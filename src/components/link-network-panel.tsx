@@ -189,7 +189,17 @@ export function LinkNetworkPanel({
         );
       }
       setMsg(t("submit.unlink.ok"));
-      router.refresh();
+      // If we're viewing the page AT the removed address, that URL no longer exists - navigate to a
+      // surviving address's page instead of refreshing into a 404. Otherwise just refresh in place.
+      const viewingRemoved =
+        typeof window !== "undefined" &&
+        window.location.pathname.toLowerCase().includes(address.toLowerCase());
+      const survivor = addresses.find((a) => a.address.toLowerCase() !== address.toLowerCase());
+      if (viewingRemoved && survivor) {
+        router.push(`/provider/${survivor.address.toLowerCase()}`);
+      } else {
+        router.refresh();
+      }
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("submit.err.unlinkFailed"));
     } finally {
