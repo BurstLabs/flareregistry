@@ -1,0 +1,27 @@
+# Local sandbox Postgres for Flare Registry.
+#
+# Host port is 5435 because 5432-5434 are already taken on this dev box. The DATABASE_URL in
+# .env.example points at 5435 to match. On Hetzner you run a real Postgres (or managed DB)
+# and set DATABASE_URL there; this file is for local development only.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: flareregistry-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: flareregistry
+      POSTGRES_PASSWORD: flareregistry
+      POSTGRES_DB: flareregistry
+    ports:
+      - "5435:5432"
+    volumes:
+      - flareregistry_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flareregistry -d flareregistry"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  flareregistry_pgdata:

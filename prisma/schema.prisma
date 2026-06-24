@@ -1,0 +1,276 @@
+// Flare Registry data model.
+//
+// A Provider is one organisation that runs a signal-provider operation. It owns one or more
+// ProviderAddress rows (one per chain it operates on) and exactly one piece of branding
+// (name, description, url, logo). Ownership is anchored to the on-chain address: a row only
+// becomes verified after the wallet for that address signs a challenge.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Provider {
+  id          String  @id @default(cuid())
+  // Branding shown in the feed and directory.
+  name        String
+  description String
+  url         String
+  // Stored relative for self-hosted logos; the feed expands it to an absolute logoURI.
+  logoPath    String?
+  // For imported providers we keep the source's absolute logo URL verbatim until the owner
+  // claims the entry and uploads their own. Null for natively-submitted providers.
+  logoURI     String?
+  // Provenance. "submitted" = created through the sign-in flow on this site. "imported" =
+  // seeded from an external list and not yet owner-claimed.
+  source      String  @default("submitted")
+
+  // Self-declared fields: things the TowoLabs extended requirements list but that cannot be
+  // verified on-chain, so they are provider-attested and shown labeled as "self-declared".
+  // privateNode: submits prices from a private (not shared) node.
+  privateNode Boolean? // null = not declared
+  // algorithm: "in-house" | "open-source" | null (not declared).
+  algorithm   String?
+
+  // Governance (new-provider flag mechanism, see docs/governance-flag-mechanism.md).
+  // flaggedOnce: this account has already been through the flag process once (once-only guard).
+  flaggedOnce Boolean @default(false)
+  // suspended: a DENIED flag outcome. Not Qualified, hidden from the default directory.
+  suspended   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addresses ProviderAddress[]
+  flagCases ProviderFlagCase[]
+}
+
+// One on-chain address the provider operates, on one chain. This is the unit that gets
+// verified and the unit that becomes a feed entry.
+model ProviderAddress {
+  id         String   @id @default(cuid())
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId String
+
+  // EVM chain id (14 Flare, 19 Songbird, 16 Coston, 114 Coston2).
+  chainId Int
+  // Lowercased 0x address. Unique per chain so two providers can't both claim it.
+  address String
+
+  // True only after a valid signature from this address is recorded, i.e. the owner has
+  // claimed the entry. Imported entries start false even though they appear in the feed.
+  verified   Boolean   @default(false)
+  verifiedAt DateTime?
+
+  // The feed's "listed" flag for this entry. For imported entries this carries the source
+  // list's listed value verbatim. For owner-submitted entries it is true once verified.
+  listed Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([chainId, address])
+  @@index([providerId])
+}
+
+// One-time signing challenges. A nonce is issued for an address, consumed on successful
+// verification, and expires shortly after issue so a leaked nonce is not reusable.
+model AuthChallenge {
+  id        String   @id @default(cuid())
+  address   String // lowercased claimed address
+  nonce     String   @unique
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([address])
+}
+
+// On-chain identity of a registered FTSO entity, ingested from the Flare-published
+// fsp-rewards reward-epoch-info.json. One row per (identity voter address, network), updated
+// to the latest epoch seen. Used to (a) match a Flare Registry listing to its on-chain entity by
+// any of the entity's addresses, and (b) drive the "Registered" badge.
+//
+// Amounts/weights are wei-scale and stored as decimal strings; do bigint math in code.
+model ProviderOnchain {
+  id      String @id @default(cuid())
+  // "flare" or "songbird".
+  network String
+  // Lowercased identity (voter) address — the entity's canonical key.
+  voter   String
+
+  delegationAddress       String?
+  submitAddress           String?
+  submitSignaturesAddress String?
+  signingPolicyAddress    String?
+  // Validator node ids the entity manages (JSON array of strings).
+  nodeIds                 Json?
+
+  // Current (latest-epoch) snapshot fields for quick display without scanning history.
+  feeBips          Int?
+  wNatWeight       String?
+  wNatCappedWeight String?
+  signingWeight    String?
+  feedCount        Int?
+  registered       Boolean @default(true)
+  goodStanding     Boolean @default(true)
+  // Member of Flare's on-chain FTSO Management Group (PollingManagementGroup contract): the
+  // curated set of eligible, well-performing providers. Refreshed from a live RPC query.
+  managementGroup  Boolean @default(false)
+
+  lastEpochSeen Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([network, voter])
+  @@index([delegationAddress])
+  @@index([submitAddress])
+  @@index([submitSignaturesAddress])
+  @@index([signingPolicyAddress])
+}
+
+// Per-provider, per-reward-epoch metrics ingested from fsp-rewards. One row per
+// (network, epochId, voter). Powers history, charts, and per-epoch liveness.
+model ProviderMetricEpoch {
+  id      String @id @default(cuid())
+  network String
+  epochId Int
+  // Lowercased identity (voter) address.
+  voter   String
+
+  feeBips          Int?
+  wNatWeight       String?
+  wNatCappedWeight String?
+  signingWeight    String?
+  feedCount        Int?
+  // The signing-policy threshold for this epoch (same for all providers in the epoch); a
+  // provider "participates" when its signing weight meets/exceeds a meaningful share. Stored
+  // per row for simplicity. Decimal string.
+  epochThreshold   String?
+
+  // Reward amounts attributed to this entity this epoch (wei-scale decimal strings).
+  feeReward       String? // claimType 1 (provider commission)
+  delegatorReward String? // claimType 2 (WNAT pool to the delegation address)
+  stakerReward    String? // claimType 3 (mirror/staking)
+
+  // Was the entity registered/active this epoch, and in good standing (no applied penalties).
+  registered   Boolean @default(true)
+  goodStanding Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@unique([network, epochId, voter])
+  @@index([network, voter])
+  @@index([network, epochId])
+}
+
+// Tracks the highest reward epoch ingested per network, so the job only fetches new epochs.
+model IngestState {
+  network           String   @id
+  lastEpochIngested Int      @default(0)
+  updatedAt         DateTime @updatedAt
+}
+
+// Cached result of the address-on-website qualification check, keyed by provider url.
+model WebsiteCheck {
+  url       String   @id
+  found     Boolean
+  checkedAt DateTime @default(now())
+}
+
+// Persisted, LATCHING qualification state per on-chain entity. Qualification is sticky: once an
+// entity becomes qualified it stays qualified, and the ONLY thing that revokes it is not
+// submitting prices for ~9 consecutive reward epochs (30 days). After revocation it must
+// re-qualify from scratch (full criteria, including the website-required onboarding window).
+model QualificationState {
+  id      String @id @default(cuid())
+  network String
+  voter   String // lowercased identity address
+
+  qualified          Boolean   @default(false)
+  // When the latch first turned on (also the restart point after a revocation).
+  qualifiedAt        DateTime?
+  // The most recent epoch in which this entity submitted/was present. Drives the no-submit gap.
+  lastSubmittedEpoch Int?
+  // The epoch at which qualification was last evaluated, so we only move forward.
+  lastEvaluatedEpoch Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([network, voter])
+}
+
+// Governance: a flag case against a new provider, decided by the Management Group.
+// See docs/governance-flag-mechanism.md for the full mechanism.
+model ProviderFlagCase {
+  id         String   @id @default(cuid())
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId String
+  network    String
+
+  // OPEN_DISCUSSION | OPEN_VOTING | DENIED | CLEARED | FAILED_QUORUM
+  state            String
+  openedAt         DateTime  @default(now())
+  discussionEndsAt DateTime
+  votingEndsAt     DateTime
+  decidedAt        DateTime?
+
+  // True when this case is the one permitted appeal of a prior DENIED case.
+  isReVote          Boolean @default(false)
+  // Member count snapshot at open, for display. Live count is used at tally.
+  memberCountAtOpen Int
+  // Recorded at tally for the public record.
+  outcomeTurnout    Int?
+  outcomeDeny       Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  initiations ProviderFlagInitiation[]
+  votes       ProviderFlagVote[]
+  defense     ProviderFlagDefense?
+}
+
+// A Management Group member co-initiating a flag. Two distinct members open a case.
+model ProviderFlagInitiation {
+  id                String           @id @default(cuid())
+  case              ProviderFlagCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId            String
+  // The member entity's identity (voter) address; one initiation per member entity per case.
+  memberEntityVoter String
+  signerAddress     String
+  grounds           String
+  createdAt         DateTime         @default(now())
+
+  @@unique([caseId, memberEntityVoter])
+}
+
+// A Management Group member's vote on a case. One vote per member entity per case.
+model ProviderFlagVote {
+  id                String           @id @default(cuid())
+  case              ProviderFlagCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId            String
+  memberEntityVoter String
+  signerAddress     String
+  // "DENY" | "KEEP"
+  vote              String
+  comment           String?
+  createdAt         DateTime         @default(now())
+
+  @@unique([caseId, memberEntityVoter])
+}
+
+// The flagged provider's public defense statement, editable during the 14-day window.
+model ProviderFlagDefense {
+  id        String           @id @default(cuid())
+  case      ProviderFlagCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId    String           @unique
+  body      String
+  updatedAt DateTime         @updatedAt
+  createdAt DateTime         @default(now())
+}

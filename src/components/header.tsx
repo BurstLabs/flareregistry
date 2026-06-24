@@ -1,0 +1,194 @@
+"use client";
+
+import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
+import { useApp } from "./providers";
+import { LOCALES, LOCALE_NAMES } from "@/lib/i18n";
+
+export function Header() {
+  const { t, theme, toggleTheme, locale, setLocale } = useApp();
+  const [langOpen, setLangOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const langRef = useRef<HTMLDivElement>(null);
+
+  const navLinks = [
+    { href: "/", label: t("nav.directory") },
+    { href: "/submit", label: t("nav.list") },
+    { href: "/api/feed/providerlist.json", label: t("nav.feed"), external: true },
+    { href: "/api", label: t("nav.api") },
+    { href: "/why", label: t("nav.why") },
+    { href: "/governance", label: t("nav.governance") },
+    { href: "/faq", label: t("nav.faq") },
+  ];
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  return (
+    <header className="sticky top-0 z-20 border-b border-themed bg-elev/80 backdrop-blur">
+      <nav className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+        <Link href="/" aria-label="Flare Registry" className="text-lg font-semibold tracking-tight">
+          <span className="text-beacon">Flare</span> Registry
+        </Link>
+
+        <div className="flex items-center gap-1 sm:gap-3">
+          <Link href="/" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
+            {t("nav.directory")}
+          </Link>
+          <Link
+            href="/submit"
+            className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline"
+          >
+            {t("nav.list")}
+          </Link>
+          <a
+            href="/api/feed/providerlist.json"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline"
+          >
+            {t("nav.feed")}
+          </a>
+          <Link href="/api" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
+            {t("nav.api")}
+          </Link>
+          <Link href="/why" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
+            {t("nav.why")}
+          </Link>
+          <Link
+            href="/governance"
+            className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline"
+          >
+            {t("nav.governance")}
+          </Link>
+          <Link href="/faq" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
+            {t("nav.faq")}
+          </Link>
+
+          {/* Language selector */}
+          <div className="relative" ref={langRef}>
+            <button
+              onClick={() => setLangOpen((o) => !o)}
+              aria-label={t("toggle.language")}
+              className="flex items-center gap-1 rounded-md border border-themed px-2 py-1.5 text-sm text-muted hover:text-beacon"
+            >
+              <GlobeIcon />
+              <span className="hidden sm:inline">{LOCALE_NAMES[locale]}</span>
+            </button>
+            {langOpen && (
+              <div className="absolute right-0 mt-1 w-36 overflow-hidden rounded-md border border-themed bg-elev shadow-lg">
+                {LOCALES.map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => {
+                      setLocale(l);
+                      setLangOpen(false);
+                    }}
+                    className={`block w-full px-3 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/5 ${
+                      l === locale ? "text-beacon" : "text-muted"
+                    }`}
+                  >
+                    {LOCALE_NAMES[l]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            aria-label={t("toggle.theme")}
+            className="rounded-md border border-themed p-1.5 text-muted hover:text-beacon"
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          </button>
+
+          {/* Mobile menu button (links are hidden below sm) */}
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+            className="rounded-md border border-themed p-1.5 text-muted hover:text-beacon sm:hidden"
+          >
+            {menuOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile nav panel */}
+      {menuOpen && (
+        <div className="border-t border-themed sm:hidden">
+          <nav className="mx-auto flex max-w-5xl flex-col px-4 py-2">
+            {navLinks.map((l) =>
+              l.external ? (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className="py-2 text-sm text-muted hover:text-beacon"
+                >
+                  {l.label}
+                </a>
+              ) : (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="py-2 text-sm text-muted hover:text-beacon"
+                >
+                  {l.label}
+                </Link>
+              )
+            )}
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 6h18M3 12h18M3 18h18" />
+    </svg>
+  );
+}
+function CloseIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+function GlobeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20" />
+    </svg>
+  );
+}
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4l1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4l1.4-1.4" />
+    </svg>
+  );
+}
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+    </svg>
+  );
+}

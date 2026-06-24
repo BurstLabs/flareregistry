@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Semantic surface tokens so components can be theme-aware without per-element dark: variants.
+   Dark is the default (html has no class or .dark); .light overrides for the light theme. */
+:root,
+.dark {
+  color-scheme: dark;
+  --bg: 10 10 10; /* neutral-950 */
+  --bg-elev: 23 23 23; /* neutral-900 */
+  --border: 38 38 38; /* neutral-800 */
+  --text: 245 245 245; /* neutral-100 */
+  --text-muted: 163 163 163; /* neutral-400 */
+  --text-faint: 115 115 115; /* neutral-500 */
+}
+
+.light {
+  color-scheme: light;
+  --bg: 250 250 250; /* neutral-50 */
+  --bg-elev: 255 255 255; /* white */
+  --border: 229 229 229; /* neutral-200 */
+  --text: 23 23 23; /* neutral-900 */
+  --text-muted: 82 82 82; /* neutral-600 */
+  --text-faint: 115 115 115; /* neutral-500 */
+}
+
+@layer base {
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+}
+
+/* Semantic helper classes used across pages so theme switching is one source of truth. */
+@layer components {
+  .surface {
+    background-color: rgb(var(--bg-elev));
+    border-color: rgb(var(--border));
+  }
+  .text-muted {
+    color: rgb(var(--text-muted));
+  }
+  .text-faint {
+    color: rgb(var(--text-faint));
+  }
+  .border-themed {
+    border-color: rgb(var(--border));
+  }
+  .bg-elev {
+    background-color: rgb(var(--bg-elev));
+  }
+}
+
+/* Avoid a flash of the wrong theme: the inline script in <head> sets the class before paint. */
