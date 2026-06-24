@@ -27,20 +27,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Session = proven address (they signed the challenge), publish or not. Find its provider
-  // record, whether a verified claim or an imported seed.
-  const sessionAddr = await prisma.providerAddress.findFirst({
-    where: { address: session },
-    select: { id: true, providerId: true, verified: true },
-  });
-  if (!sessionAddr) {
-    // No listing exists for this address yet; there is nothing to attach a logo to.
-    return NextResponse.json(
-      { error: "fill in and publish your listing first, then upload a logo" },
-      { status: 409 }
-    );
-  }
-
   const form = await req.formData().catch(() => null);
   const file = form?.get("logo");
   if (!(file instanceof File)) {
@@ -55,7 +41,9 @@ export async function POST(req: NextRequest) {
 
   let logoURI: string;
   try {
-    // Keyed by the session (proven) address, matching the feed's per-address logo scheme.
+    // Keyed by the session (proven) address, matching the feed's per-address logo scheme. This
+    // works whether or not a provider record exists yet, so a NEW listing can upload its logo
+    // before publishing (the logoURI is then included in the create payload).
     logoURI = await commitLogo(session, buf);
   } catch (e) {
     return NextResponse.json(
@@ -64,21 +52,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Uploading also claims the listing: address goes verified/listed, provider goes owner-owned.
-  // No separate publish step needed.
-  await prisma.$transaction([
-    prisma.provider.update({
-      where: { id: sessionAddr.providerId },
-      data: { logoURI, logoPath: null, source: "submitted" },
-    }),
-    prisma.providerAddress.update({
-      where: { id: sessionAddr.id },
-      data: { verified: true, verifiedAt: new Date(), listed: true },
-    }),
-  ]);
-
-  // The logo (and possibly claim state) changed; sync the committed providerlist.json.
-  await publishFeedToRepo();
+  // If a provider record already exists for this address, attach the logo now and treat the upload
+  // as a claim (verified/listed/owner-owned), as before. For a brand-new listing there's no record
+  // yet - we just return the logoURI for the client to send with the create.
+  const sessionAddr = await prisma.providerAddress.findFirst({
+    where: { address: session },
+    select: { id: true, providerId: true },
+  });
+  if (sessionAddr) {
+    await prisma.$transaction([
+      prisma.provider.update({
+        where: { id: sessionAddr.providerId },
+        data: { logoURI, logoPath: null, source: "submitted" },
+      }),
+      prisma.providerAddress.update({
+        where: { id: sessionAddr.id },
+        data: { verified: true, verifiedAt: new Date(), listed: true },
+      }),
+    ]);
+    await publishFeedToRepo();
+  }
 
   return NextResponse.json({ logoURI });
 }

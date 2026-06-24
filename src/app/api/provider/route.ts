@@ -59,6 +59,23 @@ export async function POST(req: NextRequest) {
     select: { providerId: true },
   });
 
+  // A logo is required. Accept it from this request (uploaded via /api/provider/logo before
+  // publish) or fall back to one the provider already has (on update).
+  const existingLogo = existingOwned
+    ? await prisma.provider.findUnique({
+        where: { id: existingOwned.providerId },
+        select: { logoURI: true, logoPath: true },
+      })
+    : null;
+  const hasLogo =
+    !!input.logoURI || !!existingLogo?.logoURI || !!existingLogo?.logoPath;
+  if (!hasLogo) {
+    return NextResponse.json(
+      { error: "a logo is required. Upload one before publishing your listing." },
+      { status: 400 }
+    );
+  }
+
   // Name uniqueness: a provider name (normalised: lowercased, whitespace-collapsed) must not match
   // another provider's. The caller's OWN record is excluded so editing/keeping your name works.
   // A provider operating on multiple networks keeps one record, so this does not block them.
@@ -110,6 +127,8 @@ export async function POST(req: NextRequest) {
       privateNode: input.privateNode ?? null,
       algorithm: input.algorithm ?? null,
       source: "submitted",
+      // Persist a logo uploaded before publish; on update without a new one, leave it untouched.
+      ...(input.logoURI ? { logoURI: input.logoURI, logoPath: null } : {}),
     };
     const provider = existingOwned
       ? await tx.provider.update({ where: { id: existingOwned.providerId }, data: branding })

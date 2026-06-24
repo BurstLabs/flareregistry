@@ -263,6 +263,11 @@ function SubmitPageInner() {
         return;
       }
     }
+    // A logo is required (the server enforces this too).
+    if (!logoUri) {
+      setError(t("submit.logo.required"));
+      return;
+    }
     setBusy(true);
     try {
       const res = await fetch("/api/provider", {
@@ -274,6 +279,7 @@ function SubmitPageInner() {
           url,
           privateNode,
           algorithm: algorithm || null,
+          logoURI: logoUri || null,
           addresses: [{ chainId, address }],
         }),
       });
@@ -546,19 +552,22 @@ function SubmitPageInner() {
             onPick={uploadLogo}
           />
 
-          <button
-            disabled={busy}
-            onClick={submit}
-            className="rounded bg-beacon px-4 py-2 font-medium text-neutral-950 hover:opacity-90 disabled:opacity-50"
-          >
-            {busy
-              ? t("submit.btn.saving")
-              : existing
-                ? existing.source === "imported"
-                  ? t("submit.btn.claim")
-                  : t("submit.btn.update")
-                : t("submit.btn.publish")}
-          </button>
+          <div>
+            <button
+              disabled={busy || !logoUri}
+              onClick={submit}
+              className="rounded bg-beacon px-4 py-2 font-medium text-neutral-950 hover:opacity-90 disabled:opacity-50"
+            >
+              {busy
+                ? t("submit.btn.saving")
+                : existing
+                  ? existing.source === "imported"
+                    ? t("submit.btn.claim")
+                    : t("submit.btn.update")
+                  : t("submit.btn.publish")}
+            </button>
+            {!logoUri && <p className="mt-2 text-xs text-faint">{t("submit.logo.required")}</p>}
+          </div>
         </div>
       )}
 

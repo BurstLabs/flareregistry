@@ -41,6 +41,9 @@ export const providerInputSchema = z.object({
   // Self-declared (provider-attested, not verifiable on-chain). Optional.
   privateNode: z.boolean().nullish(),
   algorithm: z.enum(["in-house", "open-source"]).nullish(),
+  // Logo URI from a prior /api/provider/logo upload. Required for new listings; on update it may
+  // be omitted when the provider already has a logo. Enforced in the route.
+  logoURI: z.string().url().max(400).nullish(),
   addresses: z
     .array(z.object({ chainId: chainIdSchema, address: addressSchema }))
     .min(1, "at least one address is required")
