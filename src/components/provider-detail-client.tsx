@@ -298,8 +298,20 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
         </ul>
 
         <details className="group mt-3">
-          <summary className="cursor-pointer list-none text-sm text-muted underline-offset-2 hover:text-beacon hover:underline">
-            {t("submit.link.title")} &rarr;
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-muted transition hover:text-beacon">
+            <svg
+              className="h-3.5 w-3.5 transition-transform group-open:rotate-90"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 2l4 4-4 4" />
+            </svg>
+            {t("detail.manageNetworks")}
           </summary>
           <div className="mt-3">
             <LinkNetworkPanel providerName={d.name} addresses={d.addresses} />
