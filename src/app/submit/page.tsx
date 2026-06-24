@@ -428,13 +428,18 @@ function SubmitPageInner() {
             <p className="font-medium">{t("submit.warn.title")}</p>
             <p className="mt-1">{t("submit.warn.body")}</p>
           </div>
-          <div className="rounded border border-themed bg-elev/50 px-3 py-2 text-xs text-muted">
-            <p className="mb-1 font-medium text-muted">{t("submit.which.title")}</p>
-            <Interp
-              text={t("submit.which.body", { identity: SENTINEL })}
-              node={<span className="font-medium">{t("submit.which.identity")}</span>}
-            />
-          </div>
+          {/* Address-choice guidance is for NEW registration (pick your identity address for the
+              best on-chain match). When managing, you just connect an address already on your
+              listing, so it's hidden. */}
+          {!manage && (
+            <div className="rounded border border-themed bg-elev/50 px-3 py-2 text-xs text-muted">
+              <p className="mb-1 font-medium text-muted">{t("submit.which.title")}</p>
+              <Interp
+                text={t("submit.which.body", { identity: SENTINEL })}
+                node={<span className="font-medium">{t("submit.which.identity")}</span>}
+              />
+            </div>
+          )}
           {/* Network choice only matters when listing a NEW address. When managing, the listing is
               found by address and its chain comes from the existing record, so the picker is hidden. */}
           {!manage && (
