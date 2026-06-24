@@ -562,7 +562,7 @@ export default function SubmitPage() {
             </p>
           )}
 
-          {saved && (
+          {(saved || existing) && (
             <div className="mt-2 rounded border border-themed bg-elev/50 p-4 text-sm">
               <p className="font-medium">{t("submit.link.title")}</p>
               <p className="mt-1 text-muted">{t("submit.link.body")}</p>
