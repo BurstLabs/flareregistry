@@ -189,6 +189,12 @@ function SubmitPageInner() {
       if (p.logoURI) setLogoUri(p.logoURI);
       setPrivateNode(!!p.privateNode);
       if (p.algorithm === "in-house" || p.algorithm === "open-source") setAlgorithm(p.algorithm);
+      // Pin chainId to the signed-in address's actual chain, so a later save writes the right
+      // network (not whatever the now-hidden dropdown last held).
+      const mine = (p.addresses ?? []).find(
+        (a: { address: string; chainId: number }) => a.address.toLowerCase() === addr.toLowerCase()
+      );
+      if (mine) setChainId(mine.chainId);
     } catch {
       // Non-fatal: fall back to an empty form.
     }
@@ -429,20 +435,24 @@ function SubmitPageInner() {
               node={<span className="font-medium">{t("submit.which.identity")}</span>}
             />
           </div>
-          <label className="block text-sm">
-            {t("submit.network")}
-            <select
-              className="mt-1 block w-full rounded bg-elev border border-themed px-3 py-2"
-              value={chainId}
-              onChange={(e) => setChainId(Number(e.target.value))}
-            >
-              {CHAINS.map((c) => (
-                <option key={c.chainId} value={c.chainId}>
-                  {c.name} ({t("submit.chainIdLabel")} {c.chainId})
-                </option>
-              ))}
-            </select>
-          </label>
+          {/* Network choice only matters when listing a NEW address. When managing, the listing is
+              found by address and its chain comes from the existing record, so the picker is hidden. */}
+          {!manage && (
+            <label className="block text-sm">
+              {t("submit.network")}
+              <select
+                className="mt-1 block w-full rounded bg-elev border border-themed px-3 py-2"
+                value={chainId}
+                onChange={(e) => setChainId(Number(e.target.value))}
+              >
+                {CHAINS.map((c) => (
+                  <option key={c.chainId} value={c.chainId}>
+                    {c.name} ({t("submit.chainIdLabel")} {c.chainId})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <button
             onClick={connect}
             className="rounded bg-beacon px-4 py-2 font-medium text-neutral-950 hover:opacity-90"
