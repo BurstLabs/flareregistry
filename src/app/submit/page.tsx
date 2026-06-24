@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CHAINS } from "@/lib/chains";
 import { checkContent } from "@/lib/content-filter";
 import { useApp } from "@/components/providers";
@@ -86,18 +86,15 @@ declare global {
   }
 }
 
-export default function SubmitPage() {
+function SubmitPageInner() {
   const { t } = useApp();
   const router = useRouter();
   // "Manage" mode: arrived from a provider's "Manage this listing" link (/submit?manage=1). Shows
   // edit-oriented copy and hides the new-listing "registration required" notice, since the visitor
   // already has a listing. Plain /submit stays the "List your provider" create flow.
-  // Read after mount: a useState lazy initializer runs during SSR (window undefined -> false) and
-  // React keeps that hydrated value, so the manage flag must be set in an effect on the client.
-  const [manage, setManage] = useState(false);
-  useEffect(() => {
-    setManage(new URLSearchParams(window.location.search).has("manage"));
-  }, []);
+  // useSearchParams is reactive: navigating /submit?manage=1 -> /submit (clicking "List your
+  // provider" in the nav) updates it without a remount, so the mode flips correctly.
+  const manage = useSearchParams().has("manage");
   const [step, setStep] = useState<Step>("connect");
   const [address, setAddress] = useState<string>("");
   const [chainId, setChainId] = useState<number>(14);
@@ -508,6 +505,15 @@ export default function SubmitPage() {
       )}
 
     </div>
+  );
+}
+
+// useSearchParams requires a Suspense boundary for the build's static-generation check.
+export default function SubmitPage() {
+  return (
+    <Suspense fallback={null}>
+      <SubmitPageInner />
+    </Suspense>
   );
 }
 
