@@ -118,7 +118,7 @@ function SubmitPageInner() {
   // If we're sitting on a signed-in, prefilled listing, reset back to the empty connect step so
   // the create flow isn't shown with someone's existing data and a contradictory title.
   useEffect(() => {
-    if (!manage && existing) {
+    if (!manage && (existing || step !== "connect")) {
       setStep("connect");
       setAddress("");
       setExisting(null);
