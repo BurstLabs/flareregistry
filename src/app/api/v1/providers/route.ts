@@ -3,7 +3,7 @@ import { buildProviderList } from "@/lib/feed";
 // GET /api/v1/providers
 // Public, documented JSON API. Returns the same enriched provider data as the feed, but in a
 // stable versioned envelope intended for programmatic use by wallets/dapps. The base fields
-// plus the `flarebeacon` metrics object per entry (see /api docs).
+// plus the `flareregistry` metrics object per entry (see /api docs).
 export const dynamic = "force-dynamic";
 
 export async function GET() {

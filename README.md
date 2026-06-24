@@ -60,7 +60,7 @@ Sign in with your **identity address** (any of the five registered addresses is 
 the identity address gives the strongest on-chain match). On Flare and Songbird the address must
 be a registered on-chain FTSO entity; the testnets (Coston, Coston2) are exempt since they have
 no reward data to check against. The feed exposes all five of an entity's registered addresses
-under `flarebeacon.entity` (identity, submit, submit-signatures, signing-policy, delegation).
+under `flareregistry.entity` (identity, submit, submit-signatures, signing-policy, delegation).
 
 ## Supported chains
 
@@ -80,7 +80,7 @@ under `flarebeacon.entity` (identity, submit, submit-signatures, signing-policy,
 - `POST /api/auth/nonce`, `POST /api/auth/verify` — sign-in.
 - `POST /api/provider`, `POST /api/provider/logo` — manage a listing (authenticated).
 
-Full schema and the `flarebeacon` metrics object: [/api](https://flareregistry.com/api).
+Full schema and the `flareregistry` metrics object: [/api](https://flareregistry.com/api).
 
 ## Logo assets
 

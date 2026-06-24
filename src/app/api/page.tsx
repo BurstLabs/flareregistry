@@ -34,7 +34,7 @@ export default function ApiDocs() {
     <div className="max-w-3xl">
       <h1 className="mb-2 text-3xl font-bold">{t("api.title")}</h1>
       <p className="mb-8 text-muted">
-        {t("api.intro")} <code className="text-beacon">flarebeacon</code>{" "}
+        {t("api.intro")} <code className="text-beacon">flareregistry</code>{" "}
         {t("api.introAfter")}
       </p>
 
@@ -66,11 +66,11 @@ export default function ApiDocs() {
         <code>logoURI</code>, <code>listed</code>.
       </p>
       <p className="mb-2 text-sm text-muted">
-        {t("api.optionalObj")} <code className="text-beacon">flarebeacon</code>{" "}
+        {t("api.optionalObj")} <code className="text-beacon">flareregistry</code>{" "}
         {t("api.optionalObjAfter")}
       </p>
       <pre className="overflow-x-auto rounded-lg border border-themed bg-elev p-4 text-xs font-medium">
-        {`"flarebeacon": {
+        {`"flareregistry": {
   "verified": true,                 // owner proved control of this address by signature
   "registered": true,               // matched to a registered FTSO entity on-chain
   "managementGroup": true,          // member of Flare's on-chain FTSO Management Group

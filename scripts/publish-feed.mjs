@@ -73,7 +73,7 @@ async function buildList() {
       if (!entity && !a.verified) return base;
       return {
         ...base,
-        flarebeacon: {
+        flareregistry: {
           verified: a.verified,
           registered: !!entity,
           managementGroup: false,

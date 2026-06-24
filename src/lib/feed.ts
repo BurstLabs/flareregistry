@@ -10,7 +10,7 @@ import { toChecksum } from "./validation";
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
 
-// Enriched, Flare Registry-specific metrics added under a namespaced key so the 7 base fields
+// Enriched, Flare Registry-specific metrics, added under a namespaced key so the 7 base fields
 // stay byte-compatible with the standard provider-list schema (consumers ignore unknown keys).
 export interface FeedProviderExtras {
   verified: boolean; // owner proved control of this address by signature
@@ -67,7 +67,7 @@ export interface FeedProvider {
   logoURI: string;
   listed: boolean;
   // Optional, additive. Absent if the entry has no on-chain match and isn't verified.
-  flarebeacon?: FeedProviderExtras;
+  flareregistry?: FeedProviderExtras;
 }
 
 export interface ProviderList {
@@ -214,7 +214,7 @@ export async function buildProviderList(): Promise<ProviderList> {
       // listed now reflects the automatic qualification status (was the imported source flag),
       // so wallets that filter on listed get the Qualified set.
       listed: qualified,
-      ...(extras ? { flarebeacon: extras } : {}),
+      ...(extras ? { flareregistry: extras } : {}),
     };
   });
 
