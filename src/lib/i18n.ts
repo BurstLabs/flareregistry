@@ -19,7 +19,7 @@ type Dict = Record<string, string>;
 const en: Dict = {
   // Header / nav
   "nav.directory": "Directory",
-  "nav.list": "Manage your listing",
+  "nav.list": "List your provider",
   "nav.feed": "Feed",
   "nav.api": "API",
   "nav.why": "Why us",
@@ -93,7 +93,7 @@ const en: Dict = {
   // Footer
   "footer.tagline": "Self-service FTSO signal provider registry for Flare and Songbird.",
   "footer.directory": "Directory",
-  "footer.list": "Manage your listing",
+  "footer.list": "List your provider",
   "footer.feed": "Feed",
   "footer.api": "API",
   "footer.rights": "All rights reserved.",
@@ -353,7 +353,7 @@ const en: Dict = {
 
 const es: Dict = {
   "nav.directory": "Directorio",
-  "nav.list": "Gestiona tu ficha",
+  "nav.list": "Publica tu proveedor",
   "nav.feed": "Feed",
   "nav.api": "API",
   "nav.why": "Por qué nosotros",
@@ -424,7 +424,7 @@ const es: Dict = {
   "footer.tagline":
     "Registro autogestionado de proveedores de señales FTSO para Flare y Songbird.",
   "footer.directory": "Directorio",
-  "footer.list": "Gestiona tu ficha",
+  "footer.list": "Publica tu proveedor",
   "footer.feed": "Feed",
   "footer.api": "API",
   "footer.rights": "Todos los derechos reservados.",
@@ -682,7 +682,7 @@ const es: Dict = {
 
 const zh: Dict = {
   "nav.directory": "目录",
-  "nav.list": "管理您的条目",
+  "nav.list": "登记您的提供商",
   "nav.feed": "数据源",
   "nav.api": "API",
   "nav.why": "为何选择我们",
@@ -752,7 +752,7 @@ const zh: Dict = {
   "card.algoOpenSource": "开源算法",
   "footer.tagline": "面向 Flare 和 Songbird 的自助式 FTSO 信号提供商登记处。",
   "footer.directory": "目录",
-  "footer.list": "管理您的条目",
+  "footer.list": "登记您的提供商",
   "footer.feed": "数据源",
   "footer.api": "API",
   "footer.rights": "保留所有权利。",
@@ -1010,7 +1010,7 @@ const zh: Dict = {
 
 const ja: Dict = {
   "nav.directory": "ディレクトリ",
-  "nav.list": "掲載を管理",
+  "nav.list": "プロバイダーを登録",
   "nav.feed": "フィード",
   "nav.api": "API",
   "nav.why": "選ばれる理由",
@@ -1081,7 +1081,7 @@ const ja: Dict = {
   "footer.tagline":
     "Flare および Songbird 向けのセルフサービス FTSO シグナルプロバイダー登録簿。",
   "footer.directory": "ディレクトリ",
-  "footer.list": "掲載を管理",
+  "footer.list": "プロバイダーを登録",
   "footer.feed": "フィード",
   "footer.api": "API",
   "footer.rights": "無断転載を禁じます。",
@@ -1339,7 +1339,7 @@ const ja: Dict = {
 
 const ko: Dict = {
   "nav.directory": "디렉터리",
-  "nav.list": "리스팅 관리",
+  "nav.list": "프로바이더 등록",
   "nav.feed": "피드",
   "nav.api": "API",
   "nav.why": "선택 이유",
@@ -1409,7 +1409,7 @@ const ko: Dict = {
   "card.algoOpenSource": "오픈소스 알고리즘",
   "footer.tagline": "Flare 및 Songbird를 위한 셀프 서비스 FTSO 시그널 프로바이더 레지스트리.",
   "footer.directory": "디렉터리",
-  "footer.list": "리스팅 관리",
+  "footer.list": "프로바이더 등록",
   "footer.feed": "피드",
   "footer.api": "API",
   "footer.rights": "모든 권리 보유.",
@@ -1667,7 +1667,7 @@ const ko: Dict = {
 
 const de: Dict = {
   "nav.directory": "Verzeichnis",
-  "nav.list": "Eintrag verwalten",
+  "nav.list": "Anbieter eintragen",
   "nav.feed": "Feed",
   "nav.api": "API",
   "nav.why": "Warum wir",
@@ -1738,7 +1738,7 @@ const de: Dict = {
   "footer.tagline":
     "Self-Service-FTSO-Signalanbieter-Verzeichnis für Flare und Songbird.",
   "footer.directory": "Verzeichnis",
-  "footer.list": "Eintrag verwalten",
+  "footer.list": "Anbieter eintragen",
   "footer.feed": "Feed",
   "footer.api": "API",
   "footer.rights": "Alle Rechte vorbehalten.",
@@ -1997,7 +1997,7 @@ const de: Dict = {
 const fr: Dict = {
   // Header / nav
   "nav.directory": "Répertoire",
-  "nav.list": "Gérer votre fiche",
+  "nav.list": "Inscrire votre fournisseur",
   "nav.feed": "Flux",
   "nav.api": "API",
   "nav.why": "Pourquoi nous",
@@ -2070,7 +2070,7 @@ const fr: Dict = {
   // Footer
   "footer.tagline": "Registre en libre-service des fournisseurs de signaux FTSO pour Flare et Songbird.",
   "footer.directory": "Répertoire",
-  "footer.list": "Gérer votre fiche",
+  "footer.list": "Inscrire votre fournisseur",
   "footer.feed": "Flux",
   "footer.api": "API",
   "footer.rights": "Tous droits réservés.",
