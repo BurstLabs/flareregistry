@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-24T18:30:13.420Z",
+  "timestamp": "2026-06-24T18:53:45.834Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1025,47 +1025,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.310Z",
-          "lastSubmittedEpoch": 408,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "fads",
-      "description": "adf",
-      "url": "https://www.dd.com",
-      "address": "0x41137152912A1fd477ca2b4aB4DdAb195D4F452F",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": true,
-      "flareregistry": {
-        "verified": true,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "songbird",
-        "feePercent": 20,
-        "votePower": "139632765463102280167230816",
-        "votePowerCapped": "139632765463102280167230816",
-        "feedCount": 63,
-        "lastEpoch": 408,
-        "delegatorRewardLastEpoch": "114249993348678743187406",
-        "feeRewardLastEpoch": "28562498337169685786650",
-        "entity": {
-          "identity": "0x121c651710217239592A169b9f7D1038Ad53446d",
-          "submit": "0x44bAE8BA9DA0a0583e49937ca5a251b8CdC1BC81",
-          "submitSignatures": "0x41137152912A1fd477ca2b4aB4DdAb195D4F452F",
-          "signingPolicy": "0x7A85E157c0adA485915019f84Bc7DA2027589D68",
-          "delegation": "0x580B729602c10c59B058c3C3b0Cec6c3db7Ae0c7"
-        },
-        "selfDeclared": {
-          "privateNode": false,
-          "algorithm": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.207Z",
           "lastSubmittedEpoch": 408,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
