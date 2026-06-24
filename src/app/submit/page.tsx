@@ -443,7 +443,9 @@ function SubmitPageInner() {
 
       {step === "form" && (
         <div className="space-y-4">
-          {existing && (
+          {/* The "you already have a listing" notice is redundant in manage mode (the intro already
+              says you're editing). The "imported" claim notice is informative, so keep it always. */}
+          {existing && (existing.source === "imported" || !manage) && (
             <div className="rounded border border-beacon/40 bg-beacon/10 px-3 py-2 text-sm text-beacon">
               {existing.source === "imported"
                 ? t("submit.existing.imported")
