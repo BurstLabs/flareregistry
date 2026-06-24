@@ -60,3 +60,37 @@ export function getChain(chainId: number): ChainInfo | undefined {
 export function isSupportedChain(chainId: number): boolean {
   return BY_ID.has(chainId);
 }
+
+type Eth = { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> };
+
+// Switch the wallet's active network to `chainId` so the signature popup shows the matching chain
+// (cosmetic - personal_sign is chain-independent). Adds the chain to the wallet if unknown.
+// Best-effort: if the user declines, we proceed since the signature is valid regardless.
+export async function switchWalletChain(eth: Eth | undefined, chainId: number) {
+  const chain = getChain(chainId);
+  if (!chain || !eth) return;
+  const hexId = `0x${chainId.toString(16)}`;
+  try {
+    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hexId }] });
+  } catch (e) {
+    if ((e as { code?: number })?.code === 4902) {
+      try {
+        await eth.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: hexId,
+              chainName: chain.name,
+              rpcUrls: [chain.rpcUrl],
+              nativeCurrency: chain.nativeCurrency,
+              blockExplorerUrls: [chain.explorerUrl],
+            },
+          ],
+        });
+      } catch {
+        /* user declined adding the chain */
+      }
+    }
+    /* user declined switching */
+  }
+}

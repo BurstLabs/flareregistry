@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CHAINS } from "@/lib/chains";
+import { CHAINS, switchWalletChain } from "@/lib/chains";
 import { useApp } from "./providers";
 
 declare global {
@@ -13,41 +13,9 @@ declare global {
   }
 }
 
-// Switch MetaMask's active network to `chainId` so the signature popup shows the matching chain
-// (cosmetic - personal_sign is chain-independent). Adds the chain to the wallet if it's unknown.
-// Best-effort: if the user declines the switch we still proceed, since the signature is valid anyway.
+// Use the shared helper; wraps it with this component's window.ethereum.
 async function switchChain(chainId: number) {
-  const chain = CHAINS.find((c) => c.chainId === chainId);
-  if (!chain || !window.ethereum) return;
-  const hexId = `0x${chainId.toString(16)}`;
-  try {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: hexId }],
-    });
-  } catch (e) {
-    // 4902 = chain not added to the wallet yet; add it, then it becomes active.
-    const code = (e as { code?: number })?.code;
-    if (code === 4902) {
-      try {
-        await window.ethereum.request({
-          method: "wallet_addEthereumChain",
-          params: [
-            {
-              chainId: hexId,
-              chainName: chain.name,
-              rpcUrls: [chain.rpcUrl],
-              nativeCurrency: chain.nativeCurrency,
-              blockExplorerUrls: [chain.explorerUrl],
-            },
-          ],
-        });
-      } catch {
-        /* user declined adding the chain; proceed - the signature is still valid */
-      }
-    }
-    /* user declined the switch; proceed anyway */
-  }
+  await switchWalletChain(window.ethereum, chainId);
 }
 
 // Self-contained "Link another network" flow. Connects a wallet, signs the user in with the
@@ -76,7 +44,9 @@ export function LinkNetworkPanel({
   const [removing, setRemoving] = useState<string>("");
 
   async function signIn(addr: string) {
-    // Establish a session as `addr` (must be an address that owns this listing).
+    // Establish a session as `addr` (must be an address that owns this listing). The session
+    // challenge is on Flare (14); match the wallet network so the sign popup is consistent.
+    await switchChain(14);
     const nonceRes = await fetch("/api/auth/nonce", {
       method: "POST",
       headers: { "content-type": "application/json" },

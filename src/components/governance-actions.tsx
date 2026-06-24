@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers";
+import { switchWalletChain } from "@/lib/chains";
 
 declare global {
   interface Window {
@@ -20,6 +21,8 @@ async function signChallenge(t: TFn): Promise<{ address: string; message: string
   const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
   const address = accounts?.[0];
   if (!address) throw new Error(t("gov.act.err.noAccount"));
+  // The governance challenge is on Flare (14); match the wallet network for a consistent popup.
+  await switchWalletChain(window.ethereum, 14);
   const nonceRes = await fetch("/api/auth/nonce", {
     method: "POST",
     headers: { "content-type": "application/json" },

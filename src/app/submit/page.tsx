@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CHAINS } from "@/lib/chains";
+import { CHAINS, switchWalletChain } from "@/lib/chains";
 import { checkContent } from "@/lib/content-filter";
 import { useApp } from "@/components/providers";
 
@@ -215,6 +215,9 @@ function SubmitPageInner() {
     setError("");
     setBusy(true);
     try {
+      // Match the wallet's active network to the chain being signed for, so the sign popup is
+      // consistent (the signature itself is chain-independent).
+      await switchWalletChain(window.ethereum, chainId);
       const nonceRes = await fetch("/api/auth/nonce", {
         method: "POST",
         headers: { "content-type": "application/json" },
