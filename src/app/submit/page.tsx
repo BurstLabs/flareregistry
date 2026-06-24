@@ -269,6 +269,35 @@ function SubmitPageInner() {
     }
   }
 
+  // Permanently delete the whole listing. The user is already signed in (step "form"), so the
+  // session authorizes it; a two-step confirm (warning + type-the-name) guards against mistakes.
+  async function deleteListing() {
+    setError("");
+    if (!window.confirm(t("submit.delete.confirm1", { name }))) return;
+    const typed = window.prompt(t("submit.delete.confirm2", { name }));
+    if (typed === null) return;
+    if (typed.trim().toLowerCase() !== name.trim().toLowerCase()) {
+      setError(t("submit.delete.nameMismatch"));
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/provider/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(typeof body.error === "string" ? body.error : t("submit.delete.failed"));
+      }
+      router.push("/");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("submit.delete.failed"));
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="max-w-xl">
       <h1 className="mb-2 text-2xl font-bold">
@@ -500,6 +529,21 @@ function SubmitPageInner() {
                   ? t("submit.btn.claim")
                   : t("submit.btn.update")
                 : t("submit.btn.publish")}
+          </button>
+        </div>
+      )}
+
+      {step === "form" && manage && existing && (
+        <div className="mt-6 rounded border border-flare/30 bg-flare/5 p-4">
+          <p className="text-sm font-medium text-flare">{t("submit.delete.heading")}</p>
+          <p className="mt-1 text-xs text-muted">{t("submit.delete.body")}</p>
+          <button
+            type="button"
+            onClick={deleteListing}
+            disabled={busy}
+            className="mt-2 rounded border border-flare px-3 py-1.5 text-xs font-medium text-flare transition hover:bg-flare/10 disabled:opacity-50"
+          >
+            {t("submit.delete.button")}
           </button>
         </div>
       )}

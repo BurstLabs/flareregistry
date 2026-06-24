@@ -74,7 +74,6 @@ export function LinkNetworkPanel({
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
   const [removing, setRemoving] = useState<string>("");
-  const [deleting, setDeleting] = useState(false);
 
   async function signIn(addr: string) {
     // Establish a session as `addr` (must be an address that owns this listing).
@@ -198,46 +197,6 @@ export function LinkNetworkPanel({
     }
   }
 
-  async function deleteListing() {
-    setErr("");
-    setMsg("");
-    // Two-step confirmation: a warning, then type-to-confirm the listing name.
-    if (!window.confirm(t("submit.delete.confirm1", { name: providerName }))) return;
-    const typed = window.prompt(t("submit.delete.confirm2", { name: providerName }));
-    if (typed === null) return;
-    if (typed.trim().toLowerCase() !== providerName.trim().toLowerCase()) {
-      setErr(t("submit.delete.nameMismatch"));
-      return;
-    }
-    setDeleting(true);
-    try {
-      if (!window.ethereum) throw new Error(t("submit.err.noWalletShort"));
-      const accounts = (await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-      const signer = accounts?.[0];
-      if (!signer) throw new Error(t("submit.err.noAccount"));
-      await signIn(signer);
-
-      const res = await fetch("/api/provider/delete", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: providerName }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(
-          typeof body.error === "string" ? body.error : t("submit.delete.failed")
-        );
-      }
-      // Listing is gone; send the user back to the directory.
-      router.push("/");
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : t("submit.delete.failed"));
-      setDeleting(false);
-    }
-  }
-
   return (
     <div className="rounded border border-themed bg-elev/50 p-4 text-sm">
       <p className="font-medium">{t("submit.link.title")}</p>
@@ -309,19 +268,6 @@ export function LinkNetworkPanel({
       )}
       {err && <p className="mt-2 text-flare">{err}</p>}
       {msg && <p className="mt-2 text-emerald-400">{msg}</p>}
-
-      <div className="mt-4 rounded border border-flare/30 bg-flare/5 p-3">
-        <p className="text-xs font-medium text-flare">{t("submit.delete.heading")}</p>
-        <p className="mt-1 text-xs text-muted">{t("submit.delete.body")}</p>
-        <button
-          type="button"
-          onClick={deleteListing}
-          disabled={deleting}
-          className="mt-2 rounded border border-flare px-3 py-1.5 text-xs font-medium text-flare transition hover:bg-flare/10 disabled:opacity-50"
-        >
-          {deleting ? t("submit.delete.deleting") : t("submit.delete.button")}
-        </button>
-      </div>
     </div>
   );
 }
