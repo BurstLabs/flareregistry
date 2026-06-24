@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-24T17:30:50.014Z",
+  "timestamp": "2026-06-24T17:47:06.849Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -4066,6 +4066,47 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.748Z",
+          "lastSubmittedEpoch": 408,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Burst FTSO",
+      "description": "We strive to provide the best signals possible. Decentralization is extremely important to us, with this FTSO we will be helping the Flare blockchain achieve this.",
+      "url": "https://burstlabs.io",
+      "address": "0x580B729602c10c59B058c3C3b0Cec6c3db7Ae0c7",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "139632765463102280167230816",
+        "votePowerCapped": "139632765463102280167230816",
+        "feedCount": 63,
+        "lastEpoch": 408,
+        "delegatorRewardLastEpoch": "114249993348678743187406",
+        "feeRewardLastEpoch": "28562498337169685786650",
+        "entity": {
+          "identity": "0x121c651710217239592A169b9f7D1038Ad53446d",
+          "submit": "0x44bAE8BA9DA0a0583e49937ca5a251b8CdC1BC81",
+          "submitSignatures": "0x41137152912A1fd477ca2b4aB4DdAb195D4F452F",
+          "signingPolicy": "0x7A85E157c0adA485915019f84Bc7DA2027589D68",
+          "delegation": "0x580B729602c10c59B058c3C3b0Cec6c3db7Ae0c7"
+        },
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house"
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:18.644Z",
           "lastSubmittedEpoch": 408,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
