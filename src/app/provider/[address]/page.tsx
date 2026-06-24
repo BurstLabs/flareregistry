@@ -106,6 +106,7 @@ export default async function ProviderDetail({
       detail: c.detail,
     })),
     addresses: p.addresses.map((a) => ({
+      chainId: a.chainId,
       chain: getChain(a.chainId)?.name ?? `chain ${a.chainId}`,
       address: a.address,
       verified: a.verified,

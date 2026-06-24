@@ -18,12 +18,15 @@ declare global {
 //
 // providerName  - the listing name the API matches the link against
 // excludeChainId - the chain of the address the user is viewing (so it is not offered again)
+// addresses     - the listing's current addresses, so an owner can remove one (unlink)
 export function LinkNetworkPanel({
   providerName,
   excludeChainId,
+  addresses = [],
 }: {
   providerName: string;
   excludeChainId?: number;
+  addresses?: { chainId: number; chain: string; address: string }[];
 }) {
   const { t } = useApp();
   const options = CHAINS.filter((c) => c.chainId !== excludeChainId);
@@ -31,6 +34,7 @@ export function LinkNetworkPanel({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
+  const [removing, setRemoving] = useState<string>("");
 
   async function signIn(addr: string) {
     // Establish a session as `addr` (must be an address that owns this listing).
@@ -106,6 +110,40 @@ export function LinkNetworkPanel({
     }
   }
 
+  async function removeAddress(chainId: number, address: string) {
+    setErr("");
+    setMsg("");
+    if (!window.confirm(t("submit.unlink.confirm", { address }))) return;
+    setRemoving(`${chainId}-${address}`);
+    try {
+      if (!window.ethereum) throw new Error(t("submit.err.noWalletShort"));
+      const accounts = (await window.ethereum.request({
+        method: "eth_requestAccounts",
+      })) as string[];
+      const signer = accounts?.[0];
+      if (!signer) throw new Error(t("submit.err.noAccount"));
+      // Prove ownership of the listing by signing in with a wallet that holds one of its addresses.
+      await signIn(signer);
+
+      const res = await fetch("/api/provider/unlink", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ chainId, address }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(
+          typeof body.error === "string" ? body.error : t("submit.err.unlinkFailed")
+        );
+      }
+      setMsg(t("submit.unlink.ok"));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("submit.err.unlinkFailed"));
+    } finally {
+      setRemoving("");
+    }
+  }
+
   return (
     <div className="rounded border border-themed bg-elev/50 p-4 text-sm">
       <p className="font-medium">{t("submit.link.title")}</p>
@@ -134,6 +172,34 @@ export function LinkNetworkPanel({
           {busy ? t("submit.link.linking") : t("submit.link.button")}
         </button>
       </div>
+      {addresses.length > 1 && (
+        <div className="mt-4 border-t border-themed pt-3">
+          <p className="text-xs text-faint">{t("submit.unlink.heading")}</p>
+          <ul className="mt-2 space-y-1">
+            {addresses.map((a) => (
+              <li
+                key={`${a.chainId}-${a.address}`}
+                className="flex items-center justify-between gap-3"
+              >
+                <span className="min-w-0 truncate">
+                  <span className="text-faint">{a.chain}</span>{" "}
+                  <span className="font-mono text-xs">{a.address}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeAddress(a.chainId, a.address)}
+                  disabled={removing === `${a.chainId}-${a.address}`}
+                  className="shrink-0 text-xs text-flare underline-offset-2 hover:underline disabled:opacity-50"
+                >
+                  {removing === `${a.chainId}-${a.address}`
+                    ? t("submit.unlink.removing")
+                    : t("submit.unlink.button")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {err && <p className="mt-2 text-flare">{err}</p>}
       {msg && <p className="mt-2 text-emerald-400">{msg}</p>}
     </div>

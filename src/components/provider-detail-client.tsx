@@ -27,7 +27,7 @@ export interface DetailData {
   privateNode: boolean;
   algorithm: string | null;
   checks: { key: string; label: string; status: "pass" | "fail" | "unknown"; detail: string }[];
-  addresses: { chain: string; address: string; verified: boolean; testnet: boolean }[];
+  addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
   // The full registered on-chain entity addresses (all five roles) per matched network.
   entityAddresses: { network: string; roles: { role: string; address: string }[] }[];
   history: {
@@ -113,8 +113,11 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
               </span>
             )}
             {d.verified && (
-              <span className="rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon">
-                {t("badge.verified")}
+              <span
+                className="rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon"
+                title={t("badge.ownerVerifiedTip")}
+              >
+                {t("badge.ownerVerified")}
               </span>
             )}
           </div>
@@ -299,7 +302,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
             {t("submit.link.title")} &rarr;
           </summary>
           <div className="mt-3">
-            <LinkNetworkPanel providerName={d.name} />
+            <LinkNetworkPanel providerName={d.name} addresses={d.addresses} />
           </div>
         </details>
       </section>
