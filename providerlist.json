@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-25T16:17:44.125Z",
+  "timestamp": "2026-06-25T19:36:29.220Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -543,8 +543,8 @@
     {
       "chainId": 14,
       "name": "Burst FTSO",
-      "description": "fdjklfadsljkfadsjlkf",
-      "url": "https://www.gadsfs.com",
+      "description": "We strive to provide the best signals possible. Decentralization is extremely important to us, with this FTSO we will be helping the Flare blockchain achieve this.",
+      "url": "https://www.burstlabs.io",
       "address": "0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
       "listed": true,
@@ -569,8 +569,8 @@
           "delegation": "0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C"
         },
         "selfDeclared": {
-          "privateNode": false,
-          "algorithm": null
+          "privateNode": true,
+          "algorithm": "in-house"
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.644Z",
