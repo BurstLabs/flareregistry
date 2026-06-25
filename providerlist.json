@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-25T19:43:37.684Z",
+  "timestamp": "2026-06-25T22:17:47.498Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -547,12 +547,12 @@
       "url": "https://www.burstlabs.io",
       "address": "0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
-      "listed": false,
+      "listed": true,
       "flareregistry": {
         "verified": true,
         "registered": true,
         "managementGroup": true,
-        "qualified": false,
+        "qualified": true,
         "network": "flare",
         "feePercent": 20,
         "votePower": "118936946976946412360514995",
@@ -573,11 +573,18 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": null,
+          "qualifiedSince": "2026-06-25T22:17:46.681Z",
           "lastSubmittedEpoch": 408,
           "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": null,
+          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
+        },
+        "governance": {
+          "pending": true,
+          "underReview": false,
+          "suspended": false,
+          "caseId": "cmqtwv4mj000p13qhj45v5r2b",
+          "state": "PENDING"
         }
       }
     },
@@ -4039,12 +4046,12 @@
       "url": "https://www.burstlabs.io",
       "address": "0x44bAE8BA9DA0a0583e49937ca5a251b8CdC1BC81",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
-      "listed": false,
+      "listed": true,
       "flareregistry": {
         "verified": true,
         "registered": true,
         "managementGroup": true,
-        "qualified": false,
+        "qualified": true,
         "network": "songbird",
         "feePercent": 20,
         "votePower": "139632765463102280167230816",
@@ -4065,11 +4072,18 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": null,
+          "qualifiedSince": "2026-06-25T22:17:46.681Z",
           "lastSubmittedEpoch": 408,
           "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": null,
+          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
+        },
+        "governance": {
+          "pending": true,
+          "underReview": false,
+          "suspended": false,
+          "caseId": "cmqtwv4mj000p13qhj45v5r2b",
+          "state": "PENDING"
         }
       }
     },
