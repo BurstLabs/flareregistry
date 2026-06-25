@@ -32,7 +32,15 @@ export default async function GovernanceCasePage({
         },
       },
       votes: { orderBy: { createdAt: "asc" } },
-      defense: true,
+      defense: {
+        include: {
+          revisions: { orderBy: { createdAt: "asc" } },
+          entries: {
+            orderBy: { createdAt: "asc" },
+            include: { revisions: { orderBy: { createdAt: "asc" } } },
+          },
+        },
+      },
     },
   });
   if (!c) notFound();
@@ -141,7 +149,25 @@ export default async function GovernanceCasePage({
       comment: v.comment,
       at: v.createdAt.toISOString(),
     })),
-    defense: c.defense?.body ?? null,
+    defense: c.defense
+      ? {
+          body: c.defense.body,
+          at: c.defense.createdAt.toISOString(),
+          editedAt: c.defense.editedAt?.toISOString() ?? null,
+          priorVersions: c.defense.revisions
+            .slice(0, Math.max(0, c.defense.revisions.length - 1))
+            .map((r) => ({ body: r.body, at: r.createdAt.toISOString() })),
+          entries: c.defense.entries.map((e) => ({
+            id: e.id,
+            body: e.body,
+            at: e.createdAt.toISOString(),
+            editedAt: e.editedAt?.toISOString() ?? null,
+            priorVersions: e.revisions
+              .slice(0, Math.max(0, e.revisions.length - 1))
+              .map((r) => ({ body: r.body, at: r.createdAt.toISOString() })),
+          })),
+        }
+      : null,
   };
 
   return (

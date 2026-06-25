@@ -321,6 +321,8 @@ model ProviderFlagVote {
 }
 
 // The flagged provider's public defense statement, editable during the 14-day window.
+// The flagged provider's public response. The primary `body` is the first response; the provider
+// can edit it (history kept) and add supplemental responses, mirroring the members' grounds.
 model ProviderFlagDefense {
   id        String           @id @default(cuid())
   case      ProviderFlagCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
@@ -328,4 +330,46 @@ model ProviderFlagDefense {
   body      String
   updatedAt DateTime         @updatedAt
   createdAt DateTime         @default(now())
+  // Set when the body was last edited (null = never edited since first posted).
+  editedAt  DateTime?
+
+  revisions ProviderFlagDefenseRevision[]
+  entries   ProviderFlagDefenseEntry[]
+}
+
+// Append-only version history of the primary defense body (first row is the original text).
+model ProviderFlagDefenseRevision {
+  id        String              @id @default(cuid())
+  defense   ProviderFlagDefense @relation(fields: [defenseId], references: [id], onDelete: Cascade)
+  defenseId String
+  body      String
+  createdAt DateTime            @default(now())
+
+  @@index([defenseId])
+}
+
+// A supplemental response the provider adds after their first, each independently editable with its
+// own history. Mirrors ProviderFlagGroundsEntry for the members' side.
+model ProviderFlagDefenseEntry {
+  id        String              @id @default(cuid())
+  defense   ProviderFlagDefense @relation(fields: [defenseId], references: [id], onDelete: Cascade)
+  defenseId String
+  body      String
+  createdAt DateTime            @default(now())
+  editedAt  DateTime?
+
+  revisions ProviderFlagDefenseEntryRevision[]
+
+  @@index([defenseId])
+}
+
+// Append-only version history for a supplemental defense entry.
+model ProviderFlagDefenseEntryRevision {
+  id        String                   @id @default(cuid())
+  entry     ProviderFlagDefenseEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId   String
+  body      String
+  createdAt DateTime                 @default(now())
+
+  @@index([entryId])
 }

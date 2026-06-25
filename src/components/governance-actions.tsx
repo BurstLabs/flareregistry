@@ -407,7 +407,8 @@ export function VoteAction({ caseId }: { caseId: string }) {
   );
 }
 
-// Defense box, shown on a case page for the flagged provider (uses their existing session).
+// Defense box, shown on a case page for the flagged provider. Posting/editing the primary response
+// is signature-gated: the provider signs with a wallet that controls one of its listed addresses.
 export function DefendAction({ caseId, current }: { caseId: string; current: string | null }) {
   const { t } = useApp();
   const router = useRouter();
@@ -421,15 +422,16 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
     setOk("");
     setBusy(true);
     try {
+      const s = await signChallenge(t);
       const res = await fetch("/api/governance/defend", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, body }),
+        body: JSON.stringify({ caseId, body, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok)
         throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.defendFailedAuth"));
-      setOk(t("gov.act.defendPosted"));
+      setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.defendPosted"));
       router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.act.err.defendFailed"));
@@ -453,10 +455,151 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
         disabled={busy}
         className="mt-2 rounded-lg bg-beacon px-4 py-2 text-sm font-medium text-neutral-950 hover:opacity-90 disabled:opacity-50"
       >
-        {busy ? t("gov.act.posting") : t("gov.act.postResponse")}
+        {busy ? t("gov.act.signing") : t("gov.act.postResponse")}
       </button>
       {err && <Note kind="err" text={err} />}
       {ok && <Note kind="ok" text={ok} />}
+    </div>
+  );
+}
+
+// Add-response panel: the flagged provider adds a SUPPLEMENTAL response entry (signature-gated).
+export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
+  const { t } = useApp();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  async function submit() {
+    setErr("");
+    setOk("");
+    if (body.trim().length < 1) return;
+    setBusy(true);
+    try {
+      const s = await signChallenge(t);
+      const res = await fetch("/api/governance/defense-entry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ caseId, body, message: s.message, signature: s.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
+      setOk(t("gov.act.addSaved"));
+      setBody("");
+      setOpen(false);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.act.err.addFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-3">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-sm font-medium text-muted hover:text-beacon"
+      >
+        {t("gov.act.addResponseToggle")} {open ? "−" : "+"}
+      </button>
+      {open && (
+        <div className="mt-3">
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={4000}
+            placeholder={t("gov.act.addResponsePlaceholder")}
+            className="block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+          />
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="mt-2 rounded-lg bg-beacon px-4 py-2 text-sm font-medium text-neutral-950 hover:opacity-90 disabled:opacity-50"
+          >
+            {busy ? t("gov.act.signing") : t("gov.act.addResponseSubmit")}
+          </button>
+          {err && <Note kind="err" text={err} />}
+          {ok && <Note kind="ok" text={ok} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Edit one supplemental response entry (signature-gated).
+export function EditDefenseEntryAction({
+  caseId,
+  entryId,
+  current,
+}: {
+  caseId: string;
+  entryId: string;
+  current: string;
+}) {
+  const { t } = useApp();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [body, setBody] = useState(current);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  async function submit() {
+    setErr("");
+    setOk("");
+    if (body.trim().length < 1) return;
+    setBusy(true);
+    try {
+      const s = await signChallenge(t);
+      const res = await fetch("/api/governance/defense-entry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ caseId, entryId, body, message: s.message, signature: s.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
+      setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.editSaved"));
+      setOpen(false);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.act.err.editFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-xs font-medium text-muted hover:text-beacon"
+      >
+        {t("gov.act.editResponseToggle")} {open ? "−" : "+"}
+      </button>
+      {open && (
+        <div className="mt-2">
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={4000}
+            placeholder={t("gov.act.addResponsePlaceholder")}
+            className="block min-h-[80px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+          />
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="mt-2 rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
+          >
+            {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
+          </button>
+          {err && <Note kind="err" text={err} />}
+          {ok && <Note kind="ok" text={ok} />}
+        </div>
+      )}
     </div>
   );
 }

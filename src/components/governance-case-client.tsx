@@ -8,6 +8,8 @@ import {
   WithdrawAction,
   EditGroundsAction,
   AddGroundsAction,
+  AddDefenseEntryAction,
+  EditDefenseEntryAction,
 } from "./governance-actions";
 
 export interface CaseView {
@@ -48,7 +50,19 @@ export interface CaseView {
     }[];
   }[];
   votes: { member: string; memberName: string | null; vote: string; comment: string | null; at: string }[];
-  defense: string | null;
+  defense: {
+    body: string;
+    at: string;
+    editedAt: string | null;
+    priorVersions: { body: string; at: string }[];
+    entries: {
+      id: string;
+      body: string;
+      at: string;
+      editedAt: string | null;
+      priorVersions: { body: string; at: string }[];
+    }[];
+  } | null;
 }
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
@@ -81,22 +95,22 @@ function memberLabel(member: string, name: string | null): string {
   return name ? `${name} (${short(member)})` : short(member);
 }
 
-// Renders one grounds text with an "edited" marker and an expandable public revision history.
-// Shared by the primary grounds and each supplemental entry.
+// Renders one text block with an "edited" marker and an expandable public revision history. Shared
+// by the members' grounds and the provider's response (primary and each supplemental entry).
 function GroundsBlock({
-  grounds,
+  text,
   editedAt,
   priorVersions,
   t,
 }: {
-  grounds: string;
+  text: string;
   editedAt: string | null;
-  priorVersions: { grounds: string; at: string }[];
+  priorVersions: { text: string; at: string }[];
   t: T;
 }) {
   return (
     <>
-      <p className="mt-1 whitespace-pre-wrap">{grounds}</p>
+      <p className="mt-1 whitespace-pre-wrap">{text}</p>
       {editedAt && (
         <div className="mt-0.5 text-xs italic text-faint">
           {t("gov.case.editedAt", { at: fmt(editedAt) })}
@@ -115,7 +129,7 @@ function GroundsBlock({
                   {k === 0 ? t("gov.case.history.original") : t("gov.case.history.revised")} &middot;{" "}
                   {fmt(r.at)}
                 </div>
-                <p className="mt-0.5 whitespace-pre-wrap text-muted">{r.grounds}</p>
+                <p className="mt-0.5 whitespace-pre-wrap text-muted">{r.text}</p>
               </li>
             ))}
           </ul>
@@ -276,7 +290,12 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                     {t("gov.case.mgMemberPrefix")} {memberLabel(i.member, i.memberName)} &middot; {fmt(i.at)}
                   </div>
                   {/* Primary grounds. */}
-                  <GroundsBlock grounds={i.grounds} editedAt={i.editedAt} priorVersions={i.priorVersions} t={t} />
+                  <GroundsBlock
+                    text={i.grounds}
+                    editedAt={i.editedAt}
+                    priorVersions={i.priorVersions.map((r) => ({ text: r.grounds, at: r.at }))}
+                    t={t}
+                  />
                   {/* Edit affordance for the primary grounds (signature-gated server-side). */}
                   {preVote && <EditGroundsAction caseId={v.id} />}
 
@@ -289,9 +308,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                             {t("gov.case.supplemental")} &middot; {fmt(e.at)}
                           </div>
                           <GroundsBlock
-                            grounds={e.grounds}
+                            text={e.grounds}
                             editedAt={e.editedAt}
-                            priorVersions={e.priorVersions}
+                            priorVersions={e.priorVersions.map((r) => ({ text: r.grounds, at: r.at }))}
                             t={t}
                           />
                           {preVote && <EditGroundsAction caseId={v.id} entryId={e.id} />}
@@ -309,15 +328,51 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         )}
       </div>
 
-      {/* Subject's public defense. */}
+      {/* Subject's public defense: primary response + supplemental entries, each with history. */}
       <div className="mt-6 surface rounded-xl border p-5">
         <h2 className="mb-2 text-lg font-semibold">{t("gov.case.providerResponse")}</h2>
         {v.defense ? (
-          <p className="whitespace-pre-wrap text-sm">{v.defense}</p>
+          <div className="text-sm">
+            <div className="text-xs text-faint">{fmt(v.defense.at)}</div>
+            <GroundsBlock
+              text={v.defense.body}
+              editedAt={v.defense.editedAt}
+              priorVersions={v.defense.priorVersions.map((r) => ({ text: r.body, at: r.at }))}
+              t={t}
+            />
+            {/* Edit the primary response (reuses the post box, prefilled). */}
+            {!decided && <DefendAction caseId={v.id} current={v.defense.body} />}
+
+            {v.defense.entries.length > 0 && (
+              <ul className="mt-3 space-y-3 border-l-2 border-beacon/30 pl-3">
+                {v.defense.entries.map((e) => (
+                  <li key={e.id}>
+                    <div className="text-xs text-faint">
+                      {t("gov.case.supplemental")} &middot; {fmt(e.at)}
+                    </div>
+                    <GroundsBlock
+                      text={e.body}
+                      editedAt={e.editedAt}
+                      priorVersions={e.priorVersions.map((r) => ({ text: r.body, at: r.at }))}
+                      t={t}
+                    />
+                    {!decided && (
+                      <EditDefenseEntryAction caseId={v.id} entryId={e.id} current={e.body} />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Add another response entry. */}
+            {!decided && <AddDefenseEntryAction caseId={v.id} />}
+          </div>
         ) : (
-          <p className="text-sm text-muted">{t("gov.case.noResponse")}</p>
+          <>
+            <p className="text-sm text-muted">{t("gov.case.noResponse")}</p>
+            {!decided && <DefendAction caseId={v.id} current={null} />}
+          </>
         )}
-        {!decided && <DefendAction caseId={v.id} current={v.defense} />}
       </div>
 
       {/* Votes on the record. */}

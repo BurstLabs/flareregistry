@@ -32,7 +32,15 @@ export async function GET(
         },
       },
       votes: { orderBy: { createdAt: "asc" } },
-      defense: true,
+      defense: {
+        include: {
+          revisions: { orderBy: { createdAt: "asc" } },
+          entries: {
+            orderBy: { createdAt: "asc" },
+            include: { revisions: { orderBy: { createdAt: "asc" } } },
+          },
+        },
+      },
     },
   });
   if (!c) return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -94,7 +102,21 @@ export async function GET(
       comment: v.comment,
       at: v.createdAt,
     })),
-    defense: c.defense?.body ?? null,
+    defense: c.defense
+      ? {
+          body: c.defense.body,
+          at: c.defense.createdAt,
+          editedAt: c.defense.editedAt,
+          revisions: c.defense.revisions.map((r) => ({ body: r.body, at: r.createdAt })),
+          entries: c.defense.entries.map((e) => ({
+            id: e.id,
+            body: e.body,
+            at: e.createdAt,
+            editedAt: e.editedAt,
+            revisions: e.revisions.map((r) => ({ body: r.body, at: r.createdAt })),
+          })),
+        }
+      : null,
     outcome:
       c.decidedAt != null
         ? { state: c.state, turnout: c.outcomeTurnout, deny: c.outcomeDeny, at: c.decidedAt }

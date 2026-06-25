@@ -1,25 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSessionAddress } from "@/lib/session";
+import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
 
 // POST /api/governance/defend
 // The flagged provider posts/updates its public defense statement (visible to everyone). Allowed
-// while a case is open. Authenticated by the provider's own verified session.
-// Body: { caseId, body }
+// from the moment it is flagged through voting. The provider proves control of one of its listed
+// addresses by signing a challenge (same wallet-signature model as the members' actions).
+// Body: { caseId, body, message, signature }
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 10, 60_000);
   if (limited) return limited;
 
-  const session = await getSessionAddress();
-  if (!session) return NextResponse.json({ error: "not authenticated" }, { status: 401 });
-
   const payload = await req.json().catch(() => null);
   const caseId = typeof payload?.caseId === "string" ? payload.caseId : null;
   const text = typeof payload?.body === "string" ? payload.body.trim() : null;
-  if (!caseId || !text) {
-    return NextResponse.json({ error: "caseId and body are required" }, { status: 400 });
+  const message = typeof payload?.message === "string" ? payload.message : null;
+  const signature = typeof payload?.signature === "string" ? payload.signature : null;
+  if (!caseId || !text || !message || !signature) {
+    return NextResponse.json(
+      { error: "caseId, body, message, and signature are required" },
+      { status: 400 }
+    );
   }
   if (text.length > 4000) {
     return NextResponse.json({ error: "defense must be at most 4000 characters" }, { status: 400 });
@@ -28,15 +31,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "defense contains inappropriate language" }, { status: 400 });
   }
 
+  // Verify the signature and recover the signing address.
+  const verified = await verifyChallenge(message, signature);
+  if (!verified.ok || !verified.address) {
+    return NextResponse.json({ error: verified.error ?? "bad signature" }, { status: 401 });
+  }
+  const signer = verified.address.toLowerCase();
+
   const theCase = await prisma.providerFlagCase.findUnique({
     where: { id: caseId },
     include: { provider: { include: { addresses: true } } },
   });
   if (!theCase) return NextResponse.json({ error: "case not found" }, { status: 404 });
 
-  // The session address must own the flagged provider.
+  // The signing address must own (verified-claim) the flagged provider.
   const ownsIt = theCase.provider.addresses.some(
-    (a) => a.address.toLowerCase() === session && a.verified
+    (a) => a.address.toLowerCase() === signer && a.verified
   );
   if (!ownsIt) {
     return NextResponse.json({ error: "only the flagged provider can post a defense" }, { status: 403 });
@@ -52,11 +62,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "the case is decided; the defense is closed" }, { status: 409 });
   }
 
-  await prisma.providerFlagDefense.upsert({
-    where: { caseId },
-    create: { caseId, body: text },
-    update: { body: text },
-  });
+  // Primary response: create on first post, edit thereafter. Every version is kept as a revision so
+  // the public record shows what changed (mirrors the members' grounds history).
+  const existing = await prisma.providerFlagDefense.findUnique({ where: { caseId } });
+  if (!existing) {
+    const created = await prisma.providerFlagDefense.create({ data: { caseId, body: text } });
+    await prisma.providerFlagDefenseRevision.create({
+      data: { defenseId: created.id, body: text },
+    });
+  } else if (existing.body.trim() !== text) {
+    await prisma.$transaction([
+      prisma.providerFlagDefense.update({
+        where: { id: existing.id },
+        data: { body: text, editedAt: new Date() },
+      }),
+      prisma.providerFlagDefenseRevision.create({ data: { defenseId: existing.id, body: text } }),
+    ]);
+  } else {
+    return NextResponse.json({ ok: true, unchanged: true });
+  }
 
   return NextResponse.json({ ok: true });
 }
