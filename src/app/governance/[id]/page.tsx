@@ -23,7 +23,13 @@ export default async function GovernanceCasePage({
       provider: { select: { id: true, name: true, suspended: true, addresses: true } },
       initiations: {
         orderBy: { createdAt: "asc" },
-        include: { revisions: { orderBy: { createdAt: "asc" } } },
+        include: {
+          revisions: { orderBy: { createdAt: "asc" } },
+          entries: {
+            orderBy: { createdAt: "asc" },
+            include: { revisions: { orderBy: { createdAt: "asc" } } },
+          },
+        },
       },
       votes: { orderBy: { createdAt: "asc" } },
       defense: true,
@@ -116,6 +122,17 @@ export default async function GovernanceCasePage({
       priorVersions: i.revisions
         .slice(0, Math.max(0, i.revisions.length - 1))
         .map((r) => ({ grounds: r.grounds, at: r.createdAt.toISOString() })),
+      // Supplemental entries the same member added later (informational), each independently
+      // editable with its own prior-version history.
+      entries: i.entries.map((e) => ({
+        id: e.id,
+        grounds: e.grounds,
+        at: e.createdAt.toISOString(),
+        editedAt: e.editedAt?.toISOString() ?? null,
+        priorVersions: e.revisions
+          .slice(0, Math.max(0, e.revisions.length - 1))
+          .map((r) => ({ grounds: r.grounds, at: r.createdAt.toISOString() })),
+      })),
     })),
     votes: c.votes.map((v) => ({
       member: v.memberEntityVoter,

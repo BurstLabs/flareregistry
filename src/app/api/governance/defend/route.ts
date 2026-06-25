@@ -42,8 +42,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "only the flagged provider can post a defense" }, { status: 403 });
   }
 
-  // Allow editing while the case is open (until the voting period ends).
-  if (theCase.state !== "OPEN_DISCUSSION" && theCase.state !== "OPEN_VOTING") {
+  // A provider can respond from the moment it is flagged (PENDING, before a second member opens the
+  // case) through the open discussion and voting periods. Only a decided case closes the defense.
+  if (
+    theCase.state !== "PENDING" &&
+    theCase.state !== "OPEN_DISCUSSION" &&
+    theCase.state !== "OPEN_VOTING"
+  ) {
     return NextResponse.json({ error: "the case is decided; the defense is closed" }, { status: 409 });
   }
 

@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useApp } from "@/components/providers";
-import { VoteAction, DefendAction, WithdrawAction, EditGroundsAction } from "./governance-actions";
+import {
+  VoteAction,
+  DefendAction,
+  WithdrawAction,
+  EditGroundsAction,
+  AddGroundsAction,
+} from "./governance-actions";
 
 export interface CaseView {
   id: string;
@@ -32,6 +38,14 @@ export interface CaseView {
     editedAt: string | null;
     // Prior versions of the grounds (oldest first), for the public edit history.
     priorVersions: { grounds: string; at: string }[];
+    // Supplemental entries the same member added later (informational).
+    entries: {
+      id: string;
+      grounds: string;
+      at: string;
+      editedAt: string | null;
+      priorVersions: { grounds: string; at: string }[];
+    }[];
   }[];
   votes: { member: string; memberName: string | null; vote: string; comment: string | null; at: string }[];
   defense: string | null;
@@ -65,6 +79,50 @@ function short(a: string): string {
 // A member's display label: their provider name with the short address, or just the address.
 function memberLabel(member: string, name: string | null): string {
   return name ? `${name} (${short(member)})` : short(member);
+}
+
+// Renders one grounds text with an "edited" marker and an expandable public revision history.
+// Shared by the primary grounds and each supplemental entry.
+function GroundsBlock({
+  grounds,
+  editedAt,
+  priorVersions,
+  t,
+}: {
+  grounds: string;
+  editedAt: string | null;
+  priorVersions: { grounds: string; at: string }[];
+  t: T;
+}) {
+  return (
+    <>
+      <p className="mt-1 whitespace-pre-wrap">{grounds}</p>
+      {editedAt && (
+        <div className="mt-0.5 text-xs italic text-faint">
+          {t("gov.case.editedAt", { at: fmt(editedAt) })}
+        </div>
+      )}
+      {priorVersions.length > 0 && (
+        <details className="mt-2 rounded border border-themed bg-elev/40 p-2 text-xs">
+          <summary className="cursor-pointer text-muted hover:text-beacon">
+            {t("gov.case.history.show", { n: priorVersions.length })}
+          </summary>
+          <ul className="mt-2 space-y-2">
+            {/* Oldest first: the first row is the original text. */}
+            {priorVersions.map((r, k) => (
+              <li key={k} className="border-l-2 border-themed pl-2">
+                <div className="text-faint">
+                  {k === 0 ? t("gov.case.history.original") : t("gov.case.history.revised")} &middot;{" "}
+                  {fmt(r.at)}
+                </div>
+                <p className="mt-0.5 whitespace-pre-wrap text-muted">{r.grounds}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </>
+  );
 }
 
 function outcomeLabel(t: T, state: string): { text: string; cls: string } {
@@ -209,48 +267,45 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         {v.initiations.length === 0 ? (
           <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
         ) : (
-          <ul className="space-y-3">
-            {v.initiations.map((i, n) => (
-              <li key={n} className="text-sm">
-                <div className="text-xs text-faint">
-                  {t("gov.case.mgMemberPrefix")} {memberLabel(i.member, i.memberName)} &middot; {fmt(i.at)}
-                  {i.editedAt && (
-                    <>
-                      {" "}
-                      &middot;{" "}
-                      <span className="italic">{t("gov.case.editedAt", { at: fmt(i.editedAt) })}</span>
-                    </>
-                  )}
-                </div>
-                <p className="mt-1 whitespace-pre-wrap">{i.grounds}</p>
-                {i.priorVersions.length > 0 && (
-                  <details className="mt-2 rounded border border-themed bg-elev/40 p-2 text-xs">
-                    <summary className="cursor-pointer text-muted hover:text-beacon">
-                      {t("gov.case.history.show", { n: i.priorVersions.length })}
-                    </summary>
-                    <ul className="mt-2 space-y-2">
-                      {/* Oldest first: the first entry is the original grounds. */}
-                      {i.priorVersions.map((r, k) => (
-                        <li key={k} className="border-l-2 border-themed pl-2">
-                          <div className="text-faint">
-                            {k === 0 ? t("gov.case.history.original") : t("gov.case.history.revised")}{" "}
-                            &middot; {fmt(r.at)}
+          <ul className="space-y-5">
+            {v.initiations.map((i, n) => {
+              const preVote = v.state === "PENDING" || v.state === "OPEN_DISCUSSION";
+              return (
+                <li key={n} className="text-sm">
+                  <div className="text-xs text-faint">
+                    {t("gov.case.mgMemberPrefix")} {memberLabel(i.member, i.memberName)} &middot; {fmt(i.at)}
+                  </div>
+                  {/* Primary grounds. */}
+                  <GroundsBlock grounds={i.grounds} editedAt={i.editedAt} priorVersions={i.priorVersions} t={t} />
+                  {/* Edit affordance for the primary grounds (signature-gated server-side). */}
+                  {preVote && <EditGroundsAction caseId={v.id} />}
+
+                  {/* Supplemental entries from the same member (informational). */}
+                  {i.entries.length > 0 && (
+                    <ul className="mt-3 space-y-3 border-l-2 border-beacon/30 pl-3">
+                      {i.entries.map((e) => (
+                        <li key={e.id}>
+                          <div className="text-xs text-faint">
+                            {t("gov.case.supplemental")} &middot; {fmt(e.at)}
                           </div>
-                          <p className="mt-0.5 whitespace-pre-wrap text-muted">{r.grounds}</p>
+                          <GroundsBlock
+                            grounds={e.grounds}
+                            editedAt={e.editedAt}
+                            priorVersions={e.priorVersions}
+                            t={t}
+                          />
+                          {preVote && <EditGroundsAction caseId={v.id} entryId={e.id} />}
                         </li>
                       ))}
                     </ul>
-                  </details>
-                )}
-              </li>
-            ))}
+                  )}
+
+                  {/* Add another (supplemental) entry under this member's flag. */}
+                  {preVote && <AddGroundsAction caseId={v.id} />}
+                </li>
+              );
+            })}
           </ul>
-        )}
-        {/* The member who raised the flag can edit their grounds until voting opens. The edit is
-            signature-gated server-side, so the affordance is shown to everyone pre-vote and the
-            server rejects anyone who is not the flagging member. */}
-        {(v.state === "PENDING" || v.state === "OPEN_DISCUSSION") && v.initiations.length > 0 && (
-          <EditGroundsAction caseId={v.id} />
         )}
       </div>
 

@@ -252,6 +252,9 @@ model ProviderFlagInitiation {
   editedAt          DateTime?
 
   revisions ProviderFlagGroundsRevision[]
+  // Supplemental grounds the same member adds later (extra evidence/notes). Informational only:
+  // they do NOT count as additional co-initiations; the primary `grounds` above is the one flag.
+  entries   ProviderFlagGroundsEntry[]
 
   @@unique([caseId, memberEntityVoter])
 }
@@ -269,6 +272,37 @@ model ProviderFlagGroundsRevision {
   createdAt    DateTime               @default(now())
 
   @@index([initiationId])
+}
+
+// A supplemental grounds entry the flagging member adds after their first (e.g. new evidence). Each
+// is independently editable with its own append-only revision history. Informational only: it does
+// not affect co-initiation, quorum, or voting. Editable while the case is pre-vote.
+model ProviderFlagGroundsEntry {
+  id            String                 @id @default(cuid())
+  initiation    ProviderFlagInitiation @relation(fields: [initiationId], references: [id], onDelete: Cascade)
+  initiationId  String
+  grounds       String
+  signerAddress String
+  createdAt     DateTime               @default(now())
+  // Set when this entry was last edited (null = never edited).
+  editedAt      DateTime?
+
+  revisions ProviderFlagGroundsEntryRevision[]
+
+  @@index([initiationId])
+}
+
+// Append-only version history for a supplemental grounds entry (mirrors ProviderFlagGroundsRevision
+// for the primary grounds). The first row is the entry's original text.
+model ProviderFlagGroundsEntryRevision {
+  id            String                   @id @default(cuid())
+  entry         ProviderFlagGroundsEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId       String
+  grounds       String
+  signerAddress String
+  createdAt     DateTime                 @default(now())
+
+  @@index([entryId])
 }
 
 // A Management Group member's vote on a case. One vote per member entity per case.

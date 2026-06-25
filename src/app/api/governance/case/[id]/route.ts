@@ -23,7 +23,13 @@ export async function GET(
       provider: { select: { id: true, name: true, suspended: true } },
       initiations: {
         orderBy: { createdAt: "asc" },
-        include: { revisions: { orderBy: { createdAt: "asc" } } },
+        include: {
+          revisions: { orderBy: { createdAt: "asc" } },
+          entries: {
+            orderBy: { createdAt: "asc" },
+            include: { revisions: { orderBy: { createdAt: "asc" } } },
+          },
+        },
       },
       votes: { orderBy: { createdAt: "asc" } },
       defense: true,
@@ -73,6 +79,14 @@ export async function GET(
       // Public, append-only history. The first row is the original text; later rows are edits.
       // Collapse to just the prior versions (the current text is `grounds` above) for display.
       revisions: i.revisions.map((r) => ({ grounds: r.grounds, at: r.createdAt })),
+      // Supplemental entries the same member added later (informational), each with its own history.
+      entries: i.entries.map((e) => ({
+        id: e.id,
+        grounds: e.grounds,
+        at: e.createdAt,
+        editedAt: e.editedAt,
+        revisions: e.revisions.map((r) => ({ grounds: r.grounds, at: r.createdAt })),
+      })),
     })),
     votes: c.votes.map((v) => ({
       member: v.memberEntityVoter,

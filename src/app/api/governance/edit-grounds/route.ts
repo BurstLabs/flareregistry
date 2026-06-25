@@ -6,11 +6,14 @@ import { isClean } from "@/lib/content-filter";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
 
 // POST /api/governance/edit-grounds
-// The Management Group member who raised a flag edits their own grounds. The new text replaces the
-// current grounds, but every version is preserved as a ProviderFlagGroundsRevision so the public
-// record shows exactly what changed and when. Editable only while the case is still pre-vote
-// (PENDING or OPEN_DISCUSSION); once voting opens the grounds lock.
-// Body: { caseId, message, signature, grounds }
+// The Management Group member who raised a flag edits one of their grounds entries. The new text
+// replaces the current text, but every version is preserved (in ProviderFlagGroundsRevision for the
+// primary entry, or ProviderFlagGroundsEntryRevision for a supplemental one) so the public record
+// shows exactly what changed and when. Editable only while the case is still pre-vote (PENDING or
+// OPEN_DISCUSSION); once voting opens the grounds lock.
+// Body: { caseId, message, signature, grounds, entryId? }
+//   entryId omitted -> edit the member's PRIMARY grounds (the initiation).
+//   entryId present  -> edit that SUPPLEMENTAL grounds entry.
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 10, 60_000);
   if (limited) return limited;
@@ -20,6 +23,7 @@ export async function POST(req: NextRequest) {
   const message = typeof body?.message === "string" ? body.message : null;
   const signature = typeof body?.signature === "string" ? body.signature : null;
   const grounds = typeof body?.grounds === "string" ? body.grounds.trim() : null;
+  const entryId = typeof body?.entryId === "string" ? body.entryId : null;
   if (!caseId || !message || !signature || !grounds) {
     return NextResponse.json(
       { error: "caseId, message, signature, and grounds are required" },
@@ -69,7 +73,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // The member must be editing their OWN initiation on this case.
+  // The member must own a flag on this case.
   const mine = theCase.initiations.find((i) => i.memberEntityVoter === memberVoter);
   if (!mine) {
     return NextResponse.json(
@@ -78,6 +82,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (entryId) {
+    // Editing a supplemental entry: it must belong to this member's flag.
+    const entry = await prisma.providerFlagGroundsEntry.findUnique({ where: { id: entryId } });
+    if (!entry || entry.initiationId !== mine.id) {
+      return NextResponse.json({ error: "entry not found on your flag" }, { status: 404 });
+    }
+    if (entry.grounds.trim() === grounds) {
+      return NextResponse.json({ ok: true, unchanged: true });
+    }
+    await prisma.$transaction([
+      prisma.providerFlagGroundsEntry.update({
+        where: { id: entry.id },
+        data: { grounds, editedAt: new Date() },
+      }),
+      prisma.providerFlagGroundsEntryRevision.create({
+        data: { entryId: entry.id, grounds, signerAddress: verified.address! },
+      }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Editing the primary grounds (the initiation itself).
   // No-op edits should not pollute the history with an identical revision.
   if (mine.grounds.trim() === grounds) {
     return NextResponse.json({ ok: true, unchanged: true });
