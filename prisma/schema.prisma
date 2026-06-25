@@ -244,10 +244,31 @@ model ProviderFlagInitiation {
   // The member entity's identity (voter) address; one initiation per member entity per case.
   memberEntityVoter String
   signerAddress     String
+  // The CURRENT grounds text. The member can edit this while the case is still pre-vote; every
+  // version (including the first) is preserved as a ProviderFlagGroundsRevision for the record.
   grounds           String
   createdAt         DateTime         @default(now())
+  // Set when the grounds were last edited (null = never edited, still the original text).
+  editedAt          DateTime?
+
+  revisions ProviderFlagGroundsRevision[]
 
   @@unique([caseId, memberEntityVoter])
+}
+
+// Append-only history of a flag's grounds. One row per version (the first is the original text);
+// the member edits freely while the case is pre-vote, but no version is ever altered or removed,
+// so the public record shows exactly what changed and when.
+model ProviderFlagGroundsRevision {
+  id           String                 @id @default(cuid())
+  initiation   ProviderFlagInitiation @relation(fields: [initiationId], references: [id], onDelete: Cascade)
+  initiationId String
+  grounds      String
+  // The address that signed this revision (the member's wallet at edit time).
+  signerAddress String
+  createdAt    DateTime               @default(now())
+
+  @@index([initiationId])
 }
 
 // A Management Group member's vote on a case. One vote per member entity per case.

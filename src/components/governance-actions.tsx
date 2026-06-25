@@ -206,6 +206,79 @@ export function WithdrawAction({ caseId }: { caseId: string }) {
   );
 }
 
+// Edit-grounds panel, shown on a pre-vote case page. The Management Group member who raised the
+// flag can revise their grounds; the new text replaces the current grounds while every version is
+// kept on the public record. Signature-gated server-side, so non-flagging members are rejected.
+export function EditGroundsAction({ caseId }: { caseId: string }) {
+  const { t } = useApp();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [grounds, setGrounds] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  async function submit() {
+    setErr("");
+    setOk("");
+    if (grounds.trim().length < 10) {
+      setErr(t("gov.act.err.groundsTooShort"));
+      return;
+    }
+    setBusy(true);
+    try {
+      const s = await signChallenge(t);
+      const res = await fetch("/api/governance/edit-grounds", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ caseId, grounds, message: s.message, signature: s.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
+      setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.editSaved"));
+      setGrounds("");
+      setOpen(false);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.act.err.editFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 border-t border-themed pt-4">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-sm font-medium text-muted hover:text-beacon"
+      >
+        {t("gov.act.editToggle")} {open ? "−" : "+"}
+      </button>
+      {open && (
+        <div className="mt-3">
+          <p className="text-xs text-muted">{t("gov.act.editBlurb")}</p>
+          <textarea
+            value={grounds}
+            onChange={(e) => setGrounds(e.target.value)}
+            maxLength={2000}
+            placeholder={t("gov.act.editPlaceholder")}
+            className="mt-2 block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+          />
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="mt-2 rounded-lg border border-flare px-4 py-2 text-sm font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
+          >
+            {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
+          </button>
+          {err && <Note kind="err" text={err} />}
+          {ok && <Note kind="ok" text={ok} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Vote panel, shown on a case page while voting is open.
 export function VoteAction({ caseId }: { caseId: string }) {
   const { t } = useApp();

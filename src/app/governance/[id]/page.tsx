@@ -21,7 +21,10 @@ export default async function GovernanceCasePage({
     where: { id },
     include: {
       provider: { select: { id: true, name: true, suspended: true, addresses: true } },
-      initiations: { orderBy: { createdAt: "asc" } },
+      initiations: {
+        orderBy: { createdAt: "asc" },
+        include: { revisions: { orderBy: { createdAt: "asc" } } },
+      },
       votes: { orderBy: { createdAt: "asc" } },
       defense: true,
     },
@@ -107,6 +110,12 @@ export default async function GovernanceCasePage({
       memberName: memberName(i.memberEntityVoter),
       grounds: i.grounds,
       at: i.createdAt.toISOString(),
+      editedAt: i.editedAt?.toISOString() ?? null,
+      // Prior versions for the public history. Drops the latest revision, since it equals the
+      // current `grounds` shown above; what remains is the trail of what changed.
+      priorVersions: i.revisions
+        .slice(0, Math.max(0, i.revisions.length - 1))
+        .map((r) => ({ grounds: r.grounds, at: r.createdAt.toISOString() })),
     })),
     votes: c.votes.map((v) => ({
       member: v.memberEntityVoter,

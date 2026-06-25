@@ -171,15 +171,20 @@ export async function POST(req: NextRequest) {
     }
     if (!theCase) throw new Error("case create failed");
 
-    // Record this member's co-initiation (unique per member entity per case).
+    // Record this member's co-initiation (unique per member entity per case). The original grounds
+    // are also stored as the first revision, so the public history is complete from the start and
+    // a later edit always has the original to show.
     try {
-      await tx.providerFlagInitiation.create({
+      const initiation = await tx.providerFlagInitiation.create({
         data: {
           caseId: theCase.id,
           memberEntityVoter: memberVoter,
           signerAddress: verified.address!,
           grounds,
         },
+      });
+      await tx.providerFlagGroundsRevision.create({
+        data: { initiationId: initiation.id, grounds, signerAddress: verified.address! },
       });
     } catch {
       throw new Error("you have already co-initiated this flag");

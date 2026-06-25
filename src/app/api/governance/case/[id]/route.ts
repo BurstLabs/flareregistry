@@ -21,7 +21,10 @@ export async function GET(
     where: { id },
     include: {
       provider: { select: { id: true, name: true, suspended: true } },
-      initiations: { orderBy: { createdAt: "asc" } },
+      initiations: {
+        orderBy: { createdAt: "asc" },
+        include: { revisions: { orderBy: { createdAt: "asc" } } },
+      },
       votes: { orderBy: { createdAt: "asc" } },
       defense: true,
     },
@@ -66,6 +69,10 @@ export async function GET(
       member: i.memberEntityVoter,
       grounds: i.grounds,
       at: i.createdAt,
+      editedAt: i.editedAt,
+      // Public, append-only history. The first row is the original text; later rows are edits.
+      // Collapse to just the prior versions (the current text is `grounds` above) for display.
+      revisions: i.revisions.map((r) => ({ grounds: r.grounds, at: r.createdAt })),
     })),
     votes: c.votes.map((v) => ({
       member: v.memberEntityVoter,
