@@ -244,6 +244,8 @@ model ProviderFlagInitiation {
   // The member entity's identity (voter) address; one initiation per member entity per case.
   memberEntityVoter String
   signerAddress     String
+  // Optional one-line subject for this point (falls back to "Point N" in the UI when null).
+  title             String?
   // The CURRENT grounds text. The member can edit this while the case is still pre-vote; every
   // version (including the first) is preserved as a ProviderFlagGroundsRevision for the record.
   grounds           String
@@ -281,6 +283,8 @@ model ProviderFlagGroundsEntry {
   id            String                 @id @default(cuid())
   initiation    ProviderFlagInitiation @relation(fields: [initiationId], references: [id], onDelete: Cascade)
   initiationId  String
+  // Optional one-line subject (falls back to "Point N" in the UI when null).
+  title         String?
   grounds       String
   signerAddress String
   createdAt     DateTime               @default(now())
@@ -327,6 +331,8 @@ model ProviderFlagDefense {
   id        String           @id @default(cuid())
   case      ProviderFlagCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
   caseId    String           @unique
+  // Optional one-line subject (falls back to "Point N" in the UI when null).
+  title     String?
   body      String
   updatedAt DateTime         @updatedAt
   createdAt DateTime         @default(now())
@@ -354,6 +360,8 @@ model ProviderFlagDefenseEntry {
   id        String              @id @default(cuid())
   defense   ProviderFlagDefense @relation(fields: [defenseId], references: [id], onDelete: Cascade)
   defenseId String
+  // Optional one-line subject (falls back to "Point N" in the UI when null).
+  title     String?
   body      String
   createdAt DateTime            @default(now())
   editedAt  DateTime?

@@ -43,6 +43,27 @@ function Note({ kind, text }: { kind: "err" | "ok"; text: string }) {
   );
 }
 
+// Optional one-line subject input, shared by every grounds/response editor.
+function TitleInput({
+  value,
+  onChange,
+  t,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      maxLength={120}
+      placeholder={t("gov.act.titlePlaceholder")}
+      className="mb-2 block w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+    />
+  );
+}
+
 // Flag form, shown on a new provider's page. A Management Group member signs and submits grounds.
 export function FlagAction({ providerId }: { providerId: string }) {
   const { t } = useApp();
@@ -213,17 +234,21 @@ export function EditGroundsAction({
   caseId,
   entryId,
   current = "",
-  label,
+  currentTitle = "",
+  inline = false,
 }: {
   caseId: string;
   entryId?: string;
   current?: string;
-  label?: string;
+  currentTitle?: string;
+  // inline = render a compact "Edit" link (for the entry header); otherwise a block toggle.
+  inline?: boolean;
 }) {
   const { t } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [grounds, setGrounds] = useState(current);
+  const [title, setTitle] = useState(currentTitle);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -241,7 +266,7 @@ export function EditGroundsAction({
       const res = await fetch("/api/governance/edit-grounds", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, entryId, grounds, message: s.message, signature: s.signature }),
+        body: JSON.stringify({ caseId, entryId, grounds, title, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
@@ -256,16 +281,16 @@ export function EditGroundsAction({
   }
 
   return (
-    <div className="mt-1">
+    <span className={inline ? "" : "mt-1 block"}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="text-xs font-medium text-muted hover:text-beacon"
       >
-        {label ?? t("gov.act.editToggle")} {open ? "−" : "+"}
+        {t("gov.act.editToggle")} {open ? "−" : "+"}
       </button>
       {open && (
         <div className="mt-2">
-          <p className="text-xs text-muted">{t("gov.act.editBlurb")}</p>
+          <TitleInput value={title} onChange={setTitle} t={t} />
           <textarea
             value={grounds}
             onChange={(e) => setGrounds(e.target.value)}
@@ -284,7 +309,7 @@ export function EditGroundsAction({
           {ok && <Note kind="ok" text={ok} />}
         </div>
       )}
-    </div>
+    </span>
   );
 }
 
@@ -295,6 +320,7 @@ export function AddGroundsAction({ caseId }: { caseId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [grounds, setGrounds] = useState("");
+  const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -312,12 +338,13 @@ export function AddGroundsAction({ caseId }: { caseId: string }) {
       const res = await fetch("/api/governance/add-grounds", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, grounds, message: s.message, signature: s.signature }),
+        body: JSON.stringify({ caseId, grounds, title, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
       setOk(t("gov.act.addSaved"));
       setGrounds("");
+      setTitle("");
       setOpen(false);
       router.refresh();
     } catch (e) {
@@ -338,12 +365,15 @@ export function AddGroundsAction({ caseId }: { caseId: string }) {
       {open && (
         <div className="mt-3">
           <p className="text-xs text-muted">{t("gov.act.addBlurb")}</p>
+          <div className="mt-2">
+            <TitleInput value={title} onChange={setTitle} t={t} />
+          </div>
           <textarea
             value={grounds}
             onChange={(e) => setGrounds(e.target.value)}
             maxLength={2000}
             placeholder={t("gov.act.addPlaceholder")}
-            className="mt-2 block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+            className="block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
           />
           <button
             onClick={submit}
@@ -416,23 +446,13 @@ export function VoteAction({ caseId }: { caseId: string }) {
   );
 }
 
-// Defense box, shown on a case page for the flagged provider. Posting/editing the primary response
-// is signature-gated: the provider signs with a wallet that controls one of its listed addresses.
-export function DefendAction({
-  caseId,
-  current,
-  collapsedLabel,
-}: {
-  caseId: string;
-  current: string | null;
-  // When set, the box starts collapsed behind a toggle with this label (used for "edit the primary
-  // response" inside the manage panel). When absent, the box is shown open (first-time posting).
-  collapsedLabel?: string;
-}) {
+// First-time response box for the flagged provider (signature-gated). Editing an existing response
+// is handled by EditResponseAction; this is shown only when no response exists yet.
+export function DefendAction({ caseId, current }: { caseId: string; current: string | null }) {
   const { t } = useApp();
   const router = useRouter();
-  const [open, setOpen] = useState(!collapsedLabel);
   const [body, setBody] = useState(current ?? "");
+  const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -446,13 +466,12 @@ export function DefendAction({
       const res = await fetch("/api/governance/defend", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, body, message: s.message, signature: s.signature }),
+        body: JSON.stringify({ caseId, body, title, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok)
         throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.defendFailedAuth"));
       setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.defendPosted"));
-      if (collapsedLabel) setOpen(false);
       router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.act.err.defendFailed"));
@@ -461,26 +480,18 @@ export function DefendAction({
     }
   }
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="mt-1 text-xs font-medium text-muted hover:text-beacon"
-      >
-        {collapsedLabel} +
-      </button>
-    );
-  }
-
   return (
     <div className="mt-2">
-      {!collapsedLabel && <p className="text-sm text-muted">{t("gov.act.defendBlurb")}</p>}
+      <p className="text-sm text-muted">{t("gov.act.defendBlurb")}</p>
+      <div className="mt-2">
+        <TitleInput value={title} onChange={setTitle} t={t} />
+      </div>
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
         maxLength={4000}
         placeholder={t("gov.act.defendPlaceholder")}
-        className="mt-2 block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+        className="block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
       />
       <button
         onClick={submit}
@@ -495,12 +506,95 @@ export function DefendAction({
   );
 }
 
+// Inline edit for a response point: the primary response (POST /defend) or a supplemental entry
+// (POST /defense-entry). Signature-gated. Rendered as a compact "Edit" link on the entry header.
+export function EditResponseAction({
+  caseId,
+  entryId,
+  isPrimary,
+  current,
+  currentTitle = "",
+}: {
+  caseId: string;
+  entryId?: string;
+  isPrimary: boolean;
+  current: string;
+  currentTitle?: string;
+}) {
+  const { t } = useApp();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [body, setBody] = useState(current);
+  const [title, setTitle] = useState(currentTitle);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  async function submit() {
+    setErr("");
+    setOk("");
+    if (body.trim().length < 1) return;
+    setBusy(true);
+    try {
+      const s = await signChallenge(t);
+      const url = isPrimary ? "/api/governance/defend" : "/api/governance/defense-entry";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ caseId, entryId, body, title, message: s.message, signature: s.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
+      setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.editSaved"));
+      setOpen(false);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.act.err.editFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <span>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-xs font-medium text-muted hover:text-beacon"
+      >
+        {t("gov.act.editToggle")} {open ? "−" : "+"}
+      </button>
+      {open && (
+        <div className="mt-2">
+          <TitleInput value={title} onChange={setTitle} t={t} />
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={4000}
+            placeholder={t("gov.act.addResponsePlaceholder")}
+            className="block min-h-[80px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+          />
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="mt-2 rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
+          >
+            {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
+          </button>
+          {err && <Note kind="err" text={err} />}
+          {ok && <Note kind="ok" text={ok} />}
+        </div>
+      )}
+    </span>
+  );
+}
+
 // Add-response panel: the flagged provider adds a SUPPLEMENTAL response entry (signature-gated).
 export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
   const { t } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [body, setBody] = useState("");
+  const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -515,12 +609,13 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
       const res = await fetch("/api/governance/defense-entry", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, body, message: s.message, signature: s.signature }),
+        body: JSON.stringify({ caseId, body, title, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
       setOk(t("gov.act.addSaved"));
       setBody("");
+      setTitle("");
       setOpen(false);
       router.refresh();
     } catch (e) {
@@ -540,6 +635,7 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
       </button>
       {open && (
         <div className="mt-3">
+          <TitleInput value={title} onChange={setTitle} t={t} />
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -556,169 +652,6 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
           </button>
           {err && <Note kind="err" text={err} />}
           {ok && <Note kind="ok" text={ok} />}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Edit one supplemental response entry (signature-gated).
-export function EditDefenseEntryAction({
-  caseId,
-  entryId,
-  current,
-  label,
-}: {
-  caseId: string;
-  entryId: string;
-  current: string;
-  label?: string;
-}) {
-  const { t } = useApp();
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [body, setBody] = useState(current);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
-
-  async function submit() {
-    setErr("");
-    setOk("");
-    if (body.trim().length < 1) return;
-    setBusy(true);
-    try {
-      const s = await signChallenge(t);
-      const res = await fetch("/api/governance/defense-entry", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, entryId, body, message: s.message, signature: s.signature }),
-      });
-      const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
-      setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.editSaved"));
-      setOpen(false);
-      router.refresh();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : t("gov.act.err.editFailed"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="mt-2">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="text-xs font-medium text-muted hover:text-beacon"
-      >
-        {label ?? t("gov.act.editResponseToggle")} {open ? "−" : "+"}
-      </button>
-      {open && (
-        <div className="mt-2">
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            maxLength={4000}
-            placeholder={t("gov.act.addResponsePlaceholder")}
-            className="block min-h-[80px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
-          />
-          <button
-            onClick={submit}
-            disabled={busy}
-            className="mt-2 rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
-          >
-            {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
-          </button>
-          {err && <Note kind="err" text={err} />}
-          {ok && <Note kind="ok" text={ok} />}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// One collapsed "manage" affordance for a member's grounds. Keeps all editing tools out of the
-// public record until "Are you this member?" is expanded; then shows a per-point edit + add control.
-// Server-side signature gating means non-owners who expand it simply cannot save.
-export function ManageGroundsPanel({
-  caseId,
-  entries,
-}: {
-  caseId: string;
-  // One per point, in display order. entryId undefined = the primary grounds.
-  entries: { entryId?: string; label: string; at: string }[];
-}) {
-  const { t } = useApp();
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-3 border-t border-themed pt-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="text-xs font-medium text-muted hover:text-beacon"
-      >
-        {t("gov.act.manageGroundsToggle")} {open ? "−" : "+"}
-      </button>
-      {open && (
-        <div className="mt-3 space-y-3">
-          <p className="text-xs text-faint">{t("gov.act.manageGroundsBlurb")}</p>
-          {entries.map((e, k) => (
-            <EditGroundsAction
-              key={e.entryId ?? "primary"}
-              caseId={caseId}
-              entryId={e.entryId}
-              label={t("gov.act.editPoint", { n: k + 1 })}
-            />
-          ))}
-          <AddGroundsAction caseId={caseId} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// One collapsed "manage" affordance for the provider's response. Same idea as ManageGroundsPanel.
-export function ManageResponsePanel({
-  caseId,
-  hasPrimary,
-  primaryBody,
-  entries,
-}: {
-  caseId: string;
-  hasPrimary: boolean;
-  primaryBody: string;
-  entries: { entryId: string; body: string }[];
-}) {
-  const { t } = useApp();
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-3 border-t border-themed pt-3">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="text-xs font-medium text-muted hover:text-beacon"
-      >
-        {t("gov.act.manageResponseToggle")} {open ? "−" : "+"}
-      </button>
-      {open && (
-        <div className="mt-3 space-y-3">
-          <p className="text-xs text-faint">{t("gov.act.manageResponseBlurb")}</p>
-          {/* Primary response: post it (if none yet) or edit it. */}
-          <DefendAction
-            caseId={caseId}
-            current={hasPrimary ? primaryBody : null}
-            collapsedLabel={hasPrimary ? t("gov.act.editPoint", { n: 1 }) : undefined}
-          />
-          {entries.map((e, k) => (
-            <EditDefenseEntryAction
-              key={e.entryId}
-              caseId={caseId}
-              entryId={e.entryId}
-              current={e.body}
-              label={t("gov.act.editPoint", { n: k + 2 })}
-            />
-          ))}
-          {/* Adding more entries requires a primary response to exist first. */}
-          {hasPrimary && <AddDefenseEntryAction caseId={caseId} />}
         </div>
       )}
     </div>

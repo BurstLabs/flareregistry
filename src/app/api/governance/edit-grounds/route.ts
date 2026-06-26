@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
   const signature = typeof body?.signature === "string" ? body.signature : null;
   const grounds = typeof body?.grounds === "string" ? body.grounds.trim() : null;
   const entryId = typeof body?.entryId === "string" ? body.entryId : null;
+  // Optional title; "" clears it. undefined (key absent) leaves it unchanged.
+  const titleProvided = typeof body?.title === "string";
+  const title = titleProvided ? body.title.trim().slice(0, 120) || null : undefined;
   if (!caseId || !message || !signature || !grounds) {
     return NextResponse.json(
       { error: "caseId, message, signature, and grounds are required" },
@@ -88,36 +92,57 @@ export async function POST(req: NextRequest) {
     if (!entry || entry.initiationId !== mine.id) {
       return NextResponse.json({ error: "entry not found on your flag" }, { status: 404 });
     }
-    if (entry.grounds.trim() === grounds) {
+    const bodyChanged = entry.grounds.trim() !== grounds;
+    const titleChanged = title !== undefined && (entry.title ?? null) !== title;
+    if (!bodyChanged && !titleChanged) {
       return NextResponse.json({ ok: true, unchanged: true });
     }
-    await prisma.$transaction([
+    const ops: Prisma.PrismaPromise<unknown>[] = [
       prisma.providerFlagGroundsEntry.update({
         where: { id: entry.id },
-        data: { grounds, editedAt: new Date() },
+        data: {
+          grounds,
+          ...(title !== undefined ? { title } : {}),
+          ...(bodyChanged ? { editedAt: new Date() } : {}),
+        },
       }),
-      prisma.providerFlagGroundsEntryRevision.create({
-        data: { entryId: entry.id, grounds, signerAddress: verified.address! },
-      }),
-    ]);
+    ];
+    // Only the body is versioned; a title-only change updates metadata without a body revision.
+    if (bodyChanged) {
+      ops.push(
+        prisma.providerFlagGroundsEntryRevision.create({
+          data: { entryId: entry.id, grounds, signerAddress: verified.address! },
+        })
+      );
+    }
+    await prisma.$transaction(ops);
     return NextResponse.json({ ok: true });
   }
 
   // Editing the primary grounds (the initiation itself).
-  // No-op edits should not pollute the history with an identical revision.
-  if (mine.grounds.trim() === grounds) {
+  const bodyChanged = mine.grounds.trim() !== grounds;
+  const titleChanged = title !== undefined && (mine.title ?? null) !== title;
+  if (!bodyChanged && !titleChanged) {
     return NextResponse.json({ ok: true, unchanged: true });
   }
-
-  await prisma.$transaction([
+  const ops: Prisma.PrismaPromise<unknown>[] = [
     prisma.providerFlagInitiation.update({
       where: { id: mine.id },
-      data: { grounds, editedAt: new Date() },
+      data: {
+        grounds,
+        ...(title !== undefined ? { title } : {}),
+        ...(bodyChanged ? { editedAt: new Date() } : {}),
+      },
     }),
-    prisma.providerFlagGroundsRevision.create({
-      data: { initiationId: mine.id, grounds, signerAddress: verified.address! },
-    }),
-  ]);
+  ];
+  if (bodyChanged) {
+    ops.push(
+      prisma.providerFlagGroundsRevision.create({
+        data: { initiationId: mine.id, grounds, signerAddress: verified.address! },
+      })
+    );
+  }
+  await prisma.$transaction(ops);
 
   return NextResponse.json({ ok: true });
 }

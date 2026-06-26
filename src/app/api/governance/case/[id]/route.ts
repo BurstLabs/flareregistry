@@ -82,6 +82,7 @@ export async function GET(
     initiations: c.initiations.map((i) => ({
       member: i.memberEntityVoter,
       grounds: i.grounds,
+      title: i.title,
       at: i.createdAt,
       editedAt: i.editedAt,
       // Public, append-only history. The first row is the original text; later rows are edits.
@@ -91,6 +92,7 @@ export async function GET(
       entries: i.entries.map((e) => ({
         id: e.id,
         grounds: e.grounds,
+        title: e.title,
         at: e.createdAt,
         editedAt: e.editedAt,
         revisions: e.revisions.map((r) => ({ grounds: r.grounds, at: r.createdAt })),
@@ -105,12 +107,14 @@ export async function GET(
     defense: c.defense
       ? {
           body: c.defense.body,
+          title: c.defense.title,
           at: c.defense.createdAt,
           editedAt: c.defense.editedAt,
           revisions: c.defense.revisions.map((r) => ({ body: r.body, at: r.createdAt })),
           entries: c.defense.entries.map((e) => ({
             id: e.id,
             body: e.body,
+            title: e.title,
             at: e.createdAt,
             editedAt: e.editedAt,
             revisions: e.revisions.map((r) => ({ body: r.body, at: r.createdAt })),

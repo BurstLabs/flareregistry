@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useApp } from "@/components/providers";
 import {
   VoteAction,
   WithdrawAction,
-  ManageGroundsPanel,
-  ManageResponsePanel,
+  EditGroundsAction,
+  AddGroundsAction,
+  EditResponseAction,
+  AddDefenseEntryAction,
+  DefendAction,
 } from "./governance-actions";
 
 export interface CaseView {
@@ -34,6 +37,7 @@ export interface CaseView {
     member: string;
     memberName: string | null;
     grounds: string;
+    title: string | null;
     at: string;
     editedAt: string | null;
     // Prior versions of the grounds (oldest first), for the public edit history.
@@ -42,6 +46,7 @@ export interface CaseView {
     entries: {
       id: string;
       grounds: string;
+      title: string | null;
       at: string;
       editedAt: string | null;
       priorVersions: { grounds: string; at: string }[];
@@ -50,12 +55,14 @@ export interface CaseView {
   votes: { member: string; memberName: string | null; vote: string; comment: string | null; at: string }[];
   defense: {
     body: string;
+    title: string | null;
     at: string;
     editedAt: string | null;
     priorVersions: { body: string; at: string }[];
     entries: {
       id: string;
       body: string;
+      title: string | null;
       at: string;
       editedAt: string | null;
       priorVersions: { body: string; at: string }[];
@@ -126,6 +133,7 @@ function EntryBlock({
   priorVersions,
   now,
   t,
+  editSlot,
 }: {
   label: string;
   at: string;
@@ -134,6 +142,8 @@ function EntryBlock({
   priorVersions: { text: string; at: string }[];
   now: number;
   t: T;
+  // Optional inline edit control, rendered at the right of the header row.
+  editSlot?: ReactNode;
 }) {
   return (
     <div className="text-sm">
@@ -149,6 +159,7 @@ function EntryBlock({
             {t("gov.case.edited")}
           </span>
         )}
+        {editSlot && <span className="ml-auto">{editSlot}</span>}
       </div>
       <p className="mt-1 whitespace-pre-wrap">{text}</p>
       {priorVersions.length > 0 && (
@@ -312,8 +323,8 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         {v.state === "OPEN_VOTING" && <VoteAction caseId={v.id} />}
       </div>
 
-      {/* Grounds from co-initiators. Each member's points render as one uniform list; all editing
-          lives in a single collapsed "manage" panel at the bottom, so the record reads cleanly. */}
+      {/* Grounds from co-initiators. Each member's points render as one uniform list; each point can
+          be edited inline (signature-gated), and a single "add another" sits at the bottom. */}
       <div className="mt-6 surface rounded-xl border p-5">
         <h2 className="text-lg font-semibold">{t("gov.case.whyFlagged")}</h2>
         <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.whyFlaggedHelp")}</p>
@@ -329,6 +340,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   id: "primary",
                   entryId: undefined as string | undefined,
                   text: i.grounds,
+                  title: i.title,
                   at: i.at,
                   editedAt: i.editedAt,
                   priorVersions: i.priorVersions.map((r) => ({ text: r.grounds, at: r.at })),
@@ -337,6 +349,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   id: e.id,
                   entryId: e.id,
                   text: e.grounds,
+                  title: e.title,
                   at: e.at,
                   editedAt: e.editedAt,
                   priorVersions: e.priorVersions.map((r) => ({ text: r.grounds, at: r.at })),
@@ -351,24 +364,30 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                     {points.map((p, k) => (
                       <li key={p.id}>
                         <EntryBlock
-                          label={t("gov.case.point", { n: k + 1 })}
+                          label={p.title || t("gov.case.point", { n: k + 1 })}
                           at={p.at}
                           text={p.text}
                           editedAt={p.editedAt}
                           priorVersions={p.priorVersions}
                           now={now}
                           t={t}
+                          editSlot={
+                            preVote ? (
+                              <EditGroundsAction
+                                caseId={v.id}
+                                entryId={p.entryId}
+                                current={p.text}
+                                currentTitle={p.title ?? ""}
+                                inline
+                              />
+                            ) : undefined
+                          }
                         />
                       </li>
                     ))}
                   </ul>
-                  {/* One collapsed manage panel for this member's grounds (edit each / add). */}
-                  {preVote && (
-                    <ManageGroundsPanel
-                      caseId={v.id}
-                      entries={points.map((p) => ({ entryId: p.entryId, label: i.memberName ?? "", at: p.at }))}
-                    />
-                  )}
+                  {/* Add another point under this member's flag. */}
+                  {preVote && <AddGroundsAction caseId={v.id} />}
                 </li>
               );
             })}
@@ -376,27 +395,32 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         )}
       </div>
 
-      {/* Subject's public response: primary + supplemental entries as one list; editing is tucked
-          into a single collapsed manage panel. */}
+      {/* Subject's public response: primary + supplemental entries as one list, each editable inline;
+          posting the first response / adding another sits at the bottom. */}
       <div className="mt-6 surface rounded-xl border p-5">
         <h2 className="text-lg font-semibold">{t("gov.case.providerResponse")}</h2>
         <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.providerResponseHelp")}</p>
         {v.defense ? (
           <>
             {(() => {
+              const d = v.defense;
               const points = [
                 {
                   id: "primary",
                   entryId: undefined as string | undefined,
-                  text: v.defense.body,
-                  at: v.defense.at,
-                  editedAt: v.defense.editedAt,
-                  priorVersions: v.defense.priorVersions.map((r) => ({ text: r.body, at: r.at })),
+                  isPrimary: true,
+                  text: d.body,
+                  title: d.title,
+                  at: d.at,
+                  editedAt: d.editedAt,
+                  priorVersions: d.priorVersions.map((r) => ({ text: r.body, at: r.at })),
                 },
-                ...v.defense.entries.map((e) => ({
+                ...d.entries.map((e) => ({
                   id: e.id,
                   entryId: e.id,
+                  isPrimary: false,
                   text: e.body,
+                  title: e.title,
                   at: e.at,
                   editedAt: e.editedAt,
                   priorVersions: e.priorVersions.map((r) => ({ text: r.body, at: r.at })),
@@ -407,32 +431,38 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   {points.map((p, k) => (
                     <li key={p.id}>
                       <EntryBlock
-                        label={t("gov.case.point", { n: k + 1 })}
+                        label={p.title || t("gov.case.point", { n: k + 1 })}
                         at={p.at}
                         text={p.text}
                         editedAt={p.editedAt}
                         priorVersions={p.priorVersions}
                         now={now}
                         t={t}
+                        editSlot={
+                          !decided ? (
+                            <EditResponseAction
+                              caseId={v.id}
+                              entryId={p.entryId}
+                              isPrimary={p.isPrimary}
+                              current={p.text}
+                              currentTitle={p.title ?? ""}
+                            />
+                          ) : undefined
+                        }
                       />
                     </li>
                   ))}
                 </ul>
               );
             })()}
-            {!decided && (
-              <ManageResponsePanel
-                caseId={v.id}
-                hasPrimary
-                primaryBody={v.defense.body}
-                entries={v.defense.entries.map((e) => ({ entryId: e.id, body: e.body }))}
-              />
-            )}
+            {/* Add another response entry. */}
+            {!decided && <AddDefenseEntryAction caseId={v.id} />}
           </>
         ) : (
           <>
             <p className="text-sm text-muted">{t("gov.case.noResponse")}</p>
-            {!decided && <ManageResponsePanel caseId={v.id} hasPrimary={false} primaryBody="" entries={[]} />}
+            {/* No response yet: post the first one (open editor). */}
+            {!decided && <DefendAction caseId={v.id} current={null} />}
           </>
         )}
       </div>

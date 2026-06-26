@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
@@ -22,6 +23,8 @@ export async function POST(req: NextRequest) {
   const entryId = typeof payload?.entryId === "string" ? payload.entryId : null;
   const message = typeof payload?.message === "string" ? payload.message : null;
   const signature = typeof payload?.signature === "string" ? payload.signature : null;
+  const titleProvided = typeof payload?.title === "string";
+  const title = titleProvided ? payload.title.trim().slice(0, 120) || null : undefined;
   if (!caseId || !text || !message || !signature) {
     return NextResponse.json(
       { error: "caseId, body, message, and signature are required" },
@@ -75,22 +78,31 @@ export async function POST(req: NextRequest) {
     if (!entry || entry.defenseId !== theCase.defense.id) {
       return NextResponse.json({ error: "entry not found on your response" }, { status: 404 });
     }
-    if (entry.body.trim() === text) {
+    const bodyChanged = entry.body.trim() !== text;
+    const titleChanged = title !== undefined && (entry.title ?? null) !== title;
+    if (!bodyChanged && !titleChanged) {
       return NextResponse.json({ ok: true, unchanged: true });
     }
-    await prisma.$transaction([
+    const ops: Prisma.PrismaPromise<unknown>[] = [
       prisma.providerFlagDefenseEntry.update({
         where: { id: entry.id },
-        data: { body: text, editedAt: new Date() },
+        data: {
+          body: text,
+          ...(title !== undefined ? { title } : {}),
+          ...(bodyChanged ? { editedAt: new Date() } : {}),
+        },
       }),
-      prisma.providerFlagDefenseEntryRevision.create({ data: { entryId: entry.id, body: text } }),
-    ]);
+    ];
+    if (bodyChanged) {
+      ops.push(prisma.providerFlagDefenseEntryRevision.create({ data: { entryId: entry.id, body: text } }));
+    }
+    await prisma.$transaction(ops);
     return NextResponse.json({ ok: true });
   }
 
   // New supplemental entry + its first revision.
   const entry = await prisma.providerFlagDefenseEntry.create({
-    data: { defenseId: theCase.defense.id, body: text },
+    data: { defenseId: theCase.defense.id, body: text, ...(title !== undefined ? { title } : {}) },
   });
   await prisma.providerFlagDefenseEntryRevision.create({
     data: { entryId: entry.id, body: text },

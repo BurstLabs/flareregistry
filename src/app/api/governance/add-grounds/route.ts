@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
   const message = typeof body?.message === "string" ? body.message : null;
   const signature = typeof body?.signature === "string" ? body.signature : null;
   const grounds = typeof body?.grounds === "string" ? body.grounds.trim() : null;
+  const title = typeof body?.title === "string" ? body.title.trim().slice(0, 120) || null : null;
   if (!caseId || !message || !signature || !grounds) {
     return NextResponse.json(
       { error: "caseId, message, signature, and grounds are required" },
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
   }
 
   const entry = await prisma.providerFlagGroundsEntry.create({
-    data: { initiationId: mine.id, grounds, signerAddress: verified.address! },
+    data: { initiationId: mine.id, grounds, title, signerAddress: verified.address! },
   });
   await prisma.providerFlagGroundsEntryRevision.create({
     data: { entryId: entry.id, grounds, signerAddress: verified.address! },

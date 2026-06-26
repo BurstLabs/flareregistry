@@ -123,6 +123,7 @@ export default async function GovernanceCasePage({
       member: i.memberEntityVoter,
       memberName: memberName(i.memberEntityVoter),
       grounds: i.grounds,
+      title: i.title,
       at: i.createdAt.toISOString(),
       editedAt: i.editedAt?.toISOString() ?? null,
       // Prior versions for the public history. Drops the latest revision, since it equals the
@@ -135,6 +136,7 @@ export default async function GovernanceCasePage({
       entries: i.entries.map((e) => ({
         id: e.id,
         grounds: e.grounds,
+        title: e.title,
         at: e.createdAt.toISOString(),
         editedAt: e.editedAt?.toISOString() ?? null,
         priorVersions: e.revisions
@@ -152,6 +154,7 @@ export default async function GovernanceCasePage({
     defense: c.defense
       ? {
           body: c.defense.body,
+          title: c.defense.title,
           at: c.defense.createdAt.toISOString(),
           editedAt: c.defense.editedAt?.toISOString() ?? null,
           priorVersions: c.defense.revisions
@@ -160,6 +163,7 @@ export default async function GovernanceCasePage({
           entries: c.defense.entries.map((e) => ({
             id: e.id,
             body: e.body,
+            title: e.title,
             at: e.createdAt.toISOString(),
             editedAt: e.editedAt?.toISOString() ?? null,
             priorVersions: e.revisions
