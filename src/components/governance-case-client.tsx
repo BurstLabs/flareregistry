@@ -133,7 +133,7 @@ function EntryBlock({
   priorVersions,
   now,
   t,
-  editSlot,
+  editor,
 }: {
   label: string;
   at: string;
@@ -142,9 +142,11 @@ function EntryBlock({
   priorVersions: { text: string; at: string }[];
   now: number;
   t: T;
-  // Optional inline edit control, rendered at the right of the header row.
-  editSlot?: ReactNode;
+  // Optional editor: a render-prop given a `close` callback. The trigger ("Edit") sits on the header
+  // row; the editor itself renders full-width below the text, prefilled, in place of the reading view.
+  editor?: (close: () => void) => ReactNode;
 }) {
+  const [editing, setEditing] = useState(false);
   return (
     <div className="text-sm">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-faint">
@@ -159,9 +161,21 @@ function EntryBlock({
             {t("gov.case.edited")}
           </span>
         )}
-        {editSlot && <span className="ml-auto">{editSlot}</span>}
+        {editor && (
+          <button
+            onClick={() => setEditing((e) => !e)}
+            className="ml-auto font-medium text-muted hover:text-beacon"
+          >
+            {editing ? t("gov.act.cancel") : t("gov.act.edit")}
+          </button>
+        )}
       </div>
-      <p className="mt-1 whitespace-pre-wrap">{text}</p>
+      {/* Editing replaces the read view with a full-width, prefilled editor below the header. */}
+      {editor && editing ? (
+        <div className="mt-2">{editor(() => setEditing(false))}</div>
+      ) : (
+        <p className="mt-1 whitespace-pre-wrap">{text}</p>
+      )}
       {priorVersions.length > 0 && (
         <details className="mt-2 rounded border border-themed bg-elev/40 p-2 text-xs">
           <summary className="cursor-pointer text-muted hover:text-beacon">
@@ -371,16 +385,18 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                           priorVersions={p.priorVersions}
                           now={now}
                           t={t}
-                          editSlot={
-                            preVote ? (
-                              <EditGroundsAction
-                                caseId={v.id}
-                                entryId={p.entryId}
-                                current={p.text}
-                                currentTitle={p.title ?? ""}
-                                inline
-                              />
-                            ) : undefined
+                          editor={
+                            preVote
+                              ? (close) => (
+                                  <EditGroundsAction
+                                    caseId={v.id}
+                                    entryId={p.entryId}
+                                    current={p.text}
+                                    currentTitle={p.title ?? ""}
+                                    onDone={close}
+                                  />
+                                )
+                              : undefined
                           }
                         />
                       </li>
@@ -438,16 +454,19 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                         priorVersions={p.priorVersions}
                         now={now}
                         t={t}
-                        editSlot={
-                          !decided ? (
-                            <EditResponseAction
-                              caseId={v.id}
-                              entryId={p.entryId}
-                              isPrimary={p.isPrimary}
-                              current={p.text}
-                              currentTitle={p.title ?? ""}
-                            />
-                          ) : undefined
+                        editor={
+                          !decided
+                            ? (close) => (
+                                <EditResponseAction
+                                  caseId={v.id}
+                                  entryId={p.entryId}
+                                  isPrimary={p.isPrimary}
+                                  current={p.text}
+                                  currentTitle={p.title ?? ""}
+                                  onDone={close}
+                                />
+                              )
+                            : undefined
                         }
                       />
                     </li>

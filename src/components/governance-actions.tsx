@@ -230,32 +230,32 @@ export function WithdrawAction({ caseId }: { caseId: string }) {
 // Edit-grounds panel, shown on a pre-vote case page. The Management Group member who raised the
 // flag can revise their grounds; the new text replaces the current grounds while every version is
 // kept on the public record. Signature-gated server-side, so non-flagging members are rejected.
+// Bare edit form for a member's grounds point (no toggle: the parent EntryBlock owns open/close and
+// renders this full-width below the point). The new text replaces the current grounds; every version
+// is kept on the public record. Signature-gated server-side.
 export function EditGroundsAction({
   caseId,
   entryId,
   current = "",
   currentTitle = "",
-  inline = false,
+  onDone,
 }: {
   caseId: string;
   entryId?: string;
   current?: string;
   currentTitle?: string;
-  // inline = render a compact "Edit" link (for the entry header); otherwise a block toggle.
-  inline?: boolean;
+  // Called after a successful save (parent closes the editor).
+  onDone?: () => void;
 }) {
   const { t } = useApp();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [grounds, setGrounds] = useState(current);
   const [title, setTitle] = useState(currentTitle);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
 
   async function submit() {
     setErr("");
-    setOk("");
     if (grounds.trim().length < 10) {
       setErr(t("gov.act.err.groundsTooShort"));
       return;
@@ -270,9 +270,8 @@ export function EditGroundsAction({
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
-      setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.editSaved"));
-      setOpen(false);
       router.refresh();
+      onDone?.();
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.act.err.editFailed"));
     } finally {
@@ -281,35 +280,24 @@ export function EditGroundsAction({
   }
 
   return (
-    <span className={inline ? "" : "mt-1 block"}>
+    <div>
+      <TitleInput value={title} onChange={setTitle} t={t} />
+      <textarea
+        value={grounds}
+        onChange={(e) => setGrounds(e.target.value)}
+        maxLength={2000}
+        placeholder={t("gov.act.editPlaceholder")}
+        className="block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+      />
       <button
-        onClick={() => setOpen((o) => !o)}
-        className="text-xs font-medium text-muted hover:text-beacon"
+        onClick={submit}
+        disabled={busy}
+        className="mt-2 rounded-lg border border-flare px-4 py-2 text-sm font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
       >
-        {t("gov.act.editToggle")} {open ? "−" : "+"}
+        {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
       </button>
-      {open && (
-        <div className="mt-2">
-          <TitleInput value={title} onChange={setTitle} t={t} />
-          <textarea
-            value={grounds}
-            onChange={(e) => setGrounds(e.target.value)}
-            maxLength={2000}
-            placeholder={t("gov.act.editPlaceholder")}
-            className="mt-2 block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
-          />
-          <button
-            onClick={submit}
-            disabled={busy}
-            className="mt-2 rounded-lg border border-flare px-4 py-2 text-sm font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
-          >
-            {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
-          </button>
-          {err && <Note kind="err" text={err} />}
-          {ok && <Note kind="ok" text={ok} />}
-        </div>
-      )}
-    </span>
+      {err && <Note kind="err" text={err} />}
+    </div>
   );
 }
 
@@ -506,33 +494,32 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
   );
 }
 
-// Inline edit for a response point: the primary response (POST /defend) or a supplemental entry
-// (POST /defense-entry). Signature-gated. Rendered as a compact "Edit" link on the entry header.
+// Bare edit form for a response point: the primary response (POST /defend) or a supplemental entry
+// (POST /defense-entry). No toggle: the parent EntryBlock owns open/close. Signature-gated.
 export function EditResponseAction({
   caseId,
   entryId,
   isPrimary,
   current,
   currentTitle = "",
+  onDone,
 }: {
   caseId: string;
   entryId?: string;
   isPrimary: boolean;
   current: string;
   currentTitle?: string;
+  onDone?: () => void;
 }) {
   const { t } = useApp();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [body, setBody] = useState(current);
   const [title, setTitle] = useState(currentTitle);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
 
   async function submit() {
     setErr("");
-    setOk("");
     if (body.trim().length < 1) return;
     setBusy(true);
     try {
@@ -545,9 +532,8 @@ export function EditResponseAction({
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
-      setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.editSaved"));
-      setOpen(false);
       router.refresh();
+      onDone?.();
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.act.err.editFailed"));
     } finally {
@@ -556,35 +542,24 @@ export function EditResponseAction({
   }
 
   return (
-    <span>
+    <div>
+      <TitleInput value={title} onChange={setTitle} t={t} />
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        maxLength={4000}
+        placeholder={t("gov.act.addResponsePlaceholder")}
+        className="block min-h-[80px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+      />
       <button
-        onClick={() => setOpen((o) => !o)}
-        className="text-xs font-medium text-muted hover:text-beacon"
+        onClick={submit}
+        disabled={busy}
+        className="mt-2 rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
       >
-        {t("gov.act.editToggle")} {open ? "−" : "+"}
+        {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
       </button>
-      {open && (
-        <div className="mt-2">
-          <TitleInput value={title} onChange={setTitle} t={t} />
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            maxLength={4000}
-            placeholder={t("gov.act.addResponsePlaceholder")}
-            className="block min-h-[80px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
-          />
-          <button
-            onClick={submit}
-            disabled={busy}
-            className="mt-2 rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
-          >
-            {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
-          </button>
-          {err && <Note kind="err" text={err} />}
-          {ok && <Note kind="ok" text={ok} />}
-        </div>
-      )}
-    </span>
+      {err && <Note kind="err" text={err} />}
+    </div>
   );
 }
 
