@@ -156,8 +156,10 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           </Link>
         )}
 
-      {/* Archived/decided flag cases: a readable record of past governance activity. */}
-      {d.pastCases.length > 0 && (
+      {/* Archived/decided flag cases: a readable record of past governance activity. Hidden once the
+          provider is qualified (a qualified provider should not be shadowed by a withdrawn/failed
+          flag); the records remain accessible from the /governance page and by direct link. */}
+      {d.pastCases.length > 0 && !d.qualified && (
         <div className="mt-4 rounded-lg border border-themed bg-elev/40 px-4 py-3 text-sm">
           <p className="mb-1 font-medium text-muted">{t("gov.pastFlags")}</p>
           <ul className="space-y-1">
@@ -176,6 +178,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
               </li>
             ))}
           </ul>
+          <p className="mt-2 text-xs text-faint">{t("gov.pastFlagsClearNote")}</p>
         </div>
       )}
 

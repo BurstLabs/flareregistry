@@ -272,6 +272,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         <div className="mt-4 rounded-lg border border-themed bg-elev/50 px-4 py-3 text-sm text-muted">
           <span className="font-medium text-fg">{t("gov.case.withdrawn.title")}</span>{" "}
           {t("gov.case.withdrawn.body")}
+          <p className="mt-1 text-xs text-faint">{t("gov.case.clearNote")}</p>
         </div>
       )}
 
