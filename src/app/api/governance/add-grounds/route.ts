@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     data: { initiationId: mine.id, grounds, title, signerAddress: verified.address! },
   });
   await prisma.providerFlagGroundsEntryRevision.create({
-    data: { entryId: entry.id, grounds, signerAddress: verified.address! },
+    data: { entryId: entry.id, grounds, title, signerAddress: verified.address! },
   });
 
   return NextResponse.json({ ok: true, entryId: entry.id });

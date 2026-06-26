@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
@@ -83,29 +82,26 @@ export async function POST(req: NextRequest) {
     if (!bodyChanged && !titleChanged) {
       return NextResponse.json({ ok: true, unchanged: true });
     }
-    const ops: Prisma.PrismaPromise<unknown>[] = [
+    const newTitle = title !== undefined ? title : (entry.title ?? null);
+    await prisma.$transaction([
       prisma.providerFlagDefenseEntry.update({
         where: { id: entry.id },
-        data: {
-          body: text,
-          ...(title !== undefined ? { title } : {}),
-          ...(bodyChanged ? { editedAt: new Date() } : {}),
-        },
+        data: { body: text, title: newTitle, editedAt: new Date() },
       }),
-    ];
-    if (bodyChanged) {
-      ops.push(prisma.providerFlagDefenseEntryRevision.create({ data: { entryId: entry.id, body: text } }));
-    }
-    await prisma.$transaction(ops);
+      prisma.providerFlagDefenseEntryRevision.create({
+        data: { entryId: entry.id, body: text, title: newTitle },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 
   // New supplemental entry + its first revision.
+  const newTitle = title ?? null;
   const entry = await prisma.providerFlagDefenseEntry.create({
-    data: { defenseId: theCase.defense.id, body: text, ...(title !== undefined ? { title } : {}) },
+    data: { defenseId: theCase.defense.id, body: text, title: newTitle },
   });
   await prisma.providerFlagDefenseEntryRevision.create({
-    data: { entryId: entry.id, body: text },
+    data: { entryId: entry.id, body: text, title: newTitle },
   });
 
   return NextResponse.json({ ok: true, entryId: entry.id });

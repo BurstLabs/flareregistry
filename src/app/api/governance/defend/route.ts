@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
@@ -69,11 +68,12 @@ export async function POST(req: NextRequest) {
   // the public record shows what changed (mirrors the members' grounds history).
   const existing = await prisma.providerFlagDefense.findUnique({ where: { caseId } });
   if (!existing) {
+    const newTitle = title ?? null;
     const created = await prisma.providerFlagDefense.create({
-      data: { caseId, body: text, ...(title !== undefined ? { title } : {}) },
+      data: { caseId, body: text, title: newTitle },
     });
     await prisma.providerFlagDefenseRevision.create({
-      data: { defenseId: created.id, body: text },
+      data: { defenseId: created.id, body: text, title: newTitle },
     });
   } else {
     const bodyChanged = existing.body.trim() !== text;
@@ -81,20 +81,16 @@ export async function POST(req: NextRequest) {
     if (!bodyChanged && !titleChanged) {
       return NextResponse.json({ ok: true, unchanged: true });
     }
-    const ops: Prisma.PrismaPromise<unknown>[] = [
+    const newTitle = title !== undefined ? title : (existing.title ?? null);
+    await prisma.$transaction([
       prisma.providerFlagDefense.update({
         where: { id: existing.id },
-        data: {
-          body: text,
-          ...(title !== undefined ? { title } : {}),
-          ...(bodyChanged ? { editedAt: new Date() } : {}),
-        },
+        data: { body: text, title: newTitle, editedAt: new Date() },
       }),
-    ];
-    if (bodyChanged) {
-      ops.push(prisma.providerFlagDefenseRevision.create({ data: { defenseId: existing.id, body: text } }));
-    }
-    await prisma.$transaction(ops);
+      prisma.providerFlagDefenseRevision.create({
+        data: { defenseId: existing.id, body: text, title: newTitle },
+      }),
+    ]);
   }
 
   return NextResponse.json({ ok: true });

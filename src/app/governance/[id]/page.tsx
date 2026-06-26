@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import {
   evaluateOutcome,
@@ -130,7 +129,7 @@ export default async function GovernanceCasePage({
       // current `grounds` shown above; what remains is the trail of what changed.
       priorVersions: i.revisions
         .slice(0, Math.max(0, i.revisions.length - 1))
-        .map((r) => ({ grounds: r.grounds, at: r.createdAt.toISOString() })),
+        .map((r) => ({ grounds: r.grounds, title: r.title, at: r.createdAt.toISOString() })),
       // Supplemental entries the same member added later (informational), each independently
       // editable with its own prior-version history.
       entries: i.entries.map((e) => ({
@@ -141,7 +140,7 @@ export default async function GovernanceCasePage({
         editedAt: e.editedAt?.toISOString() ?? null,
         priorVersions: e.revisions
           .slice(0, Math.max(0, e.revisions.length - 1))
-          .map((r) => ({ grounds: r.grounds, at: r.createdAt.toISOString() })),
+          .map((r) => ({ grounds: r.grounds, title: r.title, at: r.createdAt.toISOString() })),
       })),
     })),
     votes: c.votes.map((v) => ({
@@ -159,7 +158,7 @@ export default async function GovernanceCasePage({
           editedAt: c.defense.editedAt?.toISOString() ?? null,
           priorVersions: c.defense.revisions
             .slice(0, Math.max(0, c.defense.revisions.length - 1))
-            .map((r) => ({ body: r.body, at: r.createdAt.toISOString() })),
+            .map((r) => ({ body: r.body, title: r.title, at: r.createdAt.toISOString() })),
           entries: c.defense.entries.map((e) => ({
             id: e.id,
             body: e.body,
@@ -168,7 +167,7 @@ export default async function GovernanceCasePage({
             editedAt: e.editedAt?.toISOString() ?? null,
             priorVersions: e.revisions
               .slice(0, Math.max(0, e.revisions.length - 1))
-              .map((r) => ({ body: r.body, at: r.createdAt.toISOString() })),
+              .map((r) => ({ body: r.body, title: r.title, at: r.createdAt.toISOString() })),
           })),
         }
       : null,
@@ -176,11 +175,6 @@ export default async function GovernanceCasePage({
 
   return (
     <div className="max-w-3xl">
-      <div className="mb-4 text-sm">
-        <Link href="/governance" className="text-muted hover:text-beacon">
-          &larr; About the governance process
-        </Link>
-      </div>
       <GovernanceCaseClient view={view} />
     </div>
   );

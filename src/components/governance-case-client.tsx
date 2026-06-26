@@ -41,7 +41,7 @@ export interface CaseView {
     at: string;
     editedAt: string | null;
     // Prior versions of the grounds (oldest first), for the public edit history.
-    priorVersions: { grounds: string; at: string }[];
+    priorVersions: { grounds: string; title: string | null; at: string }[];
     // Supplemental entries the same member added later (informational).
     entries: {
       id: string;
@@ -49,7 +49,7 @@ export interface CaseView {
       title: string | null;
       at: string;
       editedAt: string | null;
-      priorVersions: { grounds: string; at: string }[];
+      priorVersions: { grounds: string; title: string | null; at: string }[];
     }[];
   }[];
   votes: { member: string; memberName: string | null; vote: string; comment: string | null; at: string }[];
@@ -58,14 +58,14 @@ export interface CaseView {
     title: string | null;
     at: string;
     editedAt: string | null;
-    priorVersions: { body: string; at: string }[];
+    priorVersions: { body: string; title: string | null; at: string }[];
     entries: {
       id: string;
       body: string;
       title: string | null;
       at: string;
       editedAt: string | null;
-      priorVersions: { body: string; at: string }[];
+      priorVersions: { body: string; title: string | null; at: string }[];
     }[];
   } | null;
 }
@@ -139,7 +139,7 @@ function EntryBlock({
   at: string;
   text: string;
   editedAt: string | null;
-  priorVersions: { text: string; at: string }[];
+  priorVersions: { text: string; title: string | null; at: string }[];
   now: number;
   t: T;
   // Optional editor: a render-prop given a `close` callback. The trigger ("Edit") sits on the header
@@ -189,6 +189,7 @@ function EntryBlock({
                   {k === 0 ? t("gov.case.history.original") : t("gov.case.history.revised")} &middot;{" "}
                   <RelTime at={r.at} now={now} />
                 </div>
+                {r.title && <div className="mt-0.5 font-medium text-muted">{r.title}</div>}
                 <p className="mt-0.5 whitespace-pre-wrap text-muted">{r.text}</p>
               </li>
             ))}
@@ -230,9 +231,17 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">
-        {v.isReVote ? t("gov.case.titleAppeal") : t("gov.case.title")}
-      </h1>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h1 className="text-2xl font-bold">
+          {v.isReVote ? t("gov.case.titleAppeal") : t("gov.case.title")}
+        </h1>
+        <Link
+          href="/governance"
+          className="shrink-0 text-xs text-muted hover:text-beacon hover:underline"
+        >
+          {t("gov.case.aboutLink")}
+        </Link>
+      </div>
       <p className="mt-1 text-sm text-muted">
         {t("gov.case.providerLabel")}{" "}
         <Link href={`/provider/${v.detailAddress}`} className="text-beacon hover:underline">
@@ -357,7 +366,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   title: i.title,
                   at: i.at,
                   editedAt: i.editedAt,
-                  priorVersions: i.priorVersions.map((r) => ({ text: r.grounds, at: r.at })),
+                  priorVersions: i.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
                 },
                 ...i.entries.map((e) => ({
                   id: e.id,
@@ -366,7 +375,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   title: e.title,
                   at: e.at,
                   editedAt: e.editedAt,
-                  priorVersions: e.priorVersions.map((r) => ({ text: r.grounds, at: r.at })),
+                  priorVersions: e.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
                 })),
               ];
               return (
@@ -429,7 +438,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   title: d.title,
                   at: d.at,
                   editedAt: d.editedAt,
-                  priorVersions: d.priorVersions.map((r) => ({ text: r.body, at: r.at })),
+                  priorVersions: d.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
                 },
                 ...d.entries.map((e) => ({
                   id: e.id,
@@ -439,7 +448,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   title: e.title,
                   at: e.at,
                   editedAt: e.editedAt,
-                  priorVersions: e.priorVersions.map((r) => ({ text: r.body, at: r.at })),
+                  priorVersions: e.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
                 })),
               ];
               return (

@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
         },
       });
       await tx.providerFlagGroundsRevision.create({
-        data: { initiationId: initiation.id, grounds, signerAddress: verified.address! },
+        data: { initiationId: initiation.id, grounds, title, signerAddress: verified.address! },
       });
     } catch {
       throw new Error("you have already co-initiated this flag");

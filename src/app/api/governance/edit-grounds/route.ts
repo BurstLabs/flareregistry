@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
@@ -97,25 +96,18 @@ export async function POST(req: NextRequest) {
     if (!bodyChanged && !titleChanged) {
       return NextResponse.json({ ok: true, unchanged: true });
     }
-    const ops: Prisma.PrismaPromise<unknown>[] = [
+    // The new title to persist/snapshot: the supplied one if provided, else the entry's current.
+    const newTitle = title !== undefined ? title : (entry.title ?? null);
+    await prisma.$transaction([
       prisma.providerFlagGroundsEntry.update({
         where: { id: entry.id },
-        data: {
-          grounds,
-          ...(title !== undefined ? { title } : {}),
-          ...(bodyChanged ? { editedAt: new Date() } : {}),
-        },
+        data: { grounds, title: newTitle, editedAt: new Date() },
       }),
-    ];
-    // Only the body is versioned; a title-only change updates metadata without a body revision.
-    if (bodyChanged) {
-      ops.push(
-        prisma.providerFlagGroundsEntryRevision.create({
-          data: { entryId: entry.id, grounds, signerAddress: verified.address! },
-        })
-      );
-    }
-    await prisma.$transaction(ops);
+      // Title and body are both versioned, so any change records a revision.
+      prisma.providerFlagGroundsEntryRevision.create({
+        data: { entryId: entry.id, grounds, title: newTitle, signerAddress: verified.address! },
+      }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 
@@ -125,24 +117,16 @@ export async function POST(req: NextRequest) {
   if (!bodyChanged && !titleChanged) {
     return NextResponse.json({ ok: true, unchanged: true });
   }
-  const ops: Prisma.PrismaPromise<unknown>[] = [
+  const newTitle = title !== undefined ? title : (mine.title ?? null);
+  await prisma.$transaction([
     prisma.providerFlagInitiation.update({
       where: { id: mine.id },
-      data: {
-        grounds,
-        ...(title !== undefined ? { title } : {}),
-        ...(bodyChanged ? { editedAt: new Date() } : {}),
-      },
+      data: { grounds, title: newTitle, editedAt: new Date() },
     }),
-  ];
-  if (bodyChanged) {
-    ops.push(
-      prisma.providerFlagGroundsRevision.create({
-        data: { initiationId: mine.id, grounds, signerAddress: verified.address! },
-      })
-    );
-  }
-  await prisma.$transaction(ops);
+    prisma.providerFlagGroundsRevision.create({
+      data: { initiationId: mine.id, grounds, title: newTitle, signerAddress: verified.address! },
+    }),
+  ]);
 
   return NextResponse.json({ ok: true });
 }
