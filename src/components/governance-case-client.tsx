@@ -431,6 +431,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                                   <EditGroundsAction
                                     caseId={v.id}
                                     entryId={p.entryId}
+                                    ownerVoter={i.member}
                                     current={p.text}
                                     currentTitle={p.title ?? ""}
                                     onDone={close}
@@ -442,8 +443,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                       </li>
                     ))}
                   </ul>
-                  {/* Add another point under this member's flag. */}
-                  {preVote && <AddGroundsAction caseId={v.id} />}
+                  {/* Add another point under this member's flag. Only the member who owns this flag
+                      (the signer must match i.member) can add to it; the server enforces it. */}
+                  {preVote && <AddGroundsAction caseId={v.id} ownerVoter={i.member} />}
                 </li>
               );
             })}

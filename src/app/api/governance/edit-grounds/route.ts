@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
   const signature = typeof body?.signature === "string" ? body.signature : null;
   const grounds = typeof body?.grounds === "string" ? body.grounds.trim() : null;
   const entryId = typeof body?.entryId === "string" ? body.entryId : null;
+  // The voter that owns the point being edited (the flag the Edit button sat under). Sent so we can
+  // reject editing another member's primary grounds instead of retargeting to the signer's own.
+  const ownerVoter = typeof body?.ownerVoter === "string" ? body.ownerVoter.toLowerCase() : null;
   // Optional title; "" clears it. undefined (key absent) leaves it unchanged.
   const titleProvided = typeof body?.title === "string";
   const title = titleProvided ? body.title.trim().slice(0, 120) || null : undefined;
@@ -73,6 +76,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "grounds can no longer be edited once voting has opened" },
       { status: 409 }
+    );
+  }
+
+  // The Edit button sat under a specific member's flag. If that flag is not the signer's, reject,
+  // rather than quietly editing the signer's own point instead.
+  if (ownerVoter && ownerVoter !== memberVoter) {
+    return NextResponse.json(
+      { error: "you can only edit your own grounds" },
+      { status: 403 }
     );
   }
 

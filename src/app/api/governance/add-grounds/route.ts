@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
   const signature = typeof body?.signature === "string" ? body.signature : null;
   const grounds = typeof body?.grounds === "string" ? body.grounds.trim() : null;
   const title = typeof body?.title === "string" ? body.title.trim().slice(0, 120) || null : null;
+  // The flag the "Add another entry" button sits under. Sent so we can reject adding to another
+  // member's flag, instead of silently retargeting the entry to the signer's own flag.
+  const ownerVoter = typeof body?.ownerVoter === "string" ? body.ownerVoter.toLowerCase() : null;
   if (!caseId || !message || !signature || !grounds) {
     return NextResponse.json(
       { error: "caseId, message, signature, and grounds are required" },
@@ -65,6 +68,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "grounds can no longer be added once voting has opened" },
       { status: 409 }
+    );
+  }
+
+  // The "Add another entry" button was shown under a specific member's flag. If that flag is not the
+  // signer's, reject, rather than quietly attaching the entry to the signer's own flag.
+  if (ownerVoter && ownerVoter !== memberVoter) {
+    return NextResponse.json(
+      { error: "you can only add a point to your own flag" },
+      { status: 403 }
     );
   }
 

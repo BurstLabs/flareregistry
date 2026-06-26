@@ -213,12 +213,16 @@ export function WithdrawAction({ caseId }: { caseId: string }) {
 export function EditGroundsAction({
   caseId,
   entryId,
+  ownerVoter,
   current = "",
   currentTitle = "",
   onDone,
 }: {
   caseId: string;
   entryId?: string;
+  // The voter that owns the point. Sent so the server rejects editing another member's primary
+  // grounds, instead of silently retargeting the edit to the signer's own point.
+  ownerVoter?: string;
   current?: string;
   currentTitle?: string;
   // Called after a successful save (parent closes the editor).
@@ -243,7 +247,7 @@ export function EditGroundsAction({
       const res = await fetch("/api/governance/edit-grounds", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, entryId, grounds, title, message: s.message, signature: s.signature }),
+        body: JSON.stringify({ caseId, entryId, ownerVoter, grounds, title, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
@@ -280,7 +284,7 @@ export function EditGroundsAction({
 
 // Add-grounds panel, shown on a pre-vote case page. The flagging member can add a SUPPLEMENTAL
 // grounds entry (extra evidence/notes). Informational only; signature-gated server-side.
-export function AddGroundsAction({ caseId }: { caseId: string }) {
+export function AddGroundsAction({ caseId, ownerVoter }: { caseId: string; ownerVoter: string }) {
   const { t } = useApp();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -303,7 +307,7 @@ export function AddGroundsAction({ caseId }: { caseId: string }) {
       const res = await fetch("/api/governance/add-grounds", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, grounds, title, message: s.message, signature: s.signature }),
+        body: JSON.stringify({ caseId, ownerVoter, grounds, title, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
