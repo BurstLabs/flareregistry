@@ -127,7 +127,8 @@ function memberLabel(member: string, name: string | null): string {
 // One entry in a party's list: a label row (e.g. "Point 1" + time), the text, an "edited" pill, and
 // an expandable public revision history. Shared by the members' grounds and the provider's response.
 function EntryBlock({
-  label,
+  num,
+  title,
   at,
   text,
   editedAt,
@@ -136,7 +137,10 @@ function EntryBlock({
   t,
   editor,
 }: {
-  label: string;
+  // Always-shown point number ("Point N"), so a list of points never reads as one item's history.
+  num: number;
+  // Optional member-supplied subject, shown after the number.
+  title: string | null;
   at: string;
   text: string;
   editedAt: string | null;
@@ -151,7 +155,8 @@ function EntryBlock({
   return (
     <div className="text-sm">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-faint">
-        <span className="font-medium text-muted">{label}</span>
+        <span className="font-semibold text-muted">{t("gov.case.point", { n: num })}</span>
+        {title && <span className="font-medium text-fg">{title}</span>}
         <span>&middot;</span>
         {/* Show the most recent activity (last edit if any, else when posted). The "edited" pill's
             tooltip carries the original post time so both are available. */}
@@ -179,11 +184,14 @@ function EntryBlock({
       ) : (
         <p className="mt-1 whitespace-pre-wrap">{text}</p>
       )}
+      {/* Read-only public revision history for THIS point only. Collapsed by default and visually
+          inset so it never reads as a separate point. Prior versions cannot be edited. */}
       {priorVersions.length > 0 && (
-        <details className="mt-2 rounded border border-themed bg-elev/40 p-2 text-xs">
-          <summary className="cursor-pointer text-muted hover:text-beacon">
+        <details className="mt-2 ml-1 rounded border border-themed/60 bg-elev/30 p-2 text-xs">
+          <summary className="cursor-pointer select-none text-faint hover:text-beacon">
             {t("gov.case.history.show", { n: priorVersions.length })}
           </summary>
+          <p className="mt-1 text-[11px] italic text-faint">{t("gov.case.history.note")}</p>
           <ul className="mt-2 space-y-2">
             {/* Oldest first: the first row is the original text. */}
             {priorVersions.map((r, k) => (
@@ -418,7 +426,8 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                     {points.map((p, k) => (
                       <li key={p.id}>
                         <EntryBlock
-                          label={p.title || t("gov.case.point", { n: k + 1 })}
+                          num={k + 1}
+                          title={p.title}
                           at={p.at}
                           text={p.text}
                           editedAt={p.editedAt}
@@ -489,7 +498,8 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   {points.map((p, k) => (
                     <li key={p.id}>
                       <EntryBlock
-                        label={p.title || t("gov.case.point", { n: k + 1 })}
+                        num={k + 1}
+                        title={p.title}
                         at={p.at}
                         text={p.text}
                         editedAt={p.editedAt}
