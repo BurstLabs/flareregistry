@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-25T22:17:49.515Z",
+  "timestamp": "2026-06-26T02:28:14.799Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -547,12 +547,12 @@
       "url": "https://www.burstlabs.io",
       "address": "0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
-      "listed": true,
+      "listed": false,
       "flareregistry": {
         "verified": true,
         "registered": true,
         "managementGroup": true,
-        "qualified": true,
+        "qualified": false,
         "network": "flare",
         "feePercent": 20,
         "votePower": "118936946976946412360514995",
@@ -573,10 +573,10 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-25T22:17:46.681Z",
+          "qualifiedSince": null,
           "lastSubmittedEpoch": 408,
           "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
+          "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
         },
         "governance": {
@@ -4046,12 +4046,12 @@
       "url": "https://www.burstlabs.io",
       "address": "0x44bAE8BA9DA0a0583e49937ca5a251b8CdC1BC81",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
-      "listed": true,
+      "listed": false,
       "flareregistry": {
         "verified": true,
         "registered": true,
         "managementGroup": true,
-        "qualified": true,
+        "qualified": false,
         "network": "songbird",
         "feePercent": 20,
         "votePower": "139632765463102280167230816",
@@ -4072,10 +4072,10 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-25T22:17:46.681Z",
+          "qualifiedSince": null,
           "lastSubmittedEpoch": 408,
           "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
+          "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
         },
         "governance": {
