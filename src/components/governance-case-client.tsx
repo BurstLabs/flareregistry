@@ -424,8 +424,16 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               ];
               return (
                 <li key={n}>
-                  <div className="mb-2 text-xs text-faint">
-                    {t("gov.case.mgMemberPrefix")} {memberLabel(i.member, i.memberName)}
+                  <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-faint">
+                    <span>
+                      {t("gov.case.mgMemberPrefix")} {memberLabel(i.member, i.memberName)}
+                    </span>
+                    {/* When this member raised their flag (their primary initiation time). Each
+                        co-initiator flags at a distinct moment, so it is shown per member. */}
+                    <span className="text-faint">&middot;</span>
+                    <span title={fmt(i.at)} className="cursor-help">
+                      {t("gov.case.memberFlaggedAt")} <RelTime at={i.at} now={now} />
+                    </span>
                   </div>
                   <ul className="space-y-3 border-l-2 border-beacon/30 pl-3">
                     {points.map((p, k) => (
