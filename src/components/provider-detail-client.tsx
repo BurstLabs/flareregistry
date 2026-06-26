@@ -15,6 +15,8 @@ export interface DetailData {
   registered: boolean;
   managementGroup: boolean;
   governance: { pending: boolean; underReview: boolean; suspended: boolean; caseId: string | null; state: string | null } | null;
+  // Concluded flag cases (archived withdrawn flags + decided cases), newest first, for the record.
+  pastCases: { caseId: string; state: string; at: string }[];
   providerId: string;
   flaggable: boolean;
   qualified: boolean;
@@ -153,6 +155,29 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
             {t("gov.viewCase")} &rarr;
           </Link>
         )}
+
+      {/* Archived/decided flag cases: a readable record of past governance activity. */}
+      {d.pastCases.length > 0 && (
+        <div className="mt-4 rounded-lg border border-themed bg-elev/40 px-4 py-3 text-sm">
+          <p className="mb-1 font-medium text-muted">{t("gov.pastFlags")}</p>
+          <ul className="space-y-1">
+            {d.pastCases.map((c) => (
+              <li key={c.caseId} className="flex items-center justify-between gap-3">
+                <span className="text-faint">
+                  {t(`gov.caseState.${c.state}`)} &middot;{" "}
+                  {new Date(c.at).toISOString().slice(0, 10)}
+                </span>
+                <Link
+                  href={`/governance/${c.caseId}`}
+                  className="shrink-0 text-beacon hover:underline"
+                >
+                  {t("gov.viewRecord")} &rarr;
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <p className="mt-4 text-muted">{d.description}</p>
       <a

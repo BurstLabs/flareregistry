@@ -166,6 +166,32 @@ export interface ProviderGovernance {
   state: string | null;
 }
 
+export interface PastFlagCase {
+  caseId: string;
+  state: string; // WITHDRAWN | DENIED | CLEARED | FAILED_QUORUM
+  at: string; // ISO of when it concluded (decidedAt), or opened if missing
+}
+
+/**
+ * Concluded flag cases per provider (archived withdrawn flags + decided cases), newest first, so the
+ * provider detail page can link to the readable record. Excludes still-live cases (PENDING/open),
+ * which are surfaced separately by governanceByProvider().
+ */
+export async function pastCasesByProvider(): Promise<Map<string, PastFlagCase[]>> {
+  const cases = await prisma.providerFlagCase.findMany({
+    where: { state: { in: ["WITHDRAWN", "DENIED", "CLEARED", "FAILED_QUORUM"] } },
+    orderBy: { decidedAt: "desc" },
+    select: { id: true, providerId: true, state: true, decidedAt: true, openedAt: true },
+  });
+  const map = new Map<string, PastFlagCase[]>();
+  for (const c of cases) {
+    const list = map.get(c.providerId) ?? [];
+    list.push({ caseId: c.id, state: c.state, at: (c.decidedAt ?? c.openedAt).toISOString() });
+    map.set(c.providerId, list);
+  }
+  return map;
+}
+
 /**
  * Governance status per provider for the feed/UI: whether it has an open case (under review),
  * whether it is suspended, and the most relevant case id. Only providers with any case or a

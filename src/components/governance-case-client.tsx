@@ -225,6 +225,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
   // A withdrawn case is archived/read-only: treat it like a finished case for edit-gating.
   const decided = idx === 3 || isWithdrawn;
   const isPending = v.state === "PENDING" && !isWithdrawn;
+  // The case actually opened (a 2nd member co-initiated) only once it reached discussion or beyond.
+  // Until then the discussion/voting deadlines are provisional placeholders, not real dates.
+  const hasOpened = idx >= 1;
   const quorumMet = v.votesCast >= v.turnoutFloor;
 
   const STAGES = [
@@ -303,18 +306,31 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         </div>
 
         <div className="mt-5 grid gap-2 text-xs text-muted sm:grid-cols-2">
-          <div>{t("gov.case.opened")} {fmt(v.openedAt)}</div>
-          <div>{t("gov.case.discussionEnds")} {fmt(v.discussionEndsAt)}</div>
-          <div>{t("gov.case.votingEnds")} {fmt(v.votingEndsAt)}</div>
-          <div>
-            {v.decidedAt
-              ? `${t("gov.case.decided")} ${fmt(v.decidedAt)}`
-              : t("gov.case.decidedPending")}
-          </div>
+          {/* "Opened" here is when the flag was raised. The discussion/voting deadlines only become
+              real once a second member opens the case, so for a flag that never opened (PENDING or
+              WITHDRAWN) they are placeholders and we suppress them to avoid showing misleading dates. */}
+          <div>{t("gov.case.flagRaised")} {fmt(v.openedAt)}</div>
+          {hasOpened && (
+            <>
+              <div>{t("gov.case.discussionEnds")} {fmt(v.discussionEndsAt)}</div>
+              <div>{t("gov.case.votingEnds")} {fmt(v.votingEndsAt)}</div>
+            </>
+          )}
+          {isWithdrawn ? (
+            v.decidedAt && <div>{t("gov.case.withdrawnAt")} {fmt(v.decidedAt)}</div>
+          ) : (
+            <div>
+              {v.decidedAt
+                ? `${t("gov.case.decided")} ${fmt(v.decidedAt)}`
+                : t("gov.case.decidedPending")}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Live tally vs quorum. */}
+      {/* Live tally vs quorum. Hidden for a withdrawn flag: no voting ever happened, so a tally and
+          "outcome" would be misleading noise. */}
+      {!isWithdrawn && (
       <div className="mt-6 surface rounded-xl border p-5">
         <h2 className="mb-3 text-lg font-semibold">{t("gov.case.voteTally")}</h2>
         <div className="grid grid-cols-3 gap-3 text-center">
@@ -358,6 +374,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         )}
         {v.state === "OPEN_VOTING" && <VoteAction caseId={v.id} />}
       </div>
+      )}
 
       {/* Grounds from co-initiators. Each member's points render as one uniform list; each point can
           be edited inline (signature-gated), and a single "add another" sits at the bottom. */}

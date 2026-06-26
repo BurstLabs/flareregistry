@@ -80,6 +80,7 @@ export default async function ProviderDetail({
     registered: !!metrics?.registered,
     managementGroup: (await (await import("@/lib/management-group")).managementGroupByProvider()).get(p.id) ?? false,
     governance: (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null,
+    pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
     // Flaggable: matched on-chain, not yet qualified, inside the new-provider window, not already
     // flagged, and no open case. This gates whether the member Flag form is offered.
