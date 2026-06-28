@@ -124,6 +124,16 @@ export default async function GovernanceCasePage({
       },
       select: { id: true, state: true },
     });
+    // An appeal currently in progress (opened, not yet decided). When present, the denied page links
+    // straight to it so it never looks like nothing happened after a request.
+    const liveAppeal = await prisma.providerFlagCase.findFirst({
+      where: {
+        providerId: c.provider.id,
+        isReVote: true,
+        state: { in: ["OPEN_DISCUSSION", "OPEN_VOTING"] },
+      },
+      select: { id: true },
+    });
     appeal = {
       opensAt: win.opensAt.toISOString(),
       closesAt: win.closesAt.toISOString(),
@@ -131,6 +141,7 @@ export default async function GovernanceCasePage({
       deadlineDays: APPEAL_DEADLINE_DAYS,
       usedCaseId: priorAppeal?.id ?? null,
       usedState: priorAppeal?.state ?? null,
+      liveCaseId: liveAppeal?.id ?? null,
     };
   }
 

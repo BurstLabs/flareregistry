@@ -168,6 +168,7 @@ export function isVotingOpen(c: { state: string; discussionEndsAt: Date; votingE
 export interface ProviderGovernance {
   pending: boolean; // a single-member flag exists; not yet an open case (needs a 2nd member)
   underReview: boolean; // an open case exists
+  isAppeal: boolean; // the headline open case is a provider-initiated appeal (re-vote)
   suspended: boolean;
   caseId: string | null;
   state: string | null;
@@ -207,7 +208,13 @@ export async function pastCasesByProvider(): Promise<Map<string, PastFlagCase[]>
 export async function governanceByProvider(): Promise<Map<string, ProviderGovernance>> {
   const cases = await prisma.providerFlagCase.findMany({
     orderBy: { openedAt: "desc" },
-    select: { id: true, providerId: true, state: true, provider: { select: { suspended: true } } },
+    select: {
+      id: true,
+      providerId: true,
+      state: true,
+      isReVote: true,
+      provider: { select: { suspended: true } },
+    },
   });
   const map = new Map<string, ProviderGovernance>();
   for (const c of cases) {
@@ -220,6 +227,7 @@ export async function governanceByProvider(): Promise<Map<string, ProviderGovern
       map.set(c.providerId, {
         pending,
         underReview: open,
+        isAppeal: open && c.isReVote,
         suspended: c.provider.suspended,
         caseId: c.id,
         state: c.state,

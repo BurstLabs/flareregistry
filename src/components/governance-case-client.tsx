@@ -38,6 +38,8 @@ export interface CaseView {
     // If the one permitted appeal has been used, the case id + its outcome; else null.
     usedCaseId: string | null;
     usedState: string | null;
+    // An appeal currently in progress (opened, not yet decided), if any.
+    liveCaseId: string | null;
   } | null;
   memberCount: number;
   turnoutFloor: number;
@@ -218,10 +220,30 @@ function AppealPanel({
 }) {
   const opensMs = new Date(appeal.opensAt).getTime();
   const closesMs = new Date(appeal.closesAt).getTime();
-  const used = !!appeal.usedCaseId;
-  const beforeWindow = !used && now < opensMs;
-  const windowOpen = !used && now >= opensMs && now <= closesMs;
-  const windowClosed = !used && now > closesMs;
+  const inProgress = !!appeal.liveCaseId;
+  const used = !inProgress && !!appeal.usedCaseId;
+  const beforeWindow = !inProgress && !used && now < opensMs;
+  const windowOpen = !inProgress && !used && now >= opensMs && now <= closesMs;
+  const windowClosed = !inProgress && !used && now > closesMs;
+
+  // An appeal is already underway: point straight to it instead of the request flow, so a denied
+  // case never looks dead after the provider has opened an appeal.
+  if (inProgress) {
+    return (
+      <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+        <p className="font-medium text-amber-600 dark:text-amber-300">
+          {t("gov.case.appeal.inProgressTitle")}
+        </p>
+        <p className="mt-1 text-muted">{t("gov.case.appeal.inProgressBody")}</p>
+        <Link
+          href={`/governance/${appeal.liveCaseId}`}
+          className="mt-2 inline-block font-medium text-beacon underline hover:opacity-90"
+        >
+          {t("gov.case.appeal.viewAppeal")} &rarr;
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 rounded-lg border border-themed bg-elev/40 p-4 text-sm">

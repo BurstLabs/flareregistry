@@ -14,7 +14,7 @@ export interface DetailData {
   verified: boolean;
   registered: boolean;
   managementGroup: boolean;
-  governance: { pending: boolean; underReview: boolean; suspended: boolean; caseId: string | null; state: string | null } | null;
+  governance: { pending: boolean; underReview: boolean; isAppeal: boolean; suspended: boolean; caseId: string | null; state: string | null } | null;
   // Concluded flag cases (archived withdrawn flags + decided cases), newest first, for the record.
   pastCases: { caseId: string; state: string; at: string }[];
   providerId: string;
@@ -138,19 +138,25 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           <Link
             href={`/governance/${d.governance.caseId}`}
             className={`mt-4 block rounded-lg border px-4 py-3 text-sm hover:opacity-90 ${
-              d.governance.suspended
-                ? "border-flare/40 bg-flare/10 text-flare"
-                : d.governance.underReview
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-300"
-                  : "border-themed bg-elev/50 text-muted"
+              d.governance.isAppeal
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+                : d.governance.suspended
+                  ? "border-flare/40 bg-flare/10 text-flare"
+                  : d.governance.underReview
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+                    : "border-themed bg-elev/50 text-muted"
             }`}
           >
             <span className="font-medium">
-              {d.governance.suspended
-                ? t("gov.suspendedBanner")
-                : d.governance.underReview
-                  ? t("gov.underReviewBanner")
-                  : t("gov.pendingBanner")}
+              {/* A suspended provider with an open appeal is its own state: say the appeal is in
+                  progress and point at the appeal case, not just "suspended". */}
+              {d.governance.isAppeal
+                ? t("gov.appealInProgressBanner")
+                : d.governance.suspended
+                  ? t("gov.suspendedBanner")
+                  : d.governance.underReview
+                    ? t("gov.underReviewBanner")
+                    : t("gov.pendingBanner")}
             </span>{" "}
             {t("gov.viewCase")} &rarr;
           </Link>
