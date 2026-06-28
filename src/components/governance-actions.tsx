@@ -366,6 +366,8 @@ export function VoteAction({ caseId }: { caseId: string }) {
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
+  // Optional public rationale that travels with the vote (signed, stored, versioned on changes).
+  const [comment, setComment] = useState("");
 
   async function cast(vote: "DENY" | "KEEP") {
     setErr("");
@@ -376,7 +378,13 @@ export function VoteAction({ caseId }: { caseId: string }) {
       const res = await fetch("/api/governance/vote", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, vote, message: s.message, signature: s.signature }),
+        body: JSON.stringify({
+          caseId,
+          vote,
+          comment: comment.trim() || undefined,
+          message: s.message,
+          signature: s.signature,
+        }),
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.voteFailed"));
@@ -399,6 +407,15 @@ export function VoteAction({ caseId }: { caseId: string }) {
     <div className="mt-5 rounded-lg border border-themed bg-elev/40 p-4">
       <p className="text-sm font-medium">{t("gov.act.voteTitle")}</p>
       <p className="mt-1 text-xs text-muted">{t("gov.act.voteBlurb")}</p>
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        disabled={!!busy}
+        maxLength={2000}
+        rows={2}
+        placeholder={t("gov.act.voteCommentPlaceholder")}
+        className="mt-3 w-full rounded-lg border border-themed bg-elev/40 px-3 py-2 text-sm placeholder:text-faint focus:border-beacon focus:outline-none disabled:opacity-50"
+      />
       <div className="mt-3 flex gap-2">
         <button
           onClick={() => cast("DENY")}
