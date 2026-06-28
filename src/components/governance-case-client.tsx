@@ -196,12 +196,16 @@ function EntryBlock({
           </summary>
           <p className="mt-1 text-[11px] italic text-faint">{t("gov.case.history.note")}</p>
           <ul className="mt-2 space-y-2">
-            {/* Oldest first: the first row is the original text. */}
-            {priorVersions.map((r, k) => (
+            {/* Most recent first. The chronologically-oldest entry (index 0 in the source array,
+                which is ascending) is the "Original"; all others are "Revised", regardless of where
+                they land in this reversed display order. */}
+            {priorVersions.map((_, k) => priorVersions[priorVersions.length - 1 - k]).map((r, k) => (
               <li key={k} className="border-l-2 border-themed pl-2">
                 <div className="text-faint">
-                  {k === 0 ? t("gov.case.history.original") : t("gov.case.history.revised")} &middot;{" "}
-                  <RelTime at={r.at} now={now} />
+                  {k === priorVersions.length - 1
+                    ? t("gov.case.history.original")
+                    : t("gov.case.history.revised")}{" "}
+                  &middot; <RelTime at={r.at} now={now} />
                 </div>
                 {r.title && <div className="mt-0.5 font-medium text-muted">{r.title}</div>}
                 <p className="mt-0.5 whitespace-pre-wrap text-muted">{r.text}</p>
