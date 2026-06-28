@@ -28,6 +28,16 @@ export interface CaseView {
   discussionEndsAt: string;
   votingEndsAt: string;
   decidedAt: string | null;
+  // Present only for a DENIED case: drives the "what happens next / how to appeal" panel.
+  appeal: {
+    opensAt: string;
+    closesAt: string;
+    cooldownDays: number;
+    deadlineDays: number;
+    // If the one permitted appeal has been used, the case id + its outcome; else null.
+    usedCaseId: string | null;
+    usedState: string | null;
+  } | null;
   memberCount: number;
   turnoutFloor: number;
   denyNeeded: number;
@@ -189,6 +199,69 @@ function MetBadge({ met, t }: { met: boolean; t: T }) {
       <span aria-hidden>{met ? "✓" : "✗"}</span>
       {met ? t("gov.case.quorumMet") : t("gov.case.quorumNotMet")}
     </span>
+  );
+}
+
+// "What happens next" + appeal guidance for a denied provider. The appeal is a one-time re-vote of
+// the case, sponsored by Management Group members, openable only within the appeal window.
+function AppealPanel({
+  appeal,
+  now,
+  t,
+}: {
+  appeal: NonNullable<CaseView["appeal"]>;
+  now: number;
+  t: T;
+}) {
+  const opensMs = new Date(appeal.opensAt).getTime();
+  const closesMs = new Date(appeal.closesAt).getTime();
+  const used = !!appeal.usedCaseId;
+  const beforeWindow = !used && now < opensMs;
+  const windowOpen = !used && now >= opensMs && now <= closesMs;
+  const windowClosed = !used && now > closesMs;
+
+  return (
+    <div className="mt-4 rounded-lg border border-themed bg-elev/40 p-4 text-sm">
+      <p className="font-medium">{t("gov.case.appeal.title")}</p>
+      <p className="mt-1 text-muted">{t("gov.case.appeal.suspended")}</p>
+
+      <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-muted">
+        <li>{t("gov.case.appeal.stepResponse")}</li>
+        <li>
+          {used
+            ? appeal.usedState === "DENIED"
+              ? t("gov.case.appeal.usedDenied")
+              : t("gov.case.appeal.usedCleared")
+            : beforeWindow
+              ? t("gov.case.appeal.stepCooldown", {
+                  cooldownDays: appeal.cooldownDays,
+                  opensAt: fmt(appeal.opensAt),
+                })
+              : windowOpen
+                ? t("gov.case.appeal.stepOpen", { closesAt: fmt(appeal.closesAt) })
+                : t("gov.case.appeal.stepClosed")}
+        </li>
+        {!used && !windowClosed && <li>{t("gov.case.appeal.stepHow")}</li>}
+        {!used && !windowClosed && <li>{t("gov.case.appeal.stepOutcome")}</li>}
+      </ol>
+
+      {beforeWindow && (
+        <p className="mt-2 text-xs text-faint">
+          {t("gov.case.appeal.opensIn")}{" "}
+          <Countdown
+            target={appeal.opensAt}
+            now={now}
+            inLabel={t("gov.case.countdownIn")}
+            passedLabel=""
+          />
+        </p>
+      )}
+      <p className="mt-3 text-xs text-faint">
+        <Link href="/governance" className="underline hover:text-beacon">
+          {t("gov.case.appeal.learnMore")}
+        </Link>
+      </p>
+    </div>
   );
 }
 
@@ -519,6 +592,8 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             {t("gov.case.outcomePrefix")} {outcomeLabel(t, v.state).text}
           </p>
         )}
+        {/* What happens next for a denied provider, including the appeal process. */}
+        {v.appeal && <AppealPanel appeal={v.appeal} now={now} t={t} />}
         {/* While voting is open, make the waiting state explicit: the case is NOT decided yet and
             stays open for the full voting period, even once the thresholds are already met. */}
         {v.state === "OPEN_VOTING" && (

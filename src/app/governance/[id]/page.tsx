@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db";
 import {
   evaluateOutcome,
   loadMembers,
+  appealWindow,
+  APPEAL_COOLDOWN_DAYS,
+  APPEAL_DEADLINE_DAYS,
   QUORUM_TURNOUT_BIPS,
   DENY_MAJORITY_BIPS,
 } from "@/lib/governance";
@@ -108,6 +111,29 @@ export default async function GovernanceCasePage({
   }
   const memberName = (voter: string) => nameByMember.get(voter.toLowerCase()) ?? null;
 
+  // Appeal info for a DENIED case: when an appeal may open/closes, and whether the single permitted
+  // appeal has already been used. Drives the "what happens next / how to appeal" panel.
+  let appeal: CaseView["appeal"] = null;
+  if (c.state === "DENIED" && c.decidedAt) {
+    const win = appealWindow(c.decidedAt);
+    const priorAppeal = await prisma.providerFlagCase.findFirst({
+      where: {
+        providerId: c.provider.id,
+        isReVote: true,
+        state: { in: ["DENIED", "CLEARED", "FAILED_QUORUM"] },
+      },
+      select: { id: true, state: true },
+    });
+    appeal = {
+      opensAt: win.opensAt.toISOString(),
+      closesAt: win.closesAt.toISOString(),
+      cooldownDays: APPEAL_COOLDOWN_DAYS,
+      deadlineDays: APPEAL_DEADLINE_DAYS,
+      usedCaseId: priorAppeal?.id ?? null,
+      usedState: priorAppeal?.state ?? null,
+    };
+  }
+
   const view: CaseView = {
     id: c.id,
     providerId: c.provider.id,
@@ -121,6 +147,7 @@ export default async function GovernanceCasePage({
     discussionEndsAt: c.discussionEndsAt.toISOString(),
     votingEndsAt: c.votingEndsAt.toISOString(),
     decidedAt: c.decidedAt?.toISOString() ?? null,
+    appeal,
     memberCount,
     turnoutFloor,
     denyNeeded,
