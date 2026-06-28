@@ -30,7 +30,8 @@ export default async function GovernanceCasePage({
           },
         },
       },
-      votes: { orderBy: { createdAt: "asc" } },
+      // Most recent activity first for the "Votes on record" display (order-independent for counts).
+      votes: { orderBy: { updatedAt: "desc" } },
       voteRevisions: { orderBy: { createdAt: "asc" } },
       defense: {
         include: {
