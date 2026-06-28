@@ -180,7 +180,7 @@ function MetBadge({ met, t }: { met: boolean; t: T }) {
   return (
     <span
       className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-        met ? "bg-emerald-500/15 text-emerald-400" : "bg-elev text-faint"
+        met ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"
       }`}
     >
       <span aria-hidden>{met ? "✓" : "✗"}</span>
