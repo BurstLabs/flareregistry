@@ -174,6 +174,21 @@ function RelTime({ at, now }: { at: string; now: number }) {
   );
 }
 
+// A condition's met/not-met state as a compact pill with a check or cross, used for the quorum and
+// deny-majority thresholds. Green when satisfied, muted otherwise.
+function MetBadge({ met, t }: { met: boolean; t: T }) {
+  return (
+    <span
+      className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+        met ? "bg-emerald-500/15 text-emerald-400" : "bg-elev text-faint"
+      }`}
+    >
+      <span aria-hidden>{met ? "✓" : "✗"}</span>
+      {met ? t("gov.case.quorumMet") : t("gov.case.quorumNotMet")}
+    </span>
+  );
+}
+
 // DENY/KEEP pill, shared by the current-votes list and the vote-history trail.
 function VoteBadge({ vote, t }: { vote: string; t: T }) {
   return (
@@ -318,6 +333,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
   // Until then the discussion/voting deadlines are provisional placeholders, not real dates.
   const hasOpened = idx >= 1;
   const quorumMet = v.votesCast >= v.turnoutFloor;
+  const denyMet = v.denyVotes >= v.denyNeeded;
 
   const STAGES = [
     t("gov.case.stage.flagged"),
@@ -472,10 +488,8 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               turnoutFloor: v.turnoutFloor,
               pct: Math.round(v.turnoutFloorBips / 100),
               memberCount: v.memberCount,
-            })}{" "}
-            <span className={quorumMet ? "text-emerald-400" : "text-faint"}>
-              {quorumMet ? t("gov.case.quorumMet") : t("gov.case.quorumNotMet")}
-            </span>
+            })}
+            <MetBadge met={quorumMet} t={t} />
           </p>
           <p>
             {t("gov.case.denyLine", {
@@ -483,12 +497,35 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               denyNeeded: v.denyNeeded,
               pct: Math.round(v.denyMajorityBips / 100),
             })}
+            <MetBadge met={denyMet} t={t} />
           </p>
         </div>
         {decided && (
           <p className={`mt-4 font-medium ${outcomeLabel(t, v.state).cls}`}>
             {t("gov.case.outcomePrefix")} {outcomeLabel(t, v.state).text}
           </p>
+        )}
+        {/* While voting is open, make the waiting state explicit: the case is NOT decided yet and
+            stays open for the full voting period, even once the thresholds are already met. */}
+        {v.state === "OPEN_VOTING" && (
+          <div className="mt-4 rounded-lg border border-themed bg-elev/40 p-3 text-sm">
+            <p className="font-medium">
+              {t("gov.case.awaitingVoteEnd")}{" "}
+              <Countdown
+                target={v.votingEndsAt}
+                now={now}
+                inLabel={t("gov.case.countdownIn")}
+                passedLabel={t("gov.case.votingEndedAlready")}
+              />
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              {quorumMet && denyMet
+                ? t("gov.case.provisionalDeny")
+                : quorumMet && !denyMet
+                  ? t("gov.case.provisionalClear")
+                  : t("gov.case.provisionalQuorum")}
+            </p>
+          </div>
         )}
         {v.state === "OPEN_VOTING" && <VoteAction caseId={v.id} />}
       </div>
