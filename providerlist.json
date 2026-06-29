@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-29T18:18:32.155Z",
+  "timestamp": "2026-06-29T18:30:27.490Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -581,12 +581,12 @@
         },
         "governance": {
           "pending": false,
-          "underReview": false,
-          "isAppeal": false,
+          "underReview": true,
+          "isAppeal": true,
           "suspended": true,
           "appealReady": false,
           "caseId": "cmqyhu8m100034mxmpfiexpo9",
-          "state": "DENIED"
+          "state": "OPEN_DISCUSSION"
         }
       }
     },
@@ -1952,7 +1952,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xF61B94dEdC5f23398997D73B7701D67556eaaD6F.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -1972,8 +1972,8 @@
           "delegation": "0xF61B94dEdC5f23398997D73B7701D67556eaaD6F"
         },
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
+          "privateNode": true,
+          "algorithm": "in-house"
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.606Z",
@@ -4084,12 +4084,12 @@
         },
         "governance": {
           "pending": false,
-          "underReview": false,
-          "isAppeal": false,
+          "underReview": true,
+          "isAppeal": true,
           "suspended": true,
           "appealReady": false,
           "caseId": "cmqyhu8m100034mxmpfiexpo9",
-          "state": "DENIED"
+          "state": "OPEN_DISCUSSION"
         }
       }
     },
