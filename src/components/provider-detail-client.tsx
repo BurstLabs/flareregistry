@@ -202,6 +202,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
 
       <ManageListingButton
         ownerAddresses={d.addresses.filter((a) => a.verified).map((a) => a.address.toLowerCase())}
+        claimed={d.verified}
       />
 
       {/* Management Group flag action (new providers only, when not already under review). */}
