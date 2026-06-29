@@ -210,11 +210,12 @@ function SubmitPageInner() {
     }
   }
 
-  // After verification, load any existing listing for this address and prefill the form.
-  async function loadExisting(addr: string) {
+  // After verification, load any existing listing for this address and prefill the form. Returns
+  // true if an existing listing was found (claim/edit), false for a brand-new address.
+  async function loadExisting(addr: string): Promise<boolean> {
     try {
       const res = await fetch(`/api/provider/${addr}`);
-      if (!res.ok) return; // 404 => brand new provider, leave the form blank
+      if (!res.ok) return false; // 404 => brand new provider, leave the form blank
       const p = await res.json();
       setName(p.name ?? "");
       setDescription(p.description ?? "");
@@ -229,8 +230,10 @@ function SubmitPageInner() {
         (a: { address: string; chainId: number }) => a.address.toLowerCase() === addr.toLowerCase()
       );
       if (mine) setChainId(mine.chainId);
+      return true;
     } catch {
       // Non-fatal: fall back to an empty form.
+      return false;
     }
   }
 
@@ -281,7 +284,26 @@ function SubmitPageInner() {
         throw new Error(body.error ?? t("submit.err.verifyFailed"));
       }
       // Prefill from an existing listing (claiming an imported entry, or editing your own).
-      await loadExisting(address.toLowerCase());
+      const hasExisting = await loadExisting(address.toLowerCase());
+      // For a brand-new listing on a mainnet chain, check registration UP FRONT so an unregistered
+      // address is told here instead of after filling in the whole form and clicking Publish. An
+      // existing listing (claim/edit) skips this; the server still enforces the gate on save.
+      if (!hasExisting) {
+        try {
+          const regRes = await fetch(
+            `/api/provider/registration?address=${address.toLowerCase()}&chainId=${chainId}`
+          );
+          const reg = await regRes.json().catch(() => ({}));
+          if (regRes.ok && reg.mainnet && reg.registered === false) {
+            setError(
+              t("submit.err.notRegistered", { address: address.toLowerCase(), chain: reg.chainName })
+            );
+            return; // stay on the connect/verify step; do not advance to the form
+          }
+        } catch {
+          // Non-fatal: if the check fails, fall through; the server still gates on publish.
+        }
+      }
       setStep("form");
     } catch (e) {
       setError(e instanceof Error ? e.message : t("submit.err.verifyFailed"));
