@@ -418,48 +418,91 @@ function EntryBlock({
           t={t}
         />
       )}
-      {/* Read-only public history for THIS point: text revisions and image attach/remove events,
-          merged into ONE chronological timeline (newest first), collapsed by default. */}
+      {/* Read-only public history for THIS point. Each entry is one EDIT: a text revision (if the
+          text changed) plus any image attach/remove from the same save, grouped together. An image
+          change made WITHOUT a text edit shows as its own entry. Newest first; collapsed. */}
       {(() => {
         const allImages = images ?? [];
-        // Build a single event list. Text revisions oldest->newest get "Original"/"Revised"; image
-        // events get an attached/removed label. Everything is then sorted newest-first together.
-        type Ev =
-          | { at: string; kind: "text"; isOriginal: boolean; title: string | null; text: string }
-          | { at: string; kind: "imgAdd" | "imgRemove" };
-        const events: Ev[] = [];
-        priorVersions.forEach((r, i) =>
-          events.push({ at: r.at, kind: "text", isOriginal: i === 0, title: r.title, text: r.text })
-        );
+        // Collect image change events (attach + remove), each with its second-bucket for grouping.
+        const sec = (iso: string) => iso.slice(0, 19); // group within the same second = same save
+        const imgEvents: { at: string; bucket: string; add: number; rem: number }[] = [];
         for (const img of allImages) {
-          events.push({ at: img.at, kind: "imgAdd" });
-          if (img.removedAt) events.push({ at: img.removedAt, kind: "imgRemove" });
+          imgEvents.push({ at: img.at, bucket: sec(img.at), add: 1, rem: 0 });
+          if (img.removedAt) imgEvents.push({ at: img.removedAt, bucket: sec(img.removedAt), add: 0, rem: 1 });
         }
-        if (events.length === 0) return null;
-        events.sort((a, b) => (a.at < b.at ? 1 : -1)); // newest first
+        // History items: one per text revision (with image tags from the same save merged in), plus
+        // standalone items for image changes whose save had no text revision.
+        type Item = {
+          at: string;
+          kind: "original" | "revised" | "image";
+          title?: string | null;
+          text?: string;
+          added: number;
+          removed: number;
+        };
+        const items: Item[] = [];
+        const usedBuckets = new Set<string>();
+        priorVersions.forEach((r, i) => {
+          const b = sec(r.at);
+          usedBuckets.add(b);
+          const sameSave = imgEvents.filter((e) => e.bucket === b);
+          items.push({
+            at: r.at,
+            kind: i === 0 ? "original" : "revised",
+            title: r.title,
+            text: r.text,
+            added: sameSave.reduce((s, e) => s + e.add, 0),
+            removed: sameSave.reduce((s, e) => s + e.rem, 0),
+          });
+        });
+        // Image-only saves (no text revision in that bucket): one entry per bucket.
+        const standalone = new Map<string, { at: string; added: number; removed: number }>();
+        for (const e of imgEvents) {
+          if (usedBuckets.has(e.bucket)) continue;
+          const cur = standalone.get(e.bucket) ?? { at: e.at, added: 0, removed: 0 };
+          cur.added += e.add;
+          cur.removed += e.rem;
+          standalone.set(e.bucket, cur);
+        }
+        for (const s of standalone.values()) {
+          items.push({ at: s.at, kind: "image", added: s.added, removed: s.removed });
+        }
+        if (items.length === 0) return null;
+        items.sort((a, b) => (a.at < b.at ? 1 : -1)); // newest first
+
+        // A compact "image attached / removed" tag line for an entry, when it had image changes.
+        const imageTag = (added: number, removed: number) => {
+          const parts: string[] = [];
+          if (added > 0) parts.push(t("gov.act.imageAttachedN", { n: added }));
+          if (removed > 0) parts.push(t("gov.act.imageRemovedN", { n: removed }));
+          return parts.join(" · ");
+        };
+
         return (
           <details className="mt-2 ml-1 rounded border border-themed/60 bg-elev/30 p-2 text-xs">
             <summary className="cursor-pointer select-none text-faint hover:text-beacon">
-              {t("gov.case.history.show", { n: events.length })}
+              {t("gov.case.history.show", { n: items.length })}
             </summary>
             <p className="mt-1 text-[11px] italic text-faint">{t("gov.case.history.note")}</p>
             <ul className="mt-2 space-y-2">
-              {events.map((ev, k) => (
+              {items.map((it, k) => (
                 <li key={k} className="border-l-2 border-themed pl-2">
                   <div className="text-faint">
-                    {ev.kind === "text"
-                      ? ev.isOriginal
-                        ? t("gov.case.history.original")
-                        : t("gov.case.history.revised")
-                      : ev.kind === "imgAdd"
-                        ? t("gov.act.imageAttachedAt")
-                        : t("gov.act.imageRemovedHist")}{" "}
-                    &middot; <RelTime at={ev.at} now={now} />
+                    {it.kind === "original"
+                      ? t("gov.case.history.original")
+                      : it.kind === "revised"
+                        ? t("gov.case.history.revised")
+                        : t("gov.act.imageChange")}{" "}
+                    &middot; <RelTime at={it.at} now={now} />
+                    {/* Image changes from this same edit, tagged onto the revision entry. */}
+                    {(it.added > 0 || it.removed > 0) && (
+                      <span className="ml-1 text-faint">&mdash; {imageTag(it.added, it.removed)}</span>
+                    )}
                   </div>
-                  {ev.kind === "text" && (
+                  {it.kind !== "image" && (
                     <>
-                      {ev.title && <div className="mt-0.5 font-medium text-muted">{ev.title}</div>}
-                      <p className="mt-0.5 whitespace-pre-wrap text-muted">{ev.text}</p>
+                      {it.title && <div className="mt-0.5 font-medium text-muted">{it.title}</div>}
+                      <p className="mt-0.5 whitespace-pre-wrap text-muted">{it.text}</p>
                     </>
                   )}
                 </li>
