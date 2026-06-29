@@ -113,6 +113,8 @@ export default async function GovernanceCasePage({
     ])
   );
   const nameByMember = new Map<string, string>();
+  // voter -> a listed ProviderAddress for that member, so their label can link to /provider/<address>.
+  const linkByMember = new Map<string, string>();
   if (memberVoters.length) {
     // The voter address is the entity identity; find the on-chain entity, then the provider that
     // lists any of its addresses.
@@ -138,12 +140,18 @@ export default async function GovernanceCasePage({
         .map((a) => a.toLowerCase());
       const pa = await prisma.providerAddress.findFirst({
         where: { address: { in: addrs } },
-        select: { provider: { select: { name: true } } },
+        select: { address: true, provider: { select: { name: true } } },
       });
-      if (pa?.provider.name) nameByMember.set(e.voter.toLowerCase(), pa.provider.name);
+      if (pa?.provider.name) {
+        nameByMember.set(e.voter.toLowerCase(), pa.provider.name);
+        // The address that actually resolves at /provider/<address>, so the member label can link to
+        // their listing. A member with no listed address resolves to no link (plain text).
+        linkByMember.set(e.voter.toLowerCase(), pa.address.toLowerCase());
+      }
     }
   }
   const memberName = (voter: string) => nameByMember.get(voter.toLowerCase()) ?? null;
+  const memberLink = (voter: string) => linkByMember.get(voter.toLowerCase()) ?? null;
 
   // Appeal info for a DENIED ORIGINAL flag case: when an appeal may open/closes, and whether the
   // single permitted appeal has already been used. Drives the "what happens next / how to appeal"
@@ -221,6 +229,7 @@ export default async function GovernanceCasePage({
     initiations: c.initiations.map((i) => ({
       member: i.memberEntityVoter,
       memberName: memberName(i.memberEntityVoter),
+      memberLink: memberLink(i.memberEntityVoter),
       grounds: i.grounds,
       title: i.title,
       at: i.createdAt.toISOString(),
@@ -251,6 +260,7 @@ export default async function GovernanceCasePage({
     votes: c.votes.map((v) => ({
       member: v.memberEntityVoter,
       memberName: memberName(v.memberEntityVoter),
+      memberLink: memberLink(v.memberEntityVoter),
       vote: v.vote,
       comment: v.comment,
       at: v.createdAt.toISOString(),
@@ -266,6 +276,7 @@ export default async function GovernanceCasePage({
       .map((r) => ({
         member: r.memberEntityVoter,
         memberName: memberName(r.memberEntityVoter),
+        memberLink: memberLink(r.memberEntityVoter),
         vote: r.vote,
         comment: r.comment,
         at: r.createdAt.toISOString(),

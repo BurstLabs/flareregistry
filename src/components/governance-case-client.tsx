@@ -59,6 +59,8 @@ export interface CaseView {
   initiations: {
     member: string;
     memberName: string | null;
+    // A listed address for this member, so the label links to /provider/<memberLink>. Null = no link.
+    memberLink: string | null;
     grounds: string;
     title: string | null;
     at: string;
@@ -83,6 +85,7 @@ export interface CaseView {
   votes: {
     member: string;
     memberName: string | null;
+    memberLink: string | null;
     vote: string;
     comment: string | null;
     at: string;
@@ -90,7 +93,7 @@ export interface CaseView {
     changed: boolean;
   }[];
   // Append-only audit of every cast/change across all members, newest first.
-  voteHistory: { member: string; memberName: string | null; vote: string; comment: string | null; at: string }[];
+  voteHistory: { member: string; memberName: string | null; memberLink: string | null; vote: string; comment: string | null; at: string }[];
   defense: {
     id: string;
     body: string;
@@ -341,6 +344,26 @@ function memberLabel(member: string, name: string | null): string {
   return name ? `${name} (${short(member)})` : short(member);
 }
 
+// A member's label, rendered as a link to their provider detail page when the member resolves to a
+// listing (link != null); otherwise plain text. Used everywhere a Management Group member is named.
+function MemberLabel({
+  member,
+  name,
+  link,
+}: {
+  member: string;
+  name: string | null;
+  link: string | null;
+}) {
+  const label = memberLabel(member, name);
+  if (!link) return <>{label}</>;
+  return (
+    <Link href={`/provider/${link}`} className="text-beacon hover:underline">
+      {label}
+    </Link>
+  );
+}
+
 // One entry in a party's list: a label row (e.g. "Point 1" + time), the text, an "edited" pill, and
 // an expandable public revision history. Shared by the members' grounds and the provider's response.
 function EntryBlock({
@@ -580,6 +603,8 @@ interface PointVM {
   ownerId: string;
   role: "member" | "provider";
   authorLabel: string;
+  // A listed address for this point's author, so a reply's author line can link to their listing.
+  authorLink: string | null;
   // The target this point replies to, or null for a top-level point.
   replyToRef: string | null;
   // The primary grounds/response can't be a reply and is always its party's first point.
@@ -647,7 +672,15 @@ function PointNode({
           >
             {p.role === "provider" ? t("gov.case.roleProvider") : t("gov.case.roleMember")}
           </span>
-          <span>{p.authorLabel}</span>
+          <span>
+            {p.authorLink ? (
+              <Link href={`/provider/${p.authorLink}`} className="text-beacon hover:underline">
+                {p.authorLabel}
+              </Link>
+            ) : (
+              p.authorLabel
+            )}
+          </span>
         </div>
       )}
       {replyingToWho && (
@@ -1078,7 +1111,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               <li key={n} className="flex items-start justify-between gap-3 py-2">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <span className="text-xs text-faint">{memberLabel(vote.member, vote.memberName)}</span>
+                    <span className="text-xs text-faint">
+                      <MemberLabel member={vote.member} name={vote.memberName} link={vote.memberLink} />
+                    </span>
                     <span className="text-xs text-faint">&middot;</span>
                     <RelTime at={vote.updatedAt} now={now} />
                     {vote.changed && (
@@ -1109,7 +1144,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   <li key={k} className="flex items-start justify-between gap-3 border-l-2 border-themed pl-2">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-x-2 text-faint">
-                        <span>{memberLabel(r.member, r.memberName)}</span>
+                        <span><MemberLabel member={r.member} name={r.memberName} link={r.memberLink} /></span>
                         <span>&middot;</span>
                         <RelTime at={r.at} now={now} />
                       </div>
@@ -1161,6 +1196,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
           const base = {
             role: "member" as const,
             authorLabel: memberLabel(i.member, i.memberName),
+            authorLink: i.memberLink,
           };
           all.push({
             ...base,
@@ -1220,7 +1256,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               onDone={close}
             />
           );
-          const base = { role: "provider" as const, authorLabel: v.providerName };
+          const base = { role: "provider" as const, authorLabel: v.providerName, authorLink: v.detailAddress };
           all.push({
             ...base,
             id: `def-${d.id}`,
@@ -1303,7 +1339,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             <span className="rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint">
               {t("gov.case.roleMember")}
             </span>
-            <span>{memberLabel(i.member, i.memberName)}</span>
+            <span><MemberLabel member={i.member} name={i.memberName} link={i.memberLink} /></span>
             <span className="text-faint">&middot;</span>
             <span title={fmt(i.at)} className="cursor-help">
               <RelTime at={i.at} now={now} />
