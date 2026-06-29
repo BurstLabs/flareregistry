@@ -919,7 +919,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             <p>
               {t("gov.case.keepLine", {
                 keepVotes: v.keepVotes,
-                decisiveVotes: v.decisiveVotes,
+                // Keep needed to deny the deny-supermajority among the current decisive votes: one
+                // more than what would let deny reach its bar. Mirrors the deny line's "X of Y needed".
+                keepNeeded: Math.max(1, v.decisiveVotes - v.denyNeeded + 1),
               })}
               <MetBadge met={quorumMet && !denyMet} t={t} />
             </p>
@@ -941,11 +943,29 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             </p>
           )}
         </div>
-        {decided && (
-          <p className={`mt-4 font-medium ${outcomeLabel(t, v.state, v.isReVote).cls}`}>
-            {t("gov.case.outcomePrefix")} {outcomeLabel(t, v.state, v.isReVote).text}
-          </p>
-        )}
+        {/* Resolved state gets its own status box, consistent with the discussion/voting banners. A
+            positive outcome (cleared / appeal upheld) is tinted green; a negative one (denied /
+            appeal rejected or failed for quorum) is tinted with the flare accent. */}
+        {decided && (() => {
+          const o = outcomeLabel(t, v.state, v.isReVote);
+          const positive = o.cls.includes("emerald");
+          return (
+            <div
+              className={`mt-4 rounded-lg border p-3 text-sm ${
+                positive
+                  ? "border-emerald-500/40 bg-emerald-500/10"
+                  : "border-flare/40 bg-flare/10"
+              }`}
+            >
+              <p className="text-xs uppercase tracking-wide text-faint">
+                {t("gov.case.statusResolved")}
+              </p>
+              <p className={`mt-0.5 font-medium ${o.cls}`}>
+                {t("gov.case.outcomePrefix")} {o.text}
+              </p>
+            </div>
+          );
+        })()}
         {/* What happens next for a denied provider, including the appeal process. */}
         {v.appeal && (
           <AppealPanel providerId={v.providerId} appeal={v.appeal} now={now} t={t} />
