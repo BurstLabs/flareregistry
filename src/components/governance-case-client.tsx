@@ -410,7 +410,7 @@ function EntryBlock({
         {showNum && (
           <span className="font-semibold text-muted">{t("gov.case.point", { n: num })}</span>
         )}
-        {title && <span className="font-medium text-fg">{title}</span>}
+        {title && <span className="min-w-0 break-words font-medium text-fg">{title}</span>}
         <span>&middot;</span>
         {/* Show the most recent activity (last edit if any, else when posted). The "edited" pill's
             tooltip carries the original post time so both are available. */}
@@ -436,7 +436,7 @@ function EntryBlock({
       {editor && editing ? (
         <div className="mt-2">{editor(() => setEditing(false))}</div>
       ) : (
-        <p className="mt-1 whitespace-pre-wrap">{text}</p>
+        <p className="mt-1 whitespace-pre-wrap break-words">{text}</p>
       )}
       {/* Active evidence images on this point: thumbnails, plus attach/remove for the author while
           the case is editable. Removed images are NOT shown here; they live in the edit history. */}
@@ -549,8 +549,8 @@ function EntryBlock({
                   </div>
                   {it.kind !== "image" && (
                     <>
-                      {it.title && <div className="mt-0.5 font-medium text-muted">{it.title}</div>}
-                      <p className="mt-0.5 whitespace-pre-wrap text-muted">{it.text}</p>
+                      {it.title && <div className="mt-0.5 break-words font-medium text-muted">{it.title}</div>}
+                      <p className="mt-0.5 whitespace-pre-wrap break-words text-muted">{it.text}</p>
                     </>
                   )}
                 </li>
@@ -672,7 +672,7 @@ function PointNode({
           >
             {p.role === "provider" ? t("gov.case.roleProvider") : t("gov.case.roleMember")}
           </span>
-          <span>
+          <span className="min-w-0 break-words">
             {p.authorLink ? (
               <Link href={`/provider/${p.authorLink}`} className="text-beacon hover:underline">
                 {p.authorLabel}
@@ -796,7 +796,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
           {t("gov.case.aboutLink")}
         </Link>
       </div>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1 break-words text-sm text-muted">
         {t("gov.case.providerLabel")}{" "}
         <Link href={`/provider/${v.detailAddress}`} className="text-beacon hover:underline">
           {v.providerName}
@@ -1120,7 +1120,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                       </span>
                     )}
                   </div>
-                  {vote.comment && <p className="mt-0.5 text-muted">{vote.comment}</p>}
+                  {vote.comment && (
+                    <p className="mt-0.5 whitespace-pre-wrap break-words text-muted">{vote.comment}</p>
+                  )}
                 </div>
                 <VoteBadge vote={vote.vote} t={t} />
               </li>
@@ -1143,7 +1145,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                         <span>&middot;</span>
                         <RelTime at={r.at} now={now} />
                       </div>
-                      {r.comment && <p className="mt-0.5 whitespace-pre-wrap text-muted">{r.comment}</p>}
+                      {r.comment && <p className="mt-0.5 whitespace-pre-wrap break-words text-muted">{r.comment}</p>}
                     </div>
                     <VoteBadge vote={r.vote} t={t} />
                   </li>
@@ -1334,7 +1336,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             <span className="rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint">
               {t("gov.case.roleMember")}
             </span>
-            <span><MemberLabel member={i.member} name={i.memberName} link={i.memberLink} /></span>
+            <span className="min-w-0 break-words"><MemberLabel member={i.member} name={i.memberName} link={i.memberLink} /></span>
             <span className="text-faint">&middot;</span>
             <span title={fmt(i.at)} className="cursor-help">
               <RelTime at={i.at} now={now} />
@@ -1373,7 +1375,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                     <span className="rounded bg-flare/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-flare">
                       {t("gov.case.roleProvider")}
                     </span>
-                    <span>{v.providerName}</span>
+                    <span className="min-w-0 break-words">{v.providerName}</span>
                     <span className="text-faint">&middot;</span>
                     <span title={fmt(d.at)} className="cursor-help">
                       <RelTime at={d.at} now={now} />
