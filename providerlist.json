@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-29T19:13:28.817Z",
+  "timestamp": "2026-06-29T19:44:45.633Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -551,7 +551,7 @@
       "flareregistry": {
         "verified": true,
         "registered": true,
-        "managementGroup": false,
+        "managementGroup": true,
         "qualified": false,
         "network": "flare",
         "feePercent": 20,
@@ -583,10 +583,10 @@
           "pending": false,
           "underReview": false,
           "isAppeal": false,
-          "suspended": false,
+          "suspended": true,
           "appealReady": false,
           "caseId": "cmqv4kszm000512w6c1yyzxut",
-          "state": "CLEARED"
+          "state": "DENIED"
         }
       }
     },
@@ -4054,7 +4054,7 @@
       "flareregistry": {
         "verified": true,
         "registered": true,
-        "managementGroup": false,
+        "managementGroup": true,
         "qualified": false,
         "network": "songbird",
         "feePercent": 20,
@@ -4086,10 +4086,10 @@
           "pending": false,
           "underReview": false,
           "isAppeal": false,
-          "suspended": false,
+          "suspended": true,
           "appealReady": false,
           "caseId": "cmqv4kszm000512w6c1yyzxut",
-          "state": "CLEARED"
+          "state": "DENIED"
         }
       }
     },
