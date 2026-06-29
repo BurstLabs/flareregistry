@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-29T19:49:19.258Z",
+  "timestamp": "2026-06-29T22:17:38.211Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -547,12 +547,12 @@
       "url": "https://www.burstlabs.io",
       "address": "0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
-      "listed": false,
+      "listed": true,
       "flareregistry": {
         "verified": true,
         "registered": true,
         "managementGroup": true,
-        "qualified": false,
+        "qualified": true,
         "network": "flare",
         "feePercent": 20,
         "votePower": "122489750626975483233954033",
@@ -573,20 +573,11 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": null,
+          "qualifiedSince": "2026-06-29T20:02:16.605Z",
           "lastSubmittedEpoch": 410,
           "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": null,
+          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
-        },
-        "governance": {
-          "pending": false,
-          "underReview": false,
-          "isAppeal": false,
-          "suspended": false,
-          "appealReady": false,
-          "caseId": "cmqv4kszm000512w6c1yyzxut",
-          "state": "CLEARED"
         }
       }
     },
@@ -2801,15 +2792,6 @@
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
-        },
-        "governance": {
-          "pending": false,
-          "underReview": false,
-          "isAppeal": false,
-          "suspended": false,
-          "appealReady": false,
-          "caseId": "cmqsanocs0003ldfficr7a4h9",
-          "state": "WITHDRAWN"
         }
       }
     },
@@ -4050,12 +4032,12 @@
       "url": "https://www.burstlabs.io",
       "address": "0x44bAE8BA9DA0a0583e49937ca5a251b8CdC1BC81",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
-      "listed": false,
+      "listed": true,
       "flareregistry": {
         "verified": true,
         "registered": true,
         "managementGroup": true,
-        "qualified": false,
+        "qualified": true,
         "network": "songbird",
         "feePercent": 20,
         "votePower": "114747494292212030833394657",
@@ -4076,20 +4058,11 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": null,
+          "qualifiedSince": "2026-06-29T20:02:16.605Z",
           "lastSubmittedEpoch": 410,
           "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": null,
+          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
-        },
-        "governance": {
-          "pending": false,
-          "underReview": false,
-          "isAppeal": false,
-          "suspended": false,
-          "appealReady": false,
-          "caseId": "cmqv4kszm000512w6c1yyzxut",
-          "state": "CLEARED"
         }
       }
     },
