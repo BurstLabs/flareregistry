@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
 import { readPointImage, deletePointImageFile } from "@/lib/point-image";
 import { apiError } from "@/lib/api-error";
+import { signerControlsProvider } from "@/lib/metrics";
 
 // GET /api/governance/image/<id>  -> stream the stored evidence image (public; case pages are public).
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -85,9 +86,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       authorized = !!memberVoter && memberVoter === init.memberEntityVoter;
     }
   } else {
-    authorized = img.case.provider.addresses.some(
-      (a) => a.address.toLowerCase() === signer && a.verified
-    );
+    // ANY of the provider's five on-chain entity role addresses is valid to sign with (voter,
+    // delegation, submit, submitSignatures, signingPolicy), not only a verified listing address.
+    authorized = await signerControlsProvider(img.case.provider.addresses, signer);
   }
   if (!authorized) {
     return NextResponse.json({ error: "only the author can remove this image" }, { status: 403 });

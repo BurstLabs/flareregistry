@@ -6,6 +6,7 @@ import { isClean } from "@/lib/content-filter";
 import { imageBuffersFromForm, storePointImageBatch, removePointImages } from "@/lib/point-image";
 import { randomUUID } from "crypto";
 import { apiError } from "@/lib/api-error";
+import { signerControlsProvider } from "@/lib/metrics";
 
 // Parse JSON, or multipart (text + images + base64 auth) when images are attached on creation.
 async function readBody(req: NextRequest) {
@@ -89,9 +90,9 @@ export async function POST(req: NextRequest) {
   });
   if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
 
-  const ownsIt = theCase.provider.addresses.some(
-    (a) => a.address.toLowerCase() === signer && a.verified
-  );
+  // ANY of the provider's five on-chain entity role addresses is valid to sign with (voter,
+  // delegation, submit, submitSignatures, signingPolicy), not only a verified listing address.
+  const ownsIt = await signerControlsProvider(theCase.provider.addresses, signer);
   if (!ownsIt) {
     return apiError("NOT_PROVIDER", "only the flagged provider can respond", 403);
   }

@@ -7,6 +7,7 @@ import { loadMembers, memberVoterFor } from "@/lib/governance";
 import { imageBuffersFromForm, storePointImageBatch } from "@/lib/point-image";
 import { randomUUID } from "crypto";
 import { apiError } from "@/lib/api-error";
+import { signerControlsProvider } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -102,10 +103,12 @@ export async function POST(req: NextRequest) {
   } catch {
     return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
+  // A member may sign with ANY of their five on-chain entity role addresses; memberVoterFor resolves
+  // any of the five back to the member.
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
-  const ownsProvider = theCase.provider.addresses.some(
-    (a) => a.address.toLowerCase() === signer && a.verified
-  );
+  // ANY of the provider's five on-chain entity role addresses is valid to sign with (voter,
+  // delegation, submit, submitSignatures, signingPolicy), not only a verified listing address.
+  const ownsProvider = await signerControlsProvider(theCase.provider.addresses, signer);
 
   if (memberVoter) {
     // Member reply -> a grounds entry under the member's initiation (create the initiation if none).

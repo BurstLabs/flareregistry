@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
 import { publishFeedToRepo } from "@/lib/feed";
 import { caseDeadlines, appealWindow, loadMembers } from "@/lib/governance";
+import { signerControlsProvider } from "@/lib/metrics";
 
 // POST /api/governance/appeal
 // The DENIED provider requests an appeal of its suspension. Unlike the original flag, an appeal is
@@ -45,7 +46,9 @@ export async function POST(req: NextRequest) {
   });
   if (!provider) return NextResponse.json({ error: "provider not found" }, { status: 404 });
 
-  const ownsIt = provider.addresses.some((a) => a.address.toLowerCase() === signer && a.verified);
+  // ANY of the provider's five on-chain entity role addresses is valid to sign with (voter,
+  // delegation, submit, submitSignatures, signingPolicy), not only a verified listing address.
+  const ownsIt = await signerControlsProvider(provider.addresses, signer);
   if (!ownsIt) {
     return NextResponse.json(
       { error: "only the provider (a verified address) can request an appeal" },

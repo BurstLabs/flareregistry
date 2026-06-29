@@ -52,6 +52,8 @@ export async function POST(req: NextRequest) {
   } catch {
     return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
+  // A member may sign with ANY of their five on-chain entity role addresses; memberVoterFor resolves
+  // any of the five back to the member.
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
   if (!memberVoter) {
     return apiError(

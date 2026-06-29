@@ -6,6 +6,7 @@ import { isClean } from "@/lib/content-filter";
 import { imageBuffersFromForm, storePointImageBatch, removePointImages } from "@/lib/point-image";
 import { randomUUID } from "crypto";
 import { apiError } from "@/lib/api-error";
+import { signerControlsProvider } from "@/lib/metrics";
 
 async function readBody(req: NextRequest) {
   const ct = req.headers.get("content-type") ?? "";
@@ -80,10 +81,11 @@ export async function POST(req: NextRequest) {
   });
   if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
 
-  // The signing address must own (verified-claim) the flagged provider.
-  const ownsIt = theCase.provider.addresses.some(
-    (a) => a.address.toLowerCase() === signer && a.verified
-  );
+  // The signer must control the flagged provider. ANY of the provider's five on-chain entity role
+  // addresses is valid to sign with (voter, delegation, submit, submitSignatures, signingPolicy), in
+  // addition to a verified listing address - the provider is not limited to the one address it
+  // verified in the registry. (See signerControlsProvider.)
+  const ownsIt = await signerControlsProvider(theCase.provider.addresses, signer);
   if (!ownsIt) {
     return apiError("NOT_PROVIDER", "only the flagged provider can post a defense", 403);
   }

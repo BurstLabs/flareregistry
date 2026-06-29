@@ -91,6 +91,56 @@ export async function metricsForProvider(addresses: string[]): Promise<ProviderM
   return entityForAddresses(addresses);
 }
 
+// True if `signer` is authorized to act AS the provider whose listing addresses are `listingAddresses`.
+// Accepts EITHER:
+//   (a) a verified address on the listing (proved by signature in the registry), OR
+//   (b) ANY of the five on-chain entity role addresses (voter, delegation, submit, submitSignatures,
+//       signingPolicy) of any FTSO entity this provider matches on-chain.
+// This mirrors the member-side rule (a member may sign with any of their five role addresses), so a
+// provider is not forced to act only with the single address it happened to verify in the registry.
+export async function signerControlsProvider(
+  listingAddresses: { address: string; verified: boolean }[],
+  signer: string
+): Promise<boolean> {
+  const s = signer.toLowerCase();
+  // (a) Fast path: a verified listing address.
+  if (listingAddresses.some((a) => a.address.toLowerCase() === s && a.verified)) return true;
+  // (b) Any of the provider's matched on-chain entity role addresses. Match the entity by ANY of the
+  // provider's listing addresses (verified or not, since the entity link is on-chain reality), then
+  // check the signer against that entity's five role addresses.
+  const addrs = listingAddresses.map((a) => a.address.toLowerCase());
+  if (!addrs.length) return false;
+  const entities = await prisma.providerOnchain.findMany({
+    where: {
+      OR: [
+        { voter: { in: addrs } },
+        { delegationAddress: { in: addrs } },
+        { submitAddress: { in: addrs } },
+        { submitSignaturesAddress: { in: addrs } },
+        { signingPolicyAddress: { in: addrs } },
+      ],
+    },
+    select: {
+      voter: true,
+      delegationAddress: true,
+      submitAddress: true,
+      submitSignaturesAddress: true,
+      signingPolicyAddress: true,
+    },
+  });
+  for (const e of entities) {
+    const roles = [
+      e.voter,
+      e.delegationAddress,
+      e.submitAddress,
+      e.submitSignaturesAddress,
+      e.signingPolicyAddress,
+    ];
+    if (roles.some((r) => r && r.toLowerCase() === s)) return true;
+  }
+  return false;
+}
+
 /**
  * Batch: map providerId -> metrics for a list of providers (each with its addresses). One
  * query per provider; fine for a directory page of ~150 rows, can be optimised later.

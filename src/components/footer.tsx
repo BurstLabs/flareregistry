@@ -46,6 +46,12 @@ export function Footer() {
           <Link href="/faq" className="text-muted hover:text-beacon">
             {t("nav.faq")}
           </Link>
+          <Link href="/terms" className="text-muted hover:text-beacon">
+            {t("nav.terms")}
+          </Link>
+          <Link href="/privacy" className="text-muted hover:text-beacon">
+            {t("nav.privacy")}
+          </Link>
         </nav>
         <div className="flex flex-col gap-2 text-sm">
           <div className="font-medium">{t("footer.support")}</div>

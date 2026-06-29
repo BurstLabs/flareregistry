@@ -6,6 +6,7 @@ import { loadMembers, memberVoterFor } from "@/lib/governance";
 import { storePointImage, IMAGE_MAX_PER_POINT, IMAGE_MAX_BYTES } from "@/lib/point-image";
 import { randomUUID } from "crypto";
 import { apiError } from "@/lib/api-error";
+import { signerControlsProvider } from "@/lib/metrics";
 
 export const dynamic = "force-dynamic";
 
@@ -123,9 +124,9 @@ export async function POST(req: NextRequest) {
     if (!def) return NextResponse.json({ error: "point not found" }, { status: 404 });
     caseId = def.case.id;
     caseState = def.case.state;
-    authorized = def.case.provider.addresses.some(
-      (a) => a.address.toLowerCase() === signer && a.verified
-    );
+    // ANY of the provider's five on-chain entity role addresses is valid to sign with (voter,
+    // delegation, submit, submitSignatures, signingPolicy), not only a verified listing address.
+    authorized = await signerControlsProvider(def.case.provider.addresses, signer);
     if (!authorized) {
       return NextResponse.json(
         { error: "only the provider can attach an image to its response" },
