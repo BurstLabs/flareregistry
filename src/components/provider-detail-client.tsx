@@ -97,6 +97,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
         <div className="min-w-0">
           <h1 className="text-3xl font-bold tracking-tight">{d.name}</h1>
           <div className="mt-2 flex flex-wrap gap-1">
+            {/* Show a clear Suspended badge so the badge row matches the suspension banner. */}
+            {d.governance?.suspended && (
+              <span
+                title={t("badge.suspendedHint")}
+                className="rounded-md bg-flare/20 px-2 py-0.5 text-xs font-medium text-flare"
+              >
+                {t("badge.suspended")}
+              </span>
+            )}
             {d.managementGroup && (
               <span
                 title={t("badge.managementGroupHint")}
