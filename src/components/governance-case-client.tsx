@@ -749,34 +749,58 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         </div>
       )}
 
-      {/* Full status progress bar, visible to everyone. */}
+      {/* Full status progress bar, visible to everyone. Each step shows its status: completed steps
+          get a check, the current step a highlighted ring + an "in progress" caption, upcoming steps
+          are muted. A withdrawn/decided case has no in-progress step (all reached steps are done). */}
       <div className="mt-6 surface rounded-xl border p-4 sm:p-5">
-        <div className="flex items-center">
-          {STAGES.map((s, i) => (
-            <div key={s} className="flex flex-1 items-center last:flex-none">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold sm:h-8 sm:w-8 ${
-                    i <= idx
-                      ? "bg-beacon text-neutral-950"
-                      : "bg-elev text-faint border border-themed"
-                  }`}
-                >
-                  {i + 1}
+        <div className="flex items-start">
+          {STAGES.map((s, i) => {
+            // done: a step the case has moved past, or any reached step once the case is decided.
+            // current: the step the case is actively in (only while not yet decided/withdrawn).
+            const done = i < idx || (i <= idx && decided);
+            const current = i === idx && !decided;
+            const statusLabel = done
+              ? t("gov.case.stepStatus.done")
+              : current
+                ? t("gov.case.stepStatus.current")
+                : t("gov.case.stepStatus.upcoming");
+            return (
+              <div key={s} className="flex flex-1 items-start last:flex-none">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold sm:h-8 sm:w-8 ${
+                      done
+                        ? "bg-beacon text-neutral-950"
+                        : current
+                          ? "bg-beacon text-neutral-950 ring-4 ring-beacon/25 animate-pulse"
+                          : "bg-elev text-faint border border-themed"
+                    }`}
+                  >
+                    {done ? "✓" : i + 1}
+                  </div>
+                  <span
+                    className={`mt-1 text-center text-[10px] leading-tight sm:text-xs ${
+                      i <= idx ? "text-fg" : "text-faint"
+                    }`}
+                  >
+                    {s}
+                  </span>
+                  {/* Per-step status caption: the active step reads "In progress" in beacon; others
+                      read Completed / Upcoming so the whole timeline is legible at a glance. */}
+                  <span
+                    className={`mt-0.5 text-center text-[9px] uppercase tracking-wide sm:text-[10px] ${
+                      current ? "text-beacon" : "text-faint"
+                    }`}
+                  >
+                    {statusLabel}
+                  </span>
                 </div>
-                <span
-                  className={`mt-1 text-center text-[10px] leading-tight sm:text-xs ${
-                    i <= idx ? "text-fg" : "text-faint"
-                  }`}
-                >
-                  {s}
-                </span>
+                {i < STAGES.length - 1 && (
+                  <div className={`mx-1 mt-3.5 h-0.5 flex-1 sm:mx-2 sm:mt-4 ${i < idx ? "bg-beacon" : "bg-themed"}`} />
+                )}
               </div>
-              {i < STAGES.length - 1 && (
-                <div className={`mx-1 h-0.5 flex-1 sm:mx-2 ${i < idx ? "bg-beacon" : "bg-themed"}`} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-5 grid gap-2 text-xs text-muted sm:grid-cols-2">
