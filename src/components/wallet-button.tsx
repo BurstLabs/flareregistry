@@ -5,6 +5,7 @@
 // AppKit account modal (where the user can disconnect or switch wallet). Disconnected -> opens the
 // connect modal (injected extension or WalletConnect).
 
+import { useEffect, useState } from "react";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
 import { useApp } from "./providers";
@@ -18,7 +19,14 @@ export function WalletButton() {
   const { open } = useAppKit();
   const { address, isConnected } = useAccount();
 
-  if (isConnected && address) {
+  // wagmi reconnects to an injected wallet (MetaMask) only on the CLIENT, after mount; the server
+  // render cannot know a wallet is connected. Rendering the connected view before mount would
+  // disagree with the server HTML and cause a hydration mismatch (and a flicker). Until mounted we
+  // render the disconnected view (matching the server), then switch once the client state settles.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (mounted && isConnected && address) {
     return (
       <button
         onClick={() => open({ view: "Account" })}
