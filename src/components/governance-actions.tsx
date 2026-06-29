@@ -1162,7 +1162,11 @@ export function ReplyAction({
 
   if (!open) {
     return (
+      // type="button" is REQUIRED: these controls can sit inside another action's <form>, and a
+      // default submit button would submit it on click, reloading the page and instantly closing the
+      // reply box (it appeared then vanished).
       <button
+        type="button"
         onClick={() => setOpen(true)}
         className="mt-1 text-xs font-medium text-muted hover:text-beacon"
       >
@@ -1183,6 +1187,7 @@ export function ReplyAction({
       />
       <div className="mt-1 flex gap-2">
         <button
+          type="button"
           onClick={submit}
           disabled={busy}
           className="rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
@@ -1190,6 +1195,7 @@ export function ReplyAction({
           {busy ? t("gov.act.signing") : t("gov.act.replySubmit")}
         </button>
         <button
+          type="button"
           onClick={() => setOpen(false)}
           disabled={busy}
           className="rounded-lg border border-themed px-3 py-1.5 text-xs font-medium text-muted hover:text-beacon disabled:opacity-50"

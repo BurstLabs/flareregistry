@@ -677,6 +677,7 @@ function PointNode({
         {canReply && <ReplyAction caseId={caseId} replyToRef={p.ref} />}
         {replies.length > 0 && (
           <button
+            type="button"
             onClick={() => setShowReplies((s) => !s)}
             className="mt-1 text-xs font-medium text-muted hover:text-beacon"
           >
