@@ -49,6 +49,32 @@ export default async function GovernanceCasePage({
   });
   if (!c) notFound();
 
+  // Evidence images for every point on this case, grouped by their owner id so each point can render
+  // its own thumbnails. One query, grouped in memory.
+  const imageRows = await prisma.providerFlagPointImage.findMany({
+    where: { caseId: c.id },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      width: true,
+      height: true,
+      initiationId: true,
+      groundsEntryId: true,
+      defenseId: true,
+      defenseEntryId: true,
+    },
+  });
+  type PointImg = { id: string; width: number; height: number };
+  const imagesByOwner = new Map<string, PointImg[]>();
+  for (const r of imageRows) {
+    const owner = r.initiationId ?? r.groundsEntryId ?? r.defenseId ?? r.defenseEntryId;
+    if (!owner) continue;
+    const list = imagesByOwner.get(owner) ?? [];
+    list.push({ id: r.id, width: r.width, height: r.height });
+    imagesByOwner.set(owner, list);
+  }
+  const imagesFor = (ownerId: string): PointImg[] => imagesByOwner.get(ownerId) ?? [];
+
   let memberCount = c.memberCountAtOpen;
   try {
     memberCount = (await loadMembers()).memberCount;
@@ -189,6 +215,9 @@ export default async function GovernanceCasePage({
       title: i.title,
       at: i.createdAt.toISOString(),
       editedAt: i.editedAt?.toISOString() ?? null,
+      // The primary grounds point is owned by the initiation row itself (ownerType "initiation").
+      initiationId: i.id,
+      images: imagesFor(i.id),
       // Prior versions for the public history. Drops the latest revision, since it equals the
       // current `grounds` shown above; what remains is the trail of what changed.
       priorVersions: i.revisions
@@ -202,6 +231,7 @@ export default async function GovernanceCasePage({
         title: e.title,
         at: e.createdAt.toISOString(),
         editedAt: e.editedAt?.toISOString() ?? null,
+        images: imagesFor(e.id),
         priorVersions: e.revisions
           .slice(0, Math.max(0, e.revisions.length - 1))
           .map((r) => ({ grounds: r.grounds, title: r.title, at: r.createdAt.toISOString() })),
@@ -231,10 +261,12 @@ export default async function GovernanceCasePage({
       })),
     defense: c.defense
       ? {
+          id: c.defense.id,
           body: c.defense.body,
           title: c.defense.title,
           at: c.defense.createdAt.toISOString(),
           editedAt: c.defense.editedAt?.toISOString() ?? null,
+          images: imagesFor(c.defense.id),
           priorVersions: c.defense.revisions
             .slice(0, Math.max(0, c.defense.revisions.length - 1))
             .map((r) => ({ body: r.body, title: r.title, at: r.createdAt.toISOString() })),
@@ -244,6 +276,7 @@ export default async function GovernanceCasePage({
             title: e.title,
             at: e.createdAt.toISOString(),
             editedAt: e.editedAt?.toISOString() ?? null,
+            images: imagesFor(e.id),
             priorVersions: e.revisions
               .slice(0, Math.max(0, e.revisions.length - 1))
               .map((r) => ({ body: r.body, title: r.title, at: r.createdAt.toISOString() })),

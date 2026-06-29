@@ -6,6 +6,7 @@ import { useApp } from "@/components/providers";
 import {
   VoteAction,
   AppealAction,
+  PointImages,
   WithdrawAction,
   EditGroundsAction,
   AddGroundsAction,
@@ -61,6 +62,8 @@ export interface CaseView {
     title: string | null;
     at: string;
     editedAt: string | null;
+    initiationId: string;
+    images: PointImage[];
     // Prior versions of the grounds (oldest first), for the public edit history.
     priorVersions: { grounds: string; title: string | null; at: string }[];
     // Supplemental entries the same member added later (informational).
@@ -70,6 +73,7 @@ export interface CaseView {
       title: string | null;
       at: string;
       editedAt: string | null;
+      images: PointImage[];
       priorVersions: { grounds: string; title: string | null; at: string }[];
     }[];
   }[];
@@ -85,10 +89,12 @@ export interface CaseView {
   // Append-only audit of every cast/change across all members, newest first.
   voteHistory: { member: string; memberName: string | null; vote: string; comment: string | null; at: string }[];
   defense: {
+    id: string;
     body: string;
     title: string | null;
     at: string;
     editedAt: string | null;
+    images: PointImage[];
     priorVersions: { body: string; title: string | null; at: string }[];
     entries: {
       id: string;
@@ -96,9 +102,17 @@ export interface CaseView {
       title: string | null;
       at: string;
       editedAt: string | null;
+      images: PointImage[];
       priorVersions: { body: string; title: string | null; at: string }[];
     }[];
   } | null;
+}
+
+// An evidence image on a point; served from /api/governance/image/<id>.
+export interface PointImage {
+  id: string;
+  width: number;
+  height: number;
 }
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
@@ -331,6 +345,10 @@ function EntryBlock({
   now,
   t,
   editor,
+  images,
+  ownerType,
+  ownerId,
+  canAttach,
 }: {
   // Always-shown point number ("Point N"), so a list of points never reads as one item's history.
   num: number;
@@ -345,6 +363,11 @@ function EntryBlock({
   // Optional editor: a render-prop given a `close` callback. The trigger ("Edit") sits on the header
   // row; the editor itself renders full-width below the text, prefilled, in place of the reading view.
   editor?: (close: () => void) => ReactNode;
+  // Evidence images on this point, plus what to attach to and whether the viewer may attach/remove.
+  images?: PointImage[];
+  ownerType?: "initiation" | "groundsEntry" | "defense" | "defenseEntry";
+  ownerId?: string;
+  canAttach?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   return (
@@ -378,6 +401,17 @@ function EntryBlock({
         <div className="mt-2">{editor(() => setEditing(false))}</div>
       ) : (
         <p className="mt-1 whitespace-pre-wrap">{text}</p>
+      )}
+      {/* Evidence images on this point: thumbnails (always visible), plus attach/remove for the
+          author while the case is editable. */}
+      {ownerType && ownerId && (
+        <PointImages
+          images={images ?? []}
+          ownerType={ownerType}
+          ownerId={ownerId}
+          canAttach={!!canAttach}
+          t={t}
+        />
       )}
       {/* Read-only public revision history for THIS point only. Collapsed by default and visually
           inset so it never reads as a separate point. Prior versions cannot be edited. */}
@@ -711,6 +745,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   title: i.title,
                   at: i.at,
                   editedAt: i.editedAt,
+                  ownerType: "initiation" as const,
+                  ownerId: i.initiationId,
+                  images: i.images,
                   priorVersions: i.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
                 },
                 ...i.entries.map((e) => ({
@@ -720,6 +757,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   title: e.title,
                   at: e.at,
                   editedAt: e.editedAt,
+                  ownerType: "groundsEntry" as const,
+                  ownerId: e.id,
+                  images: e.images,
                   priorVersions: e.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
                 })),
               ];
@@ -748,6 +788,10 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                           priorVersions={p.priorVersions}
                           now={now}
                           t={t}
+                          images={p.images}
+                          ownerType={p.ownerType}
+                          ownerId={p.ownerId}
+                          canAttach={preVote}
                           editor={
                             preVote
                               ? (close) => (
@@ -803,6 +847,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   title: d.title,
                   at: d.at,
                   editedAt: d.editedAt,
+                  ownerType: "defense" as const,
+                  ownerId: d.id,
+                  images: d.images,
                   priorVersions: d.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
                 },
                 ...d.entries.map((e) => ({
@@ -813,9 +860,13 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   title: e.title,
                   at: e.at,
                   editedAt: e.editedAt,
+                  ownerType: "defenseEntry" as const,
+                  ownerId: e.id,
+                  images: e.images,
                   priorVersions: e.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
                 })),
               ];
+              const canAttachImg = v.state === "PENDING" || v.state === "OPEN_DISCUSSION";
               return (
                 <ul className="space-y-3 border-l-2 border-beacon/30 pl-3">
                   {points.map((p, k) => (
@@ -829,6 +880,10 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                         priorVersions={p.priorVersions}
                         now={now}
                         t={t}
+                        images={p.images}
+                        ownerType={p.ownerType}
+                        ownerId={p.ownerId}
+                        canAttach={canAttachImg}
                         editor={
                           !decided
                             ? (close) => (

@@ -743,3 +743,121 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
     </div>
   );
 }
+
+// Evidence images on a governance point: a thumbnail strip everyone sees, plus upload + remove for
+// the point's author while the case is still editable. Each action is wallet-signature gated; the
+// server re-verifies authorship and the case phase.
+const IMAGE_MAX_PER_POINT = 4;
+
+export function PointImages({
+  images,
+  ownerType,
+  ownerId,
+  canAttach,
+  t,
+}: {
+  images: { id: string; width: number; height: number }[];
+  ownerType: "initiation" | "groundsEntry" | "defense" | "defenseEntry";
+  ownerId: string;
+  canAttach: boolean;
+  t: TFn;
+}) {
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function upload(file: File) {
+    setErr("");
+    setBusy(true);
+    try {
+      const s = await signChallenge(t);
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("ownerType", ownerType);
+      fd.append("ownerId", ownerId);
+      fd.append("message", s.message);
+      fd.append("signature", s.signature);
+      const res = await fetch("/api/governance/point-image", { method: "POST", body: fd });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.imageFailed"));
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.act.err.imageFailed"));
+    } finally {
+      setBusy(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function remove(id: string) {
+    setErr("");
+    setBusy(true);
+    try {
+      const s = await signChallenge(t);
+      const res = await fetch(`/api/governance/image/${id}`, {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: s.message, signature: s.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.imageFailed"));
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.act.err.imageFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (images.length === 0 && !canAttach) return null;
+
+  return (
+    <div className="mt-2">
+      {images.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {images.map((img) => (
+            <div key={img.id} className="relative">
+              <a href={`/api/governance/image/${img.id}`} target="_blank" rel="noopener noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/api/governance/image/${img.id}`}
+                  alt={t("gov.case.evidenceAlt")}
+                  className="h-20 w-20 rounded border border-themed object-cover hover:opacity-90"
+                />
+              </a>
+              {canAttach && (
+                <button
+                  onClick={() => remove(img.id)}
+                  disabled={busy}
+                  title={t("gov.act.imageRemove")}
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev text-xs text-muted hover:text-flare disabled:opacity-50"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {canAttach && images.length < IMAGE_MAX_PER_POINT && (
+        <div className="mt-2">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) upload(f);
+            }}
+            className="block text-xs text-muted file:mr-2 file:rounded file:border file:border-themed file:bg-elev file:px-2 file:py-1 file:text-xs file:text-muted hover:file:text-beacon disabled:opacity-50"
+          />
+          <p className="mt-1 text-[11px] text-faint">{t("gov.act.imageHint")}</p>
+        </div>
+      )}
+      {busy && <p className="mt-1 text-xs text-faint">{t("gov.act.signing")}</p>}
+      {err && <Note kind="err" text={err} />}
+    </div>
+  );
+}

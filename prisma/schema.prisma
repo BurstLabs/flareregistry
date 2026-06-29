@@ -234,6 +234,7 @@ model ProviderFlagCase {
   initiations   ProviderFlagInitiation[]
   votes         ProviderFlagVote[]
   voteRevisions ProviderFlagVoteRevision[]
+  pointImages   ProviderFlagPointImage[]
   defense       ProviderFlagDefense?
 }
 
@@ -408,4 +409,36 @@ model ProviderFlagDefenseEntryRevision {
   createdAt DateTime                 @default(now())
 
   @@index([entryId])
+}
+
+// An evidence image attached to a single governance "point" (a member's grounds or the provider's
+// response). Exactly one owner column is set, identifying which point it belongs to. Files live on
+// local disk under uploads/governance/<caseId>/<id>.<ext>, served via /api/governance/image/<id>.
+// Images are re-encoded on upload to strip EXIF/metadata. caseId is denormalized for fast lookup and
+// path building, and cascades on case delete.
+model ProviderFlagPointImage {
+  id     String           @id @default(cuid())
+  case   ProviderFlagCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId String
+
+  // Polymorphic owner: exactly one of these is non-null.
+  initiationId   String? // primary grounds of a member's initiation
+  groundsEntryId String? // a supplemental grounds entry
+  defenseId      String? // primary provider response
+  defenseEntryId String? // a supplemental provider response entry
+
+  // Stored file facts. mime is the RE-ENCODED type we wrote (image/png|jpeg|webp).
+  mime          String
+  ext           String
+  width         Int
+  height        Int
+  bytes         Int
+  signerAddress String
+  createdAt     DateTime @default(now())
+
+  @@index([caseId])
+  @@index([initiationId])
+  @@index([groundsEntryId])
+  @@index([defenseId])
+  @@index([defenseEntryId])
 }
