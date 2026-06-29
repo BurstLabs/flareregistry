@@ -3,6 +3,47 @@ import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
+import { imageBuffersFromForm, storePointImageBatch } from "@/lib/point-image";
+import { randomUUID } from "crypto";
+
+// Parse JSON, or multipart (text + images + base64 auth) when images are attached on creation.
+async function readBody(req: NextRequest) {
+  const ct = req.headers.get("content-type") ?? "";
+  if (ct.includes("multipart/form-data")) {
+    const form = await req.formData();
+    let message: string | null = null;
+    let signature: string | null = null;
+    try {
+      const d = JSON.parse(Buffer.from(String(form.get("auth") ?? ""), "base64").toString("utf8"));
+      message = typeof d?.message === "string" ? d.message : null;
+      signature = typeof d?.signature === "string" ? d.signature : null;
+    } catch {
+      // null
+    }
+    const titleRaw = form.get("title");
+    return {
+      caseId: typeof form.get("caseId") === "string" ? String(form.get("caseId")) : null,
+      text: typeof form.get("body") === "string" ? String(form.get("body")).trim() : null,
+      entryId: typeof form.get("entryId") === "string" ? String(form.get("entryId")) : null,
+      message,
+      signature,
+      titleProvided: typeof titleRaw === "string",
+      title: typeof titleRaw === "string" ? titleRaw.trim().slice(0, 120) || null : undefined,
+      images: await imageBuffersFromForm(form),
+    };
+  }
+  const p = await req.json().catch(() => null);
+  return {
+    caseId: typeof p?.caseId === "string" ? p.caseId : null,
+    text: typeof p?.body === "string" ? p.body.trim() : null,
+    entryId: typeof p?.entryId === "string" ? p.entryId : null,
+    message: typeof p?.message === "string" ? p.message : null,
+    signature: typeof p?.signature === "string" ? p.signature : null,
+    titleProvided: typeof p?.title === "string",
+    title: typeof p?.title === "string" ? p.title.trim().slice(0, 120) || null : undefined,
+    images: [] as Buffer[],
+  };
+}
 
 // POST /api/governance/defense-entry
 // The flagged provider adds or edits a SUPPLEMENTAL response entry (mirrors the members' supplemental
@@ -16,14 +57,7 @@ export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 10, 60_000);
   if (limited) return limited;
 
-  const payload = await req.json().catch(() => null);
-  const caseId = typeof payload?.caseId === "string" ? payload.caseId : null;
-  const text = typeof payload?.body === "string" ? payload.body.trim() : null;
-  const entryId = typeof payload?.entryId === "string" ? payload.entryId : null;
-  const message = typeof payload?.message === "string" ? payload.message : null;
-  const signature = typeof payload?.signature === "string" ? payload.signature : null;
-  const titleProvided = typeof payload?.title === "string";
-  const title = titleProvided ? payload.title.trim().slice(0, 120) || null : undefined;
+  const { caseId, text, entryId, message, signature, title, images } = await readBody(req);
   if (!caseId || !text || !message || !signature) {
     return NextResponse.json(
       { error: "caseId, body, message, and signature are required" },
@@ -103,6 +137,18 @@ export async function POST(req: NextRequest) {
   await prisma.providerFlagDefenseEntryRevision.create({
     data: { entryId: entry.id, body: text, title: newTitle },
   });
+  // Attach images only while the case is still pre-vote (editable), matching the image rule.
+  let imageCount = 0;
+  if (theCase.state === "PENDING" || theCase.state === "OPEN_DISCUSSION") {
+    try {
+      imageCount = await storePointImageBatch({
+        prisma, randomUUID, caseId, ownerColumn: "defenseEntryId",
+        ownerId: entry.id, signerAddress: verified.address!, files: images,
+      });
+    } catch {
+      // entry saved; image attach failed silently
+    }
+  }
 
-  return NextResponse.json({ ok: true, entryId: entry.id });
+  return NextResponse.json({ ok: true, entryId: entry.id, imageCount });
 }

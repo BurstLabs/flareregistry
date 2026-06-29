@@ -107,6 +107,60 @@ export async function storePointImage(
   return { ext, mime, width: meta.width, height: meta.height, bytes: out.length };
 }
 
+// Store a batch of images for a freshly-created point, in one call. Used by the combined
+// create-point-with-images routes so a point + its evidence are saved under a single signature.
+// `prisma` and `randomUUID` are passed in to avoid importing them into this fs/sharp module.
+export async function storePointImageBatch(opts: {
+  // Prisma client; typed loosely to avoid mirroring Prisma's generated types in this fs/sharp module.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prisma: any;
+  randomUUID: () => string;
+  caseId: string;
+  ownerColumn: string; // "initiationId" | "groundsEntryId" | "defenseId" | "defenseEntryId"
+  ownerId: string;
+  signerAddress: string;
+  files: Buffer[];
+}): Promise<number> {
+  const { prisma, randomUUID, caseId, ownerColumn, ownerId, signerAddress, files } = opts;
+  if (files.length === 0) return 0;
+  // Respect the per-point cap (a fresh point starts at 0, but guard anyway).
+  const existing = await prisma.providerFlagPointImage.count({ where: { [ownerColumn]: ownerId } });
+  const room = Math.max(0, IMAGE_MAX_PER_POINT - existing);
+  let saved = 0;
+  for (const buf of files.slice(0, room)) {
+    const id = randomUUID();
+    const stored = await storePointImage(caseId, id, buf); // validates + strips EXIF + writes
+    await prisma.providerFlagPointImage.create({
+      data: {
+        id,
+        caseId,
+        [ownerColumn]: ownerId,
+        mime: stored.mime,
+        ext: stored.ext,
+        width: stored.width,
+        height: stored.height,
+        bytes: stored.bytes,
+        signerAddress,
+      },
+    });
+    saved++;
+  }
+  return saved;
+}
+
+// Pull image files out of a multipart form, capping count and per-file size. Returns the raw buffers
+// (validation/EXIF-strip happens in storePointImage). Throws if a file is too large.
+export async function imageBuffersFromForm(form: FormData): Promise<Buffer[]> {
+  const entries = form.getAll("images");
+  const bufs: Buffer[] = [];
+  for (const v of entries.slice(0, IMAGE_MAX_PER_POINT)) {
+    if (!(v instanceof Blob)) continue;
+    if (v.size > IMAGE_MAX_BYTES) throw new Error("an image is larger than 2 MB");
+    bufs.push(Buffer.from(await v.arrayBuffer()));
+  }
+  return bufs;
+}
+
 // Read a stored image's bytes for serving. Returns null if missing.
 export async function readPointImage(caseId: string, imageId: string, ext: string): Promise<Buffer | null> {
   try {

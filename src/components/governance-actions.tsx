@@ -315,21 +315,27 @@ export function AddGroundsAction({
     setBusy(true);
     try {
       const s = await signChallenge(t);
-      const res = await fetch("/api/governance/add-grounds", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, ownerVoter: ownerVoter || undefined, grounds, title, message: s.message, signature: s.signature }),
-      });
+      // One signed request creates the point AND attaches its images (multipart). When there are no
+      // images, JSON keeps the simpler path.
+      let res: Response;
+      if (files.length > 0) {
+        const fd = new FormData();
+        fd.append("caseId", caseId);
+        if (ownerVoter) fd.append("ownerVoter", ownerVoter);
+        fd.append("grounds", grounds);
+        fd.append("title", title);
+        fd.append("auth", btoa(JSON.stringify({ message: s.message, signature: s.signature })));
+        for (const f of files) fd.append("images", f);
+        res = await fetch("/api/governance/add-grounds", { method: "POST", body: fd });
+      } else {
+        res = await fetch("/api/governance/add-grounds", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ caseId, ownerVoter: ownerVoter || undefined, grounds, title, message: s.message, signature: s.signature }),
+        });
+      }
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
-      // Attach any pending images to the just-created point. created -> a new initiation (primary
-      // grounds), otherwise a supplemental grounds entry. Each upload re-signs (fresh nonce).
-      const ownerType = b.created ? "initiation" : "groundsEntry";
-      const ownerId = b.created ? b.initiationId : b.entryId;
-      for (const f of files) {
-        const sig = await signChallenge(t);
-        await uploadPointImage(f, ownerType, ownerId, { message: sig.message, signature: sig.signature }, t);
-      }
       setOk(t("gov.act.addSaved"));
       setGrounds("");
       setTitle("");
@@ -574,22 +580,26 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
     setBusy(true);
     try {
       const s = await signChallenge(t);
-      const res = await fetch("/api/governance/defend", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, body, title, message: s.message, signature: s.signature }),
-      });
+      let res: Response;
+      if (files.length > 0) {
+        const fd = new FormData();
+        fd.append("caseId", caseId);
+        fd.append("body", body);
+        fd.append("title", title);
+        fd.append("auth", btoa(JSON.stringify({ message: s.message, signature: s.signature })));
+        for (const f of files) fd.append("images", f);
+        res = await fetch("/api/governance/defend", { method: "POST", body: fd });
+      } else {
+        res = await fetch("/api/governance/defend", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ caseId, body, title, message: s.message, signature: s.signature }),
+        });
+      }
       const b = await res.json().catch(() => ({}));
       if (!res.ok)
         throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.defendFailedAuth"));
-      // Attach pending images to the newly created primary response.
-      if (b.defenseId) {
-        for (const f of files) {
-          const sig = await signChallenge(t);
-          await uploadPointImage(f, "defense", b.defenseId, { message: sig.message, signature: sig.signature }, t);
-        }
-        setFiles([]);
-      }
+      setFiles([]);
       setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.defendPosted"));
       router.refresh();
     } catch (e) {
@@ -714,18 +724,24 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
     setBusy(true);
     try {
       const s = await signChallenge(t);
-      const res = await fetch("/api/governance/defense-entry", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ caseId, body, title, message: s.message, signature: s.signature }),
-      });
+      let res: Response;
+      if (files.length > 0) {
+        const fd = new FormData();
+        fd.append("caseId", caseId);
+        fd.append("body", body);
+        fd.append("title", title);
+        fd.append("auth", btoa(JSON.stringify({ message: s.message, signature: s.signature })));
+        for (const f of files) fd.append("images", f);
+        res = await fetch("/api/governance/defense-entry", { method: "POST", body: fd });
+      } else {
+        res = await fetch("/api/governance/defense-entry", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ caseId, body, title, message: s.message, signature: s.signature }),
+        });
+      }
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
-      // Attach pending images to the new response entry.
-      for (const f of files) {
-        const sig = await signChallenge(t);
-        await uploadPointImage(f, "defenseEntry", b.entryId, { message: sig.message, signature: sig.signature }, t);
-      }
       setOk(t("gov.act.addSaved"));
       setBody("");
       setTitle("");

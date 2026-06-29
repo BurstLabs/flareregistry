@@ -3,6 +3,42 @@ import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
+import { imageBuffersFromForm, storePointImageBatch } from "@/lib/point-image";
+import { randomUUID } from "crypto";
+
+async function readBody(req: NextRequest) {
+  const ct = req.headers.get("content-type") ?? "";
+  if (ct.includes("multipart/form-data")) {
+    const form = await req.formData();
+    let message: string | null = null;
+    let signature: string | null = null;
+    try {
+      const d = JSON.parse(Buffer.from(String(form.get("auth") ?? ""), "base64").toString("utf8"));
+      message = typeof d?.message === "string" ? d.message : null;
+      signature = typeof d?.signature === "string" ? d.signature : null;
+    } catch {
+      // null
+    }
+    const titleRaw = form.get("title");
+    return {
+      caseId: typeof form.get("caseId") === "string" ? String(form.get("caseId")) : null,
+      text: typeof form.get("body") === "string" ? String(form.get("body")).trim() : null,
+      message,
+      signature,
+      title: typeof titleRaw === "string" ? titleRaw.trim().slice(0, 120) || null : undefined,
+      images: await imageBuffersFromForm(form),
+    };
+  }
+  const p = await req.json().catch(() => null);
+  return {
+    caseId: typeof p?.caseId === "string" ? p.caseId : null,
+    text: typeof p?.body === "string" ? p.body.trim() : null,
+    message: typeof p?.message === "string" ? p.message : null,
+    signature: typeof p?.signature === "string" ? p.signature : null,
+    title: typeof p?.title === "string" ? p.title.trim().slice(0, 120) || null : undefined,
+    images: [] as Buffer[],
+  };
+}
 
 // POST /api/governance/defend
 // The flagged provider posts/updates its public defense statement (visible to everyone). Allowed
@@ -13,13 +49,7 @@ export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 10, 60_000);
   if (limited) return limited;
 
-  const payload = await req.json().catch(() => null);
-  const caseId = typeof payload?.caseId === "string" ? payload.caseId : null;
-  const text = typeof payload?.body === "string" ? payload.body.trim() : null;
-  const message = typeof payload?.message === "string" ? payload.message : null;
-  const signature = typeof payload?.signature === "string" ? payload.signature : null;
-  const titleProvided = typeof payload?.title === "string";
-  const title = titleProvided ? payload.title.trim().slice(0, 120) || null : undefined;
+  const { caseId, text, message, signature, title, images } = await readBody(req);
   if (!caseId || !text || !message || !signature) {
     return NextResponse.json(
       { error: "caseId, body, message, and signature are required" },
@@ -75,8 +105,19 @@ export async function POST(req: NextRequest) {
     await prisma.providerFlagDefenseRevision.create({
       data: { defenseId: created.id, body: text, title: newTitle },
     });
-    // Return the new defense id so the client can attach pending images to it.
-    return NextResponse.json({ ok: true, defenseId: created.id });
+    // Attach images while pre-vote (editable). Return the new defense id either way.
+    let imageCount = 0;
+    if (theCase.state === "PENDING" || theCase.state === "OPEN_DISCUSSION") {
+      try {
+        imageCount = await storePointImageBatch({
+          prisma, randomUUID, caseId, ownerColumn: "defenseId",
+          ownerId: created.id, signerAddress: verified.address!, files: images,
+        });
+      } catch {
+        // response saved; image attach failed silently
+      }
+    }
+    return NextResponse.json({ ok: true, defenseId: created.id, imageCount });
   } else {
     const bodyChanged = existing.body.trim() !== text;
     const titleChanged = title !== undefined && (existing.title ?? null) !== title;

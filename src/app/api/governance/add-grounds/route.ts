@@ -4,6 +4,56 @@ import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
+import { imageBuffersFromForm, storePointImageBatch } from "@/lib/point-image";
+import { randomUUID } from "crypto";
+
+// Read the request as either JSON (no images) or multipart (text + optional images, base64 auth).
+// Returns the common fields plus any image buffers, so a point and its evidence save under one sig.
+async function readBody(req: NextRequest): Promise<{
+  caseId: string | null;
+  message: string | null;
+  signature: string | null;
+  grounds: string | null;
+  title: string | null;
+  ownerVoter: string | null;
+  images: Buffer[];
+}> {
+  const ct = req.headers.get("content-type") ?? "";
+  if (ct.includes("multipart/form-data")) {
+    const form = await req.formData();
+    let message: string | null = null;
+    let signature: string | null = null;
+    try {
+      const decoded = JSON.parse(Buffer.from(String(form.get("auth") ?? ""), "base64").toString("utf8"));
+      message = typeof decoded?.message === "string" ? decoded.message : null;
+      signature = typeof decoded?.signature === "string" ? decoded.signature : null;
+    } catch {
+      // leave null
+    }
+    const grounds = typeof form.get("grounds") === "string" ? String(form.get("grounds")).trim() : null;
+    const titleRaw = form.get("title");
+    const ownerVoterRaw = form.get("ownerVoter");
+    return {
+      caseId: typeof form.get("caseId") === "string" ? String(form.get("caseId")) : null,
+      message,
+      signature,
+      grounds,
+      title: typeof titleRaw === "string" ? titleRaw.trim().slice(0, 120) || null : null,
+      ownerVoter: typeof ownerVoterRaw === "string" && ownerVoterRaw ? ownerVoterRaw.toLowerCase() : null,
+      images: await imageBuffersFromForm(form),
+    };
+  }
+  const body = await req.json().catch(() => null);
+  return {
+    caseId: typeof body?.caseId === "string" ? body.caseId : null,
+    message: typeof body?.message === "string" ? body.message : null,
+    signature: typeof body?.signature === "string" ? body.signature : null,
+    grounds: typeof body?.grounds === "string" ? body.grounds.trim() : null,
+    title: typeof body?.title === "string" ? body.title.trim().slice(0, 120) || null : null,
+    ownerVoter: typeof body?.ownerVoter === "string" ? body.ownerVoter.toLowerCase() : null,
+    images: [],
+  };
+}
 
 // POST /api/governance/add-grounds
 // The Management Group member who raised a flag adds a SUPPLEMENTAL grounds entry (e.g. new
@@ -15,15 +65,18 @@ export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 10, 60_000);
   if (limited) return limited;
 
-  const body = await req.json().catch(() => null);
-  const caseId = typeof body?.caseId === "string" ? body.caseId : null;
-  const message = typeof body?.message === "string" ? body.message : null;
-  const signature = typeof body?.signature === "string" ? body.signature : null;
-  const grounds = typeof body?.grounds === "string" ? body.grounds.trim() : null;
-  const title = typeof body?.title === "string" ? body.title.trim().slice(0, 120) || null : null;
+  let parsed;
+  try {
+    parsed = await readBody(req);
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "bad request" },
+      { status: 400 }
+    );
+  }
   // The flag the "Add another entry" button sits under. Sent so we can reject adding to another
   // member's flag, instead of silently retargeting the entry to the signer's own flag.
-  const ownerVoter = typeof body?.ownerVoter === "string" ? body.ownerVoter.toLowerCase() : null;
+  const { caseId, message, signature, grounds, title, ownerVoter, images } = parsed;
   if (!caseId || !message || !signature || !grounds) {
     return NextResponse.json(
       { error: "caseId, message, signature, and grounds are required" },
@@ -108,7 +161,16 @@ export async function POST(req: NextRequest) {
     await prisma.providerFlagGroundsRevision.create({
       data: { initiationId: initiation.id, grounds, title, signerAddress: verified.address! },
     });
-    return NextResponse.json({ ok: true, initiationId: initiation.id, created: true });
+    let imageCount = 0;
+    try {
+      imageCount = await storePointImageBatch({
+        prisma, randomUUID, caseId, ownerColumn: "initiationId",
+        ownerId: initiation.id, signerAddress: verified.address!, files: images,
+      });
+    } catch {
+      // The point is saved; a bad image just isn't attached. Surface a soft note.
+    }
+    return NextResponse.json({ ok: true, initiationId: initiation.id, created: true, imageCount });
   }
 
   const entry = await prisma.providerFlagGroundsEntry.create({
@@ -117,6 +179,15 @@ export async function POST(req: NextRequest) {
   await prisma.providerFlagGroundsEntryRevision.create({
     data: { entryId: entry.id, grounds, title, signerAddress: verified.address! },
   });
+  let imageCount = 0;
+  try {
+    imageCount = await storePointImageBatch({
+      prisma, randomUUID, caseId, ownerColumn: "groundsEntryId",
+      ownerId: entry.id, signerAddress: verified.address!, files: images,
+    });
+  } catch {
+    // entry saved; image attach failed silently
+  }
 
-  return NextResponse.json({ ok: true, entryId: entry.id });
+  return NextResponse.json({ ok: true, entryId: entry.id, imageCount });
 }
