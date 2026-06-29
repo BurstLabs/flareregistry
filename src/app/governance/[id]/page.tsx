@@ -145,10 +145,12 @@ export default async function GovernanceCasePage({
   }
   const memberName = (voter: string) => nameByMember.get(voter.toLowerCase()) ?? null;
 
-  // Appeal info for a DENIED case: when an appeal may open/closes, and whether the single permitted
-  // appeal has already been used. Drives the "what happens next / how to appeal" panel.
+  // Appeal info for a DENIED ORIGINAL flag case: when an appeal may open/closes, and whether the
+  // single permitted appeal has already been used. Drives the "what happens next / how to appeal"
+  // panel. NOT built for a DENIED appeal case itself (an appeal cannot be appealed; that case shows a
+  // plain "appeal denied, suspension final" note instead, handled in the client).
   let appeal: CaseView["appeal"] = null;
-  if (c.state === "DENIED" && c.decidedAt) {
+  if (c.state === "DENIED" && c.decidedAt && !c.isReVote) {
     const win = appealWindow(c.decidedAt);
     const priorAppeal = await prisma.providerFlagCase.findFirst({
       where: {

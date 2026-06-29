@@ -966,9 +966,17 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             </div>
           );
         })()}
-        {/* What happens next for a denied provider, including the appeal process. */}
+        {/* What happens next for a denied provider on the ORIGINAL flag case: the appeal process. */}
         {v.appeal && (
           <AppealPanel providerId={v.providerId} appeal={v.appeal} now={now} t={t} />
+        )}
+        {/* On a DENIED appeal case itself, there is no further appeal: state plainly that the one
+            permitted appeal was heard and denied, so the suspension is now final. */}
+        {v.isReVote && v.state === "DENIED" && (
+          <div className="mt-4 rounded-lg border border-flare/40 bg-flare/10 p-4 text-sm">
+            <p className="font-medium text-flare">{t("gov.case.appealDeniedFinalTitle")}</p>
+            <p className="mt-1 text-muted">{t("gov.case.appealDeniedFinalBody")}</p>
+          </div>
         )}
         {/* During discussion, say so plainly and show when voting opens. Voting has not started yet,
             so no votes can be cast. */}
