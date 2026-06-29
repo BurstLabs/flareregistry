@@ -32,6 +32,7 @@ async function readBody(req: NextRequest) {
       title: typeof titleRaw === "string" ? titleRaw.trim().slice(0, 120) || null : undefined,
       images: await imageBuffersFromForm(form),
       removeImageIds: removeRaw ? removeRaw.split(",").filter(Boolean) : [],
+      replyToRef: typeof form.get("replyToRef") === "string" ? String(form.get("replyToRef")) || null : null,
     };
   }
   const p = await req.json().catch(() => null);
@@ -45,6 +46,7 @@ async function readBody(req: NextRequest) {
     title: typeof p?.title === "string" ? p.title.trim().slice(0, 120) || null : undefined,
     images: [] as Buffer[],
     removeImageIds: [] as string[],
+    replyToRef: typeof p?.replyToRef === "string" ? p.replyToRef || null : null,
   };
 }
 
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 10, 60_000);
   if (limited) return limited;
 
-  const { caseId, text, entryId, message, signature, title, images, removeImageIds } = await readBody(req);
+  const { caseId, text, entryId, message, signature, title, images, removeImageIds, replyToRef } = await readBody(req);
   if (!caseId || !text || !message || !signature) {
     return NextResponse.json(
       { error: "caseId, body, message, and signature are required" },
@@ -157,7 +159,7 @@ export async function POST(req: NextRequest) {
   // New supplemental entry + its first revision.
   const newTitle = title ?? null;
   const entry = await prisma.providerFlagDefenseEntry.create({
-    data: { defenseId: theCase.defense.id, body: text, title: newTitle },
+    data: { defenseId: theCase.defense.id, body: text, title: newTitle, replyToRef },
   });
   await prisma.providerFlagDefenseEntryRevision.create({
     data: { entryId: entry.id, body: text, title: newTitle },

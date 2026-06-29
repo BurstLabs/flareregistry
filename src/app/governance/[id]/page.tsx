@@ -240,6 +240,7 @@ export default async function GovernanceCasePage({
         at: e.createdAt.toISOString(),
         editedAt: e.editedAt?.toISOString() ?? null,
         images: imagesFor(e.id),
+        replyToRef: e.replyToRef ?? null,
         priorVersions: e.revisions
           .slice(0, Math.max(0, e.revisions.length - 1))
           .map((r) => ({ grounds: r.grounds, title: r.title, at: r.createdAt.toISOString() })),
@@ -285,6 +286,7 @@ export default async function GovernanceCasePage({
             at: e.createdAt.toISOString(),
             editedAt: e.editedAt?.toISOString() ?? null,
             images: imagesFor(e.id),
+            replyToRef: e.replyToRef ?? null,
             priorVersions: e.revisions
               .slice(0, Math.max(0, e.revisions.length - 1))
               .map((r) => ({ body: r.body, title: r.title, at: r.createdAt.toISOString() })),

@@ -13,6 +13,7 @@ import {
   EditResponseAction,
   AddDefenseEntryAction,
   DefendAction,
+  ReplyAction,
 } from "./governance-actions";
 
 export interface CaseView {
@@ -74,6 +75,8 @@ export interface CaseView {
       at: string;
       editedAt: string | null;
       images: PointImage[];
+      // When set, this entry is a threaded reply to another point ("<ownerType>:<ownerId>").
+      replyToRef: string | null;
       priorVersions: { grounds: string; title: string | null; at: string }[];
     }[];
   }[];
@@ -103,6 +106,8 @@ export interface CaseView {
       at: string;
       editedAt: string | null;
       images: PointImage[];
+      // When set, this entry is a threaded reply to another point ("<ownerType>:<ownerId>").
+      replyToRef: string | null;
       priorVersions: { body: string; title: string | null; at: string }[];
     }[];
   } | null;
@@ -340,6 +345,7 @@ function memberLabel(member: string, name: string | null): string {
 // an expandable public revision history. Shared by the members' grounds and the provider's response.
 function EntryBlock({
   num,
+  showNum = true,
   title,
   at,
   text,
@@ -353,8 +359,10 @@ function EntryBlock({
   ownerId,
   canAttach,
 }: {
-  // Always-shown point number ("Point N"), so a list of points never reads as one item's history.
+  // Point number ("Point N"), so a list of points never reads as one item's history. Suppressed for
+  // a threaded reply (showNum=false), where the "replying to" label carries the context instead.
   num: number;
+  showNum?: boolean;
   // Optional member-supplied subject, shown after the number.
   title: string | null;
   at: string;
@@ -376,7 +384,9 @@ function EntryBlock({
   return (
     <div className="text-sm">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-faint">
-        <span className="font-semibold text-muted">{t("gov.case.point", { n: num })}</span>
+        {showNum && (
+          <span className="font-semibold text-muted">{t("gov.case.point", { n: num })}</span>
+        )}
         {title && <span className="font-medium text-fg">{title}</span>}
         <span>&middot;</span>
         {/* Show the most recent activity (last edit if any, else when posted). The "edited" pill's
@@ -541,6 +551,110 @@ function outcomeLabel(t: T, state: string): { text: string; cls: string } {
     default:
       return { text: t("gov.case.outcome.inProgress"), cls: "text-muted" };
   }
+}
+
+// A single discussion point, normalized across both parties (member grounds + provider response).
+// Replies carry replyToRef and are nested under their target by PointNode; everything else renders as
+// a top-level point in its party's section.
+interface PointVM {
+  // Stable key + the "<ownerType>:<ownerId>" ref other points reply to.
+  id: string;
+  ref: string;
+  ownerType: "initiation" | "groundsEntry" | "defense" | "defenseEntry";
+  ownerId: string;
+  role: "member" | "provider";
+  authorLabel: string;
+  // The target this point replies to, or null for a top-level point.
+  replyToRef: string | null;
+  // The primary grounds/response can't be a reply and is always its party's first point.
+  isPrimary: boolean;
+  text: string;
+  title: string | null;
+  at: string;
+  editedAt: string | null;
+  images: PointImage[];
+  priorVersions: { text: string; title: string | null; at: string }[];
+  // Inline editor for the author (render-prop given a close callback), when editing is allowed.
+  editor?: (close: () => void) => ReactNode;
+}
+
+// Renders one point and, recursively, every reply threaded beneath it. A reply is indented and
+// labelled with who it answers; the author's role tints the thread border (provider vs member).
+function PointNode({
+  p,
+  num,
+  childrenByRef,
+  labelByRef,
+  caseId,
+  canReply,
+  canAttachImg,
+  now,
+  t,
+}: {
+  p: PointVM;
+  // The point number within its party's top-level list (replies are unnumbered).
+  num: number | null;
+  childrenByRef: Map<string, PointVM[]>;
+  // Author label for a ref, so a reply can say who it is answering.
+  labelByRef: Map<string, string>;
+  caseId: string;
+  canReply: boolean;
+  canAttachImg: boolean;
+  now: number;
+  t: T;
+}) {
+  const replies = childrenByRef.get(p.ref) ?? [];
+  const replyingToWho = p.replyToRef ? labelByRef.get(p.replyToRef) : null;
+  return (
+    <li>
+      {/* A reply shows who it answers, so the thread reads even when collapsed deep. */}
+      {replyingToWho && (
+        <div className="mb-0.5 text-[11px] text-faint">
+          {t("gov.case.replyingTo", { who: replyingToWho })}
+        </div>
+      )}
+      <EntryBlock
+        num={num ?? 0}
+        showNum={num !== null}
+        title={p.title}
+        at={p.at}
+        text={p.text}
+        editedAt={p.editedAt}
+        priorVersions={p.priorVersions}
+        now={now}
+        t={t}
+        images={p.images}
+        ownerType={p.ownerType}
+        ownerId={p.ownerId}
+        canAttach={canAttachImg}
+        editor={p.editor}
+      />
+      {canReply && <ReplyAction caseId={caseId} replyToRef={p.ref} />}
+      {replies.length > 0 && (
+        <ul
+          className={`mt-2 space-y-3 border-l-2 pl-3 ${
+            // Tint the nested thread by the FIRST reply's author so a provider answer reads distinctly.
+            replies[0].role === "provider" ? "border-flare/30" : "border-beacon/30"
+          }`}
+        >
+          {replies.map((r) => (
+            <PointNode
+              key={r.id}
+              p={r}
+              num={null}
+              childrenByRef={childrenByRef}
+              labelByRef={labelByRef}
+              caseId={caseId}
+              canReply={canReply}
+              canAttachImg={canAttachImg}
+              now={now}
+              t={t}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
 }
 
 export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
@@ -819,220 +933,295 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
       </div>
       )}
 
-      {/* One unified Discussion: Management Group members and the provider, interleaved by when each
-          participant first posted. Each participant block keeps its own role badge, inline editors,
-          and add-affordance, so edit permissions and image controls are unchanged underneath. */}
+      {/* Hybrid discussion: a Flaggers section (the members who raised the flag, on flag cases only)
+          and a Provider section (the provider's defense), with threaded replies nested under the point
+          each one answers. Appeals have no flaggers, so member discussion (auto-initiations opened
+          during the appeal) shows under its own Discussion heading after the provider. */}
       {(() => {
         const preVote = v.state === "PENDING" || v.state === "OPEN_DISCUSSION";
         const canAttachImg = preVote;
-        type Participant = {
-          key: string;
-          firstAt: string;
-          role: "member" | "provider";
-          header: ReactNode;
-          points: {
-            id: string;
-            entryId?: string;
-            text: string;
-            title: string | null;
-            at: string;
-            editedAt: string | null;
-            ownerType: "initiation" | "groundsEntry" | "defense" | "defenseEntry";
-            ownerId: string;
-            images: PointImage[];
-            isPrimary?: boolean;
-            priorVersions: { text: string; title: string | null; at: string }[];
-          }[];
-          canEdit: boolean;
-          editorFor: (p: Participant["points"][number], close: () => void) => ReactNode;
-          footer: ReactNode;
-        };
-        const participants: Participant[] = [];
+        // A reply can be posted while the case is pre-vote and the signer is a participant; the route
+        // resolves the role server-side, so the affordance is shown to everyone during that window.
+        const canReply = preVote;
 
-        // Each Management Group member's grounds (primary + supplementals).
-        v.initiations.forEach((i, n) => {
-          participants.push({
-            key: `m${n}`,
-            firstAt: i.at,
-            role: "member",
-            header: (
-              <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-faint">
-                <span className="rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint">
-                  {t("gov.case.roleMember")}
-                </span>
-                <span>{memberLabel(i.member, i.memberName)}</span>
-                <span className="text-faint">&middot;</span>
-                <span title={fmt(i.at)} className="cursor-help">
-                  <RelTime at={i.at} now={now} />
-                </span>
-              </div>
-            ),
-            points: [
-              {
-                id: `m${n}-primary`,
-                entryId: undefined,
-                text: i.grounds,
-                title: i.title,
-                at: i.at,
-                editedAt: i.editedAt,
-                ownerType: "initiation",
-                ownerId: i.initiationId,
-                images: i.images,
-                priorVersions: i.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
-              },
-              ...i.entries.map((e) => ({
-                id: e.id,
-                entryId: e.id,
-                text: e.grounds,
-                title: e.title,
-                at: e.at,
-                editedAt: e.editedAt,
-                ownerType: "groundsEntry" as const,
-                ownerId: e.id,
-                images: e.images,
-                priorVersions: e.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
-              })),
-            ],
-            canEdit: preVote,
-          editorFor: (p, close) => (
-              <EditGroundsAction
-                caseId={v.id}
-                entryId={p.entryId}
-                ownerVoter={i.member}
-                current={p.text}
-                currentTitle={p.title ?? ""}
-                currentImages={p.images.filter((im) => !im.removedAt)}
-                onDone={close}
-              />
-            ),
-            footer: preVote ? <AddGroundsAction caseId={v.id} ownerVoter={i.member} /> : null,
+        // Normalize every point (member + provider) into one model, tagged with its reply ref.
+        const all: PointVM[] = [];
+        const refOf = (ownerType: PointVM["ownerType"], ownerId: string) => `${ownerType}:${ownerId}`;
+
+        v.initiations.forEach((i) => {
+          // Editor for a member point: the primary grounds (no entryId) or a supplemental entry.
+          const memberEditor = (
+            entryId: string | undefined,
+            text: string,
+            title: string | null,
+            images: PointImage[],
+            close: () => void
+          ) => (
+            <EditGroundsAction
+              caseId={v.id}
+              entryId={entryId}
+              ownerVoter={i.member}
+              current={text}
+              currentTitle={title ?? ""}
+              currentImages={images.filter((im) => !im.removedAt)}
+              onDone={close}
+            />
+          );
+          const base = {
+            role: "member" as const,
+            authorLabel: memberLabel(i.member, i.memberName),
+          };
+          all.push({
+            ...base,
+            id: `init-${i.initiationId}`,
+            ref: refOf("initiation", i.initiationId),
+            ownerType: "initiation",
+            ownerId: i.initiationId,
+            replyToRef: null,
+            isPrimary: true,
+            text: i.grounds,
+            title: i.title,
+            at: i.at,
+            editedAt: i.editedAt,
+            images: i.images,
+            priorVersions: i.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
+            editor: preVote ? (close) => memberEditor(undefined, i.grounds, i.title, i.images, close) : undefined,
+          });
+          i.entries.forEach((e) => {
+            all.push({
+              ...base,
+              id: `ge-${e.id}`,
+              ref: refOf("groundsEntry", e.id),
+              ownerType: "groundsEntry",
+              ownerId: e.id,
+              replyToRef: e.replyToRef,
+              isPrimary: false,
+              text: e.grounds,
+              title: e.title,
+              at: e.at,
+              editedAt: e.editedAt,
+              images: e.images,
+              priorVersions: e.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
+              editor: preVote ? (close) => memberEditor(e.id, e.grounds, e.title, e.images, close) : undefined,
+            });
           });
         });
 
-        // The provider's response (primary + supplemental entries) as one participant.
         if (v.defense) {
           const d = v.defense;
-          participants.push({
-            key: "provider",
-            firstAt: d.at,
-            role: "provider",
-            header: (
-              <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-faint">
-                <span className="rounded bg-flare/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-flare">
-                  {t("gov.case.roleProvider")}
-                </span>
-                <span>{v.providerName}</span>
-                <span className="text-faint">&middot;</span>
-                <span title={fmt(d.at)} className="cursor-help">
-                  <RelTime at={d.at} now={now} />
-                </span>
-              </div>
-            ),
-            points: [
-              {
-                id: "provider-primary",
-                entryId: undefined,
-                isPrimary: true,
-                text: d.body,
-                title: d.title,
-                at: d.at,
-                editedAt: d.editedAt,
-                ownerType: "defense",
-                ownerId: d.id,
-                images: d.images,
-                priorVersions: d.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
-              },
-              ...d.entries.map((e) => ({
-                id: e.id,
-                entryId: e.id,
-                isPrimary: false,
-                text: e.body,
-                title: e.title,
-                at: e.at,
-                editedAt: e.editedAt,
-                ownerType: "defenseEntry" as const,
-                ownerId: e.id,
-                images: e.images,
-                priorVersions: e.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
-              })),
-            ],
-            canEdit: !decided,
-          editorFor: (p, close) => (
-              <EditResponseAction
-                caseId={v.id}
-                entryId={p.entryId}
-                isPrimary={!!p.isPrimary}
-                current={p.text}
-                currentTitle={p.title ?? ""}
-                currentImages={p.images.filter((im) => !im.removedAt)}
-                imagesEditable={canAttachImg}
-                onDone={close}
-              />
-            ),
-            footer: !decided ? <AddDefenseEntryAction caseId={v.id} /> : null,
+          // Editor for a provider point: the primary response (isPrimary) or a supplemental entry.
+          const providerEditor = (
+            entryId: string | undefined,
+            isPrimary: boolean,
+            text: string,
+            title: string | null,
+            images: PointImage[],
+            close: () => void
+          ) => (
+            <EditResponseAction
+              caseId={v.id}
+              entryId={entryId}
+              isPrimary={isPrimary}
+              current={text}
+              currentTitle={title ?? ""}
+              currentImages={images.filter((im) => !im.removedAt)}
+              imagesEditable={canAttachImg}
+              onDone={close}
+            />
+          );
+          const base = { role: "provider" as const, authorLabel: v.providerName };
+          all.push({
+            ...base,
+            id: `def-${d.id}`,
+            ref: refOf("defense", d.id),
+            ownerType: "defense",
+            ownerId: d.id,
+            replyToRef: null,
+            isPrimary: true,
+            text: d.body,
+            title: d.title,
+            at: d.at,
+            editedAt: d.editedAt,
+            images: d.images,
+            priorVersions: d.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
+            editor: !decided ? (close) => providerEditor(undefined, true, d.body, d.title, d.images, close) : undefined,
+          });
+          d.entries.forEach((e) => {
+            all.push({
+              ...base,
+              id: `de-${e.id}`,
+              ref: refOf("defenseEntry", e.id),
+              ownerType: "defenseEntry",
+              ownerId: e.id,
+              replyToRef: e.replyToRef,
+              isPrimary: false,
+              text: e.body,
+              title: e.title,
+              at: e.at,
+              editedAt: e.editedAt,
+              images: e.images,
+              priorVersions: e.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
+              editor: !decided ? (close) => providerEditor(e.id, false, e.body, e.title, e.images, close) : undefined,
+            });
           });
         }
 
-        // Interleave by first-post time (the conversation order).
-        participants.sort((a, b) => (a.firstAt < b.firstAt ? -1 : 1));
+        // childrenByRef: replies grouped under the ref they answer (oldest first, conversation order).
+        // labelByRef: who authored each ref, so a reply can name who it is answering. A point whose
+        // reply target no longer exists (defensive) is treated as top-level so it is never dropped.
+        const labelByRef = new Map<string, string>();
+        all.forEach((p) => labelByRef.set(p.ref, p.authorLabel));
+        const childrenByRef = new Map<string, PointVM[]>();
+        all.forEach((p) => {
+          if (p.replyToRef && labelByRef.has(p.replyToRef)) {
+            const arr = childrenByRef.get(p.replyToRef) ?? [];
+            arr.push(p);
+            childrenByRef.set(p.replyToRef, arr);
+          }
+        });
+        childrenByRef.forEach((arr) => arr.sort((a, b) => (a.at < b.at ? -1 : 1)));
+        const isReply = (p: PointVM) => !!p.replyToRef && labelByRef.has(p.replyToRef);
+
+        // Top-level points for one party member: its primary plus its own non-reply supplementals.
+        const topLevelFor = (refs: string[]) =>
+          all.filter((p) => refs.includes(p.ref) && !isReply(p));
+
+        // A party's points are rendered as a thread under a role-tinted border. Member grounds are
+        // grouped per initiation (each its own header); the provider is one block.
+        const renderPoints = (points: PointVM[], borderProvider: boolean) => (
+          <ul className={`space-y-3 border-l-2 pl-3 ${borderProvider ? "border-flare/30" : "border-beacon/30"}`}>
+            {points.map((p, k) => (
+              <PointNode
+                key={p.id}
+                p={p}
+                num={k + 1}
+                childrenByRef={childrenByRef}
+                labelByRef={labelByRef}
+                caseId={v.id}
+                canReply={canReply}
+                canAttachImg={canAttachImg}
+                now={now}
+                t={t}
+              />
+            ))}
+          </ul>
+        );
+
+        const memberHeader = (i: CaseView["initiations"][number]) => (
+          <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-faint">
+            <span className="rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint">
+              {t("gov.case.roleMember")}
+            </span>
+            <span>{memberLabel(i.member, i.memberName)}</span>
+            <span className="text-faint">&middot;</span>
+            <span title={fmt(i.at)} className="cursor-help">
+              <RelTime at={i.at} now={now} />
+            </span>
+          </div>
+        );
+
+        // One member's block: header + their top-level points (primary + own non-reply entries).
+        const MemberBlock = ({ i }: { i: CaseView["initiations"][number] }) => {
+          const ownRefs = [
+            `initiation:${i.initiationId}`,
+            ...i.entries.map((e) => `groundsEntry:${e.id}`),
+          ];
+          return (
+            <li>
+              {memberHeader(i)}
+              {renderPoints(topLevelFor(ownRefs), false)}
+              {preVote && <AddGroundsAction caseId={v.id} ownerVoter={i.member} />}
+            </li>
+          );
+        };
+
+        // The provider block: header + its top-level points (response + own non-reply entries).
+        const providerBlock = v.defense
+          ? (() => {
+              const d = v.defense;
+              const ownRefs = [`defense:${d.id}`, ...d.entries.map((e) => `defenseEntry:${e.id}`)];
+              return (
+                <>
+                  <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-faint">
+                    <span className="rounded bg-flare/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-flare">
+                      {t("gov.case.roleProvider")}
+                    </span>
+                    <span>{v.providerName}</span>
+                    <span className="text-faint">&middot;</span>
+                    <span title={fmt(d.at)} className="cursor-help">
+                      <RelTime at={d.at} now={now} />
+                    </span>
+                  </div>
+                  {renderPoints(topLevelFor(ownRefs), true)}
+                  {!decided && <AddDefenseEntryAction caseId={v.id} />}
+                </>
+              );
+            })()
+          : null;
+
+        const providerFirstResponse = !v.defense && !decided && (
+          <div className="mt-4 border-t border-themed pt-3">
+            <p className="mb-1 text-xs text-muted">{t("gov.case.providerResponseHelp")}</p>
+            <DefendAction caseId={v.id} current={null} />
+          </div>
+        );
+
+        // Any Management Group member may open their own grounds while pre-vote (no existing flag of
+        // their own needed). On an appeal this is how member discussion gets started at all.
+        const openGrounds = v.state === "OPEN_DISCUSSION" && (
+          <div className="mt-4 border-t border-themed pt-3">
+            <AddGroundsAction caseId={v.id} ownerVoter="" label={t("gov.act.openGrounds")} />
+          </div>
+        );
 
         return (
-          <div className="mt-6 surface rounded-xl border p-5">
-            <h2 className="text-lg font-semibold">{t("gov.case.discussionTitle")}</h2>
-            <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.discussionHelp")}</p>
-
-            {participants.length === 0 && (
-              <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
-            )}
-
-            <ul className="space-y-6">
-              {participants.map((party) => (
-                <li key={party.key}>
-                  {party.header}
-                  <ul
-                    className={`space-y-3 border-l-2 pl-3 ${
-                      party.role === "provider" ? "border-flare/30" : "border-beacon/30"
-                    }`}
-                  >
-                    {party.points.map((p, k) => (
-                      <li key={p.id}>
-                        <EntryBlock
-                          num={k + 1}
-                          title={p.title}
-                          at={p.at}
-                          text={p.text}
-                          editedAt={p.editedAt}
-                          priorVersions={p.priorVersions}
-                          now={now}
-                          t={t}
-                          images={p.images}
-                          ownerType={p.ownerType}
-                          ownerId={p.ownerId}
-                          canAttach={canAttachImg}
-                          editor={party.canEdit ? (close) => party.editorFor(p, close) : undefined}
-                        />
-                      </li>
+          <>
+            {/* Flaggers: the members who raised the flag. Absent on appeals (provider-initiated, no
+                flaggers); their member discussion shows under the Discussion section below instead. */}
+            {!v.isReVote && (
+              <div className="mt-6 surface rounded-xl border p-5">
+                <h2 className="text-lg font-semibold">{t("gov.case.flaggersTitle")}</h2>
+                <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.flaggersHelp")}</p>
+                {v.initiations.length === 0 ? (
+                  <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
+                ) : (
+                  <ul className="space-y-6">
+                    {v.initiations.map((i) => (
+                      <MemberBlock key={i.initiationId} i={i} />
                     ))}
                   </ul>
-                  {party.footer}
-                </li>
-              ))}
-            </ul>
+                )}
+                {openGrounds}
+              </div>
+            )}
 
-            {/* The provider can post its first response, if none yet. */}
-            {!v.defense && !decided && (
-              <div className="mt-4 border-t border-themed pt-3">
-                <p className="mb-1 text-xs text-muted">{t("gov.case.providerResponseHelp")}</p>
-                <DefendAction caseId={v.id} current={null} />
+            {/* Provider: the provider's own response and follow-ups, with replies threaded beneath. */}
+            <div className="mt-6 surface rounded-xl border p-5">
+              <h2 className="text-lg font-semibold">{t("gov.case.providerTitle")}</h2>
+              <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.providerHelp")}</p>
+              {providerBlock}
+              {providerFirstResponse}
+            </div>
+
+            {/* On an appeal there are no flaggers, but members may still join the discussion. Show
+                their grounds (auto-initiations) under a Discussion heading so member points appear. */}
+            {v.isReVote && (
+              <div className="mt-6 surface rounded-xl border p-5">
+                <h2 className="text-lg font-semibold">{t("gov.case.discussionTitle")}</h2>
+                <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.discussionHelp")}</p>
+                {v.initiations.length === 0 ? (
+                  <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
+                ) : (
+                  <ul className="space-y-6">
+                    {v.initiations.map((i) => (
+                      <MemberBlock key={i.initiationId} i={i} />
+                    ))}
+                  </ul>
+                )}
+                {openGrounds}
               </div>
             )}
-            {/* Any Management Group member may open their own grounds while pre-vote. */}
-            {v.state === "OPEN_DISCUSSION" && (
-              <div className="mt-4 border-t border-themed pt-3">
-                <AddGroundsAction caseId={v.id} ownerVoter="" label={t("gov.act.openGrounds")} />
-              </div>
-            )}
-          </div>
+          </>
         );
       })()}
 

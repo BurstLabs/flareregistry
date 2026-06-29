@@ -297,10 +297,15 @@ model ProviderFlagGroundsEntry {
   createdAt     DateTime               @default(now())
   // Set when this entry was last edited (null = never edited).
   editedAt      DateTime?
+  // If this entry is a REPLY to another point, the target's "<ownerType>:<ownerId>" ref (ownerType =
+  // initiation|groundsEntry|defense|defenseEntry). Null = a top-level point. Lets the discussion
+  // thread as a conversation across member and provider points.
+  replyToRef    String?
 
   revisions ProviderFlagGroundsEntryRevision[]
 
   @@index([initiationId])
+  @@index([replyToRef])
 }
 
 // Append-only version history for a supplemental grounds entry (mirrors ProviderFlagGroundsRevision
@@ -393,10 +398,13 @@ model ProviderFlagDefenseEntry {
   body      String
   createdAt DateTime            @default(now())
   editedAt  DateTime?
+  // Reply target "<ownerType>:<ownerId>", or null for a top-level response. See ProviderFlagGroundsEntry.
+  replyToRef String?
 
   revisions ProviderFlagDefenseEntryRevision[]
 
   @@index([defenseId])
+  @@index([replyToRef])
 }
 
 // Append-only version history for a supplemental defense entry.

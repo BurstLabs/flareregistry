@@ -1120,3 +1120,84 @@ export function PointImages({
     </div>
   );
 }
+
+// Reply to a point in the discussion. The signer's role (Management Group member or the flagged
+// provider) is resolved server-side; the reply is threaded under replyToRef. Wallet-signature gated.
+export function ReplyAction({
+  caseId,
+  replyToRef,
+}: {
+  caseId: string;
+  replyToRef: string;
+}) {
+  const { t } = useApp();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function submit() {
+    setErr("");
+    if (text.trim().length < 1) return;
+    setBusy(true);
+    try {
+      const s = await signChallenge(t);
+      const res = await fetch("/api/governance/reply", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ caseId, replyToRef, text, message: s.message, signature: s.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.replyFailed"));
+      setText("");
+      setOpen(false);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.act.err.replyFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-1 text-xs font-medium text-muted hover:text-beacon"
+      >
+        {t("gov.act.reply")}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2">
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        maxLength={4000}
+        rows={2}
+        placeholder={t("gov.act.replyPlaceholder")}
+        className="block w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+      />
+      <div className="mt-1 flex gap-2">
+        <button
+          onClick={submit}
+          disabled={busy}
+          className="rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
+        >
+          {busy ? t("gov.act.signing") : t("gov.act.replySubmit")}
+        </button>
+        <button
+          onClick={() => setOpen(false)}
+          disabled={busy}
+          className="rounded-lg border border-themed px-3 py-1.5 text-xs font-medium text-muted hover:text-beacon disabled:opacity-50"
+        >
+          {t("gov.act.cancel")}
+        </button>
+      </div>
+      {err && <Note kind="err" text={err} />}
+    </div>
+  );
+}

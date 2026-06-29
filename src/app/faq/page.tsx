@@ -8,6 +8,7 @@ import { useApp } from "@/components/providers";
 // [submit], [governance], [api], [why] which are rendered as internal links below.
 const ENTRIES = [
   "list",
+  "claim",
   "qualified",
   "notQualified",
   "loseQualified",

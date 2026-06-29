@@ -17,6 +17,7 @@ async function readBody(req: NextRequest): Promise<{
   title: string | null;
   ownerVoter: string | null;
   images: Buffer[];
+  replyToRef: string | null;
 }> {
   const ct = req.headers.get("content-type") ?? "";
   if (ct.includes("multipart/form-data")) {
@@ -41,6 +42,7 @@ async function readBody(req: NextRequest): Promise<{
       title: typeof titleRaw === "string" ? titleRaw.trim().slice(0, 120) || null : null,
       ownerVoter: typeof ownerVoterRaw === "string" && ownerVoterRaw ? ownerVoterRaw.toLowerCase() : null,
       images: await imageBuffersFromForm(form),
+      replyToRef: typeof form.get("replyToRef") === "string" ? String(form.get("replyToRef")) || null : null,
     };
   }
   const body = await req.json().catch(() => null);
@@ -52,6 +54,7 @@ async function readBody(req: NextRequest): Promise<{
     title: typeof body?.title === "string" ? body.title.trim().slice(0, 120) || null : null,
     ownerVoter: typeof body?.ownerVoter === "string" ? body.ownerVoter.toLowerCase() : null,
     images: [],
+    replyToRef: typeof body?.replyToRef === "string" ? body.replyToRef || null : null,
   };
 }
 
@@ -76,7 +79,7 @@ export async function POST(req: NextRequest) {
   }
   // The flag the "Add another entry" button sits under. Sent so we can reject adding to another
   // member's flag, instead of silently retargeting the entry to the signer's own flag.
-  const { caseId, message, signature, grounds, title, ownerVoter, images } = parsed;
+  const { caseId, message, signature, grounds, title, ownerVoter, images, replyToRef } = parsed;
   if (!caseId || !message || !signature || !grounds) {
     return NextResponse.json(
       { error: "caseId, message, signature, and grounds are required" },
@@ -174,7 +177,7 @@ export async function POST(req: NextRequest) {
   }
 
   const entry = await prisma.providerFlagGroundsEntry.create({
-    data: { initiationId: mine.id, grounds, title, signerAddress: verified.address! },
+    data: { initiationId: mine.id, grounds, title, signerAddress: verified.address!, replyToRef },
   });
   await prisma.providerFlagGroundsEntryRevision.create({
     data: { entryId: entry.id, grounds, title, signerAddress: verified.address! },
