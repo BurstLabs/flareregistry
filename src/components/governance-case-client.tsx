@@ -819,64 +819,182 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
       </div>
       )}
 
-      {/* Grounds from co-initiators. Each member's points render as one uniform list; each point can
-          be edited inline (signature-gated), and a single "add another" sits at the bottom. */}
-      <div className="mt-6 surface rounded-xl border p-5">
-        <h2 className="text-lg font-semibold">
-          {v.isReVote ? t("gov.case.appealGrounds") : t("gov.case.whyFlagged")}
-        </h2>
-        <p className="mt-1 mb-4 text-xs text-muted">
-          {v.isReVote ? t("gov.case.appealGroundsHelp") : t("gov.case.whyFlaggedHelp")}
-        </p>
-        {v.initiations.length === 0 ? (
-          <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
-        ) : null}
-        {v.initiations.length > 0 && (
-          <ul className="space-y-6">
-            {v.initiations.map((i, n) => {
-              const preVote = v.state === "PENDING" || v.state === "OPEN_DISCUSSION";
-              // The member's points: primary grounds first, then supplementals, as one numbered list.
-              const points = [
-                {
-                  id: "primary",
-                  entryId: undefined as string | undefined,
-                  text: i.grounds,
-                  title: i.title,
-                  at: i.at,
-                  editedAt: i.editedAt,
-                  ownerType: "initiation" as const,
-                  ownerId: i.initiationId,
-                  images: i.images,
-                  priorVersions: i.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
-                },
-                ...i.entries.map((e) => ({
-                  id: e.id,
-                  entryId: e.id,
-                  text: e.grounds,
-                  title: e.title,
-                  at: e.at,
-                  editedAt: e.editedAt,
-                  ownerType: "groundsEntry" as const,
-                  ownerId: e.id,
-                  images: e.images,
-                  priorVersions: e.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
-                })),
-              ];
-              return (
-                <li key={n}>
-                  <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-faint">
-                    <span>
-                      {t("gov.case.mgMemberPrefix")} {memberLabel(i.member, i.memberName)}
-                    </span>
-                    {/* When this member raised their flag (their primary initiation time). Each
-                        co-initiator flags at a distinct moment, so it is shown per member. */}
-                    <span className="text-faint">&middot;</span>
-                    <span title={fmt(i.at)} className="cursor-help">
-                      {t("gov.case.memberFlaggedAt")} <RelTime at={i.at} now={now} />
-                    </span>
-                  </div>
-                  <ul className="space-y-3 border-l-2 border-beacon/30 pl-3">
-                    {points.map((p, k) => (
+      {/* One unified Discussion: Management Group members and the provider, interleaved by when each
+          participant first posted. Each participant block keeps its own role badge, inline editors,
+          and add-affordance, so edit permissions and image controls are unchanged underneath. */}
+      {(() => {
+        const preVote = v.state === "PENDING" || v.state === "OPEN_DISCUSSION";
+        const canAttachImg = preVote;
+        type Participant = {
+          key: string;
+          firstAt: string;
+          role: "member" | "provider";
+          header: ReactNode;
+          points: {
+            id: string;
+            entryId?: string;
+            text: string;
+            title: string | null;
+            at: string;
+            editedAt: string | null;
+            ownerType: "initiation" | "groundsEntry" | "defense" | "defenseEntry";
+            ownerId: string;
+            images: PointImage[];
+            isPrimary?: boolean;
+            priorVersions: { text: string; title: string | null; at: string }[];
+          }[];
+          canEdit: boolean;
+          editorFor: (p: Participant["points"][number], close: () => void) => ReactNode;
+          footer: ReactNode;
+        };
+        const participants: Participant[] = [];
+
+        // Each Management Group member's grounds (primary + supplementals).
+        v.initiations.forEach((i, n) => {
+          participants.push({
+            key: `m${n}`,
+            firstAt: i.at,
+            role: "member",
+            header: (
+              <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-faint">
+                <span className="rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint">
+                  {t("gov.case.roleMember")}
+                </span>
+                <span>{memberLabel(i.member, i.memberName)}</span>
+                <span className="text-faint">&middot;</span>
+                <span title={fmt(i.at)} className="cursor-help">
+                  <RelTime at={i.at} now={now} />
+                </span>
+              </div>
+            ),
+            points: [
+              {
+                id: `m${n}-primary`,
+                entryId: undefined,
+                text: i.grounds,
+                title: i.title,
+                at: i.at,
+                editedAt: i.editedAt,
+                ownerType: "initiation",
+                ownerId: i.initiationId,
+                images: i.images,
+                priorVersions: i.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
+              },
+              ...i.entries.map((e) => ({
+                id: e.id,
+                entryId: e.id,
+                text: e.grounds,
+                title: e.title,
+                at: e.at,
+                editedAt: e.editedAt,
+                ownerType: "groundsEntry" as const,
+                ownerId: e.id,
+                images: e.images,
+                priorVersions: e.priorVersions.map((r) => ({ text: r.grounds, title: r.title, at: r.at })),
+              })),
+            ],
+            canEdit: preVote,
+          editorFor: (p, close) => (
+              <EditGroundsAction
+                caseId={v.id}
+                entryId={p.entryId}
+                ownerVoter={i.member}
+                current={p.text}
+                currentTitle={p.title ?? ""}
+                currentImages={p.images.filter((im) => !im.removedAt)}
+                onDone={close}
+              />
+            ),
+            footer: preVote ? <AddGroundsAction caseId={v.id} ownerVoter={i.member} /> : null,
+          });
+        });
+
+        // The provider's response (primary + supplemental entries) as one participant.
+        if (v.defense) {
+          const d = v.defense;
+          participants.push({
+            key: "provider",
+            firstAt: d.at,
+            role: "provider",
+            header: (
+              <div className="mb-2 flex flex-wrap items-center gap-x-2 text-xs text-faint">
+                <span className="rounded bg-flare/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-flare">
+                  {t("gov.case.roleProvider")}
+                </span>
+                <span>{v.providerName}</span>
+                <span className="text-faint">&middot;</span>
+                <span title={fmt(d.at)} className="cursor-help">
+                  <RelTime at={d.at} now={now} />
+                </span>
+              </div>
+            ),
+            points: [
+              {
+                id: "provider-primary",
+                entryId: undefined,
+                isPrimary: true,
+                text: d.body,
+                title: d.title,
+                at: d.at,
+                editedAt: d.editedAt,
+                ownerType: "defense",
+                ownerId: d.id,
+                images: d.images,
+                priorVersions: d.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
+              },
+              ...d.entries.map((e) => ({
+                id: e.id,
+                entryId: e.id,
+                isPrimary: false,
+                text: e.body,
+                title: e.title,
+                at: e.at,
+                editedAt: e.editedAt,
+                ownerType: "defenseEntry" as const,
+                ownerId: e.id,
+                images: e.images,
+                priorVersions: e.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
+              })),
+            ],
+            canEdit: !decided,
+          editorFor: (p, close) => (
+              <EditResponseAction
+                caseId={v.id}
+                entryId={p.entryId}
+                isPrimary={!!p.isPrimary}
+                current={p.text}
+                currentTitle={p.title ?? ""}
+                currentImages={p.images.filter((im) => !im.removedAt)}
+                imagesEditable={canAttachImg}
+                onDone={close}
+              />
+            ),
+            footer: !decided ? <AddDefenseEntryAction caseId={v.id} /> : null,
+          });
+        }
+
+        // Interleave by first-post time (the conversation order).
+        participants.sort((a, b) => (a.firstAt < b.firstAt ? -1 : 1));
+
+        return (
+          <div className="mt-6 surface rounded-xl border p-5">
+            <h2 className="text-lg font-semibold">{t("gov.case.discussionTitle")}</h2>
+            <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.discussionHelp")}</p>
+
+            {participants.length === 0 && (
+              <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
+            )}
+
+            <ul className="space-y-6">
+              {participants.map((party) => (
+                <li key={party.key}>
+                  {party.header}
+                  <ul
+                    className={`space-y-3 border-l-2 pl-3 ${
+                      party.role === "provider" ? "border-flare/30" : "border-beacon/30"
+                    }`}
+                  >
+                    {party.points.map((p, k) => (
                       <li key={p.id}>
                         <EntryBlock
                           num={k + 1}
@@ -890,133 +1008,33 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                           images={p.images}
                           ownerType={p.ownerType}
                           ownerId={p.ownerId}
-                          canAttach={preVote}
-                          editor={
-                            preVote
-                              ? (close) => (
-                                  <EditGroundsAction
-                                    caseId={v.id}
-                                    entryId={p.entryId}
-                                    ownerVoter={i.member}
-                                    current={p.text}
-                                    currentTitle={p.title ?? ""}
-                                    currentImages={p.images.filter((im) => !im.removedAt)}
-                                    onDone={close}
-                                  />
-                                )
-                              : undefined
-                          }
+                          canAttach={canAttachImg}
+                          editor={party.canEdit ? (close) => party.editorFor(p, close) : undefined}
                         />
                       </li>
                     ))}
                   </ul>
-                  {/* Add another point under this member's flag. Only the member who owns this flag
-                      (the signer must match i.member) can add to it; the server enforces it. */}
-                  {preVote && <AddGroundsAction caseId={v.id} ownerVoter={i.member} />}
+                  {party.footer}
                 </li>
-              );
-            })}
-          </ul>
-        )}
-        {/* Any Management Group member may open their own grounds while the case is pre-vote. This is
-            the only way to record grounds on a provider-initiated appeal (no co-initiations exist),
-            and lets a member who has not yet weighed in add their points to any open case. The action
-            is member-gated server-side; ownerVoter is empty so the server uses the signer. */}
-        {v.state === "OPEN_DISCUSSION" && (
-          <div className="mt-4 border-t border-themed pt-3">
-            <AddGroundsAction caseId={v.id} ownerVoter="" label={t("gov.act.openGrounds")} />
-          </div>
-        )}
-      </div>
+              ))}
+            </ul>
 
-      {/* Subject's public response: primary + supplemental entries as one list, each editable inline;
-          posting the first response / adding another sits at the bottom. */}
-      <div className="mt-6 surface rounded-xl border p-5">
-        <h2 className="text-lg font-semibold">{t("gov.case.providerResponse")}</h2>
-        <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.providerResponseHelp")}</p>
-        {v.defense ? (
-          <>
-            {(() => {
-              const d = v.defense;
-              const points = [
-                {
-                  id: "primary",
-                  entryId: undefined as string | undefined,
-                  isPrimary: true,
-                  text: d.body,
-                  title: d.title,
-                  at: d.at,
-                  editedAt: d.editedAt,
-                  ownerType: "defense" as const,
-                  ownerId: d.id,
-                  images: d.images,
-                  priorVersions: d.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
-                },
-                ...d.entries.map((e) => ({
-                  id: e.id,
-                  entryId: e.id,
-                  isPrimary: false,
-                  text: e.body,
-                  title: e.title,
-                  at: e.at,
-                  editedAt: e.editedAt,
-                  ownerType: "defenseEntry" as const,
-                  ownerId: e.id,
-                  images: e.images,
-                  priorVersions: e.priorVersions.map((r) => ({ text: r.body, title: r.title, at: r.at })),
-                })),
-              ];
-              const canAttachImg = v.state === "PENDING" || v.state === "OPEN_DISCUSSION";
-              return (
-                <ul className="space-y-3 border-l-2 border-beacon/30 pl-3">
-                  {points.map((p, k) => (
-                    <li key={p.id}>
-                      <EntryBlock
-                        num={k + 1}
-                        title={p.title}
-                        at={p.at}
-                        text={p.text}
-                        editedAt={p.editedAt}
-                        priorVersions={p.priorVersions}
-                        now={now}
-                        t={t}
-                        images={p.images}
-                        ownerType={p.ownerType}
-                        ownerId={p.ownerId}
-                        canAttach={canAttachImg}
-                        editor={
-                          !decided
-                            ? (close) => (
-                                <EditResponseAction
-                                  caseId={v.id}
-                                  entryId={p.entryId}
-                                  isPrimary={p.isPrimary}
-                                  current={p.text}
-                                  currentTitle={p.title ?? ""}
-                                  currentImages={p.images.filter((im) => !im.removedAt)}
-                                  imagesEditable={canAttachImg}
-                                  onDone={close}
-                                />
-                              )
-                            : undefined
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              );
-            })()}
-            {/* Add another response entry. */}
-            {!decided && <AddDefenseEntryAction caseId={v.id} />}
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-muted">{t("gov.case.noResponse")}</p>
-            {/* No response yet: post the first one (open editor). */}
-            {!decided && <DefendAction caseId={v.id} current={null} />}
-          </>
-        )}
-      </div>
+            {/* The provider can post its first response, if none yet. */}
+            {!v.defense && !decided && (
+              <div className="mt-4 border-t border-themed pt-3">
+                <p className="mb-1 text-xs text-muted">{t("gov.case.providerResponseHelp")}</p>
+                <DefendAction caseId={v.id} current={null} />
+              </div>
+            )}
+            {/* Any Management Group member may open their own grounds while pre-vote. */}
+            {v.state === "OPEN_DISCUSSION" && (
+              <div className="mt-4 border-t border-themed pt-3">
+                <AddGroundsAction caseId={v.id} ownerVoter="" label={t("gov.act.openGrounds")} />
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Votes on the record. Shows each member's CURRENT vote (a member may change it while voting
           is open), with a full append-only history of every cast/change below. */}
