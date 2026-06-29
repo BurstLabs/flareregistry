@@ -170,6 +170,9 @@ export interface ProviderGovernance {
   underReview: boolean; // an open case exists
   isAppeal: boolean; // the headline open case is a provider-initiated appeal (re-vote)
   suspended: boolean;
+  // The provider can request an appeal right now: suspended, cooldown elapsed, within the deadline,
+  // and no appeal already used or in progress. Drives the "appeal ready" banner on the provider page.
+  appealReady: boolean;
   caseId: string | null;
   state: string | null;
 }
@@ -213,9 +216,30 @@ export async function governanceByProvider(): Promise<Map<string, ProviderGovern
       providerId: true,
       state: true,
       isReVote: true,
+      decidedAt: true,
       provider: { select: { suspended: true } },
     },
   });
+
+  // First pass: per provider, find the latest denial's decision time, whether any appeal has been
+  // used (a decided re-vote) and whether one is in progress (an open re-vote). Used to decide if the
+  // provider may request an appeal right now.
+  const now = Date.now();
+  const denialDecidedAt = new Map<string, Date>();
+  const appealUsed = new Set<string>();
+  const appealInProgress = new Set<string>();
+  for (const c of cases) {
+    if (c.state === "DENIED" && c.decidedAt && !denialDecidedAt.has(c.providerId)) {
+      denialDecidedAt.set(c.providerId, c.decidedAt); // cases are openedAt desc, so first = latest
+    }
+    if (c.isReVote && ["DENIED", "CLEARED", "FAILED_QUORUM"].includes(c.state)) {
+      appealUsed.add(c.providerId);
+    }
+    if (c.isReVote && (c.state === "OPEN_DISCUSSION" || c.state === "OPEN_VOTING")) {
+      appealInProgress.add(c.providerId);
+    }
+  }
+
   const map = new Map<string, ProviderGovernance>();
   for (const c of cases) {
     const open = c.state === "OPEN_DISCUSSION" || c.state === "OPEN_VOTING";
@@ -224,11 +248,21 @@ export async function governanceByProvider(): Promise<Map<string, ProviderGovern
     // Headline priority: an open case beats a pending one beats anything older.
     const better = open || (pending && !existing?.underReview);
     if (!existing || better) {
+      const decided = denialDecidedAt.get(c.providerId);
+      const win = decided ? appealWindow(decided) : null;
+      const appealReady =
+        c.provider.suspended &&
+        !!win &&
+        now >= win.opensAt.getTime() &&
+        now <= win.closesAt.getTime() &&
+        !appealUsed.has(c.providerId) &&
+        !appealInProgress.has(c.providerId);
       map.set(c.providerId, {
         pending,
         underReview: open,
         isAppeal: open && c.isReVote,
         suspended: c.provider.suspended,
+        appealReady,
         caseId: c.id,
         state: c.state,
       });

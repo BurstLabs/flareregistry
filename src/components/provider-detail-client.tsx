@@ -14,7 +14,7 @@ export interface DetailData {
   verified: boolean;
   registered: boolean;
   managementGroup: boolean;
-  governance: { pending: boolean; underReview: boolean; isAppeal: boolean; suspended: boolean; caseId: string | null; state: string | null } | null;
+  governance: { pending: boolean; underReview: boolean; isAppeal: boolean; suspended: boolean; appealReady: boolean; caseId: string | null; state: string | null } | null;
   // Concluded flag cases (archived withdrawn flags + decided cases), newest first, for the record.
   pastCases: { caseId: string; state: string; at: string }[];
   providerId: string;
@@ -148,15 +148,17 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
             }`}
           >
             <span className="font-medium">
-              {/* A suspended provider with an open appeal is its own state: say the appeal is in
-                  progress and point at the appeal case, not just "suspended". */}
+              {/* A suspended provider with an open appeal is its own state; a suspended provider
+                  whose appeal window is open should be told the appeal can be requested now. */}
               {d.governance.isAppeal
                 ? t("gov.appealInProgressBanner")
-                : d.governance.suspended
-                  ? t("gov.suspendedBanner")
-                  : d.governance.underReview
-                    ? t("gov.underReviewBanner")
-                    : t("gov.pendingBanner")}
+                : d.governance.suspended && d.governance.appealReady
+                  ? t("gov.appealReadyBanner")
+                  : d.governance.suspended
+                    ? t("gov.suspendedBanner")
+                    : d.governance.underReview
+                      ? t("gov.underReviewBanner")
+                      : t("gov.pendingBanner")}
             </span>{" "}
             {t("gov.viewCase")} &rarr;
           </Link>
