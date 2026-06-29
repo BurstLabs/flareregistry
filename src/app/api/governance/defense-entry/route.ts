@@ -106,7 +106,11 @@ export async function POST(req: NextRequest) {
   // Supplemental entries hang off the primary defense, so a primary response must exist first.
   if (!theCase.defense) {
     return NextResponse.json(
-      { error: "post your response first, then you can add more entries" },
+      {
+        error:
+          "Before you can add more entries, post your response in the Provider section first (use “Add your response”).",
+        code: "PROVIDER_NEEDS_RESPONSE",
+      },
       { status: 409 }
     );
   }

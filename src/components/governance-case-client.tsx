@@ -940,9 +940,11 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         </div>
       </div>
 
-      {/* Live tally vs quorum. Hidden for a withdrawn flag: no voting ever happened, so a tally and
-          "outcome" would be misleading noise. */}
-      {!isWithdrawn && (
+      {/* Live tally vs quorum. Hidden for a withdrawn flag (no voting ever happened) AND while the
+          case is still PENDING / not yet opened: a single flag has no schedule and no votes, so a
+          "0 of N needed, quorum not met" tally would imply a vote is underway when it is not. The
+          tally appears once a second member opens the case (discussion onward). */}
+      {!isWithdrawn && hasOpened && (
       <div className="mt-6 surface rounded-xl border p-5">
         <h2 className="mb-3 text-lg font-semibold">{t("gov.case.voteTally")}</h2>
         <div className="grid grid-cols-4 gap-3 text-center">

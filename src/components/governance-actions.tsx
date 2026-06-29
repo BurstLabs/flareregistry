@@ -1149,7 +1149,16 @@ export function ReplyAction({
         body: JSON.stringify({ caseId, replyToRef, text, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.replyFailed"));
+      if (!res.ok) {
+        // Known codes get a localized message; otherwise fall back to the server text.
+        const msg =
+          b.code === "PROVIDER_NEEDS_RESPONSE"
+            ? t("gov.act.err.providerNeedsResponse")
+            : typeof b.error === "string"
+              ? b.error
+              : t("gov.act.err.replyFailed");
+        throw new Error(msg);
+      }
       setText("");
       setOpen(false);
       router.refresh();

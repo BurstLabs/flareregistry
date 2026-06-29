@@ -142,7 +142,11 @@ export async function POST(req: NextRequest) {
     const defense = await prisma.providerFlagDefense.findUnique({ where: { caseId } });
     if (!defense) {
       return NextResponse.json(
-        { error: "post your response first, then you can reply" },
+        {
+          error:
+            "Before you can reply, post your response in the Provider section first (use “Add your response”). Once your response is on the record you can reply to any point.",
+          code: "PROVIDER_NEEDS_RESPONSE",
+        },
         { status: 409 }
       );
     }
