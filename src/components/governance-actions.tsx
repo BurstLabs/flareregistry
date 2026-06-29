@@ -300,6 +300,7 @@ export function AddGroundsAction({
   const [open, setOpen] = useState(false);
   const [grounds, setGrounds] = useState("");
   const [title, setTitle] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -321,9 +322,18 @@ export function AddGroundsAction({
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
+      // Attach any pending images to the just-created point. created -> a new initiation (primary
+      // grounds), otherwise a supplemental grounds entry. Each upload re-signs (fresh nonce).
+      const ownerType = b.created ? "initiation" : "groundsEntry";
+      const ownerId = b.created ? b.initiationId : b.entryId;
+      for (const f of files) {
+        const sig = await signChallenge(t);
+        await uploadPointImage(f, ownerType, ownerId, { message: sig.message, signature: sig.signature }, t);
+      }
       setOk(t("gov.act.addSaved"));
       setGrounds("");
       setTitle("");
+      setFiles([]);
       setOpen(false);
       router.refresh();
     } catch (e) {
@@ -354,6 +364,7 @@ export function AddGroundsAction({
             placeholder={t("gov.act.addPlaceholder")}
             className="block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
           />
+          <PendingImagePicker files={files} setFiles={setFiles} disabled={busy} t={t} />
           <button
             onClick={submit}
             disabled={busy}
@@ -552,6 +563,7 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
   const router = useRouter();
   const [body, setBody] = useState(current ?? "");
   const [title, setTitle] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -570,6 +582,14 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
       const b = await res.json().catch(() => ({}));
       if (!res.ok)
         throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.defendFailedAuth"));
+      // Attach pending images to the newly created primary response.
+      if (b.defenseId) {
+        for (const f of files) {
+          const sig = await signChallenge(t);
+          await uploadPointImage(f, "defense", b.defenseId, { message: sig.message, signature: sig.signature }, t);
+        }
+        setFiles([]);
+      }
       setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.defendPosted"));
       router.refresh();
     } catch (e) {
@@ -592,6 +612,7 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
         placeholder={t("gov.act.defendPlaceholder")}
         className="block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
       />
+      <PendingImagePicker files={files} setFiles={setFiles} disabled={busy} t={t} />
       <button
         onClick={submit}
         disabled={busy}
@@ -681,6 +702,7 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
   const [open, setOpen] = useState(false);
   const [body, setBody] = useState("");
   const [title, setTitle] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -699,9 +721,15 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
+      // Attach pending images to the new response entry.
+      for (const f of files) {
+        const sig = await signChallenge(t);
+        await uploadPointImage(f, "defenseEntry", b.entryId, { message: sig.message, signature: sig.signature }, t);
+      }
       setOk(t("gov.act.addSaved"));
       setBody("");
       setTitle("");
+      setFiles([]);
       setOpen(false);
       router.refresh();
     } catch (e) {
@@ -729,6 +757,7 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
             placeholder={t("gov.act.addResponsePlaceholder")}
             className="block min-h-[100px] w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
           />
+          <PendingImagePicker files={files} setFiles={setFiles} disabled={busy} t={t} />
           <button
             onClick={submit}
             disabled={busy}
@@ -744,10 +773,82 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
   );
 }
 
+const IMAGE_MAX_PER_POINT = 4;
+
+// Upload one already-selected file to a point, using a signed auth payload (base64 so multipart
+// newline normalization can't corrupt the SIWE message). Returns nothing; throws on failure.
+async function uploadPointImage(
+  file: File,
+  ownerType: "initiation" | "groundsEntry" | "defense" | "defenseEntry",
+  ownerId: string,
+  auth: { message: string; signature: string },
+  t: TFn
+) {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("ownerType", ownerType);
+  fd.append("ownerId", ownerId);
+  fd.append("auth", btoa(JSON.stringify(auth)));
+  const res = await fetch("/api/governance/point-image", { method: "POST", body: fd });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.imageFailed"));
+  }
+}
+
+// A lightweight multi-file picker for the "add a new point" forms: holds selected files in state and
+// shows their names; the parent form uploads them after it creates the point. Reuses one signature
+// for the create + all image uploads is not possible (each upload needs a fresh nonce), so the parent
+// re-signs per upload via uploadPointImage.
+function PendingImagePicker({
+  files,
+  setFiles,
+  disabled,
+  t,
+}: {
+  files: File[];
+  setFiles: (f: File[]) => void;
+  disabled: boolean;
+  t: TFn;
+}) {
+  return (
+    <div className="mt-2">
+      <input
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        multiple
+        disabled={disabled}
+        onChange={(e) => {
+          const picked = Array.from(e.target.files ?? []);
+          setFiles([...files, ...picked].slice(0, IMAGE_MAX_PER_POINT));
+        }}
+        className="block text-xs text-muted file:mr-2 file:rounded file:border file:border-themed file:bg-elev file:px-2 file:py-1 file:text-xs file:text-muted hover:file:text-beacon disabled:opacity-50"
+      />
+      {files.length > 0 && (
+        <ul className="mt-1 space-y-0.5">
+          {files.map((f, i) => (
+            <li key={i} className="flex items-center gap-2 text-[11px] text-faint">
+              <span className="truncate">{f.name}</span>
+              <button
+                type="button"
+                onClick={() => setFiles(files.filter((_, k) => k !== i))}
+                disabled={disabled}
+                className="text-muted hover:text-flare disabled:opacity-50"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-1 text-[11px] text-faint">{t("gov.act.imageHint")}</p>
+    </div>
+  );
+}
+
 // Evidence images on a governance point: a thumbnail strip everyone sees, plus upload + remove for
 // the point's author while the case is still editable. Each action is wallet-signature gated; the
 // server re-verifies authorship and the case phase.
-const IMAGE_MAX_PER_POINT = 4;
 
 export function PointImages({
   images,

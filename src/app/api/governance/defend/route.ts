@@ -75,6 +75,8 @@ export async function POST(req: NextRequest) {
     await prisma.providerFlagDefenseRevision.create({
       data: { defenseId: created.id, body: text, title: newTitle },
     });
+    // Return the new defense id so the client can attach pending images to it.
+    return NextResponse.json({ ok: true, defenseId: created.id });
   } else {
     const bodyChanged = existing.body.trim() !== text;
     const titleChanged = title !== undefined && (existing.title ?? null) !== title;
