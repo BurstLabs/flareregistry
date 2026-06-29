@@ -459,23 +459,29 @@ function EntryBlock({
             removed: sameSave.reduce((s, e) => s + e.rem, 0),
           });
         });
-        // Image-only saves (no text revision in that bucket): one entry per bucket. For the current
-        // version's bucket, suppress ADDs (already shown as thumbnails) but keep REMOVEs.
-        const standalone = new Map<string, { at: string; added: number; removed: number }>();
-        for (const e of imgEvents) {
-          if (usedBuckets.has(e.bucket)) continue; // already merged into a prior text revision
-          const isCurrent = e.bucket === currentBucket;
-          const add = isCurrent ? 0 : e.add; // current adds are the visible thumbnails
-          if (add === 0 && e.rem === 0) continue;
-          const cur = standalone.get(e.bucket) ?? { at: e.at, added: 0, removed: 0 };
-          cur.added += add;
-          cur.removed += e.rem;
-          standalone.set(e.bucket, cur);
+        // Image-only changes (not merged into a text revision). These are standalone quick-attach/
+        // remove actions; cluster consecutive ones (within CLUSTER_MS, no text revision between) into
+        // one entry so a flurry of single-image edits reads as "1 attached, 2 removed" rather than a
+        // stack of separate lines. Current-bucket ADDs are suppressed (shown as thumbnails above).
+        const CLUSTER_MS = 2 * 60 * 1000;
+        const leftovers = imgEvents
+          .filter((e) => !usedBuckets.has(e.bucket))
+          .map((e) => ({ ms: new Date(e.at).getTime(), at: e.at, add: e.bucket === currentBucket ? 0 : e.add, rem: e.rem }))
+          .filter((e) => e.add > 0 || e.rem > 0)
+          .sort((a, b) => a.ms - b.ms); // oldest first for clustering
+        let cluster: { at: string; added: number; removed: number; lastMs: number } | null = null;
+        for (const e of leftovers) {
+          if (cluster && e.ms - cluster.lastMs <= CLUSTER_MS) {
+            cluster.added += e.add;
+            cluster.removed += e.rem;
+            cluster.lastMs = e.ms;
+            cluster.at = e.at; // entry timestamp = most recent in the cluster
+          } else {
+            if (cluster) items.push({ at: cluster.at, kind: "image", added: cluster.added, removed: cluster.removed });
+            cluster = { at: e.at, added: e.add, removed: e.rem, lastMs: e.ms };
+          }
         }
-        for (const s of standalone.values()) {
-          if (s.added === 0 && s.removed === 0) continue;
-          items.push({ at: s.at, kind: "image", added: s.added, removed: s.removed });
-        }
+        if (cluster) items.push({ at: cluster.at, kind: "image", added: cluster.added, removed: cluster.removed });
         if (items.length === 0) return null;
         items.sort((a, b) => (a.at < b.at ? 1 : -1)); // newest first
 
