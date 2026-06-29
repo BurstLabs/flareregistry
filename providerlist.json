@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-28T22:17:42.641Z",
+  "timestamp": "2026-06-29T00:42:45.272Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -573,19 +573,20 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-28T22:17:39.772Z",
+          "qualifiedSince": null,
           "lastSubmittedEpoch": 409,
           "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
+          "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
         },
         "governance": {
           "pending": false,
-          "underReview": false,
-          "isAppeal": false,
+          "underReview": true,
+          "isAppeal": true,
           "suspended": true,
-          "caseId": "cmqv4kszm000512w6c1yyzxut",
-          "state": "DENIED"
+          "appealReady": false,
+          "caseId": "cmqyhu8m100034mxmpfiexpo9",
+          "state": "OPEN_DISCUSSION"
         }
       }
     },
@@ -2806,6 +2807,7 @@
           "underReview": false,
           "isAppeal": false,
           "suspended": false,
+          "appealReady": false,
           "caseId": "cmqsanocs0003ldfficr7a4h9",
           "state": "WITHDRAWN"
         }
@@ -4074,19 +4076,20 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-28T22:17:39.772Z",
+          "qualifiedSince": null,
           "lastSubmittedEpoch": 409,
           "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
+          "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
         },
         "governance": {
           "pending": false,
-          "underReview": false,
-          "isAppeal": false,
+          "underReview": true,
+          "isAppeal": true,
           "suspended": true,
-          "caseId": "cmqv4kszm000512w6c1yyzxut",
-          "state": "DENIED"
+          "appealReady": false,
+          "caseId": "cmqyhu8m100034mxmpfiexpo9",
+          "state": "OPEN_DISCUSSION"
         }
       }
     },
