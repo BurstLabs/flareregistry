@@ -22,6 +22,8 @@ export interface CaseView {
   suspended: boolean;
   state: string;
   isReVote: boolean;
+  // For an appeal (re-vote), the original denied review it appeals, so the page can link back to it.
+  appealOfCaseId: string | null;
   // When the flag was first raised (PENDING). The discussion window starts at openedAt, which is a
   // later, distinct moment (the 2nd co-initiator opening the case).
   raisedAt: string;
@@ -467,6 +469,16 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
           {v.providerName}
         </Link>
       </p>
+      {/* An appeal links back to the original denied review it is appealing, so the original record
+          is always one click away once an appeal has started. */}
+      {v.isReVote && v.appealOfCaseId && (
+        <p className="mt-1 text-sm text-muted">
+          {t("gov.case.appealOfLabel")}{" "}
+          <Link href={`/governance/${v.appealOfCaseId}`} className="text-beacon hover:underline">
+            {t("gov.case.appealOfLink")}
+          </Link>
+        </p>
+      )}
 
       {isPending && (
         <>

@@ -145,6 +145,18 @@ export default async function GovernanceCasePage({
     };
   }
 
+  // When viewing an APPEAL (re-vote), find the original denied review it appeals, so the appeal
+  // page links back to it and the original review stays one click away.
+  let appealOfCaseId: string | null = null;
+  if (c.isReVote) {
+    const original = await prisma.providerFlagCase.findFirst({
+      where: { providerId: c.provider.id, isReVote: false, state: "DENIED" },
+      orderBy: { decidedAt: "desc" },
+      select: { id: true },
+    });
+    appealOfCaseId = original?.id ?? null;
+  }
+
   const view: CaseView = {
     id: c.id,
     providerId: c.provider.id,
@@ -153,6 +165,7 @@ export default async function GovernanceCasePage({
     suspended: c.provider.suspended,
     state: c.state,
     isReVote: c.isReVote,
+    appealOfCaseId,
     raisedAt: c.createdAt.toISOString(),
     openedAt: c.openedAt.toISOString(),
     discussionEndsAt: c.discussionEndsAt.toISOString(),
