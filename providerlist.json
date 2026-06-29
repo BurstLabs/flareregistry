@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-29T17:44:49.673Z",
+  "timestamp": "2026-06-29T18:00:10.262Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -547,12 +547,12 @@
       "url": "https://www.burstlabs.io",
       "address": "0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
-      "listed": true,
+      "listed": false,
       "flareregistry": {
         "verified": true,
         "registered": true,
         "managementGroup": true,
-        "qualified": true,
+        "qualified": false,
         "network": "flare",
         "feePercent": 20,
         "votePower": "122489750626975483233954033",
@@ -583,10 +583,10 @@
           "pending": false,
           "underReview": false,
           "isAppeal": false,
-          "suspended": false,
+          "suspended": true,
           "appealReady": false,
           "caseId": "cmqyhu8m100034mxmpfiexpo9",
-          "state": "CLEARED"
+          "state": "DENIED"
         }
       }
     },
@@ -4050,12 +4050,12 @@
       "url": "https://www.burstlabs.io",
       "address": "0x44bAE8BA9DA0a0583e49937ca5a251b8CdC1BC81",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
-      "listed": true,
+      "listed": false,
       "flareregistry": {
         "verified": true,
         "registered": true,
         "managementGroup": true,
-        "qualified": true,
+        "qualified": false,
         "network": "songbird",
         "feePercent": 20,
         "votePower": "114747494292212030833394657",
@@ -4086,10 +4086,10 @@
           "pending": false,
           "underReview": false,
           "isAppeal": false,
-          "suspended": false,
+          "suspended": true,
           "appealReady": false,
           "caseId": "cmqyhu8m100034mxmpfiexpo9",
-          "state": "CLEARED"
+          "state": "DENIED"
         }
       }
     },
