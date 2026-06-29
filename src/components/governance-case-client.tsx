@@ -671,9 +671,11 @@ function PointNode({
         canAttach={canAttachImg}
         editor={p.editor}
       />
-      {canReply && <ReplyAction caseId={caseId} replyToRef={p.ref} />}
-      {replies.length > 0 && (
-        <>
+      {/* Reply trigger and the collapse toggle sit on one row with a gap, so they never run together
+          ("ReplyShow 3 replies"). ReplyAction expands to a full editor below when opened. */}
+      <div className="flex flex-wrap items-center gap-x-4">
+        {canReply && <ReplyAction caseId={caseId} replyToRef={p.ref} />}
+        {replies.length > 0 && (
           <button
             onClick={() => setShowReplies((s) => !s)}
             className="mt-1 text-xs font-medium text-muted hover:text-beacon"
@@ -682,30 +684,30 @@ function PointNode({
               ? t("gov.case.hideReplies")
               : t("gov.case.showReplies", { n: replyCount })}
           </button>
-          {showReplies && (
-            <ul
-              className={`mt-2 space-y-3 border-l-2 pl-3 ${
-                // Tint the nested thread by the FIRST reply's author so a provider answer reads distinctly.
-                replies[0].role === "provider" ? "border-flare/30" : "border-beacon/30"
-              }`}
-            >
-              {replies.map((r) => (
-                <PointNode
-                  key={r.id}
-                  p={r}
-                  num={null}
-                  childrenByRef={childrenByRef}
-                  labelByRef={labelByRef}
-                  caseId={caseId}
-                  canReply={canReply}
-                  canAttachImg={canAttachImg}
-                  now={now}
-                  t={t}
-                />
-              ))}
-            </ul>
-          )}
-        </>
+        )}
+      </div>
+      {replies.length > 0 && showReplies && (
+        <ul
+          className={`mt-2 space-y-3 border-l-2 pl-3 ${
+            // Tint the nested thread by the FIRST reply's author so a provider answer reads distinctly.
+            replies[0].role === "provider" ? "border-flare/30" : "border-beacon/30"
+          }`}
+        >
+          {replies.map((r) => (
+            <PointNode
+              key={r.id}
+              p={r}
+              num={null}
+              childrenByRef={childrenByRef}
+              labelByRef={labelByRef}
+              caseId={caseId}
+              canReply={canReply}
+              canAttachImg={canAttachImg}
+              now={now}
+              t={t}
+            />
+          ))}
+        </ul>
       )}
     </li>
   );
