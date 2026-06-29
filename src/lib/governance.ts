@@ -141,6 +141,24 @@ export async function loadMembers(): Promise<{
       }
     }
   }
+
+  // Test-only: GOVERNANCE_TEST_EXCLUDE (comma-separated lowercased voter addresses) removes those
+  // members entirely, so an address that is BOTH an on-chain member and the flagged provider can be
+  // tested in the provider role (otherwise the member branch wins). Applied last so it strips the
+  // voter and all of its role addresses regardless of insertion order. Unset in normal operation.
+  const excluded = (process.env.GOVERNANCE_TEST_EXCLUDE ?? "")
+    .split(",")
+    .map((a) => a.trim().toLowerCase())
+    .filter(Boolean);
+  if (excluded.length) {
+    const excludedSet = new Set(excluded);
+    for (const [addr, voter] of [...voterByAddress.entries()]) {
+      if (excludedSet.has(voter)) {
+        voterByAddress.delete(addr);
+        memberAddresses.delete(addr);
+      }
+    }
+  }
   return { memberAddresses, voterByAddress, memberCount: totalMemberCount };
 }
 
