@@ -11,6 +11,7 @@ import {
   caseDeadlines,
   CO_INITIATORS_REQUIRED,
 } from "@/lib/governance";
+import { apiError } from "@/lib/api-error";
 
 // POST /api/governance/flag
 // A Management Group member co-initiates a flag against a new provider. The member signs a
@@ -35,13 +36,14 @@ export async function POST(req: NextRequest) {
     );
   }
   if (grounds.length < 10 || grounds.length > 2000) {
-    return NextResponse.json(
-      { error: "grounds must be between 10 and 2000 characters" },
-      { status: 400 }
+    return apiError(
+      "GROUNDS_LENGTH",
+      "grounds must be between 10 and 2000 characters",
+      400
     );
   }
   if (!isClean(grounds)) {
-    return NextResponse.json({ error: "grounds contain inappropriate language" }, { status: 400 });
+    return apiError("INAPPROPRIATE_LANGUAGE", "grounds contain inappropriate language", 400);
   }
 
   // Verify the signer controls a current Management Group member address.
@@ -53,13 +55,14 @@ export async function POST(req: NextRequest) {
   try {
     members = await loadMembers();
   } catch {
-    return NextResponse.json({ error: "could not verify Management Group membership" }, { status: 503 });
+    return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
   if (!memberVoter) {
-    return NextResponse.json(
-      { error: "the signing address is not a current Management Group member" },
-      { status: 403 }
+    return apiError(
+      "NOT_A_MEMBER",
+      "the signing address is not a current Management Group member",
+      403
     );
   }
 

@@ -5,6 +5,7 @@ import { commitLogo, uploadsEnabled } from "@/lib/github";
 import { validateLogo } from "@/lib/png";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
+import { apiError } from "@/lib/api-error";
 
 // POST /api/provider/logo  (multipart/form-data, field "logo")
 // Commits the uploaded PNG to the public assets repo for the authenticated address and points
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
   const session = await getSessionAddress();
   if (!session) {
-    return NextResponse.json({ error: "not authenticated" }, { status: 401 });
+    return apiError("NOT_AUTHENTICATED", "not authenticated", 401);
   }
   if (!uploadsEnabled()) {
     return NextResponse.json(

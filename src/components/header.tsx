@@ -134,7 +134,7 @@ export function Header() {
           {/* Mobile menu button (links are hidden below sm) */}
           <button
             onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Menu"
+            aria-label={t("nav.menu")}
             aria-expanded={menuOpen}
             className="rounded-md border border-themed p-1.5 text-muted hover:text-beacon sm:hidden"
           >

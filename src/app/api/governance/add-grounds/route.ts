@@ -6,6 +6,7 @@ import { isClean } from "@/lib/content-filter";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
 import { imageBuffersFromForm, storePointImageBatch } from "@/lib/point-image";
 import { randomUUID } from "crypto";
+import { apiError } from "@/lib/api-error";
 
 // Read the request as either JSON (no images) or multipart (text + optional images, base64 auth).
 // Returns the common fields plus any image buffers, so a point and its evidence save under one sig.
@@ -87,13 +88,14 @@ export async function POST(req: NextRequest) {
     );
   }
   if (grounds.length < 10 || grounds.length > 2000) {
-    return NextResponse.json(
-      { error: "grounds must be between 10 and 2000 characters" },
-      { status: 400 }
+    return apiError(
+      "GROUNDS_LENGTH",
+      "grounds must be between 10 and 2000 characters",
+      400
     );
   }
   if (!isClean(grounds)) {
-    return NextResponse.json({ error: "grounds contain inappropriate language" }, { status: 400 });
+    return apiError("INAPPROPRIATE_LANGUAGE", "grounds contain inappropriate language", 400);
   }
 
   const verified = await verifyChallenge(message, signature);
@@ -104,13 +106,14 @@ export async function POST(req: NextRequest) {
   try {
     members = await loadMembers();
   } catch {
-    return NextResponse.json({ error: "could not verify Management Group membership" }, { status: 503 });
+    return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
   if (!memberVoter) {
-    return NextResponse.json(
-      { error: "the signing address is not a current Management Group member" },
-      { status: 403 }
+    return apiError(
+      "NOT_A_MEMBER",
+      "the signing address is not a current Management Group member",
+      403
     );
   }
 
@@ -118,21 +121,23 @@ export async function POST(req: NextRequest) {
     where: { id: caseId },
     include: { initiations: true },
   });
-  if (!theCase) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
 
   if (theCase.state !== "PENDING" && theCase.state !== "OPEN_DISCUSSION") {
-    return NextResponse.json(
-      { error: "grounds can no longer be added once voting has opened" },
-      { status: 409 }
+    return apiError(
+      "VOTING_LOCKED_GROUNDS",
+      "grounds can no longer be added once voting has opened",
+      409
     );
   }
 
   // The "Add another entry" button was shown under a specific member's flag. If that flag is not the
   // signer's, reject, rather than quietly attaching the entry to the signer's own flag.
   if (ownerVoter && ownerVoter !== memberVoter) {
-    return NextResponse.json(
-      { error: "you can only add a point to your own flag" },
-      { status: 403 }
+    return apiError(
+      "NOT_YOUR_FLAG",
+      "you can only add a point to your own flag",
+      403
     );
   }
 
@@ -147,15 +152,17 @@ export async function POST(req: NextRequest) {
     // route's counting (so the case opens properly); we must not create a second initiation here and
     // bypass that gate.
     if (theCase.state !== "OPEN_DISCUSSION") {
-      return NextResponse.json(
-        { error: "you have not flagged this provider, so you cannot add grounds yet" },
-        { status: 403 }
+      return apiError(
+        "CANNOT_ADD_GROUNDS_YET",
+        "you have not flagged this provider, so you cannot add grounds yet",
+        403
       );
     }
     if (ownerVoter && ownerVoter !== memberVoter) {
-      return NextResponse.json(
-        { error: "you can only add a point to your own grounds" },
-        { status: 403 }
+      return apiError(
+        "NOT_YOUR_FLAG",
+        "you can only add a point to your own grounds",
+        403
       );
     }
     const initiation = await prisma.providerFlagInitiation.create({

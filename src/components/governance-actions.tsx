@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers";
 import { switchWalletChain } from "@/lib/chains";
+import { apiErrorMessage } from "@/lib/i18n";
 
 declare global {
   interface Window {
@@ -105,7 +106,7 @@ export function FlagAction({ providerId }: { providerId: string }) {
         body: JSON.stringify({ providerId, grounds, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.flagFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.flagFailed"));
       // On success, go straight into the Governance review for this case (where the flag, its
       // grounds, and the withdraw option live), instead of leaving the member on the provider page.
       if (b.caseId) {
@@ -177,7 +178,7 @@ export function WithdrawAction({ caseId }: { caseId: string }) {
         body: JSON.stringify({ caseId, message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.withdrawFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.withdrawFailed"));
       setOk(b.caseClosed ? t("gov.act.withdrawnClosed") : t("gov.act.withdrawn"));
       router.refresh();
     } catch (e) {
@@ -270,7 +271,7 @@ export function EditGroundsAction({
         });
       }
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.editFailed"));
       router.refresh();
       onDone?.();
     } catch (e) {
@@ -363,7 +364,7 @@ export function AddGroundsAction({
         });
       }
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.addFailed"));
       setOk(t("gov.act.addSaved"));
       setGrounds("");
       setTitle("");
@@ -443,7 +444,7 @@ export function AppealAction({ providerId }: { providerId: string }) {
         }),
       });
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.appealFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.appealFailed"));
       setOk(t("gov.act.appealOpened"));
       // Go straight to the newly opened appeal case so the provider sees their appeal in progress.
       if (typeof b.caseId === "string") {
@@ -531,7 +532,7 @@ export function VoteAction({ caseId }: { caseId: string }) {
         }),
       });
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.voteFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.voteFailed"));
       setOk(
         b.unchanged
           ? t("gov.act.voteUnchanged")
@@ -626,7 +627,7 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
       }
       const b = await res.json().catch(() => ({}));
       if (!res.ok)
-        throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.defendFailedAuth"));
+        throw new Error(apiErrorMessage(t, b, "gov.act.err.defendFailedAuth"));
       setFiles([]);
       setOk(b.unchanged ? t("gov.act.editUnchanged") : t("gov.act.defendPosted"));
       router.refresh();
@@ -723,7 +724,7 @@ export function EditResponseAction({
         });
       }
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.editFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.editFailed"));
       router.refresh();
       onDone?.();
     } catch (e) {
@@ -801,7 +802,7 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
         });
       }
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.addFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.addFailed"));
       setOk(t("gov.act.addSaved"));
       setBody("");
       setTitle("");
@@ -868,7 +869,7 @@ async function uploadPointImage(
   const res = await fetch("/api/governance/point-image", { method: "POST", body: fd });
   if (!res.ok) {
     const b = await res.json().catch(() => ({}));
-    throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.imageFailed"));
+    throw new Error(apiErrorMessage(t, b, "gov.act.err.imageFailed"));
   }
 }
 
@@ -1039,7 +1040,7 @@ export function PointImages({
       fd.append("auth", btoa(JSON.stringify({ message: s.message, signature: s.signature })));
       const res = await fetch("/api/governance/point-image", { method: "POST", body: fd });
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.imageFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.imageFailed"));
       router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.act.err.imageFailed"));
@@ -1060,7 +1061,7 @@ export function PointImages({
         body: JSON.stringify({ message: s.message, signature: s.signature }),
       });
       const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(typeof b.error === "string" ? b.error : t("gov.act.err.imageFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.imageFailed"));
       router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.act.err.imageFailed"));

@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
 import { storePointImage, IMAGE_MAX_PER_POINT, IMAGE_MAX_BYTES } from "@/lib/point-image";
 import { randomUUID } from "crypto";
+import { apiError } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
     try {
       members = await loadMembers();
     } catch {
-      return NextResponse.json({ error: "could not verify Management Group membership" }, { status: 503 });
+      return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
     }
     const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
     authorized = !!memberVoter && memberVoter === init.memberEntityVoter;

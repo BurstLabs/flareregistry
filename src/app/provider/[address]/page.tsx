@@ -62,13 +62,15 @@ export default async function ProviderDetail({
   const NETWORK_LABEL: Record<string, string> = { flare: "Flare", songbird: "Songbird" };
   const entityAddresses = entities.map((e) => ({
     network: NETWORK_LABEL[e.network] ?? e.network,
+    // roleKey is a stable identifier translated client-side (detail.role.*); role keeps the English
+    // term as a fallback for any client that does not translate.
     roles: [
-      { role: "Identity", address: e.voter },
-      { role: "Submit", address: e.submitAddress },
-      { role: "Submit signatures", address: e.submitSignaturesAddress },
-      { role: "Signing policy", address: e.signingPolicyAddress },
-      { role: "Delegation", address: e.delegationAddress },
-    ].filter((r): r is { role: string; address: string } => !!r.address),
+      { roleKey: "identity", role: "Identity", address: e.voter },
+      { roleKey: "submit", role: "Submit", address: e.submitAddress },
+      { roleKey: "submitSignatures", role: "Submit signatures", address: e.submitSignaturesAddress },
+      { roleKey: "signingPolicy", role: "Signing policy", address: e.signingPolicyAddress },
+      { roleKey: "delegation", role: "Delegation", address: e.delegationAddress },
+    ].filter((r): r is { roleKey: string; role: string; address: string } => !!r.address),
   }));
 
   const data: DetailData = {

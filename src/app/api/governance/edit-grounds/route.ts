@@ -4,6 +4,7 @@ import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
+import { apiError } from "@/lib/api-error";
 import {
   imageBuffersFromForm,
   storePointImageBatch,
@@ -86,13 +87,14 @@ export async function POST(req: NextRequest) {
     );
   }
   if (grounds.length < 10 || grounds.length > 2000) {
-    return NextResponse.json(
-      { error: "grounds must be between 10 and 2000 characters" },
-      { status: 400 }
+    return apiError(
+      "GROUNDS_LENGTH",
+      "grounds must be between 10 and 2000 characters",
+      400
     );
   }
   if (!isClean(grounds)) {
-    return NextResponse.json({ error: "grounds contain inappropriate language" }, { status: 400 });
+    return apiError("INAPPROPRIATE_LANGUAGE", "grounds contain inappropriate language", 400);
   }
 
   // Verify the signer controls a current Management Group member address.
@@ -104,13 +106,14 @@ export async function POST(req: NextRequest) {
   try {
     members = await loadMembers();
   } catch {
-    return NextResponse.json({ error: "could not verify Management Group membership" }, { status: 503 });
+    return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
   if (!memberVoter) {
-    return NextResponse.json(
-      { error: "the signing address is not a current Management Group member" },
-      { status: 403 }
+    return apiError(
+      "NOT_A_MEMBER",
+      "the signing address is not a current Management Group member",
+      403
     );
   }
 
@@ -118,13 +121,14 @@ export async function POST(req: NextRequest) {
     where: { id: caseId },
     include: { initiations: true },
   });
-  if (!theCase) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
 
   // Grounds lock once voting opens (or the case is decided). Only pre-vote stages are editable.
   if (theCase.state !== "PENDING" && theCase.state !== "OPEN_DISCUSSION") {
-    return NextResponse.json(
-      { error: "grounds can no longer be edited once voting has opened" },
-      { status: 409 }
+    return apiError(
+      "VOTING_LOCKED_GROUNDS",
+      "grounds can no longer be edited once voting has opened",
+      409
     );
   }
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CHAINS, switchWalletChain } from "@/lib/chains";
 import { useApp } from "./providers";
+import { apiErrorMessage } from "@/lib/i18n";
 
 declare global {
   interface Window {
@@ -65,7 +66,7 @@ export function LinkNetworkPanel({
     });
     if (!verifyRes.ok) {
       const body = await verifyRes.json().catch(() => ({}));
-      throw new Error(body.error ?? t("submit.err.verifyFailed"));
+      throw new Error(apiErrorMessage(t, body, "submit.err.verifyFailed"));
     }
   }
 
@@ -114,7 +115,7 @@ export function LinkNetworkPanel({
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(
-          typeof body.error === "string" ? body.error : t("submit.err.linkFailed")
+          apiErrorMessage(t, body, "submit.err.linkFailed")
         );
       }
       const chainName =
@@ -155,7 +156,7 @@ export function LinkNetworkPanel({
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(
-          typeof body.error === "string" ? body.error : t("submit.err.unlinkFailed")
+          apiErrorMessage(t, body, "submit.err.unlinkFailed")
         );
       }
       setMsg(t("submit.unlink.ok"));

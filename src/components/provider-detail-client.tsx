@@ -32,7 +32,7 @@ export interface DetailData {
   checks: { key: string; label: string; status: "pass" | "fail" | "unknown"; detail: string }[];
   addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
   // The full registered on-chain entity addresses (all five roles) per matched network.
-  entityAddresses: { network: string; roles: { role: string; address: string }[] }[];
+  entityAddresses: { network: string; roles: { roleKey: string; role: string; address: string }[] }[];
   history: {
     epoch: number;
     feeBips: number | null;
@@ -385,10 +385,10 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 <ul className="divide-y divide-themed text-sm">
                   {e.roles.map((r) => (
                     <li
-                      key={r.role}
+                      key={r.roleKey}
                       className="flex flex-col gap-0.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                     >
-                      <span className="shrink-0 text-faint">{r.role}</span>
+                      <span className="shrink-0 text-faint">{t(`detail.role.${r.roleKey}`)}</span>
                       <span className="truncate font-mono text-xs">{r.address}</span>
                     </li>
                   ))}

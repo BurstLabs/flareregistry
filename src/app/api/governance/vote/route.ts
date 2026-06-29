@@ -4,6 +4,7 @@ import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
 import { loadMembers, memberVoterFor, isVotingOpen } from "@/lib/governance";
+import { apiError } from "@/lib/api-error";
 
 // POST /api/governance/vote
 // A Management Group member casts a DENY or KEEP vote during a case's voting period.
@@ -26,17 +27,18 @@ export async function POST(req: NextRequest) {
     );
   }
   if (comment && (comment.length > 2000 || !isClean(comment))) {
-    return NextResponse.json({ error: "comment too long or inappropriate" }, { status: 400 });
+    return apiError("COMMENT_INVALID", "comment too long or inappropriate", 400);
   }
 
   const theCase = await prisma.providerFlagCase.findUnique({ where: { id: caseId } });
-  if (!theCase) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
 
   const now = new Date();
   if (!isVotingOpen(theCase, now)) {
-    return NextResponse.json(
-      { error: "voting is not open for this case (it is in discussion or already decided)" },
-      { status: 409 }
+    return apiError(
+      "VOTING_NOT_OPEN",
+      "voting is not open for this case (it is in discussion or already decided)",
+      409
     );
   }
 
@@ -48,13 +50,14 @@ export async function POST(req: NextRequest) {
   try {
     members = await loadMembers();
   } catch {
-    return NextResponse.json({ error: "could not verify Management Group membership" }, { status: 503 });
+    return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
   if (!memberVoter) {
-    return NextResponse.json(
-      { error: "the signing address is not a current Management Group member" },
-      { status: 403 }
+    return apiError(
+      "NOT_A_MEMBER",
+      "the signing address is not a current Management Group member",
+      403
     );
   }
 

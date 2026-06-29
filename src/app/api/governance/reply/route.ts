@@ -6,6 +6,7 @@ import { isClean } from "@/lib/content-filter";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
 import { imageBuffersFromForm, storePointImageBatch } from "@/lib/point-image";
 import { randomUUID } from "crypto";
+import { apiError } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
 
@@ -62,10 +63,10 @@ export async function POST(req: NextRequest) {
     );
   }
   if (text.length < 1 || text.length > 4000) {
-    return NextResponse.json({ error: "reply must be 1-4000 characters" }, { status: 400 });
+    return apiError("REPLY_LENGTH", "reply must be 1-4000 characters", 400);
   }
   if (!isClean(text)) {
-    return NextResponse.json({ error: "reply contains inappropriate language" }, { status: 400 });
+    return apiError("INAPPROPRIATE_LANGUAGE", "reply contains inappropriate language", 400);
   }
 
   const verified = await verifyChallenge(message, signature);
@@ -78,11 +79,12 @@ export async function POST(req: NextRequest) {
     where: { id: caseId },
     include: { provider: { include: { addresses: true } } },
   });
-  if (!theCase) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
   if (theCase.state !== "PENDING" && theCase.state !== "OPEN_DISCUSSION") {
-    return NextResponse.json(
-      { error: "replies can no longer be added once voting has opened" },
-      { status: 409 }
+    return apiError(
+      "VOTING_LOCKED_REPLY",
+      "replies can no longer be added once voting has opened",
+      409
     );
   }
 
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
   try {
     members = await loadMembers();
   } catch {
-    return NextResponse.json({ error: "could not verify Management Group membership" }, { status: 503 });
+    return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
   const ownsProvider = theCase.provider.addresses.some(
@@ -113,9 +115,10 @@ export async function POST(req: NextRequest) {
     if (!initiation) {
       // Allowed only on an OPEN case (mirrors add-grounds: don't bypass the PENDING co-init gate).
       if (theCase.state !== "OPEN_DISCUSSION") {
-        return NextResponse.json(
-          { error: "you have not flagged this provider, so you cannot reply yet" },
-          { status: 403 }
+        return apiError(
+          "CANNOT_REPLY_YET",
+          "you have not flagged this provider, so you cannot reply yet",
+          403
         );
       }
       initiation = await prisma.providerFlagInitiation.create({

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
+import { apiError } from "@/lib/api-error";
 
 // POST /api/governance/unflag
 // A member withdraws their own co-initiation. Only allowed while the case is still PENDING (i.e.
@@ -24,11 +25,12 @@ export async function POST(req: NextRequest) {
   }
 
   const theCase = await prisma.providerFlagCase.findUnique({ where: { id: caseId } });
-  if (!theCase) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
   if (theCase.state !== "PENDING") {
-    return NextResponse.json(
-      { error: "the case has already opened; a flag can only be withdrawn before a second member joins" },
-      { status: 409 }
+    return apiError(
+      "FLAG_ALREADY_OPENED",
+      "the case has already opened; a flag can only be withdrawn before a second member joins",
+      409
     );
   }
 
@@ -40,18 +42,18 @@ export async function POST(req: NextRequest) {
   try {
     members = await loadMembers();
   } catch {
-    return NextResponse.json({ error: "could not verify Management Group membership" }, { status: 503 });
+    return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
   if (!memberVoter) {
-    return NextResponse.json({ error: "the signing address is not a current Management Group member" }, { status: 403 });
+    return apiError("NOT_A_MEMBER", "the signing address is not a current Management Group member", 403);
   }
 
   const mine = await prisma.providerFlagInitiation.findUnique({
     where: { caseId_memberEntityVoter: { caseId, memberEntityVoter: memberVoter } },
   });
   if (!mine) {
-    return NextResponse.json({ error: "you have not co-initiated this flag" }, { status: 404 });
+    return apiError("NOT_CO_INITIATOR", "you have not co-initiated this flag", 404);
   }
 
   const totalInitiations = await prisma.providerFlagInitiation.count({ where: { caseId } });

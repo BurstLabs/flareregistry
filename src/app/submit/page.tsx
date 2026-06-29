@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CHAINS, switchWalletChain } from "@/lib/chains";
 import { checkContent } from "@/lib/content-filter";
 import { useApp } from "@/components/providers";
+import { apiErrorMessage } from "@/lib/i18n";
 
 // Provider self-service flow:
 //   1. Connect wallet (window.ethereum) and read the active address.
@@ -199,7 +200,7 @@ function SubmitPageInner() {
       fd.append("logo", file);
       const res = await fetch("/api/provider/logo", { method: "POST", body: fd });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? t("submit.logo.uploadFailed"));
+      if (!res.ok) throw new Error(apiErrorMessage(t, body, "submit.logo.uploadFailed"));
       setLogoUri(body.logoURI);
       setLogoMsg(t("submit.logo.published"));
       setLogoOk(true);
@@ -281,7 +282,7 @@ function SubmitPageInner() {
       });
       if (!verifyRes.ok) {
         const body = await verifyRes.json().catch(() => ({}));
-        throw new Error(body.error ?? t("submit.err.verifyFailed"));
+        throw new Error(apiErrorMessage(t, body, "submit.err.verifyFailed"));
       }
       // Prefill from an existing listing (claiming an imported entry, or editing your own).
       const hasExisting = await loadExisting(address.toLowerCase());
@@ -379,7 +380,7 @@ function SubmitPageInner() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(typeof body.error === "string" ? body.error : t("submit.delete.failed"));
+        throw new Error(apiErrorMessage(t, body, "submit.delete.failed"));
       }
       router.push("/");
     } catch (e) {

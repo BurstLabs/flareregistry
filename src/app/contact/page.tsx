@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useApp } from "@/components/providers";
 import { checkContent } from "@/lib/content-filter";
+import { apiErrorMessage } from "@/lib/i18n";
 
 export default function ContactPage() {
   const { t } = useApp();
@@ -42,7 +43,7 @@ export default function ContactPage() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(
-          typeof body.error === "string" ? body.error : t("contact.error")
+          apiErrorMessage(t, body, "contact.error")
         );
       }
       setSent(true);

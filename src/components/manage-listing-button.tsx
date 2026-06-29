@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "./providers";
 import { switchWalletChain } from "@/lib/chains";
+import { apiErrorMessage } from "@/lib/i18n";
 
 declare global {
   interface Window {
@@ -80,7 +81,7 @@ export function ManageListingButton({
       });
       if (!verifyRes.ok) {
         const body = await verifyRes.json().catch(() => ({}));
-        throw new Error(body.error ?? t("submit.err.verifyFailed"));
+        throw new Error(apiErrorMessage(t, body, "submit.err.verifyFailed"));
       }
       router.push("/submit?manage=1");
     } catch (e) {

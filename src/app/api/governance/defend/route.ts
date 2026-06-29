@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
 import { imageBuffersFromForm, storePointImageBatch, removePointImages } from "@/lib/point-image";
 import { randomUUID } from "crypto";
+import { apiError } from "@/lib/api-error";
 
 async function readBody(req: NextRequest) {
   const ct = req.headers.get("content-type") ?? "";
@@ -60,10 +61,10 @@ export async function POST(req: NextRequest) {
     );
   }
   if (text.length > 4000) {
-    return NextResponse.json({ error: "defense must be at most 4000 characters" }, { status: 400 });
+    return apiError("DEFENSE_LENGTH", "defense must be at most 4000 characters", 400);
   }
   if (!isClean(text)) {
-    return NextResponse.json({ error: "defense contains inappropriate language" }, { status: 400 });
+    return apiError("INAPPROPRIATE_LANGUAGE", "defense contains inappropriate language", 400);
   }
 
   // Verify the signature and recover the signing address.
@@ -77,14 +78,14 @@ export async function POST(req: NextRequest) {
     where: { id: caseId },
     include: { provider: { include: { addresses: true } } },
   });
-  if (!theCase) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
 
   // The signing address must own (verified-claim) the flagged provider.
   const ownsIt = theCase.provider.addresses.some(
     (a) => a.address.toLowerCase() === signer && a.verified
   );
   if (!ownsIt) {
-    return NextResponse.json({ error: "only the flagged provider can post a defense" }, { status: 403 });
+    return apiError("NOT_PROVIDER", "only the flagged provider can post a defense", 403);
   }
 
   // A provider can respond from the moment it is flagged (PENDING) through the discussion period.
@@ -92,9 +93,10 @@ export async function POST(req: NextRequest) {
   // members vote on is frozen for everyone, so the provider cannot change its statement mid-vote.
   // Same for flag cases and appeals (state-based).
   if (theCase.state !== "PENDING" && theCase.state !== "OPEN_DISCUSSION") {
-    return NextResponse.json(
-      { error: "the response is locked once voting has opened" },
-      { status: 409 }
+    return apiError(
+      "VOTING_LOCKED_RESPONSE",
+      "the response is locked once voting has opened",
+      409
     );
   }
 

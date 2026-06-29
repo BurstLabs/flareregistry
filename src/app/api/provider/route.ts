@@ -6,6 +6,7 @@ import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
 import { isRegisteredOnchain } from "@/lib/metrics";
 import { getChain } from "@/lib/chains";
+import { apiError } from "@/lib/api-error";
 
 // POST /api/provider  -> create or update the authenticated provider's listing.
 //
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
   const session = await getSessionAddress();
   if (!session) {
-    return NextResponse.json({ error: "not authenticated" }, { status: 401 });
+    return apiError("NOT_AUTHENTICATED", "not authenticated", 401);
   }
 
   const parsed = providerInputSchema.safeParse(await req.json().catch(() => null));
@@ -42,9 +43,12 @@ export async function POST(req: NextRequest) {
   for (const a of input.addresses) {
     const chain = getChain(a.chainId);
     if (chain?.mainnet && !(await isRegisteredOnchain(a.address, chain.key))) {
+      // Coded + interpolation vars so the client can localize with the address/chain filled in.
       return NextResponse.json(
         {
           error: `address ${a.address} is not a registered FTSO entity on ${chain.name}. Only on-chain registered signal providers can list.`,
+          code: "NOT_REGISTERED",
+          vars: { address: a.address, chain: chain.name },
         },
         { status: 403 }
       );
@@ -70,9 +74,10 @@ export async function POST(req: NextRequest) {
   const hasLogo =
     !!input.logoURI || !!existingLogo?.logoURI || !!existingLogo?.logoPath;
   if (!hasLogo) {
-    return NextResponse.json(
-      { error: "a logo is required. Upload one before publishing your listing." },
-      { status: 400 }
+    return apiError(
+      "LOGO_REQUIRED",
+      "a logo is required. Upload one before publishing your listing.",
+      400
     );
   }
 
@@ -90,6 +95,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: `A provider named "${clash.name}" already exists. If this is your other network, sign in with that listing and use "Link another network" instead of creating a new one.`,
+        code: "NAME_TAKEN",
       },
       { status: 409 }
     );
@@ -109,7 +115,10 @@ export async function POST(req: NextRequest) {
     // Allowed: my own record (any address), or the signed session address claiming its record.
     if (!ownedByMe && !isSessionAddr) {
       return NextResponse.json(
-        { error: `address ${a.address} on chain ${a.chainId} belongs to another listing` },
+        {
+          error: `address ${a.address} on chain ${a.chainId} belongs to another listing`,
+          code: "ADDRESS_OTHER_LISTING",
+        },
         { status: 409 }
       );
     }

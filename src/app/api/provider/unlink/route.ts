@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSessionAddress } from "@/lib/session";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
+import { apiError } from "@/lib/api-error";
 
 // POST /api/provider/unlink  -> remove an address from the caller's listing.
 //
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   const session = await getSessionAddress();
   if (!session) {
-    return NextResponse.json({ error: "not authenticated" }, { status: 401 });
+    return apiError("NOT_AUTHENTICATED", "not authenticated", 401);
   }
 
   const body = await req.json().catch(() => null);

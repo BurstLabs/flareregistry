@@ -4,6 +4,7 @@ import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
 import { readPointImage, deletePointImageFile } from "@/lib/point-image";
+import { apiError } from "@/lib/api-error";
 
 // GET /api/governance/image/<id>  -> stream the stored evidence image (public; case pages are public).
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -78,7 +79,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       try {
         members = await loadMembers();
       } catch {
-        return NextResponse.json({ error: "could not verify membership" }, { status: 503 });
+        return apiError("MEMBERSHIP_UNVERIFIED", "could not verify membership", 503);
       }
       const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
       authorized = !!memberVoter && memberVoter === init.memberEntityVoter;

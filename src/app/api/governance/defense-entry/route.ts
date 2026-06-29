@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
 import { imageBuffersFromForm, storePointImageBatch, removePointImages } from "@/lib/point-image";
 import { randomUUID } from "crypto";
+import { apiError } from "@/lib/api-error";
 
 // Parse JSON, or multipart (text + images + base64 auth) when images are attached on creation.
 async function readBody(req: NextRequest) {
@@ -86,21 +87,22 @@ export async function POST(req: NextRequest) {
     where: { id: caseId },
     include: { provider: { include: { addresses: true } }, defense: true },
   });
-  if (!theCase) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
 
   const ownsIt = theCase.provider.addresses.some(
     (a) => a.address.toLowerCase() === signer && a.verified
   );
   if (!ownsIt) {
-    return NextResponse.json({ error: "only the flagged provider can respond" }, { status: 403 });
+    return apiError("NOT_PROVIDER", "only the flagged provider can respond", 403);
   }
 
   // Locks once voting opens, matching the primary defense and member grounds: the record members
   // vote on is frozen for everyone. Same for flag cases and appeals (state-based).
   if (theCase.state !== "PENDING" && theCase.state !== "OPEN_DISCUSSION") {
-    return NextResponse.json(
-      { error: "the response is locked once voting has opened" },
-      { status: 409 }
+    return apiError(
+      "VOTING_LOCKED_RESPONSE",
+      "the response is locked once voting has opened",
+      409
     );
   }
 
