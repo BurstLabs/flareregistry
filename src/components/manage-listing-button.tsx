@@ -18,13 +18,19 @@ declare global {
 // edit form - skipping the otherwise near-empty connect screen.
 //
 // claimed=false means this is an unclaimed legacy seed (no verified owner yet). Then the affordance
-// reads "Claim this listing" and the owner-wallet gate is skipped: any wallet may attempt, and the
-// server (/api/provider) enforces that the signer controls one of the listing's registered addresses.
+// reads "Claim this listing" and the wallet must match one of THIS listing's registered addresses
+// (claimAddresses). Without that check, signing in with a wallet that owns a DIFFERENT provider would
+// open a session and /submit?manage=1 would jump to that wallet's own listing, not the one being
+// claimed (the manage flow resolves the listing by the signed-in address).
 export function ManageListingButton({
   ownerAddresses,
+  claimAddresses = [],
   claimed = true,
 }: {
+  // Verified owner addresses (gate for managing an already-claimed listing).
   ownerAddresses: string[];
+  // All of this listing's registered addresses (gate for claiming an unclaimed seed).
+  claimAddresses?: string[];
   claimed?: boolean;
 }) {
   const { t } = useApp();
@@ -43,12 +49,13 @@ export function ManageListingButton({
       const addr = accounts?.[0];
       if (!addr) throw new Error(t("submit.err.noAccount"));
 
-      // For an ALREADY-claimed listing, the connected wallet must be a verified owner of THIS
-      // provider; otherwise managing here would silently jump to whatever listing that wallet owns.
-      // Reject up front with a clear error. An unclaimed seed has no owner yet, so any wallet may
-      // attempt to claim it and the server enforces the registered-address match.
-      if (claimed && !ownerAddresses.includes(addr.toLowerCase())) {
-        throw new Error(t("detail.manageWrongWallet"));
+      // The connected wallet must belong to THIS listing; otherwise signing in would open a session
+      // and the manage flow would jump to whatever listing that wallet owns, not this one. For an
+      // already-claimed listing the wallet must be a verified owner; for an unclaimed seed it must be
+      // one of the listing's registered addresses (the legitimate claimant signs with one of those).
+      const allowed = claimed ? ownerAddresses : claimAddresses;
+      if (!allowed.includes(addr.toLowerCase())) {
+        throw new Error(claimed ? t("detail.manageWrongWallet") : t("detail.claimWrongWallet"));
       }
 
       // Match the wallet network to the session challenge chain (Flare 14) for a consistent popup.
