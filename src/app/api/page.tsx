@@ -69,7 +69,7 @@ export default function ApiDocs() {
         {t("api.optionalObj")} <code className="text-beacon">flareregistry</code>{" "}
         {t("api.optionalObjAfter")}
       </p>
-      <pre className="overflow-x-auto rounded-lg border border-themed bg-elev p-4 text-xs font-medium">
+      <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-themed bg-elev p-4 text-xs font-medium">
         {`"flareregistry": {
   "verified": true,                 // owner proved control of this address by signature
   "registered": true,               // matched to a registered FTSO entity on-chain
@@ -110,7 +110,7 @@ export default function ApiDocs() {
 
       <h2 className="mb-3 mt-8 text-xl font-semibold">{t("api.logoHeading")}</h2>
       <p className="mb-3 text-sm text-muted">{t("api.logoHosted")}</p>
-      <pre className="overflow-x-auto rounded-lg border border-themed bg-elev p-4 text-xs font-medium">
+      <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-themed bg-elev p-4 text-xs font-medium">
         {`https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/<checksumAddress>.png
 
 # example

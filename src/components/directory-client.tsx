@@ -223,7 +223,7 @@ export function DirectoryClient({
                 <p className="mt-3 line-clamp-3 text-sm text-muted">{p.description}</p>
 
                 {(p.fee || p.votePower || p.reward) && (
-                  <dl className="mt-4 grid grid-cols-3 gap-2 text-xs max-[400px]:grid-cols-1">
+                  <dl className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
                     {p.fee && (
                       <div>
                         <dt className="text-faint">{t("card.fee")}</dt>

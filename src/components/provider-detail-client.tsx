@@ -220,7 +220,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
 
       {/* Metrics */}
       {(d.fee || d.votePower || d.reward) && (
-        <dl className="surface mt-6 grid grid-cols-2 gap-4 rounded-xl border p-5 text-sm sm:grid-cols-4">
+        <dl className="surface mt-6 grid grid-cols-2 gap-4 rounded-xl border p-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {d.fee && (
             <div>
               <dt className="text-faint">{t("card.fee")}</dt>

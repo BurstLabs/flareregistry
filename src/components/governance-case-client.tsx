@@ -1025,7 +1025,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
           {showTally && (
             <>
               <h2 className="mt-5 mb-3 text-lg font-semibold">{t("gov.case.voteTally")}</h2>
-              <div className="grid grid-cols-4 gap-3 text-center">
+              <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
                 <div>
                   <div className="text-2xl font-bold text-flare">{v.denyVotes}</div>
                   <div className="text-xs text-faint">{t("gov.case.deny")}</div>
