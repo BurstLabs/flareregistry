@@ -418,44 +418,52 @@ function EntryBlock({
           t={t}
         />
       )}
-      {/* Read-only public history for THIS point: text revisions AND removed-image records, merged
-          and collapsed by default. */}
+      {/* Read-only public history for THIS point: text revisions and image attach/remove events,
+          merged into ONE chronological timeline (newest first), collapsed by default. */}
       {(() => {
-        const removedImages = (images ?? []).filter((i) => i.removedAt);
-        const historyCount = priorVersions.length + removedImages.length;
-        if (historyCount === 0) return null;
-        const revs = priorVersions.map((_, k) => priorVersions[priorVersions.length - 1 - k]);
+        const allImages = images ?? [];
+        // Build a single event list. Text revisions oldest->newest get "Original"/"Revised"; image
+        // events get an attached/removed label. Everything is then sorted newest-first together.
+        type Ev =
+          | { at: string; kind: "text"; isOriginal: boolean; title: string | null; text: string }
+          | { at: string; kind: "imgAdd" | "imgRemove" };
+        const events: Ev[] = [];
+        priorVersions.forEach((r, i) =>
+          events.push({ at: r.at, kind: "text", isOriginal: i === 0, title: r.title, text: r.text })
+        );
+        for (const img of allImages) {
+          events.push({ at: img.at, kind: "imgAdd" });
+          if (img.removedAt) events.push({ at: img.removedAt, kind: "imgRemove" });
+        }
+        if (events.length === 0) return null;
+        events.sort((a, b) => (a.at < b.at ? 1 : -1)); // newest first
         return (
           <details className="mt-2 ml-1 rounded border border-themed/60 bg-elev/30 p-2 text-xs">
             <summary className="cursor-pointer select-none text-faint hover:text-beacon">
-              {t("gov.case.history.show", { n: historyCount })}
+              {t("gov.case.history.show", { n: events.length })}
             </summary>
             <p className="mt-1 text-[11px] italic text-faint">{t("gov.case.history.note")}</p>
             <ul className="mt-2 space-y-2">
-              {revs.map((r, k) => (
-                <li key={`t${k}`} className="border-l-2 border-themed pl-2">
+              {events.map((ev, k) => (
+                <li key={k} className="border-l-2 border-themed pl-2">
                   <div className="text-faint">
-                    {k === revs.length - 1
-                      ? t("gov.case.history.original")
-                      : t("gov.case.history.revised")}{" "}
-                    &middot; <RelTime at={r.at} now={now} />
+                    {ev.kind === "text"
+                      ? ev.isOriginal
+                        ? t("gov.case.history.original")
+                        : t("gov.case.history.revised")
+                      : ev.kind === "imgAdd"
+                        ? t("gov.act.imageAttachedAt")
+                        : t("gov.act.imageRemovedHist")}{" "}
+                    &middot; <RelTime at={ev.at} now={now} />
                   </div>
-                  {r.title && <div className="mt-0.5 font-medium text-muted">{r.title}</div>}
-                  <p className="mt-0.5 whitespace-pre-wrap text-muted">{r.text}</p>
+                  {ev.kind === "text" && (
+                    <>
+                      {ev.title && <div className="mt-0.5 font-medium text-muted">{ev.title}</div>}
+                      <p className="mt-0.5 whitespace-pre-wrap text-muted">{ev.text}</p>
+                    </>
+                  )}
                 </li>
               ))}
-              {/* Removed images, newest first. The bytes are gone; only the record remains. */}
-              {removedImages
-                .slice()
-                .reverse()
-                .map((img) => (
-                  <li key={`i${img.id}`} className="border-l-2 border-themed pl-2 text-faint">
-                    {t("gov.act.imageRemovedAt", {
-                      added: fmt(img.at),
-                      removed: fmt(img.removedAt!),
-                    })}
-                  </li>
-                ))}
             </ul>
           </details>
         );
