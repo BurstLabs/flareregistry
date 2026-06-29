@@ -34,26 +34,46 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Quorum evaluation for a tally. memberCount is the LIVE Management Group size at tally time. */
 // Quorum is measured against ALL votes cast (DENY + KEEP + ABSTAIN): an abstention is a present
-// member, so it counts toward turnout. The deny majority is measured only against the DECISIVE
-// votes (DENY + KEEP); an abstention is "present but not voting on the question", so it neither
-// helps nor hinders denial. This is what makes ABSTAIN a true neutral that cannot game quorum.
+// member, so it counts toward turnout. The majority is measured only against the DECISIVE votes
+// (DENY + KEEP); an abstention is "present but not voting on the question", so it neither helps nor
+// hinders. This is what makes ABSTAIN a true neutral that cannot game quorum.
+//
+// The two processes have OPPOSITE defaults, so each needs an AFFIRMATIVE majority to change its
+// status quo, and an all-abstain (or split) quorate vote changes nothing:
+//   Flag  (status quo = listed)   - a DENY supermajority is required to suspend. Otherwise CLEARED.
+//   Appeal(status quo = suspended)- a KEEP supermajority is required to lift the suspension. Otherwise
+//                                   the appeal is rejected (DENIED), so an all-abstain appeal does NOT
+//                                   lift the suspension.
 export function evaluateOutcome(
   memberCount: number,
   votesCast: number,
   denyVotes: number,
-  decisiveVotes: number = votesCast
-): { decided: FlagState; turnoutFloor: number; denyNeeded: number } {
+  decisiveVotes: number = votesCast,
+  opts: { isReVote?: boolean; keepVotes?: number } = {}
+): { decided: FlagState; turnoutFloor: number; denyNeeded: number; keepNeeded: number } {
   const turnoutFloor = Math.ceil((QUORUM_TURNOUT_BIPS / 10000) * memberCount);
+  // Symmetric supermajority bar applied to whichever side must affirmatively win.
   const denyNeeded = Math.ceil((DENY_MAJORITY_BIPS / 10000) * decisiveVotes);
+  const keepNeeded = Math.ceil((DENY_MAJORITY_BIPS / 10000) * decisiveVotes);
   if (votesCast < turnoutFloor) {
-    return { decided: "FAILED_QUORUM", turnoutFloor, denyNeeded };
+    return { decided: "FAILED_QUORUM", turnoutFloor, denyNeeded, keepNeeded };
   }
-  // With zero decisive votes (everyone abstained) denyNeeded is 0; an all-abstain quorate case is
-  // not a denial, so require at least one deny.
+  if (opts.isReVote) {
+    // Appeal: only an affirmative KEEP supermajority overturns the denial. With zero decisive votes
+    // (all abstain) keepNeeded is 0, but a non-vote is not a win, so require at least one keep.
+    const keepVotes = opts.keepVotes ?? 0;
+    if (keepVotes >= keepNeeded && keepVotes > 0) {
+      return { decided: "CLEARED", turnoutFloor, denyNeeded, keepNeeded };
+    }
+    // Anything else with quorum (deny majority, a split, or all-abstain) rejects the appeal.
+    return { decided: "DENIED", turnoutFloor, denyNeeded, keepNeeded };
+  }
+  // Flag: a DENY supermajority suspends. With zero decisive votes denyNeeded is 0, so require at
+  // least one deny; otherwise the provider stays listed.
   if (denyVotes >= denyNeeded && denyVotes > 0) {
-    return { decided: "DENIED", turnoutFloor, denyNeeded };
+    return { decided: "DENIED", turnoutFloor, denyNeeded, keepNeeded };
   }
-  return { decided: "CLEARED", turnoutFloor, denyNeeded };
+  return { decided: "CLEARED", turnoutFloor, denyNeeded, keepNeeded };
 }
 
 /**

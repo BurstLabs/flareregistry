@@ -82,7 +82,10 @@ export async function POST(req: NextRequest) {
       const denyVotes = validVotes.filter((v) => v.vote === "DENY").length;
       const keepVotes = validVotes.filter((v) => v.vote === "KEEP").length;
       const decisiveVotes = denyVotes + keepVotes; // excludes abstentions (for the deny majority)
-      const { decided } = evaluateOutcome(members.memberCount, votesCast, denyVotes, decisiveVotes);
+      const { decided } = evaluateOutcome(members.memberCount, votesCast, denyVotes, decisiveVotes, {
+        isReVote: c.isReVote,
+        keepVotes,
+      });
 
       // Suspension effect depends on whether this is a flag or an APPEAL, because the outcomes mean
       // opposite things:

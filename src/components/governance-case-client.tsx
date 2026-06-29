@@ -707,6 +707,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
   const hasOpened = idx >= 1;
   const quorumMet = v.votesCast >= v.turnoutFloor;
   const denyMet = v.denyVotes >= v.denyNeeded;
+  // An appeal is upheld only by an affirmative KEEP supermajority (same 67%-of-decisive bar as deny),
+  // and at least one keep, so an all-abstain or split vote does NOT lift the suspension.
+  const keepMet = v.keepVotes >= v.denyNeeded && v.keepVotes > 0;
 
   const STAGES = [
     // An appeal is filed by the provider, not "flagged" by members.
@@ -912,18 +915,18 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             <MetBadge met={quorumMet} t={t} />
           </p>
           {/* For an appeal, show BOTH sides: the appellant needs a keep result to overturn the
-              denial, and the deny side is what would reject the appeal. The keep side is "met" exactly
-              when the case would resolve CLEARED (quorum met and the deny supermajority NOT reached).
-              For a flag case, only the single deny line is shown (a deny supermajority suspends). */}
+              denial, and the deny side is what would reject the appeal. The keep side is "met" only on
+              an affirmative keep supermajority (the same 67%-of-decisive bar as deny) - a split or
+              all-abstain vote does NOT uphold the appeal. For a flag case, only the single deny line is
+              shown (a deny supermajority suspends). */}
           {v.isReVote && (
             <p>
               {t("gov.case.keepLine", {
                 keepVotes: v.keepVotes,
-                // Keep needed to deny the deny-supermajority among the current decisive votes: one
-                // more than what would let deny reach its bar. Mirrors the deny line's "X of Y needed".
-                keepNeeded: Math.max(1, v.decisiveVotes - v.denyNeeded + 1),
+                // Keep needed = the 67%-of-decisive supermajority bar (at least 1), mirroring deny.
+                keepNeeded: Math.max(1, v.denyNeeded),
               })}
-              <MetBadge met={quorumMet && !denyMet} t={t} />
+              <MetBadge met={keepMet} t={t} />
             </p>
           )}
           <p>
@@ -1011,11 +1014,20 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               />
             </p>
             <p className="mt-1 text-xs text-muted">
-              {quorumMet && denyMet
-                ? t(v.isReVote ? "gov.case.provisionalDenyAppeal" : "gov.case.provisionalDeny")
-                : quorumMet && !denyMet
-                  ? t(v.isReVote ? "gov.case.provisionalClearAppeal" : "gov.case.provisionalClear")
-                  : t(v.isReVote ? "gov.case.provisionalQuorumAppeal" : "gov.case.provisionalQuorum")}
+              {v.isReVote
+                ? // Appeal: upheld only on an affirmative keep supermajority; otherwise (with quorum)
+                  // it is rejected; without quorum it fails for lack of quorum.
+                  quorumMet && keepMet
+                  ? t("gov.case.provisionalClearAppeal")
+                  : quorumMet
+                    ? t("gov.case.provisionalDenyAppeal")
+                    : t("gov.case.provisionalQuorumAppeal")
+                : // Flag: suspended only on a deny supermajority; otherwise cleared; else fails quorum.
+                  quorumMet && denyMet
+                  ? t("gov.case.provisionalDeny")
+                  : quorumMet && !denyMet
+                    ? t("gov.case.provisionalClear")
+                    : t("gov.case.provisionalQuorum")}
             </p>
             {/* Only relevant while quorum is still short: the provider must rally the votes. */}
             {!quorumMet && (
