@@ -3,40 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers";
-import { switchWalletChain } from "@/lib/chains";
+import { useSignChallenge } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
 
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-    };
-  }
-}
-
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
-
-// Connect the wallet and produce a signed SIWE challenge for the active address.
-async function signChallenge(t: TFn): Promise<{ address: string; message: string; signature: string }> {
-  if (!window.ethereum) throw new Error(t("gov.act.err.noWallet"));
-  const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
-  const address = accounts?.[0];
-  if (!address) throw new Error(t("gov.act.err.noAccount"));
-  // The governance challenge is on Flare (14); match the wallet network for a consistent popup.
-  await switchWalletChain(window.ethereum, 14);
-  const nonceRes = await fetch("/api/auth/nonce", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ address, chainId: 14 }),
-  });
-  if (!nonceRes.ok) throw new Error(t("gov.act.err.noChallenge"));
-  const { message } = await nonceRes.json();
-  const signature = (await window.ethereum.request({
-    method: "personal_sign",
-    params: [message, address],
-  })) as string;
-  return { address, message, signature };
-}
 
 // Inline status line under an action. Errors scroll themselves into view, because some action boxes
 // (notably the provider response) sit at the bottom of a long case page, where a rejection rendered
@@ -83,6 +53,7 @@ function TitleInput({
 // Flag form, shown on a new provider's page. A Management Group member signs and submits grounds.
 export function FlagAction({ providerId }: { providerId: string }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [grounds, setGrounds] = useState("");
@@ -99,7 +70,7 @@ export function FlagAction({ providerId }: { providerId: string }) {
     }
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const res = await fetch("/api/governance/flag", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -161,6 +132,7 @@ export function FlagAction({ providerId }: { providerId: string }) {
 // own flag (the endpoint verifies they are that member). Closes the case if no flag remains.
 export function WithdrawAction({ caseId }: { caseId: string }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -171,7 +143,7 @@ export function WithdrawAction({ caseId }: { caseId: string }) {
     setOk("");
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const res = await fetch("/api/governance/unflag", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -232,6 +204,7 @@ export function EditGroundsAction({
   onDone?: () => void;
 }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [grounds, setGrounds] = useState(current);
   const [title, setTitle] = useState(currentTitle);
@@ -249,7 +222,7 @@ export function EditGroundsAction({
     }
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const hasImageChange = newFiles.length > 0 || removeIds.length > 0;
       let res: Response;
       if (hasImageChange) {
@@ -325,6 +298,7 @@ export function AddGroundsAction({
   label?: string;
 }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [grounds, setGrounds] = useState("");
@@ -343,7 +317,7 @@ export function AddGroundsAction({
     }
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       // One signed request creates the point AND attaches its images (multipart). When there are no
       // images, JSON keeps the simpler path.
       let res: Response;
@@ -420,6 +394,7 @@ export function AddGroundsAction({
 // appeal opens immediately (no Management Group co-initiation), running discussion then voting.
 export function AppealAction({ providerId }: { providerId: string }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [statement, setStatement] = useState("");
   const [busy, setBusy] = useState(false);
@@ -432,7 +407,7 @@ export function AppealAction({ providerId }: { providerId: string }) {
     setOk("");
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const res = await fetch("/api/governance/appeal", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -507,6 +482,7 @@ export function AppealAction({ providerId }: { providerId: string }) {
 
 export function VoteAction({ caseId }: { caseId: string }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
@@ -519,7 +495,7 @@ export function VoteAction({ caseId }: { caseId: string }) {
     setOk("");
     setBusy(vote);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const res = await fetch("/api/governance/vote", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -595,6 +571,7 @@ export function VoteAction({ caseId }: { caseId: string }) {
 // is handled by EditResponseAction; this is shown only when no response exists yet.
 export function DefendAction({ caseId, current }: { caseId: string; current: string | null }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [body, setBody] = useState(current ?? "");
   const [title, setTitle] = useState("");
@@ -608,7 +585,7 @@ export function DefendAction({ caseId, current }: { caseId: string; current: str
     setOk("");
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       let res: Response;
       if (files.length > 0) {
         const fd = new FormData();
@@ -688,6 +665,7 @@ export function EditResponseAction({
   onDone?: () => void;
 }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [body, setBody] = useState(current);
   const [title, setTitle] = useState(currentTitle);
@@ -702,7 +680,7 @@ export function EditResponseAction({
     if (body.trim().length < 1) return;
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const url = isPrimary ? "/api/governance/defend" : "/api/governance/defense-entry";
       const hasImageChange = imagesEditable && (newFiles.length > 0 || removeIds.length > 0);
       let res: Response;
@@ -769,6 +747,7 @@ export function EditResponseAction({
 // Add-response panel: the flagged provider adds a SUPPLEMENTAL response entry (signature-gated).
 export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [body, setBody] = useState("");
@@ -784,7 +763,7 @@ export function AddDefenseEntryAction({ caseId }: { caseId: string }) {
     if (body.trim().length < 1) return;
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       let res: Response;
       if (files.length > 0) {
         const fd = new FormData();
@@ -1020,6 +999,7 @@ export function PointImages({
   t: TFn;
 }) {
   const router = useRouter();
+  const signChallenge = useSignChallenge(t);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -1030,7 +1010,7 @@ export function PointImages({
     setErr("");
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const fd = new FormData();
       fd.append("file", file);
       fd.append("ownerType", ownerType);
@@ -1054,7 +1034,7 @@ export function PointImages({
     setErr("");
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const res = await fetch(`/api/governance/image/${id}`, {
         method: "DELETE",
         headers: { "content-type": "application/json" },
@@ -1132,6 +1112,7 @@ export function ReplyAction({
   replyToRef: string;
 }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -1143,7 +1124,7 @@ export function ReplyAction({
     if (text.trim().length < 1) return;
     setBusy(true);
     try {
-      const s = await signChallenge(t);
+      const s = await signChallenge();
       const res = await fetch("/api/governance/reply", {
         method: "POST",
         headers: { "content-type": "application/json" },

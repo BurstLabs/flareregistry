@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { switchWalletChain } from "@/lib/chains";
+import { useWalletSign } from "@/lib/useWalletSign";
 
 // Operator-only admin dashboard. English-only (internal tool, not a user-facing page). Access is
 // gated by ADMIN_ADDRESSES: sign in with an allowlisted wallet (reusing the SIWE flow) to unlock it.
 
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-    };
-  }
-}
-
 type Tab = "stats" | "providers" | "qualification" | "governance" | "system";
+
+// Minimal English-only translator so the shared wallet-sign hook (which throws localised keys) shows
+// readable copy in this internal tool without pulling in the full i18n context.
+const ADMIN_STRINGS: Record<string, string> = {
+  "submit.err.noAccount": "No account.",
+  "submit.err.noChallenge": "Could not get a challenge.",
+  "submit.err.wrongAccount": "Wrong account.",
+};
+const adminT = (key: string) => ADMIN_STRINGS[key] ?? key;
 
 export default function AdminPage() {
   const [admin, setAdmin] = useState<boolean | null>(null);
@@ -22,6 +23,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("stats");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const connectAndSign = useWalletSign(adminT);
 
   const checkSession = useCallback(async () => {
     try {
@@ -42,22 +44,7 @@ export default function AdminPage() {
     setErr("");
     setBusy(true);
     try {
-      if (!window.ethereum) throw new Error("No wallet found.");
-      const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[];
-      const addr = accounts?.[0];
-      if (!addr) throw new Error("No account.");
-      await switchWalletChain(window.ethereum, 14);
-      const nonceRes = await fetch("/api/auth/nonce", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address: addr, chainId: 14 }),
-      });
-      if (!nonceRes.ok) throw new Error("Could not get a challenge.");
-      const { message } = await nonceRes.json();
-      const signature = (await window.ethereum.request({
-        method: "personal_sign",
-        params: [message, addr],
-      })) as string;
+      const { message, signature } = await connectAndSign({ chainId: 14 });
       const verifyRes = await fetch("/api/auth/verify", {
         method: "POST",
         headers: { "content-type": "application/json" },

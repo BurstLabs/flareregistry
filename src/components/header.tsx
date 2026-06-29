@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useApp } from "./providers";
+import { WalletButton } from "./wallet-button";
 import { LOCALES, LOCALE_NAMES } from "@/lib/i18n";
 
 export function Header() {
@@ -91,6 +92,9 @@ export function Header() {
           <Link href="/faq" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
             {t("nav.faq")}
           </Link>
+
+          {/* Wallet connect / account */}
+          <WalletButton />
 
           {/* Language selector */}
           <div className="relative" ref={langRef}>

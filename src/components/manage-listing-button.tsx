@@ -3,16 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "./providers";
-import { switchWalletChain } from "@/lib/chains";
+import { useWalletSign } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
-
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-    };
-  }
-}
 
 // Inline "Manage this listing" on the provider page: connect the wallet and sign in (opening a
 // session), then route to /submit?manage=1, which detects the session and jumps straight to the
@@ -36,6 +28,7 @@ export function ManageListingButton({
 }) {
   const { t } = useApp();
   const router = useRouter();
+  const connectAndSign = useWalletSign(t);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -43,36 +36,16 @@ export function ManageListingButton({
     setErr("");
     setBusy(true);
     try {
-      if (!window.ethereum) throw new Error(t("submit.err.noWalletShort"));
-      const accounts = (await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-      const addr = accounts?.[0];
-      if (!addr) throw new Error(t("submit.err.noAccount"));
-
       // The connected wallet must belong to THIS listing; otherwise signing in would open a session
       // and the manage flow would jump to whatever listing that wallet owns, not this one. For an
       // already-claimed listing the wallet must be a verified owner; for an unclaimed seed it must be
       // one of the listing's registered addresses (the legitimate claimant signs with one of those).
-      const allowed = claimed ? ownerAddresses : claimAddresses;
-      if (!allowed.includes(addr.toLowerCase())) {
-        throw new Error(claimed ? t("detail.manageWrongWallet") : t("detail.claimWrongWallet"));
-      }
-
-      // Match the wallet network to the session challenge chain (Flare 14) for a consistent popup.
-      await switchWalletChain(window.ethereum, 14);
-
-      const nonceRes = await fetch("/api/auth/nonce", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address: addr, chainId: 14 }),
+      // The challenge is on Flare (14). The allow-list guard runs before signing.
+      const { message, signature } = await connectAndSign({
+        chainId: 14,
+        allowAddresses: claimed ? ownerAddresses : claimAddresses,
+        allowAddressesErrorKey: claimed ? "detail.manageWrongWallet" : "detail.claimWrongWallet",
       });
-      if (!nonceRes.ok) throw new Error(t("submit.err.noChallenge"));
-      const { message } = await nonceRes.json();
-      const signature = (await window.ethereum.request({
-        method: "personal_sign",
-        params: [message, addr],
-      })) as string;
 
       const verifyRes = await fetch("/api/auth/verify", {
         method: "POST",

@@ -2,7 +2,10 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CHAINS, switchWalletChain } from "@/lib/chains";
+import { useAppKit } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
+import { CHAINS } from "@/lib/chains";
+import { useWalletSign } from "@/lib/useWalletSign";
 import { checkContent } from "@/lib/content-filter";
 import { useApp } from "@/components/providers";
 import { apiErrorMessage } from "@/lib/i18n";
@@ -79,17 +82,12 @@ function explainError(error: unknown, t: T): string | null {
   return null;
 }
 
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-    };
-  }
-}
-
 function SubmitPageInner() {
   const { t } = useApp();
   const router = useRouter();
+  const { open } = useAppKit();
+  const { address: connectedAddress, isConnected } = useAccount();
+  const connectAndSign = useWalletSign(t);
   // "Manage" mode: arrived from a provider's "Manage this listing" link (/submit?manage=1). Shows
   // edit-oriented copy and hides the new-listing "registration required" notice, since the visitor
   // already has a listing. Plain /submit stays the "List your provider" create flow.
@@ -238,42 +236,28 @@ function SubmitPageInner() {
     }
   }
 
+  // Open the AppKit modal (injected extension or WalletConnect). Once a wallet connects, the effect
+  // below advances to the verify step with the connected address.
   async function connect() {
     setError("");
-    if (!window.ethereum) {
-      setError(t("submit.err.noWallet"));
-      return;
-    }
-    const accounts = (await window.ethereum.request({
-      method: "eth_requestAccounts",
-    })) as string[];
-    if (!accounts?.length) {
-      setError(t("submit.err.noAccount"));
-      return;
-    }
-    setAddress(accounts[0]);
-    setStep("verify");
+    await open();
   }
+
+  // When a wallet connects on the connect step, capture its address and move to verify. Pin the
+  // chain dropdown to the connected wallet's chain when it is one we support, else keep the default.
+  useEffect(() => {
+    if (step === "connect" && isConnected && connectedAddress) {
+      setAddress(connectedAddress);
+      setStep("verify");
+    }
+  }, [step, isConnected, connectedAddress]);
 
   async function verify() {
     setError("");
     setBusy(true);
     try {
-      // Match the wallet's active network to the chain being signed for, so the sign popup is
-      // consistent (the signature itself is chain-independent).
-      await switchWalletChain(window.ethereum, chainId);
-      const nonceRes = await fetch("/api/auth/nonce", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address, chainId }),
-      });
-      if (!nonceRes.ok) throw new Error(t("submit.err.noChallenge"));
-      const { message } = await nonceRes.json();
-
-      const signature = (await window.ethereum!.request({
-        method: "personal_sign",
-        params: [message, address],
-      })) as string;
+      // connectAndSign matches the wallet network (best-effort), fetches the nonce, and signs.
+      const { message, signature } = await connectAndSign({ chainId });
 
       const verifyRes = await fetch("/api/auth/verify", {
         method: "POST",

@@ -2,22 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CHAINS, switchWalletChain } from "@/lib/chains";
+import { CHAINS } from "@/lib/chains";
+import { useWalletSign } from "@/lib/useWalletSign";
 import { useApp } from "./providers";
 import { apiErrorMessage } from "@/lib/i18n";
-
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-    };
-  }
-}
-
-// Use the shared helper; wraps it with this component's window.ethereum.
-async function switchChain(chainId: number) {
-  await switchWalletChain(window.ethereum, chainId);
-}
 
 // Self-contained "Link another network" flow. Connects a wallet, signs the user in with the
 // connected address (proof of an address they already control on this listing), then takes a
@@ -37,6 +25,7 @@ export function LinkNetworkPanel({
 }) {
   const { t } = useApp();
   const router = useRouter();
+  const connectAndSign = useWalletSign(t);
   const options = CHAINS.filter((c) => c.chainId !== excludeChainId);
   const [linkChainId, setLinkChainId] = useState<number>(options[0]?.chainId ?? 19);
   const [busy, setBusy] = useState(false);
@@ -44,21 +33,10 @@ export function LinkNetworkPanel({
   const [msg, setMsg] = useState("");
   const [removing, setRemoving] = useState<string>("");
 
-  async function signIn(addr: string) {
-    // Establish a session as `addr` (must be an address that owns this listing). The session
-    // challenge is on Flare (14); match the wallet network so the sign popup is consistent.
-    await switchChain(14);
-    const nonceRes = await fetch("/api/auth/nonce", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ address: addr, chainId: 14 }),
-    });
-    if (!nonceRes.ok) throw new Error(t("submit.err.noChallenge"));
-    const { message } = await nonceRes.json();
-    const signature = (await window.ethereum!.request({
-      method: "personal_sign",
-      params: [message, addr],
-    })) as string;
+  async function signIn() {
+    // Establish a session as the connected address (must be one that owns this listing; the server
+    // enforces ownership). The session challenge is on Flare (14).
+    const { message, signature } = await connectAndSign({ chainId: 14 });
     const verifyRes = await fetch("/api/auth/verify", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -79,33 +57,14 @@ export function LinkNetworkPanel({
     setMsg("");
     setBusy(true);
     try {
-      if (!window.ethereum) throw new Error(t("submit.err.noWalletShort"));
-      const accounts = (await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-      const addr = accounts?.[0];
-      if (!addr) throw new Error(t("submit.err.noAccount"));
-      // For "Verify" on a specific row, the connected account must be that address.
-      if (expectAddress && addr.toLowerCase() !== expectAddress.toLowerCase()) {
-        throw new Error(t("submit.err.wrongAccount", { address: expectAddress }));
-      }
-
-      // Match the wallet's active network to the address's chain so the sign popup is consistent.
-      await switchChain(chainId);
-
-      // Single signature, from the address being linked/verified. The server matches the listing
-      // by name and requires it to already have a verified owner, so no separate sign-in is needed.
-      const nonceRes = await fetch("/api/auth/nonce", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address: addr, chainId }),
+      // Single signature, from the address being linked/verified, on its own chain. The server
+      // matches the listing by name and requires it to already have a verified owner, so no separate
+      // sign-in is needed. For "Verify" on a specific row, the connected account must be that address.
+      const { message, signature } = await connectAndSign({
+        chainId,
+        expectAddress,
+        expectAddressErrorKey: "submit.err.wrongAccount",
       });
-      if (!nonceRes.ok) throw new Error(t("submit.err.noChallenge"));
-      const { message } = await nonceRes.json();
-      const signature = (await window.ethereum.request({
-        method: "personal_sign",
-        params: [message, addr],
-      })) as string;
 
       const res = await fetch("/api/provider/link", {
         method: "POST",
@@ -139,14 +98,8 @@ export function LinkNetworkPanel({
     if (!window.confirm(t("submit.unlink.confirm", { address }))) return;
     setRemoving(`${chainId}-${address}`);
     try {
-      if (!window.ethereum) throw new Error(t("submit.err.noWalletShort"));
-      const accounts = (await window.ethereum.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-      const signer = accounts?.[0];
-      if (!signer) throw new Error(t("submit.err.noAccount"));
       // Prove ownership of the listing by signing in with a wallet that holds one of its addresses.
-      await signIn(signer);
+      await signIn();
 
       const res = await fetch("/api/provider/unlink", {
         method: "POST",

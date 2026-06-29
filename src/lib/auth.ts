@@ -3,7 +3,9 @@
 
 import { SiweMessage } from "siwe";
 import { randomBytes } from "node:crypto";
+import { createPublicClient, http, type Hex } from "viem";
 import { prisma } from "./db";
+import { getChain } from "./chains";
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -69,17 +71,37 @@ export async function verifyChallenge(
   if (challenge.expiresAt.getTime() < Date.now())
     return { ok: false, error: "challenge expired" };
 
-  // siwe.verify checks the signature recovers to siwe.address and that nonce/domain match.
+  // siwe.verify checks the signature recovers to siwe.address (EOA / ECDSA) and that nonce/domain
+  // match. It does NOT validate smart-account (EIP-1271) signatures unless given an ethers provider,
+  // which we don't carry (the app is viem-based). So: try the EOA path first; on failure, fall back
+  // to an on-chain EIP-1271 check via viem. The nonce/domain/expiry are already enforced above, and
+  // the address is pinned below, so verifying just the signature against siwe.address is sufficient.
+  let signatureValid = false;
   try {
     const result = await siwe.verify({
       signature,
       nonce: challenge.nonce,
       domain: SIWE_DOMAIN,
     });
-    if (!result.success) return { ok: false, error: "bad signature" };
+    signatureValid = result.success;
   } catch {
-    return { ok: false, error: "bad signature" };
+    signatureValid = false;
   }
+
+  if (!signatureValid) {
+    // EIP-1271 fallback: the signer may be a smart-contract wallet (Safe, etc.) whose signature is a
+    // contract assertion, not a recoverable ECDSA sig. viem's verifyMessage calls the wallet's
+    // isValidSignature on-chain (and also handles EIP-6492). Best-effort: an RPC failure or an
+    // undeployed counterfactual account just leaves signatureValid false.
+    signatureValid = await verifyContractSignature(
+      siwe.address,
+      message,
+      signature,
+      siwe.chainId
+    );
+  }
+
+  if (!signatureValid) return { ok: false, error: "bad signature" };
 
   const recovered = siwe.address.toLowerCase();
   if (recovered !== challenge.address) {
@@ -95,4 +117,28 @@ export async function verifyChallenge(
   if (consumed.count !== 1) return { ok: false, error: "nonce already used" };
 
   return { ok: true, address: recovered };
+}
+
+// On-chain EIP-1271 / EIP-6492 signature check for smart-account wallets, via viem. Returns false on
+// any RPC error or for an undeployed counterfactual account rather than throwing, so the caller can
+// treat it as a plain "bad signature". chainId comes from the signed SIWE message; we only support
+// our known chains (testnets included, since a provider may verify a testnet address).
+async function verifyContractSignature(
+  address: string,
+  message: string,
+  signature: string,
+  chainId: number
+): Promise<boolean> {
+  const chain = getChain(chainId);
+  if (!chain) return false;
+  try {
+    const client = createPublicClient({ transport: http(chain.rpcUrl) });
+    return await client.verifyMessage({
+      address: address as Hex,
+      message,
+      signature: signature as Hex,
+    });
+  } catch {
+    return false;
+  }
 }
