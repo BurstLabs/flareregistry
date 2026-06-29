@@ -911,8 +911,21 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             })}
             <MetBadge met={quorumMet} t={t} />
           </p>
+          {/* For an appeal, show BOTH sides: the appellant needs a keep result to overturn the
+              denial, and the deny side is what would reject the appeal. The keep side is "met" exactly
+              when the case would resolve CLEARED (quorum met and the deny supermajority NOT reached).
+              For a flag case, only the single deny line is shown (a deny supermajority suspends). */}
+          {v.isReVote && (
+            <p>
+              {t("gov.case.keepLine", {
+                keepVotes: v.keepVotes,
+                decisiveVotes: v.decisiveVotes,
+              })}
+              <MetBadge met={quorumMet && !denyMet} t={t} />
+            </p>
+          )}
           <p>
-            {t("gov.case.denyLine", {
+            {t(v.isReVote ? "gov.case.rejectLine" : "gov.case.denyLine", {
               denyVotes: v.denyVotes,
               denyNeeded: v.denyNeeded,
               pct: Math.round(v.denyMajorityBips / 100),
