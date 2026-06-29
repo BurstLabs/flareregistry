@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-29T18:30:27.490Z",
+  "timestamp": "2026-06-29T19:12:45.695Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -551,7 +551,7 @@
       "flareregistry": {
         "verified": true,
         "registered": true,
-        "managementGroup": true,
+        "managementGroup": false,
         "qualified": false,
         "network": "flare",
         "feePercent": 20,
@@ -581,12 +581,12 @@
         },
         "governance": {
           "pending": false,
-          "underReview": true,
-          "isAppeal": true,
+          "underReview": false,
+          "isAppeal": false,
           "suspended": true,
           "appealReady": false,
-          "caseId": "cmqyhu8m100034mxmpfiexpo9",
-          "state": "OPEN_DISCUSSION"
+          "caseId": "cmqv4kszm000512w6c1yyzxut",
+          "state": "DENIED"
         }
       }
     },
@@ -4054,7 +4054,7 @@
       "flareregistry": {
         "verified": true,
         "registered": true,
-        "managementGroup": true,
+        "managementGroup": false,
         "qualified": false,
         "network": "songbird",
         "feePercent": 20,
@@ -4084,12 +4084,12 @@
         },
         "governance": {
           "pending": false,
-          "underReview": true,
-          "isAppeal": true,
+          "underReview": false,
+          "isAppeal": false,
           "suspended": true,
           "appealReady": false,
-          "caseId": "cmqyhu8m100034mxmpfiexpo9",
-          "state": "OPEN_DISCUSSION"
+          "caseId": "cmqv4kszm000512w6c1yyzxut",
+          "state": "DENIED"
         }
       }
     },
