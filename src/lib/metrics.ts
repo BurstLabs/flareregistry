@@ -46,6 +46,9 @@ export interface ProviderMetrics {
   // Latest-epoch reward amounts (wei strings).
   feeReward: string | null;
   delegatorReward: string | null;
+  stakerReward: string | null;
+  // Validator node IDs this entity manages (may be more than one).
+  nodeIds: string[];
 }
 
 // Lowercased address -> entity, for the network(s) we ingest.
@@ -90,6 +93,8 @@ async function entityForAddresses(addresses: string[]): Promise<ProviderMetrics 
     lastEpoch: oc.lastEpochSeen,
     feeReward: latest?.feeReward ?? null,
     delegatorReward: latest?.delegatorReward ?? null,
+    stakerReward: latest?.stakerReward ?? null,
+    nodeIds: Array.isArray(oc.nodeIds) ? (oc.nodeIds as string[]) : [],
   };
 }
 

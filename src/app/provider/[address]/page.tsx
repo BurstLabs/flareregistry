@@ -114,7 +114,9 @@ export default async function ProviderDetail({
     votePowerCapped: formatWeiCompact(metrics?.wNatCappedWeight ?? null),
     feedCount: metrics?.feedCount ?? null,
     reward: formatWeiCompact(metrics?.delegatorReward ?? null),
+    stakerReward: formatWeiCompact(metrics?.stakerReward ?? null),
     rewardEpoch: metrics?.lastEpoch ?? null,
+    nodeIds: metrics?.nodeIds ?? [],
     privateNode: !!p.privateNode,
     algorithm: p.algorithm,
     checks: (qual?.checks ?? []).map((c) => ({

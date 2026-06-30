@@ -27,7 +27,9 @@ export interface DetailData {
   votePowerCapped: string | null;
   feedCount: number | null;
   reward: string | null;
+  stakerReward: string | null;
   rewardEpoch: number | null;
+  nodeIds: string[];
   privateNode: boolean;
   algorithm: string | null;
   checks: { key: string; label: string; status: "pass" | "fail" | "unknown"; detail: string }[];
@@ -268,7 +270,30 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
               <dd className="font-medium">{d.reward}</dd>
             </div>
           )}
+          {d.stakerReward && (
+            <div>
+              <dt className="text-faint">{t("detail.stakerReward")}</dt>
+              <dd className="font-medium">{d.stakerReward}</dd>
+            </div>
+          )}
         </dl>
+      )}
+
+      {/* Validators: the node IDs this entity manages (some providers run more than one). */}
+      {d.nodeIds.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-1 text-lg font-semibold">
+            {t("detail.validators")} ({d.nodeIds.length})
+          </h2>
+          <p className="mb-3 text-xs text-faint">{t("detail.validatorsNote")}</p>
+          <ul className="surface divide-y divide-themed rounded-xl border text-sm">
+            {d.nodeIds.map((id) => (
+              <li key={id} className="px-4 py-3 font-mono text-xs break-all">
+                {id}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Qualification checklist */}

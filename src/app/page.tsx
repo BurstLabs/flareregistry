@@ -84,6 +84,7 @@ export default async function Home({
       votePower: formatWeiCompact(m?.wNatWeight ?? null),
       reward: formatWeiCompact(m?.delegatorReward ?? null),
       rewardEpoch: m?.lastEpoch ?? null,
+      validators: m?.nodeIds.length ?? 0,
       checks: (q?.checks ?? []).map((c) => ({
         key: c.key,
         label: c.label,

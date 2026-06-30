@@ -26,6 +26,7 @@ export interface CardProvider {
   votePower: string | null;
   reward: string | null;
   rewardEpoch: number | null;
+  validators: number;
   checks: CardCheck[];
   chains: string[];
   privateNode: boolean;
@@ -222,7 +223,7 @@ export function DirectoryClient({
 
                 <p className="mt-3 line-clamp-3 text-sm text-muted">{p.description}</p>
 
-                {(p.fee || p.votePower || p.reward) && (
+                {(p.fee || p.votePower || p.reward || p.validators > 0) && (
                   <dl className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
                     {p.fee && (
                       <div>
@@ -242,6 +243,12 @@ export function DirectoryClient({
                           {t("card.reward", { epoch: p.rewardEpoch ?? "" })}
                         </dt>
                         <dd className="font-medium">{p.reward}</dd>
+                      </div>
+                    )}
+                    {p.validators > 0 && (
+                      <div>
+                        <dt className="text-faint">{t("card.validators")}</dt>
+                        <dd className="font-medium">{p.validators}</dd>
                       </div>
                     )}
                   </dl>
