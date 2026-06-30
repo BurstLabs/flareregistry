@@ -360,13 +360,13 @@ function SubmitPageInner() {
           addresses: [{ chainId, address }],
         }),
       });
+      const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
         throw new Error(explainError(body.error, t) ?? t("submit.err.saveFailed"));
       }
-      // On success, send the owner to their live listing, where they can manage it (edit, link
-      // another network, etc.). Linking is a management action and lives on the detail page.
-      router.push(`/provider/${address.toLowerCase()}`);
+      // On success, send the owner to their live listing. Use the canonical address the server
+      // returns (the connected wallet may be a role address that is not itself a listing page).
+      router.push(`/provider/${(body.address ?? address).toLowerCase()}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("submit.err.saveFailed"));
     } finally {

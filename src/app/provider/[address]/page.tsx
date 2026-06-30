@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
-import { metricsForProvider, formatFee, formatWeiCompact } from "@/lib/metrics";
+import { metricsForProvider, formatFee, formatWeiCompact, listingAddressesForSigner } from "@/lib/metrics";
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
 import { ProviderDetailClient, type DetailData } from "@/components/provider-detail-client";
 
@@ -21,11 +21,22 @@ export default async function ProviderDetail({
 }) {
   const addr = (await params).address.toLowerCase();
 
-  // Find the provider that owns this address.
-  const owned = await prisma.providerAddress.findFirst({
+  // Find the provider that owns this address. Resolve by a stored listing address OR by any of the
+  // entity's five on-chain role addresses, so a link shared with a non-delegation role address (e.g.
+  // after claiming with a submit address) still resolves to the listing.
+  let owned = await prisma.providerAddress.findFirst({
     where: { address: addr },
     include: { provider: { include: { addresses: true } } },
   });
+  if (!owned) {
+    const canon = await listingAddressesForSigner(addr);
+    if (canon.length) {
+      owned = await prisma.providerAddress.findFirst({
+        where: { address: { in: canon } },
+        include: { provider: { include: { addresses: true } } },
+      });
+    }
+  }
   if (!owned) notFound();
   const p = owned.provider;
   const addresses = p.addresses.map((a) => a.address);

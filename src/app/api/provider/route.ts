@@ -211,5 +211,10 @@ export async function POST(req: NextRequest) {
   // Keep the committed providerlist.json in the public repo in sync with this change.
   await publishFeedToRepo();
 
-  return NextResponse.json({ id: result.id });
+  // Return a canonical listing address the caller controls, so the client can redirect to a working
+  // /provider/<address> page (the connected address may be a role address that is not a listing row).
+  const redirectAddress =
+    input.addresses.find((a) => controlled.has(a.address.toLowerCase()))?.address ??
+    input.addresses[0]?.address;
+  return NextResponse.json({ id: result.id, address: redirectAddress });
 }
