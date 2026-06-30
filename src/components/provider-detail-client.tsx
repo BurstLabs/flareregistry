@@ -89,12 +89,16 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       </Link>
 
       <div className="mt-4 flex items-start gap-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={d.logo}
-          alt=""
-          className="h-16 w-16 shrink-0 rounded-xl bg-black/5 object-contain dark:bg-white/5"
-        />
+        <div className="relative shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={d.logo}
+            alt=""
+            className="h-16 w-16 rounded-xl bg-black/5 object-contain dark:bg-white/5"
+          />
+          {/* Members-only report flag, overlaid on the logo corner (server enforces membership). */}
+          {d.hasLogo && <ReportLogoAction providerId={d.providerId} />}
+        </div>
         <div className="min-w-0">
           <h1 className="text-3xl font-bold tracking-tight">{d.name}</h1>
           <div className="mt-2 flex flex-wrap gap-1">
@@ -218,9 +222,6 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
 
       {/* Management Group flag action (new providers only, when not already under review). */}
       {d.flaggable && !d.governance?.underReview && <FlagAction providerId={d.providerId} />}
-
-      {/* Management Group can report an inappropriate logo (server enforces members-only). */}
-      {d.hasLogo && <ReportLogoAction providerId={d.providerId} />}
 
       {/* Metrics */}
       {(d.fee || d.votePower || d.reward) && (

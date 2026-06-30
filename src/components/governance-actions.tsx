@@ -163,32 +163,44 @@ export function ReportLogoAction({ providerId }: { providerId: string }) {
   }
 
   return (
-    <div className="mt-4 rounded-lg border border-themed bg-elev/40 p-4 text-sm">
-      <button onClick={() => setOpen((o) => !o)} className="font-medium text-muted hover:text-beacon">
-        {t("logo.report.toggle")} {open ? "−" : "+"}
+    <div className="relative">
+      {/* Tiny flag icon, overlaid on the logo corner. Members-only is enforced server-side; the
+          control is unobtrusive since reporting is rare. */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        title={t("logo.report.toggle")}
+        aria-label={t("logo.report.toggle")}
+        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev text-[11px] leading-none text-faint shadow-sm hover:text-flare"
+      >
+        ⚑
       </button>
       {open && (
-        <div className="mt-3">
-          <p className="text-muted">{t("logo.report.blurb")}</p>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            maxLength={1000}
-            placeholder={t("logo.report.placeholder")}
-            className="mt-3 block min-h-[80px] w-full rounded border border-themed bg-elev px-3 py-2"
-          />
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              onClick={submit}
-              disabled={busy}
-              className="rounded-lg border border-flare px-4 py-2 font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
-            >
-              {busy ? t("gov.act.signing") : t("logo.report.submit")}
-            </button>
+        <>
+          {/* click-away backdrop */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-lg border border-themed bg-elev p-3 text-sm shadow-lg">
+            <p className="text-xs text-muted">{t("logo.report.blurb")}</p>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={1000}
+              placeholder={t("logo.report.placeholder")}
+              className="mt-2 block min-h-[64px] w-full rounded border border-themed bg-elev px-2 py-1.5 text-sm"
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={submit}
+                disabled={busy}
+                className="rounded-lg border border-flare px-3 py-1.5 text-xs font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
+              >
+                {busy ? t("gov.act.signing") : t("logo.report.submit")}
+              </button>
+            </div>
+            {err && <Note kind="err" text={err} />}
+            {ok && <Note kind="ok" text={ok} />}
           </div>
-          {err && <Note kind="err" text={err} />}
-          {ok && <Note kind="ok" text={ok} />}
-        </div>
+        </>
       )}
     </div>
   );
