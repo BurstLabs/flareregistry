@@ -3,8 +3,8 @@
 // adapter with cookie storage for SSR, and the AppKit modal instance.
 //
 // Chains are derived from CHAINS in ./chains so the chain list stays single-sourced. We hand-build
-// viem chain objects from that data rather than importing viem's presets, so Flare/Songbird/Coston
-// all carry our own RPC URLs (WalletConnect's default RPC map does not cover them).
+// viem chain objects from that data rather than importing viem's presets, so Flare/Songbird
+// carry our own RPC URLs (WalletConnect's default RPC map does not cover them).
 
 import { cookieStorage, createStorage } from "wagmi";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";

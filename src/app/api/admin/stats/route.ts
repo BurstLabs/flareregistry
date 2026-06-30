@@ -25,7 +25,7 @@ export async function GET() {
       prisma.provider.count({ where: { suspended: true } }),
     ]);
 
-  // Per-network verified-address counts (chainId 14 Flare, 19 Songbird, 16 Coston, 114 Coston2).
+  // Per-network verified-address counts (chainId 14 Flare, 19 Songbird).
   const byChainRaw = await prisma.providerAddress.groupBy({
     by: ["chainId"],
     where: { verified: true },

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // Lightweight read-only check of whether an address is a registered on-chain FTSO entity on the
 // given chain, so the submit flow can warn an unregistered address up front (right after sign-in)
 // instead of only when the listing is published. Mirrors the create route's registration gate:
-// mainnet (Flare/Songbird) requires registration; testnets are exempt.
+// the address must be a registered FTSO entity on a supported network (Flare/Songbird).
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const address = (searchParams.get("address") ?? "").toLowerCase();
@@ -18,11 +18,8 @@ export async function GET(req: NextRequest) {
   }
   const chain = getChain(chainId);
   if (!chain) {
+    // Only Flare/Songbird are supported; anything else (incl. testnets) is unknown here.
     return NextResponse.json({ error: "unknown chainId" }, { status: 400 });
-  }
-  // Testnets have no on-chain reward data to check against, so they are not gated.
-  if (!chain.mainnet) {
-    return NextResponse.json({ registered: true, mainnet: false, chainName: chain.name });
   }
   const registered = await isRegisteredOnchain(address, chain.key);
   return NextResponse.json({ registered, mainnet: true, chainName: chain.name });

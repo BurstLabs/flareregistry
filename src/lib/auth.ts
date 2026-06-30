@@ -143,7 +143,7 @@ export async function verifyChallenge(
 // On-chain EIP-1271 / EIP-6492 signature check for smart-account wallets, via viem. Returns false on
 // any RPC error or for an undeployed counterfactual account rather than throwing, so the caller can
 // treat it as a plain "bad signature". chainId comes from the signed SIWE message; we only support
-// our known chains (testnets included, since a provider may verify a testnet address).
+// our known chains (Flare, Songbird).
 async function verifyContractSignature(
   address: string,
   message: string,

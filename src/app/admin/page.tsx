@@ -163,7 +163,7 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     </div>
   );
 }
-const CHAIN_NAME: Record<number, string> = { 14: "Flare", 19: "Songbird", 16: "Coston", 114: "Coston2" };
+const CHAIN_NAME: Record<number, string> = { 14: "Flare", 19: "Songbird" };
 
 // ---------- Statistics ----------
 function StatsTab() {

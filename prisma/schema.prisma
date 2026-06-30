@@ -100,7 +100,7 @@ model ProviderAddress {
   provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
   providerId String
 
-  // EVM chain id (14 Flare, 19 Songbird, 16 Coston, 114 Coston2).
+  // EVM chain id (14 Flare, 19 Songbird).
   chainId Int
   // Lowercased 0x address. Unique per chain so two providers can't both claim it.
   address String

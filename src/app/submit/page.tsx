@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
-import { CHAINS } from "@/lib/chains";
 import { useWalletSign } from "@/lib/useWalletSign";
 import { checkContent } from "@/lib/content-filter";
 import { useApp } from "@/components/providers";
@@ -290,8 +289,21 @@ function SubmitPageInner() {
     setError("");
     setBusy(true);
     try {
-      // connectAndSign matches the wallet network (best-effort), fetches the nonce, and signs.
-      const { message, signature } = await connectAndSign({ chainId });
+      // The network is determined by the connected address, not a picker: resolve which network this
+      // address is a registered entity on (Flare/Songbird) and sign on that chain. If it resolves to
+      // neither, it isn't a registered FTSO entity - tell the user before they sign.
+      let signChainId = chainId;
+      try {
+        const rr = await fetch(`/api/provider/resolve-role?address=${address.toLowerCase()}`);
+        const rb = await rr.json().catch(() => ({}));
+        if (rr.ok && Array.isArray(rb.roles) && rb.roles.length) {
+          signChainId = rb.roles[0].chainId;
+          setChainId(signChainId);
+        }
+      } catch {
+        /* fall back to the current chainId; the registration check below still gates */
+      }
+      const { message, signature } = await connectAndSign({ chainId: signChainId });
 
       const verifyRes = await fetch("/api/auth/verify", {
         method: "POST",
@@ -310,7 +322,7 @@ function SubmitPageInner() {
       if (!hasExisting) {
         try {
           const regRes = await fetch(
-            `/api/provider/registration?address=${address.toLowerCase()}&chainId=${chainId}`
+            `/api/provider/registration?address=${address.toLowerCase()}&chainId=${signChainId}`
           );
           const reg = await regRes.json().catch(() => ({}));
           if (regRes.ok && reg.mainnet && reg.registered === false) {
@@ -521,25 +533,8 @@ function SubmitPageInner() {
               />
             </div>
           )}
-          {/* Network choice only matters when listing a NEW address. When managing, the listing is
-              found by address and its chain comes from the existing record, so the picker is hidden. */}
-          {!manage && (
-            <label className="block text-sm">
-              {t("submit.network")}
-              <select
-                className="mt-1 block w-full rounded bg-elev border border-themed px-3 py-2"
-                value={chainId}
-                onChange={(e) => setChainId(Number(e.target.value))}
-              >
-                {/* Only mainnet networks are listable (testnets have no verifiable on-chain data). */}
-                {CHAINS.filter((c) => c.mainnet).map((c) => (
-                  <option key={c.chainId} value={c.chainId}>
-                    {c.name} ({t("submit.chainIdLabel")} {c.chainId})
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+          {/* No network picker: the network is determined by your connected address (one address is a
+              registered entity on exactly one network). We detect Flare vs Songbird after you sign. */}
           <button
             onClick={connect}
             className="rounded bg-beacon px-4 py-2 font-medium text-neutral-950 hover:opacity-90"

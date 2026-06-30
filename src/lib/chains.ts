@@ -1,10 +1,12 @@
-// Supported chains. chainId matches the standard provider list so feed entries stay interchangeable.
+// Supported chains. Only the production networks (Flare, Songbird) are supported - testnets are not
+// listable (they have no ingested on-chain entity data to verify against). chainId matches the
+// standard provider list so feed entries stay interchangeable.
 
 export interface ChainInfo {
   chainId: number;
   key: string;
   name: string;
-  /** True for the production networks shown in wallets; testnets are opt-in. */
+  /** Always true now (only production networks are supported); kept for call-site compatibility. */
   mainnet: boolean;
   /** For wallet_addEthereumChain, so a sign popup can be switched to match the address's chain. */
   rpcUrl: string;
@@ -30,24 +32,6 @@ export const CHAINS: ChainInfo[] = [
     rpcUrl: "https://songbird-api.flare.network/ext/C/rpc",
     nativeCurrency: { name: "Songbird", symbol: "SGB", decimals: 18 },
     explorerUrl: "https://songbird-explorer.flare.network",
-  },
-  {
-    chainId: 16,
-    key: "coston",
-    name: "Coston",
-    mainnet: false,
-    rpcUrl: "https://coston-api.flare.network/ext/C/rpc",
-    nativeCurrency: { name: "Coston Flare", symbol: "CFLR", decimals: 18 },
-    explorerUrl: "https://coston-explorer.flare.network",
-  },
-  {
-    chainId: 114,
-    key: "coston2",
-    name: "Coston2",
-    mainnet: false,
-    rpcUrl: "https://coston2-api.flare.network/ext/C/rpc",
-    nativeCurrency: { name: "Coston2 Flare", symbol: "C2FLR", decimals: 18 },
-    explorerUrl: "https://coston2-explorer.flare.network",
   },
 ];
 
