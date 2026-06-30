@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { isRegisteredOnchain, resolveEntityListingAddress, entityRoleAddresses } from "@/lib/metrics";
-import { getChain } from "@/lib/chains";
+import { getChain, CHAINS } from "@/lib/chains";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
 import { getSessionAddress } from "@/lib/session";
@@ -106,27 +106,34 @@ export async function POST(req: NextRequest) {
   const resolved = chainB.mainnet ? await resolveEntityListingAddress(addressB, chainB.key) : null;
   const listingAddress = existingRow?.address.toLowerCase() ?? resolved?.listingAddress ?? addressB;
 
-  // Authorization. Two legitimate cases, both safe:
-  //   (a) VERIFY AN EXISTING ROW: an address of the signer's entity is already on this listing (e.g. a
-  //       claimed-but-unproven second network). Signing as any of that entity's role addresses is
-  //       itself the proof - no separate owner session is needed.
-  //   (b) LINK A NEW ADDRESS: it is not yet on the listing. This is the takeover-sensitive path (S1),
-  //       so it requires an authenticated session that is already a VERIFIED owner of the listing.
+  // Authorization. Two legitimate cases:
+  //   (a) VERIFY AN EXISTING ROW: an address of the signer's entity is already on this listing.
+  //   (b) LINK A NEW NETWORK: requires proving you OWN the listing, so a stranger who merely controls
+  //       some entity can't attach their network to your claimed listing by name. "Owner" = a session
+  //       that is any of the five role addresses of an entity which owns a VERIFIED address on the
+  //       listing (the session may be a role address, not the exact stored one).
   const bAlreadyOnListing = !!existingRow;
   if (!bAlreadyOnListing) {
     const sessionAddr = (await getSessionAddress())?.toLowerCase() ?? null;
     if (!sessionAddr) {
       return NextResponse.json(
-        { error: "sign in to the listing you want to add a network to before linking" },
+        { error: "sign in with a verified address on this listing before linking a new network" },
         { status: 401 }
       );
     }
+    // Build the role set of the session across mainnet networks, then check if any VERIFIED listing
+    // address is among them (i.e. the session controls an already-verified network on this listing).
+    const sessionRoleSet = new Set<string>([sessionAddr]);
+    for (const ch of CHAINS) {
+      if (!ch.mainnet) continue;
+      for (const r of await entityRoleAddresses(sessionAddr, ch.key)) sessionRoleSet.add(r);
+    }
     const callerOwnsTarget = ownedA.addresses.some(
-      (a) => a.verified && a.address.toLowerCase() === sessionAddr
+      (a) => a.verified && sessionRoleSet.has(a.address.toLowerCase())
     );
     if (!callerOwnsTarget) {
       return NextResponse.json(
-        { error: "you are not a verified owner of this listing; sign in with an address already on it" },
+        { error: "you are not a verified owner of this listing; sign in with an address from one of its verified networks" },
         { status: 403 }
       );
     }
