@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useAppKit } from "@reown/appkit/react";
-import { useAccount, useSignMessage, useSwitchChain } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 
 export type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -57,7 +57,6 @@ export function useWalletSign(t: TFn) {
   const { open } = useAppKit();
   const { address: connectedAddress, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
-  const { switchChainAsync } = useSwitchChain();
 
   // useAccount's address is captured per-render. The imperative wait below runs across many renders
   // (while the user picks a wallet in the AppKit modal), so a closure over `connectedAddress` would
@@ -96,12 +95,9 @@ export function useWalletSign(t: TFn) {
         throw new Error(t(opts.allowAddressesErrorKey ?? "submit.err.wrongAccount", { address }));
       }
 
-      // Cosmetic network match; ignore rejection.
-      try {
-        await switchChainAsync({ chainId: opts.chainId });
-      } catch {
-        /* user declined or chain unsupported by wallet - signature is chain-independent */
-      }
+      // No wallet network switch: the SIWE signature is chain-independent and the registry network is
+      // determined by the address's on-chain entity, not the wallet's active chain. Prompting a switch
+      // only added confusing wallet popups.
 
       const nonceRes = await fetch("/api/auth/nonce", {
         method: "POST",
@@ -123,7 +119,7 @@ export function useWalletSign(t: TFn) {
       }
       return { address, message, signature };
     },
-    [connectedAddress, isConnected, open, getAddress, switchChainAsync, signMessageAsync, t]
+    [connectedAddress, isConnected, open, getAddress, signMessageAsync, t]
   );
 }
 
