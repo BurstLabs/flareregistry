@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { isRegisteredOnchain, resolveEntityListingAddress, entityRoleAddresses } from "@/lib/metrics";
-import { getChain, CHAINS } from "@/lib/chains";
+import { getChain } from "@/lib/chains";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
-import { getSessionAddress } from "@/lib/session";
 
 // POST /api/provider/link  -> attach a network address to an existing, already-claimed listing.
 //
@@ -106,41 +105,14 @@ export async function POST(req: NextRequest) {
   const resolved = chainB.mainnet ? await resolveEntityListingAddress(addressB, chainB.key) : null;
   const listingAddress = existingRow?.address.toLowerCase() ?? resolved?.listingAddress ?? addressB;
 
-  // Authorization. Two legitimate cases:
-  //   (a) VERIFY AN EXISTING ROW: an address of the signer's entity is already on this listing.
-  //   (b) LINK A NEW NETWORK: requires proving you OWN the listing, so a stranger who merely controls
-  //       some entity can't attach their network to your claimed listing by name. "Owner" = a session
-  //       that is any of the five role addresses of an entity which owns a VERIFIED address on the
-  //       listing (the session may be a role address, not the exact stored one).
+  // Authorization (simplified per product decision). The listing must already be claimed (checked
+  // above: it has a verified owner). To either VERIFY an existing row or LINK a new network, the signer
+  // proves control of THAT network by signing with any of its entity's five on-chain role addresses
+  // (the mainnet registration gate above already confirmed addressB is a registered entity on chain B).
+  // We do NOT additionally require a verified-owner session. Trade-off accepted: someone controlling a
+  // registered entity on the network being added could attach it to a claimed listing by name; this is
+  // a deliberate simplification to avoid the two-signature / account-switch flow.
   const bAlreadyOnListing = !!existingRow;
-  if (!bAlreadyOnListing) {
-    const sessionAddr = (await getSessionAddress())?.toLowerCase() ?? null;
-    if (!sessionAddr) {
-      return NextResponse.json(
-        { error: "sign in with a verified address on this listing before linking a new network" },
-        { status: 401 }
-      );
-    }
-    // Build the role set of the session across mainnet networks, then check if any VERIFIED listing
-    // address is among them (i.e. the session controls an already-verified network on this listing).
-    const sessionRoleSet = new Set<string>([sessionAddr]);
-    for (const ch of CHAINS) {
-      if (!ch.mainnet) continue;
-      for (const r of await entityRoleAddresses(sessionAddr, ch.key)) sessionRoleSet.add(r);
-    }
-    const callerOwnsTarget = ownedA.addresses.some(
-      (a) => a.verified && sessionRoleSet.has(a.address.toLowerCase())
-    );
-    if (!callerOwnsTarget) {
-      return NextResponse.json(
-        {
-          error: "you are not a verified owner of this listing; sign in with an address from one of its verified networks",
-          code: "LINK_NOT_OWNER",
-        },
-        { status: 403 }
-      );
-    }
-  }
 
   // If the canonical listing address already belongs to a DIFFERENT provider, only allow the merge
   // when that record is an unclaimed import (no verified address). A claimed listing is never absorbed.

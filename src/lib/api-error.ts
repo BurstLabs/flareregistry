@@ -38,8 +38,7 @@ export type ApiErrorCode =
   | "NOT_REGISTERED"
   | "NAME_TAKEN"
   | "ADDRESS_OTHER_LISTING"
-  | "ADDRESS_NOT_ON_LISTING"
-  | "LINK_NOT_OWNER";
+  | "ADDRESS_NOT_ON_LISTING";
 
 // The map from code to the i18n key the client should render. Kept here so server and client agree.
 export const API_ERROR_I18N: Record<ApiErrorCode, string> = {
@@ -68,7 +67,6 @@ export const API_ERROR_I18N: Record<ApiErrorCode, string> = {
   NAME_TAKEN: "apiErr.nameTaken",
   ADDRESS_OTHER_LISTING: "apiErr.addressOtherListing",
   ADDRESS_NOT_ON_LISTING: "apiErr.addressNotOnListing",
-  LINK_NOT_OWNER: "submit.link.notOwner",
 };
 
 // Helper to build a coded error response: { error, code }, with the given HTTP status.

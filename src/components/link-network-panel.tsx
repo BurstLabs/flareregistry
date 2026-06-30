@@ -64,14 +64,9 @@ export function LinkNetworkPanel({
     if (mode === "verify") setVerifyingKey(`${chainId}`);
     else setBusy(true);
     try {
-      // For a NEW address: prove listing ownership first (sign in with an address already on it), then
-      // sign with the new address. For "Verify" on an existing row: signing with any role address of
-      // that network's entity is itself the proof, so no sign-in and no account pinning.
-      if (mode === "link") {
-        await signIn();
-      }
-      // Signature on the target chain. For link, from the new address; for verify, from any role
-      // address of that network's entity.
+      // Both link and verify need a single signature from any of the target network's five role
+      // addresses; the server resolves the entity and confirms control. No owner sign-in or account
+      // pinning is required.
       const { message, signature } = await connectAndSign({ chainId });
 
       const res = await fetch("/api/provider/link", {
