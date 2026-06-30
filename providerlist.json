@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-30T18:38:40.732Z",
+  "timestamp": "2026-06-30T19:25:47.708Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -2265,13 +2265,13 @@
     {
       "chainId": 14,
       "name": "LightFTSO",
-      "description": "Homebrewed FTSO, light, nimble, with high rewards and lower fees. Get on! We're getting passive income!",
+      "description": "LightFTSO is the first FTSO data provider from Mexico. Since October 2021, we have been actively participating in the Flare Network with consistent uptime, strong performance, and great rewards for our delegators. Built in-house and with love, LightFTSO is always striving to provide reliable, trustworthy data, and committed to  the growth of the Flare ecosystem.",
       "url": "https://www.lightft.so",
       "address": "0xA9C69eb9De79188A9ABa46c5336607F88A80eC89",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xfB9197720329a80191BA140844E96DCcAD149014.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -2291,11 +2291,11 @@
           "delegation": "0xA9C69eb9De79188A9ABa46c5336607F88A80eC89"
         },
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
+          "privateNode": true,
+          "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.104Z",
+          "qualifiedSince": "2026-06-22T23:47:19.514Z",
           "lastSubmittedEpoch": 410,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -5170,13 +5170,13 @@
     {
       "chainId": 19,
       "name": "LightFTSO",
-      "description": "Homebrewed FTSO, light, nimble, with high rewards and lower fees. Get on! We're getting passive income!",
+      "description": "LightFTSO is the first FTSO data provider from Mexico. Since October 2021, we have been actively participating in the Flare Network with consistent uptime, strong performance, and great rewards for our delegators. Built in-house and with love, LightFTSO is always striving to provide reliable, trustworthy data, and committed to  the growth of the Flare ecosystem.",
       "url": "https://www.lightft.so",
       "address": "0xfB9197720329a80191BA140844E96DCcAD149014",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xfB9197720329a80191BA140844E96DCcAD149014.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -5196,11 +5196,11 @@
           "delegation": "0xfB9197720329a80191BA140844E96DCcAD149014"
         },
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
+          "privateNode": true,
+          "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.104Z",
+          "qualifiedSince": "2026-06-22T23:47:19.514Z",
           "lastSubmittedEpoch": 410,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
