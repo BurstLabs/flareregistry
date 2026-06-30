@@ -199,8 +199,11 @@ function SubmitPageInner() {
       const res = await fetch("/api/provider/logo", { method: "POST", body: fd });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(apiErrorMessage(t, body, "submit.logo.uploadFailed"));
-      setLogoUri(body.logoURI);
-      setLogoMsg(t("submit.logo.published"));
+      // The logo is held for a review window before it goes live (it does not replace the current
+      // logo yet). Show the preview + the go-live date instead of "published".
+      if (body.pendingURL) setLogoUri(body.pendingURL);
+      const goLive = body.goLiveAt ? new Date(body.goLiveAt).toLocaleDateString() : "";
+      setLogoMsg(t("submit.logo.pending", { date: goLive }));
       setLogoOk(true);
     } catch (e) {
       setLogoMsg(e instanceof Error ? e.message : t("submit.logo.uploadFailed"));

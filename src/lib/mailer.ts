@@ -63,3 +63,66 @@ export async function sendContactEmail(m: ContactMessage): Promise<void> {
     text,
   });
 }
+
+// Every logo upload is emailed here for review (set via LOGO_NOTICE_TO; falls back to CONTACT_TO).
+const LOGO_NOTICE_TO = process.env.LOGO_NOTICE_TO ?? CONTACT_TO;
+
+export interface LogoUploadNotice {
+  providerName: string;
+  address: string;
+  signer: string;
+  pendingURL: string;
+  goLiveAt: Date;
+}
+
+/**
+ * Notify the operator of a new logo upload (held for the review window). Best-effort: callers should
+ * not fail the upload if this throws. Requires SMTP to be configured and LOGO_NOTICE_TO/CONTACT_TO.
+ */
+export async function sendLogoUploadNotice(n: LogoUploadNotice): Promise<void> {
+  if (!(SMTP_HOST && SMTP_USER && SMTP_PASS && LOGO_NOTICE_TO)) return;
+  const text = [
+    `A new logo was uploaded to Flare Registry and is pending the review window.`,
+    ``,
+    `Provider: ${n.providerName}`,
+    `Address:  ${n.address}`,
+    `Uploaded by (signer): ${n.signer}`,
+    `Goes live: ${n.goLiveAt.toISOString()}`,
+    ``,
+    `Preview (pending image): ${n.pendingURL}`,
+  ].join("\n");
+  await getTransport().sendMail({
+    from: SMTP_FROM,
+    to: LOGO_NOTICE_TO,
+    subject: `[Flare Registry] New logo pending review: ${n.providerName}`,
+    text,
+  });
+}
+
+// Notify the operator when a Management Group member reports a logo as inappropriate. Best-effort.
+export interface LogoReportNotice {
+  providerName: string;
+  address: string;
+  reporter: string;
+  reason: string;
+}
+
+export async function sendLogoReportNotice(n: LogoReportNotice): Promise<void> {
+  if (!(SMTP_HOST && SMTP_USER && SMTP_PASS && LOGO_NOTICE_TO)) return;
+  const text = [
+    `A Management Group member reported a provider logo as inappropriate.`,
+    ``,
+    `Provider: ${n.providerName}`,
+    `Address:  ${n.address}`,
+    `Reported by: ${n.reporter}`,
+    `Reason: ${n.reason}`,
+    ``,
+    `Review it in the admin panel (Reports).`,
+  ].join("\n");
+  await getTransport().sendMail({
+    from: SMTP_FROM,
+    to: LOGO_NOTICE_TO,
+    subject: `[Flare Registry] Logo reported: ${n.providerName}`,
+    text,
+  });
+}

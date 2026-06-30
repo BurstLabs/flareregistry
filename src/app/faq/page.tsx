@@ -15,6 +15,7 @@ const ENTRIES = [
   "registered",
   "mgBadge",
   "flagged",
+  "logo",
   "addresses",
   "api",
   "cost",

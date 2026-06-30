@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSessionAddress } from "@/lib/session";
-import { commitLogo, uploadsEnabled } from "@/lib/github";
+import { commitPendingLogo, uploadsEnabled } from "@/lib/github";
+import { pendingLogoRawURL } from "@/lib/logos";
 import { validateLogoStrict } from "@/lib/png";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-error";
+import { sendLogoUploadNotice } from "@/lib/mailer";
+import { logoGoLiveAt } from "@/lib/logo-review";
 
 // POST /api/provider/logo  (multipart/form-data, field "logo")
-// Commits the uploaded PNG to the public assets repo for the authenticated address and points
-// the provider's logoURI at it. A signed-in session is proof of ownership, so uploading also
-// claims the listing. The PNG must meet the logo requirements (see lib/png).
+// Validates the uploaded PNG and commits it as a PENDING logo (assets/pending/<addr>.png). It does
+// NOT go live immediately: every logo (new or changed) is held for a review window (LOGO_REVIEW_DAYS,
+// default 7) so an inappropriate image is never published instantly; a cron promotes it afterward.
+// A signed-in session is still proof of ownership, so uploading still CLAIMS the listing now (only
+// the image is deferred). Every upload is emailed to the operator for review. PNG requirements: see
+// lib/png.
 
 export const runtime = "nodejs";
 
@@ -40,12 +46,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: check.error }, { status: 400 });
   }
 
-  let logoURI: string;
+  let pendingURL: string;
   try {
-    // Keyed by the session (proven) address, matching the feed's per-address logo scheme. This
-    // works whether or not a provider record exists yet, so a NEW listing can upload its logo
-    // before publishing (the logoURI is then included in the create payload).
-    logoURI = await commitLogo(session, buf);
+    // Commit to the PENDING path so it does NOT overwrite the live logo during the review window.
+    pendingURL = await commitPendingLogo(session, buf);
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "failed to publish logo" },
@@ -53,26 +57,48 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // If a provider record already exists for this address, attach the logo now and treat the upload
-  // as a claim (verified/listed/owner-owned), as before. For a brand-new listing there's no record
-  // yet - we just return the logoURI for the client to send with the create.
+  const now = new Date();
+  const goLiveAt = logoGoLiveAt(now);
+
+  // If a provider record already exists for this address, record the PENDING logo and treat the
+  // upload as a claim NOW (verified/listed/owner-owned) - only the image is deferred, not ownership.
+  // The live logoURI is left untouched so the current logo keeps showing until promotion. For a brand
+  // -new listing there's no record yet; we return the pending URL and go-live date for the client.
   const sessionAddr = await prisma.providerAddress.findFirst({
     where: { address: session },
     select: { id: true, providerId: true },
   });
+  let providerName = "(new listing)";
   if (sessionAddr) {
-    await prisma.$transaction([
+    const [updated] = await prisma.$transaction([
       prisma.provider.update({
         where: { id: sessionAddr.providerId },
-        data: { logoURI, logoPath: null, source: "submitted" },
+        data: {
+          logoPendingURI: pendingURL,
+          logoPendingAt: now,
+          logoPendingSigner: session,
+          source: "submitted",
+        },
+        select: { name: true },
       }),
       prisma.providerAddress.update({
         where: { id: sessionAddr.id },
         data: { verified: true, verifiedAt: new Date(), listed: true },
       }),
     ]);
+    providerName = updated.name;
+    // Claiming changes verified/listed state, so refresh the feed (the live logo is unchanged).
     await publishFeedToRepo();
   }
 
-  return NextResponse.json({ logoURI });
+  // Email the operator for review. Best-effort: never fail the upload over the notification.
+  sendLogoUploadNotice({
+    providerName,
+    address: session,
+    signer: session,
+    pendingURL,
+    goLiveAt,
+  }).catch(() => {});
+
+  return NextResponse.json({ pending: true, pendingURL, goLiveAt: goLiveAt.toISOString() });
 }

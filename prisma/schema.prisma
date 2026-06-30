@@ -49,13 +49,48 @@ model Provider {
   archivedAt     DateTime?
   archivedReason String?
 
+  // PENDING LOGO: a newly uploaded logo is held for a review window (LOGO_REVIEW_DAYS, default 7)
+  // before it goes live, so an inappropriate image is not published instantly. The pending PNG lives
+  // at assets/pending/<addr>.png; the live logoURI is untouched until a cron promotes it. Cleared on
+  // promotion (or admin rejection). logoPendingAt is when the upload happened.
+  logoPendingURI    String?
+  logoPendingAt     DateTime?
+  logoPendingSigner String? // lowercased address that uploaded it
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  addresses ProviderAddress[]
-  flagCases ProviderFlagCase[]
+  addresses   ProviderAddress[]
+  flagCases   ProviderFlagCase[]
+  logoReports LogoReport[]
 
   @@index([archivedAt])
+  @@index([logoPendingAt])
+}
+
+// Append-only record of a logo being reported as inappropriate by a Management Group member. History
+// is RETAINED: admin actions update status/resolvedAt/resolvedBy, rows are never deleted, so who
+// reported what (and when, and how it was resolved) is permanently on record.
+model LogoReport {
+  id         String   @id @default(cuid())
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId String
+
+  // The logo URL that was reported (so the record stands even after the logo is later changed).
+  logoURI        String?
+  reporterAddress String  // lowercased MG-member address that signed the report
+  reporterVoter   String  // canonical member-entity voter for that address
+  reason          String
+
+  // OPEN -> resolved by an admin. Rows are never deleted (history kept).
+  status     String    @default("OPEN") // OPEN | LOGO_REMOVED | DISMISSED
+  resolvedAt DateTime?
+  resolvedBy String? // lowercased admin address
+
+  createdAt DateTime @default(now())
+
+  @@index([providerId])
+  @@index([status])
 }
 
 // One on-chain address the provider operates, on one chain. This is the unit that gets

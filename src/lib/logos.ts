@@ -17,6 +17,20 @@ export function logoRepoPath(address: string): string {
   return `${LOGO_DIR}/${getAddress(address)}.png`;
 }
 
+// Pending logos live under assets/pending/ during the 7-day review window so they do not overwrite
+// the live logo. A cron promotes pending -> live once the window elapses.
+export const LOGO_PENDING_DIR = "assets/pending";
+
+/** Path within the repo for a provider's PENDING (not-yet-live) logo, keyed by checksummed address. */
+export function pendingLogoRepoPath(address: string): string {
+  return `${LOGO_PENDING_DIR}/${getAddress(address)}.png`;
+}
+
+/** Public raw-CDN URL for a pending logo committed to the repo. */
+export function pendingLogoRawURL(address: string): string {
+  return `https://raw.githubusercontent.com/${LOGO_REPO}/${LOGO_BRANCH}/${pendingLogoRepoPath(address)}`;
+}
+
 /** Public raw-CDN URL for a logo committed to the repo. This is what goes in the feed. */
 export function logoRawURL(address: string): string {
   return `https://raw.githubusercontent.com/${LOGO_REPO}/${LOGO_BRANCH}/${logoRepoPath(address)}`;

@@ -128,6 +128,72 @@ export function FlagAction({ providerId }: { providerId: string }) {
   );
 }
 
+// Report-logo form. Shown on a provider page; only a Management Group member can submit (the server
+// enforces membership on the signature). The report is recorded and emailed; the logo stays live
+// until an admin acts. A non-member who tries gets a clear "members only" error from the server.
+export function ReportLogoAction({ providerId }: { providerId: string }) {
+  const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  async function submit() {
+    setErr("");
+    setOk("");
+    setBusy(true);
+    try {
+      const s = await signChallenge();
+      const res = await fetch("/api/provider/logo/report", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ providerId, reason, message: s.message, signature: s.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "logo.report.err"));
+      setOk(t("logo.report.ok"));
+      setReason("");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("logo.report.err"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-themed bg-elev/40 p-4 text-sm">
+      <button onClick={() => setOpen((o) => !o)} className="font-medium text-muted hover:text-beacon">
+        {t("logo.report.toggle")} {open ? "−" : "+"}
+      </button>
+      {open && (
+        <div className="mt-3">
+          <p className="text-muted">{t("logo.report.blurb")}</p>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={1000}
+            placeholder={t("logo.report.placeholder")}
+            className="mt-3 block min-h-[80px] w-full rounded border border-themed bg-elev px-3 py-2"
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              onClick={submit}
+              disabled={busy}
+              className="rounded-lg border border-flare px-4 py-2 font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
+            >
+              {busy ? t("gov.act.signing") : t("logo.report.submit")}
+            </button>
+          </div>
+          {err && <Note kind="err" text={err} />}
+          {ok && <Note kind="ok" text={ok} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Withdraw panel, shown on a PENDING case page. The member who co-initiated can withdraw their
 // own flag (the endpoint verifies they are that member). Closes the case if no flag remains.
 export function WithdrawAction({ caseId }: { caseId: string }) {

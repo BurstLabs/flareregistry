@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin";
 import { publishFeedToRepo } from "@/lib/feed";
 import { evaluateQualification, purgeStaleProviders } from "@/lib/qualification";
 import { syncManagementGroup } from "@/lib/management-group";
+import { promoteDueLogos } from "@/lib/logo-review";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,10 @@ export async function POST(req: NextRequest) {
         const result = await purgeStaleProviders({ dryRun: !confirm });
         if (confirm) await publishFeedToRepo().catch(() => {});
         return NextResponse.json({ ok: true, action, dryRun: !confirm, result });
+      }
+      case "promoteLogos": {
+        const result = await promoteDueLogos();
+        return NextResponse.json({ ok: true, action, result });
       }
       default:
         return NextResponse.json({ error: "unknown action" }, { status: 400 });

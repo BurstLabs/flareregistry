@@ -7,7 +7,7 @@ import { useWalletSign } from "@/lib/useWalletSign";
 // Operator-only admin dashboard. English-only (internal tool, not a user-facing page). Access is
 // gated by ADMIN_ADDRESSES: sign in with an allowlisted wallet (reusing the SIWE flow) to unlock it.
 
-type Tab = "stats" | "providers" | "qualification" | "governance" | "system";
+type Tab = "stats" | "providers" | "qualification" | "governance" | "reports" | "system";
 
 // Minimal English-only translator so the shared wallet-sign hook (which throws localised keys) shows
 // readable copy in this internal tool without pulling in the full i18n context.
@@ -112,6 +112,7 @@ export default function AdminPage() {
     { id: "providers", label: "Providers" },
     { id: "qualification", label: "Qualification" },
     { id: "governance", label: "Governance" },
+    { id: "reports", label: "Logo reports" },
     { id: "system", label: "System" },
   ];
 
@@ -143,6 +144,7 @@ export default function AdminPage() {
         {tab === "providers" && <ProvidersTab />}
         {tab === "qualification" && <QualificationTab />}
         {tab === "governance" && <GovernanceTab />}
+        {tab === "reports" && <ReportsTab />}
         {tab === "system" && <SystemTab />}
       </div>
     </div>
@@ -522,6 +524,101 @@ function GovernanceTab() {
   );
 }
 
+// ---------- Logo reports ----------
+function ReportsTab() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [msg, setMsg] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const load = useCallback(async () => {
+    const r = await fetch(`/api/admin/logo-reports?status=${showAll ? "all" : "OPEN"}`);
+    const b = await r.json();
+    setRows(b.reports ?? []);
+  }, [showAll]);
+  useEffect(() => {
+    load();
+  }, [load]);
+  async function act(id: string, action: "removeLogo" | "dismiss", provider: string) {
+    const label = action === "removeLogo" ? "remove this logo" : "dismiss this report";
+    if (!confirm(`Are you sure you want to ${label} for "${provider}"?`)) return;
+    const r = await fetch("/api/admin/logo-reports", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id, action }),
+    });
+    setMsg(r.ok ? "Done." : "Failed.");
+    if (r.ok) load();
+  }
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between text-xs text-muted">
+        <span>{msg}</span>
+        <label className="flex items-center gap-1">
+          <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
+          Show resolved (history)
+        </label>
+      </div>
+      <Card>
+        <table className="w-full text-sm">
+          <thead className="text-xs text-faint">
+            <tr>
+              <th className="text-left font-normal">Provider</th>
+              <th className="text-left font-normal">Reporter</th>
+              <th className="text-left font-normal">Reason</th>
+              <th className="text-left font-normal">When</th>
+              <th className="text-left font-normal">Status</th>
+              <th className="text-right font-normal"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-themed/60 align-top">
+                <td className="py-1">
+                  <a href={`/provider/${r.provider?.id ?? ""}`} className="text-beacon hover:underline">
+                    {r.provider?.name ?? "(removed)"}
+                  </a>
+                </td>
+                <td className="py-1 font-mono text-xs text-muted">{r.reporterAddress?.slice(0, 10)}…</td>
+                <td className="py-1 text-muted break-words" style={{ maxWidth: 280 }}>{r.reason}</td>
+                <td className="py-1 text-faint">{new Date(r.createdAt).toLocaleDateString()}</td>
+                <td className="py-1 text-muted">{r.status}</td>
+                <td className="py-1 text-right whitespace-nowrap">
+                  {r.status === "OPEN" ? (
+                    <>
+                      <button
+                        onClick={() => act(r.id, "removeLogo", r.provider?.name ?? "")}
+                        className="mr-1 rounded bg-flare/15 px-2 py-0.5 text-xs text-flare"
+                      >
+                        remove logo
+                      </button>
+                      <button
+                        onClick={() => act(r.id, "dismiss", r.provider?.name ?? "")}
+                        className="rounded bg-elev px-2 py-0.5 text-xs text-muted"
+                      >
+                        dismiss
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-faint text-xs">
+                      {r.resolvedBy ? `by ${r.resolvedBy.slice(0, 8)}…` : ""}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="py-2 text-muted">
+                  No {showAll ? "" : "open "}logo reports.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+}
+
 // ---------- System ----------
 function SystemTab() {
   const [out, setOut] = useState("");
@@ -561,6 +658,7 @@ function SystemTab() {
           <Btn action="syncManagement" label="Sync Management Group" />
           <Btn action="purge" label="Purge stale (dry run)" />
           <Btn action="purge" label="Purge stale (confirm)" confirm />
+          <Btn action="promoteLogos" label="Promote due logos" />
         </div>
         <p className="mt-2 text-xs text-faint">
           These run the same library functions as the scheduled cron jobs.

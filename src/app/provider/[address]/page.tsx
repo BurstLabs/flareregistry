@@ -84,6 +84,7 @@ export default async function ProviderDetail({
     governance: (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null,
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
+    hasLogo: !!p.logoURI,
     // Flaggable: matched on-chain, not yet qualified, inside the new-provider window, not already
     // flagged, and no open case. This gates whether the member Flag form is offered.
     flaggable:

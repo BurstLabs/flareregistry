@@ -136,8 +136,19 @@ export async function POST(req: NextRequest) {
       privateNode: input.privateNode ?? null,
       algorithm: input.algorithm ?? null,
       source: "submitted",
-      // Persist a logo uploaded before publish; on update without a new one, leave it untouched.
-      ...(input.logoURI ? { logoURI: input.logoURI, logoPath: null } : {}),
+      // A logo uploaded before publish goes through the SAME review window as any change: it is
+      // stored as PENDING (held LOGO_REVIEW_DAYS, promoted by cron), not live. The /api/provider/logo
+      // route commits it under assets/pending/, so its URL contains "/pending/"; persist it as pending
+      // rather than as the live logoURI. On a plain edit (no new logo), leave the logo untouched.
+      ...(input.logoURI && input.logoURI.includes("/pending/")
+        ? {
+            logoPendingURI: input.logoURI,
+            logoPendingAt: new Date(),
+            logoPendingSigner: session,
+          }
+        : input.logoURI
+          ? { logoURI: input.logoURI, logoPath: null }
+          : {}),
     };
     const provider = existingOwned
       ? await tx.provider.update({ where: { id: existingOwned.providerId }, data: branding })

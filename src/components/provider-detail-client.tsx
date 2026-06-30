@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useApp } from "./providers";
-import { FlagAction } from "./governance-actions";
+import { FlagAction, ReportLogoAction } from "./governance-actions";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { ManageListingButton } from "./manage-listing-button";
 
@@ -18,6 +18,7 @@ export interface DetailData {
   // Concluded flag cases (archived withdrawn flags + decided cases), newest first, for the record.
   pastCases: { caseId: string; state: string; at: string }[];
   providerId: string;
+  hasLogo: boolean;
   flaggable: boolean;
   qualified: boolean;
   network: string | null;
@@ -217,6 +218,9 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
 
       {/* Management Group flag action (new providers only, when not already under review). */}
       {d.flaggable && !d.governance?.underReview && <FlagAction providerId={d.providerId} />}
+
+      {/* Management Group can report an inappropriate logo (server enforces members-only). */}
+      {d.hasLogo && <ReportLogoAction providerId={d.providerId} />}
 
       {/* Metrics */}
       {(d.fee || d.votePower || d.reward) && (
