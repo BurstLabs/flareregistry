@@ -91,7 +91,12 @@ function resolveLogo(logoPath: string | null, sourceLogoURI: string | null): str
  */
 export async function buildProviderList(): Promise<ProviderList> {
   const addresses = await prisma.providerAddress.findMany({
-    where: { OR: [{ verified: true }, { provider: { source: "imported" } }] },
+    // Exclude archived (soft-deleted, departed) providers from the live feed; they are served
+    // read-only at /api/feed/archived.json. archivedAt:null AND (verified OR imported).
+    where: {
+      provider: { is: { archivedAt: null } },
+      OR: [{ verified: true }, { provider: { is: { source: "imported" } } }],
+    },
     include: { provider: true },
     orderBy: [{ chainId: "asc" }, { provider: { name: "asc" } }],
   });
@@ -99,7 +104,10 @@ export async function buildProviderList(): Promise<ProviderList> {
   // Qualification status per provider: the persisted LATCHED status (sticky; only revoked by a
   // long no-submit gap, advanced during ingestion), not a fresh per-render compute.
   const provForQual = await prisma.provider.findMany({
-    where: { OR: [{ addresses: { some: { verified: true } } }, { source: "imported" }] },
+    where: {
+      archivedAt: null,
+      OR: [{ addresses: { some: { verified: true } } }, { source: "imported" }],
+    },
     select: { id: true, addresses: { select: { address: true } } },
   });
   const { latchedRiskByAddresses } = await import("./qualification");
@@ -223,6 +231,51 @@ export async function buildProviderList(): Promise<ProviderList> {
     timestamp: new Date().toISOString(),
     version: { major: 1, minor: 3, patch: 0 },
     providers,
+  };
+}
+
+// One archived (departed) provider, as served by the read-only archive endpoint.
+export interface ArchivedProvider {
+  name: string;
+  description: string;
+  url: string;
+  source: string; // "submitted" | "imported"
+  archivedAt: string | null;
+  archivedReason: string | null;
+  addresses: { chainId: number; address: string }[];
+}
+
+export interface ArchivedList {
+  name: string;
+  timestamp: string;
+  note: string;
+  providers: ArchivedProvider[];
+}
+
+// Build the archived-providers list for /api/feed/archived.json. This is the audit record of
+// providers removed from the live feed (departed: unqualified and lapsed beyond the purge window).
+// It is PURELY DERIVED from the database on each request - there is no stored archived file that
+// anything writes to, so concurrent updates can never conflict (unlike the committed providerlist.json
+// which a publish bot writes). One entry per archived provider, with all of its addresses.
+export async function buildArchivedList(): Promise<ArchivedList> {
+  const providers = await prisma.provider.findMany({
+    where: { archivedAt: { not: null } },
+    include: { addresses: { orderBy: { chainId: "asc" } } },
+    orderBy: [{ archivedAt: "desc" }, { name: "asc" }],
+  });
+  return {
+    name: "Flare Registry archived (departed) providers",
+    timestamp: new Date().toISOString(),
+    note: "Providers removed from the live feed after going inactive on-chain (unqualified and lapsed beyond the purge window). Kept for the public audit record; not part of the live provider list. A provider that becomes active again is automatically restored to the live feed.",
+    providers: providers.map((p) => ({
+      name: p.name,
+      description: p.description,
+      url: p.url,
+      source: p.source,
+      archivedAt: p.archivedAt ? p.archivedAt.toISOString() : null,
+      archivedReason: p.archivedReason,
+      addresses: p.addresses.map((a) => ({ chainId: a.chainId, address: a.address })),
+    })),
   };
 }
 

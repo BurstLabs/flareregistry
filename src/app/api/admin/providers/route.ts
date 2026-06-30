@@ -41,6 +41,11 @@ export async function PATCH(req: NextRequest) {
   if (typeof b.url === "string") data.url = b.url.trim();
   if (b.source === "submitted" || b.source === "imported") data.source = b.source;
   if (typeof b.suspended === "boolean") data.suspended = b.suspended;
+  // archived: true -> archive (soft-delete, exclude from feed); false -> restore to the live feed.
+  if (typeof b.archived === "boolean") {
+    data.archivedAt = b.archived ? new Date() : null;
+    data.archivedReason = b.archived ? "Archived by admin." : null;
+  }
   if (!Object.keys(data).length) return NextResponse.json({ error: "no changes" }, { status: 400 });
 
   const provider = await prisma.provider.update({ where: { id }, data });

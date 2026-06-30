@@ -42,11 +42,20 @@ model Provider {
   // suspended: a DENIED flag outcome. Not Qualified, hidden from the default directory.
   suspended   Boolean @default(false)
 
+  // ARCHIVE (soft-delete) instead of hard-deleting a departed provider. The purge job sets this when
+  // a provider is unqualified and has not submitted prices for the purge window on every matched
+  // network; archived providers are EXCLUDED from the live feed but kept for the audit record (served
+  // read-only at /api/feed/archived.json) and auto-unarchived if they become active again. Null = live.
+  archivedAt     DateTime?
+  archivedReason String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   addresses ProviderAddress[]
   flagCases ProviderFlagCase[]
+
+  @@index([archivedAt])
 }
 
 // One on-chain address the provider operates, on one chain. This is the unit that gets

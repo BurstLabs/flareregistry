@@ -355,6 +355,13 @@ function ProvidersTab() {
                 >
                   {p.suspended ? "suspended" : "active"}
                 </button>
+                <button
+                  onClick={() => patch(p.id, { archived: !p.archivedAt })}
+                  className={`rounded px-2 py-1 ${p.archivedAt ? "bg-amber-500/20 text-amber-400" : "bg-elev text-muted"}`}
+                  title={p.archivedAt ? `Archived ${new Date(p.archivedAt).toISOString().slice(0, 10)} — click to restore` : "Archive (remove from live feed, keep record)"}
+                >
+                  {p.archivedAt ? "archived" : "archive"}
+                </button>
                 <button onClick={() => del(p.id, p.name)} className="rounded bg-flare/15 px-2 py-1 text-flare">
                   delete
                 </button>

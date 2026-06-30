@@ -499,7 +499,9 @@ const PURGE_AFTER_EPOCHS = 26;
  * `dryRun` returns the candidates without deleting (use to preview before enabling on cron).
  */
 export async function purgeStaleProviders(opts?: { dryRun?: boolean }): Promise<{
+  // `deleted` is the archived set (name kept for caller compatibility); `restored` came back to life.
   deleted: { id: string; name: string }[];
+  restored: { id: string; name: string }[];
   dryRun: boolean;
 }> {
   const dryRun = opts?.dryRun ?? false;
@@ -529,7 +531,8 @@ export async function purgeStaleProviders(opts?: { dryRun?: boolean }): Promise<
     include: { addresses: true },
   });
 
-  const toDelete: { id: string; name: string }[] = [];
+  const toArchive: { id: string; name: string }[] = [];
+  const toRestore: { id: string; name: string }[] = [];
   for (const p of providers) {
     // A provider can match MULTIPLE entities (one per network). Collect all of them.
     const matched = Array.from(
@@ -540,11 +543,12 @@ export async function purgeStaleProviders(opts?: { dryRun?: boolean }): Promise<
       )
     );
 
-    // Never purge a provider with no on-chain match (likely an address-matching gap, not dead).
+    // A provider with no on-chain match is likely an address-matching gap, not dead: never archive
+    // it. (If it is already archived for some reason, leave it as-is rather than guess.)
     if (matched.length === 0) continue;
 
-    // Keep the provider if it is qualified OR recently active on ANY matched entity/network.
-    // Only purge when ALL of its matched entities are unqualified AND lapsed for >= 3 months.
+    // Alive if qualified OR recently active on ANY matched entity/network. Archive only when ALL of
+    // its matched entities are unqualified AND lapsed for >= the purge window.
     const aliveSomewhere = matched.some((entity) => {
       const state = stateByVoter.get(`${entity.network}:${entity.voter}`);
       if (state?.qualified) return true;
@@ -554,18 +558,36 @@ export async function purgeStaleProviders(opts?: { dryRun?: boolean }): Promise<
       return gap < PURGE_AFTER_EPOCHS;
     });
 
-    if (!aliveSomewhere) toDelete.push({ id: p.id, name: p.name });
-  }
-
-  if (!dryRun) {
-    for (const d of toDelete) {
-      // Log before deleting (audit trail for an irreversible action).
-      console.warn(`[purge] deleting provider ${d.id} "${d.name}"`);
-      await prisma.provider.delete({ where: { id: d.id } });
+    if (!aliveSomewhere && !p.archivedAt) {
+      toArchive.push({ id: p.id, name: p.name });
+    } else if (aliveSomewhere && p.archivedAt) {
+      // A previously-archived provider that is active again: bring it back into the live feed.
+      toRestore.push({ id: p.id, name: p.name });
     }
   }
 
-  return { deleted: toDelete, dryRun };
+  if (!dryRun) {
+    const now = new Date();
+    for (const d of toArchive) {
+      // Soft-delete (archive) rather than hard-delete: the record is kept for the audit endpoint and
+      // can be restored automatically if the provider returns on-chain.
+      console.warn(`[purge] archiving provider ${d.id} "${d.name}"`);
+      await prisma.provider.update({
+        where: { id: d.id },
+        data: { archivedAt: now, archivedReason: "Unqualified and lapsed beyond the purge window." },
+      });
+    }
+    for (const d of toRestore) {
+      console.warn(`[purge] restoring provider ${d.id} "${d.name}" (active again)`);
+      await prisma.provider.update({
+        where: { id: d.id },
+        data: { archivedAt: null, archivedReason: null },
+      });
+    }
+  }
+
+  // `deleted` kept as the field name for backward compatibility with callers; it now means archived.
+  return { deleted: toArchive, restored: toRestore, dryRun };
 }
 
 // Re-export for callers that only need the website primitive.
