@@ -254,16 +254,20 @@ function SubmitPageInner() {
   }
 
   // Open the AppKit modal (injected extension or WalletConnect). Once a wallet connects, the effect
-  // below advances to the verify step with the connected address.
+  // below advances to the verify step with the connected address. We only auto-advance AFTER the user
+  // clicks Connect (connectClicked) - otherwise a wallet that is already connected in the extension
+  // would make the page skip the intro/connect screen on load, flashing it for a frame.
+  const [connectClicked, setConnectClicked] = useState(false);
   async function connect() {
     setError("");
+    setConnectClicked(true);
     await open();
   }
 
-  // When a wallet connects on the connect step, capture its address and move to verify. Pin the
-  // chain dropdown to the connected wallet's chain when it is one we support, else keep the default.
+  // When a wallet connects on the connect step (after the user clicked Connect), capture its address
+  // and move to verify. Pin the chain dropdown to the connected wallet's chain when supported.
   useEffect(() => {
-    if (step === "connect" && isConnected && connectedAddress) {
+    if (step === "connect" && connectClicked && isConnected && connectedAddress) {
       setAddress(connectedAddress);
       // The connected wallet may be any of the entity's five role addresses; resolve which network it
       // belongs to so we pin the right chain (and later submit the canonical listing address).
@@ -280,7 +284,7 @@ function SubmitPageInner() {
         setStep("verify");
       })();
     }
-  }, [step, isConnected, connectedAddress]);
+  }, [step, connectClicked, isConnected, connectedAddress]);
 
   async function verify() {
     setError("");
