@@ -355,13 +355,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           {d.addresses.map((a) => (
             <li key={`${a.chain}-${a.address}`} className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
-                <span className="text-faint">{a.chain}</span>
+                {/* Network + status only. The specific address isn't shown here because ANY of the
+                    network entity's five role addresses can verify/manage it; the full per-role
+                    address list lives in the "Registered on-chain addresses" section below. */}
+                <span className="font-medium">{a.chain}</span>
                 {a.testnet && (
                   <span className="ml-2 rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted">
                     {t("detail.testnet")}
                   </span>
                 )}
-                <div className="truncate font-mono text-xs">{a.address}</div>
               </div>
               {a.verified ? (
                 <span className="shrink-0 rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon">
