@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-30T18:38:40.732Z",
+  "timestamp": "2026-06-30T19:24:09.133Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -2265,13 +2265,13 @@
     {
       "chainId": 14,
       "name": "LightFTSO",
-      "description": "Homebrewed FTSO, light, nimble, with high rewards and lower fees. Get on! We're getting passive income!",
+      "description": "LightFTSO is the first FTSO data provider from Mexico. Since October 2021, we have been actively participating in the Flare Network with consistent uptime, strong performance, and great rewards for our delegators. Built in-house and with love, LightFTSO is always striving to provide reliable, trustworthy data, and committed to  the growth of the Flare ecosystem.",
       "url": "https://www.lightft.so",
       "address": "0xA9C69eb9De79188A9ABa46c5336607F88A80eC89",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xfB9197720329a80191BA140844E96DCcAD149014.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -2291,8 +2291,8 @@
           "delegation": "0xA9C69eb9De79188A9ABa46c5336607F88A80eC89"
         },
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
+          "privateNode": true,
+          "algorithm": "in-house"
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.104Z",
@@ -5160,47 +5160,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.275Z",
-          "lastSubmittedEpoch": 410,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 19,
-      "name": "LightFTSO",
-      "description": "Homebrewed FTSO, light, nimble, with high rewards and lower fees. Get on! We're getting passive income!",
-      "url": "https://www.lightft.so",
-      "address": "0xfB9197720329a80191BA140844E96DCcAD149014",
-      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xfB9197720329a80191BA140844E96DCcAD149014.png",
-      "listed": true,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": true,
-        "qualified": true,
-        "network": "songbird",
-        "feePercent": 20,
-        "votePower": "93206924902808951827865194",
-        "votePowerCapped": "93206924902808951827865194",
-        "feedCount": 63,
-        "lastEpoch": 410,
-        "delegatorRewardLastEpoch": "84801170724178816168791",
-        "feeRewardLastEpoch": "21200292681044704033261",
-        "entity": {
-          "identity": "0xEE6f6572cfeB3467CE5F3572Bea7c5FD6d2b1725",
-          "submit": "0x5d62D85f7903ECA56C65521172BdA8904A1e0937",
-          "submitSignatures": "0xE0FB39dcf3Eb2d3Ae7088263B0FBA6BEa04c523F",
-          "signingPolicy": "0x81050097cbDc0B3D58fe0db4469775db7F538304",
-          "delegation": "0xfB9197720329a80191BA140844E96DCcAD149014"
-        },
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.104Z",
           "lastSubmittedEpoch": 410,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
