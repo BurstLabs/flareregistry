@@ -271,7 +271,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           )}
           {d.stakerReward && (
             <div>
-              <dt className="text-faint">{t("detail.stakerReward")}</dt>
+              <dt className="text-faint">{t("detail.stakerReward", { epoch: d.rewardEpoch ?? "" })}</dt>
               <dd className="font-medium">{d.stakerReward}</dd>
             </div>
           )}
