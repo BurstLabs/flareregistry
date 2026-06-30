@@ -23,7 +23,12 @@ export default async function Home({
   const showAll = (await searchParams)?.show === "all";
 
   const all = await prisma.provider.findMany({
-    where: { OR: [{ addresses: { some: { verified: true } } }, { source: "imported" }] },
+    // Exclude archived (departed/unmatched) providers from the directory - they live only on the
+    // read-only archive endpoint. Without this, archived legacy imports (e.g. SAKURA) still showed.
+    where: {
+      archivedAt: null,
+      OR: [{ addresses: { some: { verified: true } } }, { source: "imported" }],
+    },
     include: { addresses: true },
     orderBy: { name: "asc" },
   });

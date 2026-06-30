@@ -39,6 +39,9 @@ export default async function ProviderDetail({
   }
   if (!owned) notFound();
   const p = owned.provider;
+  // Archived (departed/unmatched) providers are not part of the live registry - their detail page is
+  // gone (they remain only on the read-only archive endpoint). 404 so they don't render as live.
+  if (p.archivedAt) notFound();
   const addresses = p.addresses.map((a) => a.address);
 
   const [metrics, qualMap, latchedMap] = await Promise.all([
