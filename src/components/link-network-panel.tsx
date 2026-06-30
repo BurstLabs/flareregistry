@@ -178,9 +178,17 @@ export function LinkNetworkPanel({
                 key={`${a.chainId}-${a.address}`}
                 className="flex items-center justify-between gap-3"
               >
-                <span className="min-w-0 truncate">
-                  <span className="text-faint">{a.chain}</span>{" "}
-                  <span className="font-mono text-xs">{a.address}</span>
+                <span className="min-w-0 flex items-center gap-2 truncate">
+                  {/* Network + status, not the address: any of the entity's five role addresses can
+                      verify/manage it, so a single address would be misleading here too. */}
+                  <span className="font-medium">{a.chain}</span>
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-[10px] ${
+                      a.verified ? "bg-beacon/20 text-beacon" : "bg-elev text-faint"
+                    }`}
+                  >
+                    {a.verified ? t("badge.verified") : t("badge.unverified")}
+                  </span>
                 </span>
                 <span className="flex shrink-0 items-center gap-3">
                   {!a.verified && (
