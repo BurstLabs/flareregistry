@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-30T21:54:54.182Z",
+  "timestamp": "2026-06-30T21:56:47.726Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -3362,6 +3362,47 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.187Z",
+          "lastSubmittedEpoch": 410,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Ugly Kitty",
+      "description": "We are a Flare and Songbird blockchain networks data signals provider based in the USA.",
+      "url": "https://uglykitty.xyz",
+      "address": "0x35149714467F2FE71b46eEb4d11689ED8728Bd25",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x35149714467F2FE71b46eEb4d11689ED8728Bd25.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "86939842138106871156249844",
+        "votePowerCapped": "86939842138106871156249844",
+        "feedCount": 63,
+        "lastEpoch": 410,
+        "delegatorRewardLastEpoch": "76883678421908213525248",
+        "feeRewardLastEpoch": "19220919605477053371699",
+        "entity": {
+          "identity": "0x01CaAAA7B40AA13aB2a04087d262B5558E695607",
+          "submit": "0xBE9f00D70c357c663b63cf5972D4c59c851a7618",
+          "submitSignatures": "0x7E5A5371517f855e10d27394483dBAB123dA5d9D",
+          "signingPolicy": "0x338119F38fc07f29aA96449251353d9e4684DA6D",
+          "delegation": "0x35149714467F2FE71b46eEb4d11689ED8728Bd25"
+        },
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house"
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:19.976Z",
           "lastSubmittedEpoch": 410,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
