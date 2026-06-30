@@ -174,6 +174,28 @@ export async function resolveEntityListingAddress(
 }
 
 /**
+ * All canonical listing addresses (delegation, or voter) across every network where the signer is any
+ * of the entity's five on-chain role addresses. Lets a lookup/claim find the listing when the caller
+ * signs with a non-delegation role address. Empty if the signer is not a role of any known entity.
+ */
+export async function listingAddressesForSigner(signer: string): Promise<string[]> {
+  const s = signer.toLowerCase();
+  const entities = await prisma.providerOnchain.findMany({
+    where: {
+      OR: [
+        { voter: s },
+        { delegationAddress: s },
+        { submitAddress: s },
+        { submitSignaturesAddress: s },
+        { signingPolicyAddress: s },
+      ],
+    },
+    select: { voter: true, delegationAddress: true },
+  });
+  return entities.map((e) => (e.delegationAddress ?? e.voter).toLowerCase());
+}
+
+/**
  * Batch: map providerId -> metrics for a list of providers (each with its addresses). One
  * query per provider; fine for a directory page of ~150 rows, can be optimised later.
  */

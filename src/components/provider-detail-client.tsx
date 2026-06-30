@@ -216,7 +216,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
 
       <ManageListingButton
         ownerAddresses={d.addresses.filter((a) => a.verified).map((a) => a.address.toLowerCase())}
-        claimAddresses={d.addresses.map((a) => a.address.toLowerCase())}
+        // Claiming/managing may be done with ANY of the entity's five on-chain role addresses
+        // (identity/submit/submit-signatures/signing-policy/delegation), not only the address stored
+        // on the listing. Include the listing addresses plus all five roles per matched network.
+        claimAddresses={[
+          ...d.addresses.map((a) => a.address.toLowerCase()),
+          ...d.entityAddresses.flatMap((e) => e.roles.map((r) => r.address.toLowerCase())),
+        ]}
         claimed={d.verified}
       />
 

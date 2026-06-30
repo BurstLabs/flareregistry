@@ -227,11 +227,14 @@ function SubmitPageInner() {
       setPrivateNode(!!p.privateNode);
       if (p.algorithm === "in-house" || p.algorithm === "open-source") setAlgorithm(p.algorithm);
       // Pin chainId to the signed-in address's actual chain, so a later save writes the right
-      // network (not whatever the now-hidden dropdown last held).
+      // network (not whatever the now-hidden dropdown last held). The connected wallet may be one of
+      // the entity's role addresses (not the listing's stored address), so if it isn't found directly
+      // fall back to the listing's first address chain.
       const mine = (p.addresses ?? []).find(
         (a: { address: string; chainId: number }) => a.address.toLowerCase() === addr.toLowerCase()
       );
       if (mine) setChainId(mine.chainId);
+      else if (p.addresses?.[0]) setChainId(p.addresses[0].chainId);
       return true;
     } catch {
       // Non-fatal: fall back to an empty form.
@@ -251,7 +254,20 @@ function SubmitPageInner() {
   useEffect(() => {
     if (step === "connect" && isConnected && connectedAddress) {
       setAddress(connectedAddress);
-      setStep("verify");
+      // The connected wallet may be any of the entity's five role addresses; resolve which network it
+      // belongs to so we pin the right chain (and later submit the canonical listing address).
+      (async () => {
+        try {
+          const r = await fetch(`/api/provider/resolve-role?address=${connectedAddress.toLowerCase()}`);
+          const b = await r.json().catch(() => ({}));
+          if (r.ok && Array.isArray(b.roles) && b.roles.length) {
+            setChainId(b.roles[0].chainId);
+          }
+        } catch {
+          // Non-fatal: keep the default chain; loadExisting/registration still gate correctly.
+        }
+        setStep("verify");
+      })();
     }
   }, [step, isConnected, connectedAddress]);
 

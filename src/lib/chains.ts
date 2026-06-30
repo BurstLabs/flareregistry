@@ -57,6 +57,10 @@ export function getChain(chainId: number): ChainInfo | undefined {
   return BY_ID.get(chainId);
 }
 
+export function getChainByKey(key: string): ChainInfo | undefined {
+  return CHAINS.find((c) => c.key === key);
+}
+
 export function isSupportedChain(chainId: number): boolean {
   return BY_ID.has(chainId);
 }
