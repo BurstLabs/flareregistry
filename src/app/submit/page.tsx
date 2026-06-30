@@ -260,7 +260,12 @@ function SubmitPageInner() {
   async function connect() {
     setError("");
     setConnectClicked(true);
-    await open();
+    // Only open the AppKit modal if no wallet is connected yet. If one is already connected, opening it
+    // would just show the account view (Fund/Swap/Disconnect); instead the effect below advances
+    // straight to the sign step using the connected address.
+    if (!isConnected || !connectedAddress) {
+      await open();
+    }
   }
 
   // When a wallet connects on the connect step (after the user clicked Connect), capture its address
@@ -539,7 +544,7 @@ function SubmitPageInner() {
             onClick={connect}
             className="rounded bg-beacon px-4 py-2 font-medium text-neutral-950 hover:opacity-90"
           >
-            {t("submit.connectBtn")}
+            {isConnected && connectedAddress ? t("submit.continueBtn") : t("submit.connectBtn")}
           </button>
         </div>
       )}
