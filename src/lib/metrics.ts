@@ -3,6 +3,7 @@
 // addresses equals one of the entity's five registered addresses.
 
 import { prisma } from "./db";
+import { toNodeId } from "./validators";
 
 /**
  * True if `address` is one of the registered on-chain FTSO entity addresses (any of the five
@@ -94,7 +95,10 @@ async function entityForAddresses(addresses: string[]): Promise<ProviderMetrics 
     feeReward: latest?.feeReward ?? null,
     delegatorReward: latest?.delegatorReward ?? null,
     stakerReward: latest?.stakerReward ?? null,
-    nodeIds: Array.isArray(oc.nodeIds) ? (oc.nodeIds as string[]) : [],
+    // Stored as hex; surface the canonical NodeID- form (also what ProviderValidator is keyed by).
+    nodeIds: Array.isArray(oc.nodeIds)
+      ? (oc.nodeIds as string[]).map((id) => toNodeId(id))
+      : [],
   };
 }
 

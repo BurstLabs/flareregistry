@@ -3,6 +3,38 @@
 // fee, uptime and online status (joined to providers by nodeId, which is in ProviderOnchain.nodeIds).
 
 import { prisma } from "./db";
+import { createHash } from "node:crypto";
+
+// fsp-rewards stores node IDs as 20-byte HEX (e.g. 0x5fce...), but the P-chain and the wider ecosystem
+// use the CB58 "NodeID-..." form (base58check of the 20 bytes + 4-byte sha256 checksum). Convert so we
+// display the canonical NodeID and can JOIN to ProviderValidator (which is keyed by NodeID-...).
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+function base58(bytes: Buffer): string {
+  let n = BigInt("0x" + (bytes.toString("hex") || "0"));
+  let s = "";
+  while (n > 0n) {
+    const r = Number(n % 58n);
+    n = n / 58n;
+    s = B58[r] + s;
+  }
+  for (const b of bytes) {
+    if (b === 0) s = "1" + s;
+    else break;
+  }
+  return s;
+}
+export function hexToNodeId(hex: string): string {
+  const h = hex.startsWith("0x") ? hex.slice(2) : hex;
+  if (!/^[0-9a-fA-F]{40}$/.test(h)) return hex; // not a 20-byte hex node id; leave as-is
+  const raw = Buffer.from(h, "hex");
+  const checksum = createHash("sha256").update(raw).digest().subarray(-4);
+  return "NodeID-" + base58(Buffer.concat([raw, checksum]));
+}
+
+/** Normalize any stored node id (hex or already NodeID-) to the canonical NodeID- form. */
+export function toNodeId(id: string): string {
+  return id.startsWith("NodeID-") ? id : hexToNodeId(id);
+}
 
 // P-chain RPC endpoints (the C-chain RPCs in chains.ts are /ext/C/rpc; validators live on /ext/bc/P).
 const P_CHAIN_RPC: Record<string, string> = {
