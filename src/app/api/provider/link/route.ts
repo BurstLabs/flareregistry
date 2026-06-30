@@ -133,7 +133,10 @@ export async function POST(req: NextRequest) {
     );
     if (!callerOwnsTarget) {
       return NextResponse.json(
-        { error: "you are not a verified owner of this listing; sign in with an address from one of its verified networks" },
+        {
+          error: "you are not a verified owner of this listing; sign in with an address from one of its verified networks",
+          code: "LINK_NOT_OWNER",
+        },
         { status: 403 }
       );
     }
