@@ -4,7 +4,7 @@ import { getSessionAddress } from "@/lib/session";
 import { providerInputSchema, normalizeName } from "@/lib/validation";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
-import { isRegisteredOnchain, resolveEntityListingAddress } from "@/lib/metrics";
+import { isRegisteredOnchain, resolveEntityListingAddress, entityRoleAddresses } from "@/lib/metrics";
 import { getChain } from "@/lib/chains";
 import { apiError } from "@/lib/api-error";
 
@@ -28,24 +28,34 @@ export async function POST(req: NextRequest) {
   const input = parsed.data;
 
   // The caller proves control of a network by signing with ANY of that network entity's five on-chain
-  // role addresses, not only the delegation address stored on the listing. So:
-  //  1. Normalize each submitted address to its CANONICAL listing address (if the submitted address is
-  //     a role address of an entity on that network, use the entity's delegation address instead). The
-  //     client may submit the connected role address; the listing always stores the canonical one.
-  //  2. Likewise resolve the SESSION to the canonical address it controls per submitted network.
-  //  3. A submitted (canonical) address is "controlled" when the session resolves to it.
+  // role addresses, not only the address stored on the listing. So, per submitted address, normalize it
+  // to the address that should appear on the listing:
+  //  - If one of the SIGNER's role addresses for that network is ALREADY a row on an existing listing,
+  //    use THAT stored address (imported listings may store any role, not delegation - matching the
+  //    stored row avoids creating a duplicate delegation row and re-verifies the existing one).
+  //  - Otherwise fall back to the entity's canonical (delegation) address.
+  // Then a network is "controlled" when the SESSION resolves (via any of its roles) to that address.
   for (const a of input.addresses) {
     const chain = getChain(a.chainId);
     if (!chain?.mainnet) continue;
-    const canon = await resolveEntityListingAddress(a.address, chain.key);
-    if (canon) a.address = canon.listingAddress;
+    const roles = await entityRoleAddresses(a.address, chain.key);
+    if (roles.length) {
+      const existing = await prisma.providerAddress.findFirst({
+        where: { chainId: a.chainId, address: { in: roles } },
+        select: { address: true },
+      });
+      const canon = await resolveEntityListingAddress(a.address, chain.key);
+      a.address = (existing?.address ?? canon?.listingAddress ?? a.address).toLowerCase();
+    }
   }
   const controlled = new Set<string>([session.toLowerCase()]);
   for (const a of input.addresses) {
     const chain = getChain(a.chainId);
     if (!chain?.mainnet) continue;
-    const resolved = await resolveEntityListingAddress(session, chain.key);
-    if (resolved && resolved.listingAddress === a.address.toLowerCase()) {
+    // The session controls this network if any of the session's role addresses for it matches the
+    // (normalized) submitted address - i.e. the session and the address belong to the same entity.
+    const sessionRoles = await entityRoleAddresses(session, chain.key);
+    if (sessionRoles.includes(a.address.toLowerCase())) {
       controlled.add(a.address.toLowerCase());
     }
   }

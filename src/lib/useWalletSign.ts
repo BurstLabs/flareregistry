@@ -111,11 +111,30 @@ export function useWalletSign(t: TFn) {
       if (!nonceRes.ok) throw new Error(t("submit.err.noChallenge"));
       const { message } = await nonceRes.json();
 
-      const signature = await signMessageAsync({ message });
+      let signature: string;
+      try {
+        signature = await signMessageAsync({ message });
+      } catch (e) {
+        throw new Error(cleanWalletError(e, t));
+      }
       return { address, message, signature };
     },
     [connectedAddress, isConnected, open, getAddress, switchChainAsync, signMessageAsync, t]
   );
+}
+
+// Turn a raw wallet/viem signing error into a clean, human message. viem appends boilerplate like
+// "Details: ..." and "Version: viem@x.y.z" to its error messages; we surface a friendly localized
+// string for the common user-rejection case and strip the boilerplate otherwise.
+export function cleanWalletError(e: unknown, t: TFn): string {
+  const raw = e instanceof Error ? e.message : String(e ?? "");
+  // viem/EIP-1193 user rejection is code 4001, and the message starts with "User rejected".
+  const code = (e as { code?: number })?.code;
+  if (code === 4001 || /user rejected/i.test(raw)) {
+    return t("submit.err.userRejected");
+  }
+  // Drop viem's trailing "Version:" line and any "Details:" duplication, keep the first line.
+  return raw.split("\n").map((l) => l.trim()).filter(Boolean)[0]?.replace(/\s*Version:.*$/i, "") || raw;
 }
 
 // Convenience wrapper for the common "sign a Flare-14 session/governance challenge" case. Takes the

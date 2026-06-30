@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
-import { isRegisteredOnchain, resolveEntityListingAddress } from "@/lib/metrics";
+import { isRegisteredOnchain, resolveEntityListingAddress, entityRoleAddresses } from "@/lib/metrics";
 import { getChain } from "@/lib/chains";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
@@ -66,19 +66,19 @@ export async function POST(req: NextRequest) {
   }
 
   // The signer may use ANY of the entity's five on-chain role addresses (identity/submit/submit-sigs/
-  // signing-policy/delegation) to prove control of this network, not only the delegation address that
-  // is stored on the listing. Resolve the signer to its entity and use that entity's CANONICAL listing
-  // address (delegation, or voter) as the address to verify/list. On mainnet the entity is known on
-  // -chain; on testnets (no ingested entity) fall back to the signer itself.
-  const resolved = chainB.mainnet
-    ? await resolveEntityListingAddress(addressB, chainB.key)
-    : null;
-  const listingAddress = resolved?.listingAddress ?? addressB;
+  // signing-policy/delegation) to prove control of this network. Get the full role set so we can match
+  // the signer against whatever address the listing actually stores for this network (imported listings
+  // may store any role, not the delegation address).
+  const roles = chainB.mainnet ? await entityRoleAddresses(addressB, chainB.key) : [];
 
   // Find the target listing by name (shared normaliser, S14), and require it to already be claimed.
   const { normalizeName } = await import("@/lib/validation");
   const candidates = await prisma.provider.findMany({
-    select: { id: true, name: true, addresses: { select: { address: true, verified: true } } },
+    select: {
+      id: true,
+      name: true,
+      addresses: { select: { chainId: true, address: true, verified: true } },
+    },
   });
   const ownedA = candidates.find((p) => normalizeName(p.name) === normalizeName(name));
   if (!ownedA) {
@@ -96,15 +96,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Does an address ALREADY on this listing (on chain B) belong to the signer's entity? If so, this is
+  // a "verify an existing row" action: verify THAT stored address (whatever role it is). Otherwise the
+  // listing address to use is the entity's canonical (delegation) address, or the signer itself.
+  const matchSet = new Set([addressB.toLowerCase(), ...roles]);
+  const existingRow = ownedA.addresses.find(
+    (a) => a.chainId === chainIdB && matchSet.has(a.address.toLowerCase())
+  );
+  const resolved = chainB.mainnet ? await resolveEntityListingAddress(addressB, chainB.key) : null;
+  const listingAddress = existingRow?.address.toLowerCase() ?? resolved?.listingAddress ?? addressB;
+
   // Authorization. Two legitimate cases, both safe:
-  //   (a) VERIFY AN EXISTING ROW: the resolved listing address is already on this listing (e.g. a
+  //   (a) VERIFY AN EXISTING ROW: an address of the signer's entity is already on this listing (e.g. a
   //       claimed-but-unproven second network). Signing as any of that entity's role addresses is
   //       itself the proof - no separate owner session is needed.
   //   (b) LINK A NEW ADDRESS: it is not yet on the listing. This is the takeover-sensitive path (S1),
   //       so it requires an authenticated session that is already a VERIFIED owner of the listing.
-  const bAlreadyOnListing = ownedA.addresses.some(
-    (a) => a.address.toLowerCase() === listingAddress.toLowerCase()
-  );
+  const bAlreadyOnListing = !!existingRow;
   if (!bAlreadyOnListing) {
     const sessionAddr = (await getSessionAddress())?.toLowerCase() ?? null;
     if (!sessionAddr) {

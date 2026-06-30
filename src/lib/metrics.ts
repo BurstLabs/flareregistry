@@ -174,9 +174,50 @@ export async function resolveEntityListingAddress(
 }
 
 /**
- * All canonical listing addresses (delegation, or voter) across every network where the signer is any
- * of the entity's five on-chain role addresses. Lets a lookup/claim find the listing when the caller
- * signs with a non-delegation role address. Empty if the signer is not a role of any known entity.
+ * All five on-chain role addresses (voter/identity, delegation, submit, submit-signatures,
+ * signing-policy) of the entity that `signer` is a role of on `network`. Empty if not found. Used to
+ * match a signer against whatever address a listing happens to store for that network (imported
+ * listings may store any role, not the delegation address).
+ */
+export async function entityRoleAddresses(signer: string, network: string): Promise<string[]> {
+  const s = signer.toLowerCase();
+  const oc = await prisma.providerOnchain.findFirst({
+    where: {
+      network,
+      OR: [
+        { voter: s },
+        { delegationAddress: s },
+        { submitAddress: s },
+        { submitSignaturesAddress: s },
+        { signingPolicyAddress: s },
+      ],
+    },
+    select: {
+      voter: true,
+      delegationAddress: true,
+      submitAddress: true,
+      submitSignaturesAddress: true,
+      signingPolicyAddress: true,
+    },
+  });
+  if (!oc) return [];
+  return [
+    oc.voter,
+    oc.delegationAddress,
+    oc.submitAddress,
+    oc.submitSignaturesAddress,
+    oc.signingPolicyAddress,
+  ]
+    .filter((a): a is string => !!a)
+    .map((a) => a.toLowerCase());
+}
+
+/**
+ * ALL five role addresses across every entity the signer is a role of. Used to find a listing by any
+ * role address regardless of which role the listing happens to store (imported listings may store the
+ * submit, identity, etc. address rather than delegation). Empty if the signer is not a known role.
+ * NOTE: returns the full role set on purpose - matching only the delegation address misses listings
+ * that stored a different role, which was a recurring lookup bug.
  */
 export async function listingAddressesForSigner(signer: string): Promise<string[]> {
   const s = signer.toLowerCase();
@@ -190,9 +231,27 @@ export async function listingAddressesForSigner(signer: string): Promise<string[
         { signingPolicyAddress: s },
       ],
     },
-    select: { voter: true, delegationAddress: true },
+    select: {
+      voter: true,
+      delegationAddress: true,
+      submitAddress: true,
+      submitSignaturesAddress: true,
+      signingPolicyAddress: true,
+    },
   });
-  return entities.map((e) => (e.delegationAddress ?? e.voter).toLowerCase());
+  const out = new Set<string>();
+  for (const e of entities) {
+    for (const a of [
+      e.voter,
+      e.delegationAddress,
+      e.submitAddress,
+      e.submitSignaturesAddress,
+      e.signingPolicyAddress,
+    ]) {
+      if (a) out.add(a.toLowerCase());
+    }
+  }
+  return [...out];
 }
 
 /**
