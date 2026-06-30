@@ -50,15 +50,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "malformed message" }, { status: 400 });
   }
 
-  // Registration gate for B on mainnet networks.
   const chainB = getChain(chainIdB);
   if (!chainB) {
     return NextResponse.json({ error: "unsupported network" }, { status: 400 });
   }
-  if (chainB.mainnet && !(await isRegisteredOnchain(addressB, chainB.key))) {
+  // Only mainnet networks (Flare/Songbird) are listable. Testnets have no ingested on-chain entity
+  // data, so an address there cannot be verified - which previously let non-existent testnet addresses
+  // be linked. Reject them outright.
+  if (!chainB.mainnet) {
+    return NextResponse.json(
+      { error: `${chainB.name} is a testnet and cannot be listed.`, code: "TESTNET_NOT_SUPPORTED" },
+      { status: 400 }
+    );
+  }
+  // Registration gate: the address must be a registered on-chain FTSO entity on chain B.
+  if (!(await isRegisteredOnchain(addressB, chainB.key))) {
     return NextResponse.json(
       {
         error: `address ${addressB} is not a registered FTSO entity on ${chainB.name}. Only on-chain registered signal providers can list.`,
+        code: "NOT_REGISTERED",
       },
       { status: 403 }
     );

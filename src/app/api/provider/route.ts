@@ -70,9 +70,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Registration gate: on mainnet networks (Flare/Songbird) the address must be a registered
-  // on-chain FTSO entity. This keeps the registry to real providers. Testnets (Coston/Coston2)
-  // have no on-chain reward data to check against, so they are exempt.
+  // Only mainnet networks (Flare/Songbird) are listable. Testnets have no ingested on-chain entity
+  // data and cannot be verified, so they are rejected.
+  for (const a of input.addresses) {
+    const chain = getChain(a.chainId);
+    if (chain && !chain.mainnet) {
+      return NextResponse.json(
+        { error: `${chain.name} is a testnet and cannot be listed.`, code: "TESTNET_NOT_SUPPORTED" },
+        { status: 400 }
+      );
+    }
+  }
+  // Registration gate: on mainnet the address must be a registered on-chain FTSO entity.
   for (const a of input.addresses) {
     const chain = getChain(a.chainId);
     if (chain?.mainnet && !(await isRegisteredOnchain(a.address, chain.key))) {

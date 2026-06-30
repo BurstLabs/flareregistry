@@ -26,7 +26,8 @@ export function LinkNetworkPanel({
   const { t } = useApp();
   const router = useRouter();
   const connectAndSign = useWalletSign(t);
-  const options = CHAINS.filter((c) => c.chainId !== excludeChainId);
+  // Only mainnet networks are listable (testnets have no verifiable on-chain entity data).
+  const options = CHAINS.filter((c) => c.mainnet && c.chainId !== excludeChainId);
   const [linkChainId, setLinkChainId] = useState<number>(options[0]?.chainId ?? 19);
   const [busy, setBusy] = useState(false); // a "link a new network" action is in progress
   const [verifyingKey, setVerifyingKey] = useState<string>(""); // which existing row is being verified

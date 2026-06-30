@@ -527,7 +527,8 @@ function SubmitPageInner() {
                 value={chainId}
                 onChange={(e) => setChainId(Number(e.target.value))}
               >
-                {CHAINS.map((c) => (
+                {/* Only mainnet networks are listable (testnets have no verifiable on-chain data). */}
+                {CHAINS.filter((c) => c.mainnet).map((c) => (
                   <option key={c.chainId} value={c.chainId}>
                     {c.name} ({t("submit.chainIdLabel")} {c.chainId})
                   </option>
