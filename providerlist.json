@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-30T22:18:16.475Z",
+  "timestamp": "2026-06-30T22:43:05.716Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -16,7 +16,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xdc908744b7946Dd19bf8E754c058Fab9fEc84993.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": false,
         "qualified": true,
@@ -36,8 +36,8 @@
           "delegation": "0xdc908744b7946Dd19bf8E754c058Fab9fEc84993"
         },
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
+          "privateNode": true,
+          "algorithm": "in-house"
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.379Z",
