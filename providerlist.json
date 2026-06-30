@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-06-30T19:40:43.387Z",
+  "timestamp": "2026-06-30T19:42:13.619Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -4100,6 +4100,47 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.502Z",
+          "lastSubmittedEpoch": 410,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Catenalytica",
+      "description": "Our mission is to deliver the highest possible reward rates for our delegators. We achieve this by combining a high-accuracy FTSO algorithm with low validator fees, all while committing to complete data transparency.",
+      "url": "https://catenalytica.com",
+      "address": "0x1C602a30335187A97D8061Ffffd4522796DE82bF",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x1C602a30335187A97D8061Ffffd4522796DE82bF.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "247536952973367488947229601",
+        "votePowerCapped": "224201730655994910125651555",
+        "feedCount": 63,
+        "lastEpoch": 410,
+        "delegatorRewardLastEpoch": "200224539813950318651006",
+        "feeRewardLastEpoch": "50056134953487579648791",
+        "entity": {
+          "identity": "0x8ddd48b520Df91f05C5d8c19b2cEE59ABe65978a",
+          "submit": "0x92BF54Ae8AeD699a038e8d8b0e62e5b511F56DC5",
+          "submitSignatures": "0x351Cc97C268f5dC8EEEDdDed15B0bd0825E683F6",
+          "signingPolicy": "0x5B0FF409b17dF4b717Ea0c5035d0a961c502Fca8",
+          "delegation": "0x1C602a30335187A97D8061Ffffd4522796DE82bF"
+        },
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house"
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:19.953Z",
           "lastSubmittedEpoch": 410,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
