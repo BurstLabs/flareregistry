@@ -49,6 +49,10 @@ export default function ApiDocs() {
         .
       </Endpoint>
 
+      <Endpoint method="GET" path="/api/feed/archived.json">
+        {t("api.ep.archived")}
+      </Endpoint>
+
       <Endpoint method="GET" path="/api/v1/providers">
         {t("api.ep.providers")}{" "}
         <code>{`{ apiVersion, generatedAt, count, providers[] }`}</code>.{" "}
@@ -58,6 +62,9 @@ export default function ApiDocs() {
       <Endpoint method="GET" path="/api/provider/:address">
         {t("api.ep.provider")}
       </Endpoint>
+
+      <h2 className="mb-3 mt-8 text-xl font-semibold">{t("api.lifecycleHeading")}</h2>
+      <p className="mb-3 text-sm text-muted">{t("api.lifecycleBody")}</p>
 
       <h2 className="mb-3 mt-8 text-xl font-semibold">{t("api.schemaHeading")}</h2>
       <p className="mb-3 text-sm text-muted">
