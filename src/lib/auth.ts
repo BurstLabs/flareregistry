@@ -30,8 +30,11 @@ export async function issueChallenge(
     data: { address: address.toLowerCase(), nonce, chainId, action: action ?? null, expiresAt },
   });
 
+  // NOTE: no double-quotes in the statement. The SIWE ABNF parser (siwe 2.3.2) fails to re-parse a
+  // message whose statement contains a `"` character, so `authorize "session"` would round-trip as a
+  // "malformed message" on verify. Keep the action word unquoted.
   const statement = action
-    ? `Flare Registry: authorize "${action}" with this address.`
+    ? `Flare Registry: authorize ${action} with this address.`
     : "Sign in to Flare Registry to prove you control this signal-provider address.";
 
   const message = new SiweMessage({
