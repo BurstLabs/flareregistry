@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-03T11:58:52.983Z",
+  "timestamp": "2026-07-03T12:00:52.903Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1680,7 +1680,7 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:19.886Z",
+          "qualifiedSince": "2026-06-22T23:47:18.803Z",
           "lastSubmittedEpoch": 411,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -4879,6 +4879,47 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.093Z",
+          "lastSubmittedEpoch": 411,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "FTSO London",
+      "description": "Let's work together to maximise your Flare Rewards. Our delegation services enable token holders to earn lucrative rewards on the Flare Network",
+      "url": "https://www.ftso.london",
+      "address": "0x0708a4C813594b7E0218CB4A5D8b75c76AbFc859",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x0708a4C813594b7E0218CB4A5D8b75c76AbFc859.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "159912483432415412036746456",
+        "votePowerCapped": "159912483432415412036746456",
+        "feedCount": 63,
+        "lastEpoch": 411,
+        "delegatorRewardLastEpoch": "145139464852256662140058",
+        "feeRewardLastEpoch": "36284866213064165520978",
+        "entity": {
+          "identity": "0xD288C3EF25eBf79e7C53EA37DcDfB0710f3Ed173",
+          "submit": "0x2d4da92b99b98DD4a0744Fa563BF27B30aEE6b0B",
+          "submitSignatures": "0xA587056d4D028003b0241051bbFF7eC2691D84f9",
+          "signingPolicy": "0x5DA692A7Ee11E292bDdf8eA15bD388F3beC1347a",
+          "delegation": "0x0708a4C813594b7E0218CB4A5D8b75c76AbFc859"
+        },
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house"
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:18.803Z",
           "lastSubmittedEpoch": 411,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
