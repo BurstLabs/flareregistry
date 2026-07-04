@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-04T22:53:55.867Z",
+  "timestamp": "2026-07-04T22:54:45.158Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1106,7 +1106,7 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:19.759Z",
+          "qualifiedSince": "2026-06-22T23:47:18.950Z",
           "lastSubmittedEpoch": 411,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -4346,6 +4346,47 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.310Z",
+          "lastSubmittedEpoch": 411,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "FlareBase",
+      "description": "FlareBase is an Italian Flare provider. We offer near real time prices with an high accuracy rate, FDC data and Flare validators.",
+      "url": "https://www.flare-base.io",
+      "address": "0x86eC5c8Ce7a4DD7762Cff205d64Bfc0C272feB6d",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x86eC5c8Ce7a4DD7762Cff205d64Bfc0C272feB6d.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "129697097686046842686675041",
+        "votePowerCapped": "129697097686046842686675041",
+        "feedCount": 63,
+        "lastEpoch": 411,
+        "delegatorRewardLastEpoch": "120223243397495681734687",
+        "feeRewardLastEpoch": "30055810849373920421109",
+        "entity": {
+          "identity": "0x527E5e829763885008E171493C0E8d4A1eC48239",
+          "submit": "0xE6c5024a337451e32f18f4B043bdb2d755897F7E",
+          "submitSignatures": "0xfB341c48679a52973F778dF1DD5c50A8e03010B0",
+          "signingPolicy": "0x526a35584129879950C1B044F5627812217B833a",
+          "delegation": "0x86eC5c8Ce7a4DD7762Cff205d64Bfc0C272feB6d"
+        },
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house"
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:18.950Z",
           "lastSubmittedEpoch": 411,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
