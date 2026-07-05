@@ -98,7 +98,7 @@ function ContractsInfo({ t }: { t: T }) {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <tbody>
-                <tr className="border-b border-themed">
+                <tr className="border-b border-themed/60">
                   <td className="py-1 pr-3 text-muted">{t("submit.contracts.registryLabel")}</td>
                   <td className="py-1 font-mono break-all">
                     <a
