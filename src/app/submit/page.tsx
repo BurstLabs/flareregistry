@@ -49,6 +49,108 @@ function Interp({
   return <>{out}</>;
 }
 
+interface NetworkContracts {
+  key: string;
+  name: string;
+  explorerUrl: string;
+  registry: string;
+  contracts: { name: string; address: string }[];
+}
+
+// Collapsible "Interacting on-chain" block: lists Flare's FTSO protocol contract addresses per
+// network, resolved live from the Flare Contract Registry (via /api/contracts). Aimed at providers
+// who verify and transact against the chain directly. These are FLARE protocol contracts, not ours -
+// the copy makes that explicit so nobody thinks listings are managed on-chain or that this is a way
+// around the signature gate (it isn't: claiming a listing still requires a signature here).
+function ContractsInfo({ t }: { t: T }) {
+  const [networks, setNetworks] = useState<NetworkContracts[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/contracts")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => {
+        if (live) setNetworks(d.networks ?? []);
+      })
+      .catch(() => {
+        if (live) setFailed(true);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  return (
+    <details className="rounded border border-themed bg-elev/50 p-4 text-sm">
+      <summary className="cursor-pointer font-medium">{t("submit.contracts.summary")}</summary>
+      <p className="mt-3 text-muted">{t("submit.contracts.intro")}</p>
+      <p className="mt-2 text-xs text-faint">{t("submit.contracts.disclaimer")}</p>
+
+      {failed && <p className="mt-3 text-xs text-muted">{t("submit.contracts.unavailable")}</p>}
+      {!failed && !networks && (
+        <p className="mt-3 text-xs text-muted">{t("submit.contracts.loading")}</p>
+      )}
+
+      {networks?.map((net) => (
+        <div key={net.key} className="mt-4">
+          <p className="mb-2 font-medium">{net.name}</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <tbody>
+                <tr className="border-b border-themed">
+                  <td className="py-1 pr-3 text-muted">{t("submit.contracts.registryLabel")}</td>
+                  <td className="py-1 font-mono break-all">
+                    <a
+                      href={`${net.explorerUrl}/address/${net.registry}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-beacon hover:underline"
+                    >
+                      {net.registry}
+                    </a>
+                  </td>
+                </tr>
+                {net.contracts.map((c) => (
+                  <tr key={c.name} className="border-b border-themed/60">
+                    <td className="py-1 pr-3 text-muted">{c.name}</td>
+                    <td className="py-1 font-mono break-all">
+                      <a
+                        href={`${net.explorerUrl}/address/${c.address}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-beacon hover:underline"
+                      >
+                        {c.address}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+
+      <p className="mt-4 text-xs text-faint">
+        <Interp
+          text={t("submit.contracts.docsNote", { link: SENTINEL })}
+          node={
+            <a
+              href="https://dev.flare.network/network/guides/flare-contracts-registry"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-beacon hover:underline"
+            >
+              {t("submit.contracts.docsLink")}
+            </a>
+          }
+        />
+      </p>
+    </details>
+  );
+}
+
 // Turn an API error (string or Zod .flatten()) into a readable reason for the form.
 const FIELD_LABEL_KEYS: Record<string, string> = {
   name: "submit.field.name",
@@ -537,6 +639,14 @@ function SubmitPageInner() {
             />
           </p>
         </details>
+      )}
+
+      {/* Flare's on-chain FTSO contract addresses, for providers who register/manage directly against
+          the chain. Create flow only - a managing provider is already listed. */}
+      {step === "connect" && !manage && (
+        <div className="mb-6">
+          <ContractsInfo t={t} />
+        </div>
       )}
 
       {error && (
