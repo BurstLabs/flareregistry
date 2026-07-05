@@ -216,7 +216,13 @@ function SubmitPageInner() {
 
   // After verification, load any existing listing for this address and prefill the form. Returns
   // true if an existing listing was found (claim/edit), false for a brand-new address.
-  async function loadExisting(addr: string): Promise<boolean> {
+  //
+  // preferredChainId: the network the user explicitly chose in the verify step (chosenChainId). When
+  // an entity shares role addresses across BOTH networks (e.g. the same identity/submit address is
+  // registered on Flare and Songbird), resolve-role returns two networks and we must NOT overwrite the
+  // user's choice with an arbitrary first-in-list network - doing so silently claimed Flare when the
+  // user picked Songbird. If given, it wins; we only fall back to auto-resolving when it's absent.
+  async function loadExisting(addr: string, preferredChainId?: number): Promise<boolean> {
     try {
       const res = await fetch(`/api/provider/${addr}`);
       if (!res.ok) return false; // 404 => brand new provider, leave the form blank
@@ -228,10 +234,17 @@ function SubmitPageInner() {
       if (p.logoURI) setLogoUri(p.logoURI);
       setPrivateNode(!!p.privateNode);
       if (p.algorithm === "in-house" || p.algorithm === "open-source") setAlgorithm(p.algorithm);
-      // Pin chainId to the network the signed-in address actually belongs to, so a later save writes
-      // the right network. The connected wallet may be a stored listing address OR one of the entity's
-      // five role addresses. If it isn't a stored address, resolve which network that role belongs to
-      // (do NOT guess the listing's first address - that picks the wrong network for multi-net providers).
+      // Pin chainId to the network the save should write. Priority:
+      //  1. The network the user explicitly picked in the verify step (preferredChainId). This is the
+      //     source of truth once a choice has been made and must never be clobbered below.
+      //  2. A stored listing row whose address IS the connected address (unambiguous - that row's chain).
+      //  3. Otherwise resolve the connected address's on-chain role(s). If it resolves to a SINGLE
+      //     network, use it. If it resolves to MORE THAN ONE (shared role addresses across networks),
+      //     do NOT guess - leave the current chainId (the verify step asks the user to pick).
+      if (preferredChainId != null) {
+        setChainId(preferredChainId);
+        return true;
+      }
       const mine = (p.addresses ?? []).find(
         (a: { address: string; chainId: number }) => a.address.toLowerCase() === addr.toLowerCase()
       );
@@ -242,7 +255,12 @@ function SubmitPageInner() {
           const rr = await fetch(`/api/provider/resolve-role?address=${addr.toLowerCase()}`);
           const rb = await rr.json().catch(() => ({}));
           if (rr.ok && Array.isArray(rb.roles) && rb.roles.length) {
-            setChainId(rb.roles[0].chainId);
+            const chains = Array.from(
+              new Set(rb.roles.map((r: { chainId: number }) => r.chainId))
+            );
+            // Only auto-pin when the address unambiguously belongs to ONE network. Multi-network
+            // entities are disambiguated by the user's pick in verify(), not guessed here.
+            if (chains.length === 1) setChainId(chains[0] as number);
           }
         } catch {
           // Non-fatal: keep whatever chain was already pinned on connect.
@@ -349,7 +367,10 @@ function SubmitPageInner() {
       }
       // Prefill from an existing listing (claiming an imported entry, or editing your own). Registration
       // was already confirmed before signing (resolve-role checks both networks), so no second check.
-      await loadExisting(address.toLowerCase());
+      // Pass the network the user actually signed for (signChainId) so loadExisting cannot overwrite it
+      // with an arbitrary first-resolved network - the bug that made a Songbird claim save under Flare
+      // for entities whose role addresses are shared across both networks.
+      await loadExisting(address.toLowerCase(), signChainId);
       setStep("form");
     } catch (e) {
       setError(e instanceof Error ? e.message : t("submit.err.verifyFailed"));
