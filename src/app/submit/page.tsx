@@ -105,7 +105,7 @@ function ContractsInfo({ t }: { t: T }) {
                       href={`${net.explorerUrl}/address/${net.registry}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-beacon hover:underline"
+                      className="text-beacon visited:text-beacon hover:underline"
                     >
                       {net.registry}
                     </a>
@@ -119,7 +119,7 @@ function ContractsInfo({ t }: { t: T }) {
                         href={`${net.explorerUrl}/address/${c.address}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-beacon hover:underline"
+                        className="text-beacon visited:text-beacon hover:underline"
                       >
                         {c.address}
                       </a>
@@ -140,7 +140,7 @@ function ContractsInfo({ t }: { t: T }) {
               href="https://dev.flare.network/network/guides/flare-contracts-registry"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-beacon hover:underline"
+              className="text-beacon visited:text-beacon hover:underline"
             >
               {t("submit.contracts.docsLink")}
             </a>
