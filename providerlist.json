@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-13T16:18:15.207Z",
+  "timestamp": "2026-07-13T16:52:56.060Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1274,6 +1274,47 @@
           "lastSubmittedEpoch": 414,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Flare Forward ",
+      "description": "AI-coded FTSO v2 provider from FlareForward, with full anchor-feed coverage and a self-bonded validator, tuned continuously by our own AI. We also run DeFi University - learn decentralized finance and AI with us: https://defiuniversitypro.com. Delegate your WFLR and check our live on-chain results for yourself.",
+      "url": "https://ftso.flareforward.com/",
+      "address": "0xce2c92C54F7307894725e8ceb16424B7C9C18807",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "12600058766720104193119",
+        "votePowerCapped": "12600058766720104193119",
+        "feedCount": 63,
+        "lastEpoch": 414,
+        "delegatorRewardLastEpoch": "510842267458194785457",
+        "feeRewardLastEpoch": "323193694576099469851",
+        "entity": {
+          "identity": "0x1FBB55a1877817A0f90cAE60c1ab22FC94f97110",
+          "submit": "0x4e1d158779f5F41d9397BBB101af9D37Fc92D750",
+          "submitSignatures": "0x4923D3A01327F5480AdBB3ed01c019c58f970B1e",
+          "signingPolicy": "0x67f39503608c47ECe7Df897BF01A034db2ae1ED9",
+          "delegation": "0xce2c92C54F7307894725e8ceb16424B7C9C18807"
+        },
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house"
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": 414,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
         }
       }
