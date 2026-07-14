@@ -524,6 +524,102 @@ function GovernanceTab() {
   );
 }
 
+// ---------- Pending logos (in the review window) ----------
+// New uploads are held for a review window before auto-going-live. This panel lets the operator
+// eyeball each pending image and either approve it now (promote to live immediately) or reject it
+// (discard the upload). Without this, the only signal was a notification email with no matching action.
+function PendingLogosPanel() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState("");
+  const load = useCallback(async () => {
+    const r = await fetch("/api/admin/pending-logos");
+    const b = await r.json();
+    setRows(b.pending ?? []);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+  async function act(id: string, action: "approve" | "reject", name: string) {
+    const label = action === "approve" ? "publish this logo now" : "discard this pending logo";
+    if (!confirm(`Are you sure you want to ${label} for "${name}"?`)) return;
+    setBusy(id + action);
+    setMsg("");
+    try {
+      const r = await fetch("/api/admin/pending-logos", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, action }),
+      });
+      const b = await r.json();
+      setMsg(r.ok ? (action === "approve" ? "Published." : "Discarded.") : b.error ?? "Failed.");
+      if (r.ok) load();
+    } finally {
+      setBusy("");
+    }
+  }
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between text-xs text-muted">
+        <span className="font-semibold text-fg">Pending logos (in review window)</span>
+        <span>{msg}</span>
+      </div>
+      <Card>
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted">No logos awaiting review.</p>
+        ) : (
+          <ul className="space-y-3">
+            {rows.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-themed/50 pt-3 first:border-0 first:pt-0">
+                <div className="flex items-center gap-3">
+                  {p.previewURL ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.previewURL} alt="" width={40} height={40} className="rounded bg-elev" />
+                  ) : (
+                    <div className="h-10 w-10 rounded bg-elev" />
+                  )}
+                  <div className="text-sm">
+                    <a href={`/provider/${p.id}`} className="font-medium text-beacon hover:underline">
+                      {p.name}
+                    </a>
+                    <div className="text-xs text-faint">
+                      Auto-goes-live {p.goLiveAt ? new Date(p.goLiveAt).toLocaleDateString() : "—"}
+                      {p.previewURL && (
+                        <>
+                          {" · "}
+                          <a href={p.previewURL} target="_blank" rel="noreferrer" className="hover:underline">
+                            preview
+                          </a>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    onClick={() => act(p.id, "approve", p.name)}
+                    disabled={!!busy}
+                    className="rounded bg-emerald-500/15 px-2.5 py-1 text-emerald-400 disabled:opacity-50"
+                  >
+                    {busy === p.id + "approve" ? "…" : "approve now"}
+                  </button>
+                  <button
+                    onClick={() => act(p.id, "reject", p.name)}
+                    disabled={!!busy}
+                    className="rounded bg-flare/15 px-2.5 py-1 text-flare disabled:opacity-50"
+                  >
+                    {busy === p.id + "reject" ? "…" : "reject"}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 // ---------- Logo reports ----------
 function ReportsTab() {
   const [rows, setRows] = useState<any[]>([]);
@@ -550,7 +646,8 @@ function ReportsTab() {
   }
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between text-xs text-muted">
+      <PendingLogosPanel />
+      <div className="mb-2 mt-6 flex items-center justify-between text-xs text-muted">
         <span>{msg}</span>
         <label className="flex items-center gap-1">
           <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
