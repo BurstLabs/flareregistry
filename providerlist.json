@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-15T13:44:56.665Z",
+  "timestamp": "2026-07-15T13:46:56.566Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1188,7 +1188,7 @@
           "algorithm": "in-house"
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:19.627Z",
+          "qualifiedSince": "2026-06-22T23:47:19.261Z",
           "lastSubmittedEpoch": 414,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -4469,6 +4469,47 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.298Z",
+          "lastSubmittedEpoch": 414,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "FlareBus",
+      "description": "FlareBus is a decentralized FTSO provider that delivers accurate and real-time price data for the Flare Network ecosystem. Our infrastructure is a hybrid blend of dedicated bare-metal servers and scalable cloud environments. This combination allows us to optimize for both low-latency performance and high availability.",
+      "url": "https://flarebus.com",
+      "address": "0xF24F04f1F886B2e09d9Cf76FbC7e02925c9f8CC8",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x6c5C813Dd19F071bE0b6e83701955810f118e717.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "76014508943620751180398402",
+        "votePowerCapped": "76014508943620751180398402",
+        "feedCount": 63,
+        "lastEpoch": 414,
+        "delegatorRewardLastEpoch": "72525371300555254340323",
+        "feeRewardLastEpoch": "18131342825138813575479",
+        "entity": {
+          "identity": "0x6fAcdb16cA28aDe44f682c17BE7B3357EB2f6A4c",
+          "submit": "0x86EaC68014dB746b662E6BeA8bE9A2DF3caEFda5",
+          "submitSignatures": "0xADB05bC67040578BFb4B25f3cE89aB89c2F78A97",
+          "signingPolicy": "0xe627eB93529583A0F359E4b39Fc8Ad275cC93BFc",
+          "delegation": "0xF24F04f1F886B2e09d9Cf76FbC7e02925c9f8CC8"
+        },
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house"
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:19.261Z",
           "lastSubmittedEpoch": 414,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
