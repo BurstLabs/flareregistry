@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-15T13:46:56.566Z",
+  "timestamp": "2026-07-15T14:35:49.151Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1656,7 +1656,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x010a16c53F33E4d93892f00897965578b55a8CFC.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -1676,8 +1676,8 @@
           "delegation": "0xb0421af2cFfB21D8a0Be4087448146E4f9cbD306"
         },
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
+          "privateNode": true,
+          "algorithm": "in-house"
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.093Z",
@@ -4879,47 +4879,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.828Z",
-          "lastSubmittedEpoch": 414,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 19,
-      "name": "FTSO EU",
-      "description": "Ftso.eu is one of the oldest signal providers building on Flare, with a strong community and presence. Our signals are weighted, dynamic, resilient, processed with an innovative approach on a distributed P2P network to guarantee their accuracy.",
-      "url": "https://www.ftso.eu",
-      "address": "0x010a16c53F33E4d93892f00897965578b55a8CFC",
-      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x010a16c53F33E4d93892f00897965578b55a8CFC.png",
-      "listed": true,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": true,
-        "qualified": true,
-        "network": "songbird",
-        "feePercent": 20,
-        "votePower": "108199814682888049558872985",
-        "votePowerCapped": "108199814682888049558872985",
-        "feedCount": 63,
-        "lastEpoch": 414,
-        "delegatorRewardLastEpoch": "96460166671980991508134",
-        "feeRewardLastEpoch": "24115041667995247866685",
-        "entity": {
-          "identity": "0xbB99dda7b6dcE88908dCD684ab7bf1a90f084401",
-          "submit": "0x41C2c30B9bD902Ce3710903f27f5024da49C509E",
-          "submitSignatures": "0x9bE9e883FDaa4cF0353bD5677e2D27973e9cEe82",
-          "signingPolicy": "0x8481da9fB718E36121D67BE580531faC1ef1349F",
-          "delegation": "0x010a16c53F33E4d93892f00897965578b55a8CFC"
-        },
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.093Z",
           "lastSubmittedEpoch": 414,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
