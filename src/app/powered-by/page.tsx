@@ -264,8 +264,8 @@ function SubmitForm({ consumers }: { consumers: PublicConsumer[] }) {
         <textarea
           value={f.blurb}
           onChange={(e) => setF({ ...f, blurb: e.target.value })}
-          maxLength={400}
-          rows={3}
+          maxLength={1000}
+          rows={5}
           required
           className="mt-1 block w-full rounded border border-themed bg-elev px-3 py-2 text-sm outline-none focus:border-beacon/60"
         />

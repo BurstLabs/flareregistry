@@ -40,7 +40,7 @@ const baseFields = {
   name: z.string().trim().min(1).max(80).refine(isClean, CLEAN),
   url: httpUrl,
   category: z.enum(CONSUMER_CATEGORIES),
-  blurb: z.string().trim().min(1).max(400).refine(isClean, CLEAN),
+  blurb: z.string().trim().min(1).max(1000).refine(isClean, CLEAN),
   // Optional external https logo image URL. No git-CDN upload for consumers in v1.
   logoURL: httpUrl.optional().or(z.literal("")),
   // Optional private contact for follow-up; never shown publicly.
