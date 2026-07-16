@@ -99,6 +99,16 @@ export default function ApiDocs() {
     "signingPolicy": "0x...",
     "delegation": "0x..."
   },
+  "validators": [                   // P-chain nodes for this entity (empty if none)
+    {
+      "nodeId": "NodeID-...",
+      "feePercent": 20.0,           // validator staking fee (or null)
+      "uptimePercent": 99.98,       // (or null)
+      "connected": true,
+      "weight": "...",              // self+delegated stake, decimal string (or null)
+      "delegatorCount": 12          // (or null)
+    }
+  ],
   "selfDeclared": {                 // provider-attested, NOT verified on-chain
     "privateNode": true,            // submits from a private node (or null)
     "algorithm": "in-house"         // "in-house" | "open-source" | null

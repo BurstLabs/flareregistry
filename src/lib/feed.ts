@@ -34,6 +34,16 @@ export interface FeedProviderExtras {
     signingPolicy: string | null;
     delegation: string | null;
   } | null;
+  // Validator (P-chain node) stats for the entity's registered node ids, joined by nodeId. Same data
+  // shown on the directory: fee/uptime/connected/weight/delegatorCount. Empty array if none.
+  validators: {
+    nodeId: string;
+    feePercent: number | null;
+    uptimePercent: number | null;
+    connected: boolean;
+    weight: string | null; // decimal string
+    delegatorCount: number | null;
+  }[];
   // Self-declared (provider-attested, not verified on-chain). Null when not declared.
   selfDeclared: {
     privateNode: boolean | null;
@@ -155,6 +165,11 @@ export async function buildProviderList(): Promise<ProviderList> {
     }
   }
 
+  // Validator (P-chain node) stats for every provider, loaded once and keyed by "network:nodeId" so
+  // each entry can join its entity's node ids without an N+1 query.
+  const { allValidatorsByNetworkNode, toNodeId } = await import("./validators");
+  const validatorByNetworkNode = await allValidatorsByNetworkNode();
+
   const providers: FeedProvider[] = addresses.map((a) => {
     const entity = entityByAddress.get(a.address.toLowerCase());
     const latest = entity ? latestByVoter.get(`${entity.network}:${entity.voter}`) : undefined;
@@ -195,6 +210,21 @@ export async function buildProviderList(): Promise<ProviderList> {
                     : null,
                 }
               : null,
+            validators:
+              entity && Array.isArray(entity.nodeIds)
+                ? (entity.nodeIds as string[]).map((raw) => {
+                    const nodeId = toNodeId(raw);
+                    const v = validatorByNetworkNode.get(`${entity.network}:${nodeId}`);
+                    return {
+                      nodeId,
+                      feePercent: v?.feePercent ?? null,
+                      uptimePercent: v?.uptimePercent ?? null,
+                      connected: v?.connected ?? false,
+                      weight: v?.weight ?? null,
+                      delegatorCount: v?.delegatorCount ?? null,
+                    };
+                  })
+                : [],
             selfDeclared: {
               privateNode: a.provider.privateNode,
               algorithm: a.provider.algorithm,

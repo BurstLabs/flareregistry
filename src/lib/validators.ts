@@ -118,7 +118,26 @@ export interface ValidatorInfo {
   feePercent: number | null;
   uptimePercent: number | null;
   connected: boolean;
+  weight: string | null; // self+delegated stake weight (decimal string)
   delegatorCount: number | null;
+}
+
+function toValidatorInfo(r: {
+  nodeId: string;
+  feePercent: number | null;
+  uptimePercent: number | null;
+  connected: boolean;
+  weight: string | null;
+  delegatorCount: number | null;
+}): ValidatorInfo {
+  return {
+    nodeId: r.nodeId,
+    feePercent: r.feePercent,
+    uptimePercent: r.uptimePercent,
+    connected: r.connected,
+    weight: r.weight,
+    delegatorCount: r.delegatorCount,
+  };
 }
 
 /** Validator stats for a set of node ids on a network, keyed by nodeId. */
@@ -130,16 +149,14 @@ export async function validatorsForNodeIds(
   const rows = await prisma.providerValidator.findMany({
     where: { network, nodeId: { in: nodeIds } },
   });
-  return new Map(
-    rows.map((r) => [
-      r.nodeId,
-      {
-        nodeId: r.nodeId,
-        feePercent: r.feePercent,
-        uptimePercent: r.uptimePercent,
-        connected: r.connected,
-        delegatorCount: r.delegatorCount,
-      },
-    ])
-  );
+  return new Map(rows.map((r) => [r.nodeId, toValidatorInfo(r)]));
+}
+
+/**
+ * All validator stats for both networks, keyed by "network:nodeId". One query, for callers (like the
+ * feed builder) that need to join validators across every provider at once without an N+1.
+ */
+export async function allValidatorsByNetworkNode(): Promise<Map<string, ValidatorInfo>> {
+  const rows = await prisma.providerValidator.findMany();
+  return new Map(rows.map((r) => [`${r.network}:${r.nodeId}`, toValidatorInfo(r)]));
 }
