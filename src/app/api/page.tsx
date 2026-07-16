@@ -74,6 +74,10 @@ export default function ApiDocs() {
         <code>description</code>, <code>url</code>, <code>address</code> (EIP-55),{" "}
         <code>logoURI</code>, <code>listed</code>.
       </p>
+      <div className="mb-3 rounded-lg border border-beacon/40 bg-beacon/5 p-4">
+        <p className="text-sm font-semibold text-beacon">{t("api.listedHeading")}</p>
+        <p className="mt-1 text-sm text-muted">{t("api.listedBody")}</p>
+      </div>
       <p className="mb-2 text-sm text-muted">
         {t("api.optionalObj")} <code className="text-beacon">flareregistry</code>{" "}
         {t("api.optionalObjAfter")}
