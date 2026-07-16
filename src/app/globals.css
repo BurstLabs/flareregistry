@@ -55,4 +55,25 @@
   }
 }
 
+/* Pulsing glow for the "Powered by" CTA on the directory heading, to draw attention to the new
+   consumer showcase. Uses the beacon amber (#f5a623). Respects reduced-motion below. */
+@keyframes powered-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 4px 0 rgba(245, 166, 35, 0.45), 0 0 0 1px rgba(245, 166, 35, 0.35) inset;
+  }
+  50% {
+    box-shadow: 0 0 16px 3px rgba(245, 166, 35, 0.85), 0 0 0 1px rgba(245, 166, 35, 0.6) inset;
+  }
+}
+.powered-glow {
+  animation: powered-glow 2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .powered-glow {
+    animation: none;
+    box-shadow: 0 0 8px 1px rgba(245, 166, 35, 0.6);
+  }
+}
+
 /* Avoid a flash of the wrong theme: the inline script in <head> sets the class before paint. */

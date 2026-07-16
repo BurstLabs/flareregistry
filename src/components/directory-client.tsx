@@ -92,11 +92,20 @@ export function DirectoryClient({
       </section>
 
       <section>
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">
-            {filtered.length}{" "}
-            {showAll ? t("home.providers") : t("home.qualifiedProviders")}
-          </h2>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-xl font-semibold">
+              {filtered.length}{" "}
+              {showAll ? t("home.providers") : t("home.qualifiedProviders")}
+            </h2>
+            <Link
+              href="/powered-by"
+              className="powered-glow inline-flex items-center gap-1.5 rounded-full border border-beacon/60 bg-beacon/10 px-3 py-1 text-sm font-medium text-beacon transition hover:bg-beacon/20"
+            >
+              <SparkIcon />
+              {t("nav.poweredBy")}
+            </Link>
+          </div>
           {total > qualifiedCount && (
             <Link
               href={showAll ? "/" : "/?show=all"}
@@ -370,5 +379,13 @@ export function DirectoryClient({
         )}
       </section>
     </div>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2z" />
+    </svg>
   );
 }
