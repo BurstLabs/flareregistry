@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-16T22:18:50.463Z",
+  "timestamp": "2026-07-16T22:22:12.359Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -51,57 +51,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.379Z",
-          "lastSubmittedEpoch": 414,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "4DadsFTSO",
-      "description": "4 dads, a bunch of kids and a FTSO. Furthering efforts of decentralization for Flare Network and it's canary network, Songbird.",
-      "url": "https://4dads.io",
-      "address": "0xC522E6A633545872f1afc0cdD7b2D96d97E3dE67",
-      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x35D73107A089Ac2b3b14a6681D8c408Aab9568D3.png",
-      "listed": true,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": true,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "144387389347593561504312183",
-        "votePowerCapped": "144387389347593561504312183",
-        "feedCount": 63,
-        "lastEpoch": 414,
-        "delegatorRewardLastEpoch": "65206937063395597527306",
-        "feeRewardLastEpoch": "20109994812040619121793",
-        "entity": {
-          "identity": "0x5637eEd1E134f4e17AD7B063b991D18b95Af41A8",
-          "submit": "0x486aC9352F2001d1f43B9c02622Aa26099b86609",
-          "submitSignatures": "0xF190c5AC19A1f54Bd6687D250a527b6ADbb991F9",
-          "signingPolicy": "0x2467a13e8a8fFA25fc35ED1b9fA9167F7341928b",
-          "delegation": "0xC522E6A633545872f1afc0cdD7b2D96d97E3dE67"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-CoNH4gyEwB9gTrEmozwh14Zr8hs6wokRS",
-            "feePercent": 20,
-            "uptimePercent": 99.9947,
-            "connected": true,
-            "weight": "13500000000000000",
-            "delegatorCount": 65
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.564Z",
           "lastSubmittedEpoch": 414,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -4989,7 +4938,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x35D73107A089Ac2b3b14a6681D8c408Aab9568D3.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -5010,8 +4959,8 @@
         },
         "validators": [],
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null
+          "privateNode": true,
+          "algorithm": "in-house"
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.564Z",
