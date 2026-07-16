@@ -23,23 +23,31 @@ export function Header() {
     }
   }
   const [langOpen, setLangOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
 
-  const navLinks = [
+  // Primary links stay inline; secondary/informational links collapse into the "More" dropdown on
+  // desktop. The mobile panel lists everything flat (it has the vertical room). "Powered by" is not
+  // in the nav: it is surfaced by the glowing homepage pill and the footer.
+  const primaryLinks: { href: string; label: string; external?: boolean }[] = [
     { href: "/", label: t("nav.directory") },
     { href: "/submit", label: t("nav.list") },
     { href: "/api/feed/providerlist.json", label: t("nav.feed"), external: true },
     { href: "/api", label: t("nav.api") },
+  ];
+  const moreLinks: { href: string; label: string; external?: boolean }[] = [
     { href: "/why", label: t("nav.why") },
     { href: "/governance", label: t("nav.governance") },
-    { href: "/powered-by", label: t("nav.poweredBy") },
     { href: "/faq", label: t("nav.faq") },
   ];
+  const navLinks = [...primaryLinks, ...moreLinks];
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
     }
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -81,24 +89,32 @@ export function Header() {
           <Link href="/api" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
             {t("nav.api")}
           </Link>
-          <Link href="/why" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
-            {t("nav.why")}
-          </Link>
-          <Link
-            href="/governance"
-            className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline"
-          >
-            {t("nav.governance")}
-          </Link>
-          <Link
-            href="/powered-by"
-            className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline"
-          >
-            {t("nav.poweredBy")}
-          </Link>
-          <Link href="/faq" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
-            {t("nav.faq")}
-          </Link>
+
+          {/* "More" dropdown: secondary/informational links, kept off the main bar to declutter. */}
+          <div className="relative hidden sm:block" ref={moreRef}>
+            <button
+              onClick={() => setMoreOpen((o) => !o)}
+              aria-expanded={moreOpen}
+              className="flex items-center gap-1 px-2 text-sm text-muted hover:text-beacon"
+            >
+              {t("nav.more")}
+              <ChevronIcon open={moreOpen} />
+            </button>
+            {moreOpen && (
+              <div className="absolute right-0 mt-2 w-40 overflow-hidden rounded-md border border-themed bg-elev shadow-lg">
+                {moreLinks.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setMoreOpen(false)}
+                    className="block px-3 py-2 text-sm text-muted hover:bg-black/5 hover:text-beacon dark:hover:bg-white/5"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Wallet connect / account */}
           <WalletButton />
@@ -202,6 +218,21 @@ function CloseIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={`transition-transform ${open ? "rotate-180" : ""}`}
+    >
+      <path d="M6 9l6 6 6-6" />
     </svg>
   );
 }

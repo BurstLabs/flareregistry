@@ -19,7 +19,9 @@ export function Footer() {
           />
           <p className="mt-2 text-sm text-muted">{t("footer.tagline")}</p>
         </div>
+        {/* Product: the core actions, mirroring the primary links in the top nav. */}
         <nav className="flex flex-col gap-2 text-sm">
+          <div className="font-medium">{t("footer.product")}</div>
           <Link href="/" className="text-muted hover:text-beacon">
             {t("footer.directory")}
           </Link>
@@ -37,11 +39,18 @@ export function Footer() {
           <Link href="/api" className="text-muted hover:text-beacon">
             {t("footer.api")}
           </Link>
+        </nav>
+        {/* Learn: the informational/secondary links, mirroring the "More" menu in the top nav. */}
+        <nav className="flex flex-col gap-2 text-sm">
+          <div className="font-medium">{t("footer.learn")}</div>
           <Link href="/why" className="text-muted hover:text-beacon">
             {t("nav.why")}
           </Link>
           <Link href="/governance" className="text-muted hover:text-beacon">
             {t("nav.governance")}
+          </Link>
+          <Link href="/powered-by" className="text-muted hover:text-beacon">
+            {t("nav.poweredBy")}
           </Link>
           <Link href="/faq" className="text-muted hover:text-beacon">
             {t("nav.faq")}
