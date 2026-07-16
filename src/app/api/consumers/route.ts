@@ -45,8 +45,9 @@ const baseFields = {
   logoURL: httpUrl.optional().or(z.literal("")),
   // Optional private contact for follow-up; never shown publicly.
   contactEmail: z.string().trim().email().max(160).optional().or(z.literal("")),
-  // Honeypot: a hidden field real users never fill. Bots that fill it are silently dropped.
-  website: z.string().max(0).optional().or(z.literal("")),
+  // Honeypot: a hidden field real users never fill. It must PASS schema validation (any string) so a
+  // bot that fills it is not handed a 400 that reveals the trap; the handler drops it silently below.
+  website: z.string().max(200).optional(),
 };
 
 const submitSchema = z.discriminatedUnion("mode", [
