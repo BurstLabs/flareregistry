@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-16T16:18:23.190Z",
+  "timestamp": "2026-07-16T17:29:37.496Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -35,6 +35,16 @@
           "signingPolicy": "0x0Ed685641B49903ee88449FAD7aE90C890FE5271",
           "delegation": "0xdc908744b7946Dd19bf8E754c058Fab9fEc84993"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-NHdoCbjV2qnAqdFFw6ZesXcGG9CWjxt77",
+            "feePercent": 10,
+            "uptimePercent": 89.5921,
+            "connected": true,
+            "weight": "3500000000000000",
+            "delegatorCount": 2
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -76,6 +86,16 @@
           "signingPolicy": "0x2467a13e8a8fFA25fc35ED1b9fA9167F7341928b",
           "delegation": "0xC522E6A633545872f1afc0cdD7b2D96d97E3dE67"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-CoNH4gyEwB9gTrEmozwh14Zr8hs6wokRS",
+            "feePercent": 20,
+            "uptimePercent": 99.9946,
+            "connected": true,
+            "weight": "13500000000000000",
+            "delegatorCount": 64
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -117,6 +137,40 @@
           "signingPolicy": "0x84824513537A6d24cfcEDdc1Ab8f4079a6Bd4CFb",
           "delegation": "0xAf05Ac13F4a4e754a496B46bbd611F5FFDb42606"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-EPLACd344ouymyJAQYXZBvbmU3NJ6ooeB",
+            "feePercent": 10,
+            "uptimePercent": 99.9935,
+            "connected": true,
+            "weight": "7959600000000000",
+            "delegatorCount": 29
+          },
+          {
+            "nodeId": "NodeID-FDR3CXdwP3H3Zz9QKfL61fk56zkPEgdFV",
+            "feePercent": 10,
+            "uptimePercent": 99.9944,
+            "connected": true,
+            "weight": "13333333000000000",
+            "delegatorCount": 25
+          },
+          {
+            "nodeId": "NodeID-AFor3TgDtzsV8kK8sjqkneuUKpv8tbNwM",
+            "feePercent": 10,
+            "uptimePercent": 99.9949,
+            "connected": true,
+            "weight": "13333334000000000",
+            "delegatorCount": 74
+          },
+          {
+            "nodeId": "NodeID-AFor4y2SR55vTb8wtqrJ1gkxPiwdzFTEE",
+            "feePercent": 10,
+            "uptimePercent": 99.9994,
+            "connected": true,
+            "weight": "13333334000000000",
+            "delegatorCount": 47
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -158,6 +212,16 @@
           "signingPolicy": "0x3FA07a1d5Cb3B34C7A04782C5dd8bE9D910ed0e5",
           "delegation": "0x7808b9E0F7c488172B54B30f98C2FcF36D903B2c"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-FLPF99Gi1c79NGHw7GYyhttWPVxpCq713",
+            "feePercent": 20,
+            "uptimePercent": 99.9998,
+            "connected": true,
+            "weight": "10000000000000000",
+            "delegatorCount": 13
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -199,6 +263,16 @@
           "signingPolicy": "0x680cB53763D589B2835ff522cBEEA507Dba9F74C",
           "delegation": "0xAF7504242064532CbD3370aD7591452B1D09BBdc"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-6cnsMcUNTJwCcDuAyPwJqEaVa6yMrk8eq",
+            "feePercent": 10,
+            "uptimePercent": 99.9951,
+            "connected": true,
+            "weight": "13333333000000000",
+            "delegatorCount": 166
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -240,6 +314,16 @@
           "signingPolicy": "0xeA72945433E66C231A2cF1Cf5e4cB17De16d7aDc",
           "delegation": "0xD1eDC6Dd3Ba8b0881A44002Ac501a69E924b8F00"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-DcUJTi6u5Xoutgr1A25iMu4Rp5JEbsEqr",
+            "feePercent": 20,
+            "uptimePercent": 99.7295,
+            "connected": true,
+            "weight": "9500000000000000",
+            "delegatorCount": 8
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -281,6 +365,32 @@
           "signingPolicy": "0x58F485e216a70138e81490e5FdCbf729510a7488",
           "delegation": "0x47B6EfFE71ABD4e8CdCC56f2341BEb404f804b87"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-KRkND3cB1bYaWt71CSQdCUjRSR95d3cNz",
+            "feePercent": 20,
+            "uptimePercent": 99.9981,
+            "connected": true,
+            "weight": "10202000000000000",
+            "delegatorCount": 5
+          },
+          {
+            "nodeId": "NodeID-K5oMYbGkADUJeAxJaZgVFDtCxCH2gFtAA",
+            "feePercent": 20,
+            "uptimePercent": 99.993,
+            "connected": true,
+            "weight": "14089000000000000",
+            "delegatorCount": 6
+          },
+          {
+            "nodeId": "NodeID-J78JH6xKf59nTSxTDuWK1aD7YGcgkMTu3",
+            "feePercent": 10,
+            "uptimePercent": 99.9974,
+            "connected": true,
+            "weight": "10099980000000000",
+            "delegatorCount": 35
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -322,6 +432,16 @@
           "signingPolicy": "0x21E1ea951E51afC00545901457E573c1d41cE0C6",
           "delegation": "0xB7fD410Bb86f427b2d2C75eFe6e35e621465913b"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-MfzBQ6MbriE31UWm9NjSnEgLiR1cAkEnN",
+            "feePercent": 10,
+            "uptimePercent": 99.9748,
+            "connected": true,
+            "weight": "29990100000000000",
+            "delegatorCount": 402
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -363,6 +483,24 @@
           "signingPolicy": "0x1f4785bFdA610047Fcfe9d0Db21E5F19C0F280e1",
           "delegation": "0xD3956F862a4960bB4937e596a2BaeCFfCbb4b3e0"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-k4QG8eJ9bYu717nbj8Ki8VykK8g1VWK9",
+            "feePercent": 20,
+            "uptimePercent": 99.9687,
+            "connected": true,
+            "weight": "15000000000000000",
+            "delegatorCount": 29
+          },
+          {
+            "nodeId": "NodeID-P4T4uKqveVxjZZXVdADHENdnCKnsCFvDE",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "15000000000000000",
+            "delegatorCount": 21
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -404,6 +542,32 @@
           "signingPolicy": "0x4f29816fDDfEceF74b05639718eB719F719DEF4e",
           "delegation": "0x07702A7494F760B0b3642463BdD2B7A13cFDDbb2"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-MsF6Xc1PsMWtcxVudCepWb5kUeF1EF8RX",
+            "feePercent": 12.5,
+            "uptimePercent": 99.9645,
+            "connected": true,
+            "weight": "13340000000000000",
+            "delegatorCount": 60
+          },
+          {
+            "nodeId": "NodeID-DWh5dWPjkxHRsXJiNK5KQcEm5rDwEzikE",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "20000000000000000",
+            "delegatorCount": 3
+          },
+          {
+            "nodeId": "NodeID-JmYHE5qkDc7pxphwiRJss47vhmwAXavUi",
+            "feePercent": 10,
+            "uptimePercent": 99.9948,
+            "connected": true,
+            "weight": "13340000000000000",
+            "delegatorCount": 52
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -445,6 +609,40 @@
           "signingPolicy": "0xAEcc531817dbb9f7cC73de3e2117091e7bB4309F",
           "delegation": "0x4990320858AE3528B645C60059281a66C3488888"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-HZwFckGTbucqTtE7qcv6z85mnScUfAeW6",
+            "feePercent": 10,
+            "uptimePercent": 99.9991,
+            "connected": true,
+            "weight": "13340000000000000",
+            "delegatorCount": 201
+          },
+          {
+            "nodeId": "NodeID-Bo98cjoi5LvF6jXAMHZZLQYutyeGutBQ1",
+            "feePercent": 10,
+            "uptimePercent": 99.9983,
+            "connected": true,
+            "weight": "13400000000000000",
+            "delegatorCount": 277
+          },
+          {
+            "nodeId": "NodeID-J8sGdhcnVY1yVQNEb7w3LUjxkWCnByhw8",
+            "feePercent": 10,
+            "uptimePercent": 99.9837,
+            "connected": true,
+            "weight": "13340000000000000",
+            "delegatorCount": 142
+          },
+          {
+            "nodeId": "NodeID-4VGUXmAD3YHdapbLnJBmuWEQceaRQ1Zyd",
+            "feePercent": 20,
+            "uptimePercent": 99.8573,
+            "connected": true,
+            "weight": "10962600000000000",
+            "delegatorCount": 40
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -486,6 +684,40 @@
           "signingPolicy": "0xF178Fd26Fac21d47BB279706e2F8705af8Be8EEf",
           "delegation": "0x9269fb79B098AB314de8A1E2AFb8705678520443"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-3phxSiKoYMj1dNSJysZhHYQKUbLX786jy",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "10000000000000000",
+            "delegatorCount": 2
+          },
+          {
+            "nodeId": "NodeID-DtwBuXMHKZn2zJd74cSjvwkVjuJTAEs2n",
+            "feePercent": 10,
+            "uptimePercent": 99.9958,
+            "connected": true,
+            "weight": "13500000000000000",
+            "delegatorCount": 77
+          },
+          {
+            "nodeId": "NodeID-LDAEZjAdapQMY4oF9t57FdBQhZKWd8wAg",
+            "feePercent": 20,
+            "uptimePercent": 99.9857,
+            "connected": true,
+            "weight": "20000000000000000",
+            "delegatorCount": 1
+          },
+          {
+            "nodeId": "NodeID-9npi1dwwDKNhUorcpFKaqgb8PAJt3w3RJ",
+            "feePercent": 10,
+            "uptimePercent": 99.9969,
+            "connected": true,
+            "weight": "10000000000000000",
+            "delegatorCount": 15
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -527,6 +759,40 @@
           "signingPolicy": "0x05ca60d45584358D999F39Bb62bE1835ad50B742",
           "delegation": "0x9A46864A3b0a7805B266C445289C3fAD1E48f18e"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-GZEWkCpn852hwKhbGNJgZvbjtvEfU6Ktg",
+            "feePercent": 20,
+            "uptimePercent": 99.9786,
+            "connected": true,
+            "weight": "20000000000000000",
+            "delegatorCount": 133
+          },
+          {
+            "nodeId": "NodeID-MKeSBNK4dMPNnvPPxb2xEjbeyyJMc9tfc",
+            "feePercent": 20,
+            "uptimePercent": 99.5304,
+            "connected": true,
+            "weight": "20000000000000000",
+            "delegatorCount": 76
+          },
+          {
+            "nodeId": "NodeID-5oLazJm5PtV8JFb2GpzuCVMZdi1GxkwYP",
+            "feePercent": 20,
+            "uptimePercent": 99.5297,
+            "connected": true,
+            "weight": "20000000000000000",
+            "delegatorCount": 27
+          },
+          {
+            "nodeId": "NodeID-BeE5PDQkbtgbeDsxJMc2diKWyE95HtuHR",
+            "feePercent": 20,
+            "uptimePercent": 99.719,
+            "connected": true,
+            "weight": "20000000000000000",
+            "delegatorCount": 97
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": null
@@ -568,6 +834,16 @@
           "signingPolicy": "0x05f46574210074B5F5d7130FB3E0833d180693D8",
           "delegation": "0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-9jaZDNBCn4AwMzRqFBhxfem2ZZtiArRm2",
+            "feePercent": 10,
+            "uptimePercent": 99.9354,
+            "connected": true,
+            "weight": "4000000000000000",
+            "delegatorCount": 33
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -609,6 +885,24 @@
           "signingPolicy": "0x414D0c57c2694c0B2Fd47f2dF6c92181E4A0a1e1",
           "delegation": "0xC7cF3238D2ca63d01Ad4d42B4cCB9dB8b0adE702"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-JHnfNSNgSThSJEFG8aq99FRAE4a7Ko7UP",
+            "feePercent": 20,
+            "uptimePercent": 99.9941,
+            "connected": true,
+            "weight": "15479100000000000",
+            "delegatorCount": 30
+          },
+          {
+            "nodeId": "NodeID-AW81N9vGQttoQMMdpqbihU5hEwH793YXj",
+            "feePercent": 10,
+            "uptimePercent": 99.9992,
+            "connected": true,
+            "weight": "10585185000000000",
+            "delegatorCount": 66
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -650,6 +944,16 @@
           "signingPolicy": "0x5B0FF409b17dF4b717Ea0c5035d0a961c502Fca8",
           "delegation": "0xad918962795547a8c997F96f7BAbB822612a5FfE"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-Lj9wReAAhUQokvp2up5RokYYxkTTPqZRC",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "16000000000000000",
+            "delegatorCount": 30
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -691,6 +995,32 @@
           "signingPolicy": "0xB9fCb4AA4C78B0C9885610dabC95359De77a4e3c",
           "delegation": "0x6434b1ED626585D3e58E995aD3C2cc0D6718755c"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-7HLcuEFt7c1qTggK8AkLim9ekhPu2NYLM",
+            "feePercent": 10,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "13400000000000000",
+            "delegatorCount": 9
+          },
+          {
+            "nodeId": "NodeID-7iiWBpS5GSwZHGLqibPxnU388hyXjCKHs",
+            "feePercent": 10,
+            "uptimePercent": 99.9985,
+            "connected": true,
+            "weight": "1000000000000000",
+            "delegatorCount": 3
+          },
+          {
+            "nodeId": "NodeID-81YSLP3x2DBCmkTJsxaytopnELkfopijP",
+            "feePercent": 10,
+            "uptimePercent": 99.976,
+            "connected": true,
+            "weight": "13400000000000000",
+            "delegatorCount": 21
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -732,6 +1062,16 @@
           "signingPolicy": "0xf60cCd5B3b8C44EcDC351E0f7fD046eEae363Bd6",
           "delegation": "0x9C44c70180642cF4Cfd06d77b84Bb8F864ea5697"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-FERvNWfCH4mjCSoFnjF4YouDBuYZCpfKm",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "4999999000000000",
+            "delegatorCount": 34
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -773,6 +1113,24 @@
           "signingPolicy": "0x6d62d0e3614fD6C44b14B41a00fC7dF80Ae91DAe",
           "delegation": "0x6EBbd69832AF87434253C10F9045E012286f509E"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-JKw7j6LkdFTn1egU4Pd3YtPreebaqLU4i",
+            "feePercent": 17,
+            "uptimePercent": 92.4241,
+            "connected": true,
+            "weight": "3033333000000000",
+            "delegatorCount": 4
+          },
+          {
+            "nodeId": "NodeID-Gmd8JQGtt7UuGTus32SMhqV9TG1D92a7f",
+            "feePercent": 14,
+            "uptimePercent": 99.9986,
+            "connected": true,
+            "weight": "3640000000000000",
+            "delegatorCount": 20
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -814,6 +1172,24 @@
           "signingPolicy": "0x70538a23D7A825eABF80E26dFacfD8c9D61C205D",
           "delegation": "0xCaA49C97318b6Bb62b7F9241891D70F87FC05D35"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-7joNh7X4xsHBSXCpLQig22nSqU6xp41k8",
+            "feePercent": 20,
+            "uptimePercent": 99.9926,
+            "connected": true,
+            "weight": "13000000000000000",
+            "delegatorCount": 9
+          },
+          {
+            "nodeId": "NodeID-3qpQ3cVcU8UxvmCtkwGV4ZB3RYcKoDBRn",
+            "feePercent": 10,
+            "uptimePercent": 99.9947,
+            "connected": true,
+            "weight": "14000000000000000",
+            "delegatorCount": 13
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -855,6 +1231,16 @@
           "signingPolicy": "0x012b8C17ad310E25c09b62e29989F0da1f0b400f",
           "delegation": "0x3fE77e9be1ECcDe815311f9bcc40814F4eC6AE09"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-9WF8MvjNhmR45AdNjVfAWp27KKq7KCGpm",
+            "feePercent": 20,
+            "uptimePercent": 99.3707,
+            "connected": true,
+            "weight": "5130000000000000",
+            "delegatorCount": 2
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -896,6 +1282,24 @@
           "signingPolicy": "0xb4D29b9DB72a9E557f58314d6De7C435bac40391",
           "delegation": "0x57711D552E2309c7a83716351e7a59a438f17e3a"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-DqtFZusCw713o96Hx29iHKUhFyZ4eBDpw",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "12484800000000000",
+            "delegatorCount": 83
+          },
+          {
+            "nodeId": "NodeID-NEBeLpZHjxiSB9fbqDeqsxU529e41hQYE",
+            "feePercent": 20,
+            "uptimePercent": 99.9892,
+            "connected": true,
+            "weight": "13349995000000000",
+            "delegatorCount": 34
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -937,6 +1341,16 @@
           "signingPolicy": "0x8F57080ef650C181cF52ead62F8aAdC5F5159Eb9",
           "delegation": "0x1c2bB2CA14914a462AB7268DE4A48eF6445116c2"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-9fsCXCFJ7hzgsGK4FVpuNt1FVjJ9ScfVU",
+            "feePercent": 20,
+            "uptimePercent": 99.7792,
+            "connected": true,
+            "weight": "30000011240000000",
+            "delegatorCount": 12
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -978,6 +1392,24 @@
           "signingPolicy": "0xB25f584a52cC31541F6d783aBe700C078F618BB4",
           "delegation": "0x9b42B895D2A10D048eaf4996fDf93aEBf59167BF"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-DAVrAR2VCxe7rnmkDaVUbW8jWd9b86cS",
+            "feePercent": 20,
+            "uptimePercent": 99.9962,
+            "connected": true,
+            "weight": "5000000000000000",
+            "delegatorCount": 37
+          },
+          {
+            "nodeId": "NodeID-4mKZ7GYeKtdHMxhmHajDh1WVrVx1xWJxJ",
+            "feePercent": 10,
+            "uptimePercent": 99.999,
+            "connected": true,
+            "weight": "13333333000000000",
+            "delegatorCount": 34
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1019,6 +1451,16 @@
           "signingPolicy": "0x6b7E0Dc15d9cd1b9F5A1a57Dd27e93fe7aaCb392",
           "delegation": "0x9b5F4A2177135A2A6DC83893D5d58e684419aB24"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-FXJQRCN2nEqBYVsorBS5WHriwihjzv7G6",
+            "feePercent": 20,
+            "uptimePercent": 99.6942,
+            "connected": true,
+            "weight": "13000000000000000",
+            "delegatorCount": 16
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1060,6 +1502,24 @@
           "signingPolicy": "0x26Bf9DE6AFcEBD951ac521826F6463b078eC55CE",
           "delegation": "0xfa9368CFbee3b070d8552d8e75Cdc0fF72eFAC50"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-GoVQ17h7kU1H3pKBZHF3cu2NyTBichnfg",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "9603000000000000",
+            "delegatorCount": 5
+          },
+          {
+            "nodeId": "NodeID-Mhm29H5a3Xq1jG9UpVoqo5mFXqqL3WpUV",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "9000000000000000",
+            "delegatorCount": 12
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1101,6 +1561,24 @@
           "signingPolicy": "0x526a35584129879950C1B044F5627812217B833a",
           "delegation": "0xAc2884A4479Bf7c21AA0462d52bc9c76c3a9A3dD"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-Ms5oKoFmzxNYgpAnppbY62GYmQcTQbXhV",
+            "feePercent": 10,
+            "uptimePercent": 99.512,
+            "connected": true,
+            "weight": "6000000000000000",
+            "delegatorCount": 92
+          },
+          {
+            "nodeId": "NodeID-J9tdd552FoPfAZboP3WwWqXvvrJDqkW97",
+            "feePercent": 20,
+            "uptimePercent": 99.9932,
+            "connected": true,
+            "weight": "7150000000000000",
+            "delegatorCount": 7
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -1142,6 +1620,24 @@
           "signingPolicy": "0x644c70e36168b8A922AECAdDae38C95d40403E3a",
           "delegation": "0xdd33Ba13F32C90D678422251B52B005335fB7A4c"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-CrsvTSFLB8G3ziPaVjgH1pj8NQxSZkECD",
+            "feePercent": 10,
+            "uptimePercent": 99.9352,
+            "connected": true,
+            "weight": "13340000000000000",
+            "delegatorCount": 63
+          },
+          {
+            "nodeId": "NodeID-Fvr7jSqNdueYRthVBp2qVWdAgw3tQzjxa",
+            "feePercent": 20,
+            "uptimePercent": 99.9976,
+            "connected": true,
+            "weight": "9568469000000000",
+            "delegatorCount": 6
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1183,6 +1679,40 @@
           "signingPolicy": "0xDCE826ac4CAd3E36DF791163Dac3B6D6707901C6",
           "delegation": "0x6c5C813Dd19F071bE0b6e83701955810f118e717"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-PkR4UxQ6MVLQAZ7RmKd93eDmS8BtmYdLG",
+            "feePercent": 9,
+            "uptimePercent": 99.7928,
+            "connected": true,
+            "weight": "13333333980000000",
+            "delegatorCount": 90
+          },
+          {
+            "nodeId": "NodeID-A3LxQME97LZCyiY6kAWnZ3SXkwJ82YDM9",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "11669526950000000",
+            "delegatorCount": 6
+          },
+          {
+            "nodeId": "NodeID-9mdghD2VMj56BXp7zf52o19h9WepVMyUn",
+            "feePercent": 9,
+            "uptimePercent": 99.9858,
+            "connected": true,
+            "weight": "13333333990000000",
+            "delegatorCount": 101
+          },
+          {
+            "nodeId": "NodeID-7FSTPU4B1sXzHGXTrGyxqa146yGVJ1PDu",
+            "feePercent": 9,
+            "uptimePercent": 99.984,
+            "connected": true,
+            "weight": "13334000000000000",
+            "delegatorCount": 75
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -1224,6 +1754,16 @@
           "signingPolicy": "0xCDc29B9e5A9D394911B4F93Dc26074cf940B79C5",
           "delegation": "0xDe40311b4b538392e0e7dCC134426C397c956cA9"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-5V2bQbryZTU4pAe59KNHNBru1BwEfcXqg",
+            "feePercent": 20,
+            "uptimePercent": 99.9964,
+            "connected": true,
+            "weight": "13333334000000000",
+            "delegatorCount": 14
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1265,6 +1805,16 @@
           "signingPolicy": "0x519468FD9811661F490cB921B499d2388bc9426b",
           "delegation": "0x184DbC7F2D96aBDfDe5CDa8c56F3F13DbF138cdF"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-8aGBxZssVWRvEr57YGRsWjZTHbnoWrfcc",
+            "feePercent": 20,
+            "uptimePercent": 99.9945,
+            "connected": true,
+            "weight": "13500000000000000",
+            "delegatorCount": 11
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1306,6 +1856,16 @@
           "signingPolicy": "0x67f39503608c47ECe7Df897BF01A034db2ae1ED9",
           "delegation": "0xce2c92C54F7307894725e8ceb16424B7C9C18807"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-5amxeiA5AKHPPy6v1C7S1YgmkoXQDedtE",
+            "feePercent": 20,
+            "uptimePercent": 99.9986,
+            "connected": true,
+            "weight": "1000000000000000",
+            "delegatorCount": 0
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -1347,6 +1907,24 @@
           "signingPolicy": "0x7CF61474946584517F08f702b4b2cF518b6201B4",
           "delegation": "0xF0F095bbd5e2E33e9c1703cdEDd0015280406E90"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-4hyFQEeDqpG9yyEnafTwqQQTTFex32KG2",
+            "feePercent": 20,
+            "uptimePercent": 99.9909,
+            "connected": true,
+            "weight": "12000000000000000",
+            "delegatorCount": 16
+          },
+          {
+            "nodeId": "NodeID-J8Zbi3b3AjTEUmHdE4KSApEU1U36iaeDS",
+            "feePercent": 20,
+            "uptimePercent": 99.9945,
+            "connected": true,
+            "weight": "12000000000000000",
+            "delegatorCount": 5
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1388,6 +1966,32 @@
           "signingPolicy": "0x66ae2b213619924E609e69dD5dAb170C560FF7e1",
           "delegation": "0x2566E97B2947dC2D6E9CAf0BF737Aabd7e78a0f6"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-Jgnf61mFy134gFJNJKtrmBeSganNYANPZ",
+            "feePercent": 7.5,
+            "uptimePercent": 99.9475,
+            "connected": true,
+            "weight": "5420000000000000",
+            "delegatorCount": 235
+          },
+          {
+            "nodeId": "NodeID-LyKs43vshhK1Pr6apWF1sV51m2Q2CAwY",
+            "feePercent": 10,
+            "uptimePercent": 99.9525,
+            "connected": true,
+            "weight": "7500000000000000",
+            "delegatorCount": 145
+          },
+          {
+            "nodeId": "NodeID-6UzFTU6qVKYnTSaC5WbXq1kEYKxxZAjSY",
+            "feePercent": 10,
+            "uptimePercent": 99.9751,
+            "connected": true,
+            "weight": "13333333000000000",
+            "delegatorCount": 39
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1429,6 +2033,32 @@
           "signingPolicy": "0xf750F8AF5b29019aac70897f47C61482d5D57442",
           "delegation": "0x111246F191a2A20012723369d3CEc77777E774E9"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-ECqqsWu9jpUvZgPyf9yPZZcyWmJjWyN1T",
+            "feePercent": 20,
+            "uptimePercent": 99.9952,
+            "connected": true,
+            "weight": "13500890000000000",
+            "delegatorCount": 3
+          },
+          {
+            "nodeId": "NodeID-7vz3A92AkLi9YRYTauPgvkdiMmhnuDRzj",
+            "feePercent": 20,
+            "uptimePercent": 99.9877,
+            "connected": true,
+            "weight": "14000100000000000",
+            "delegatorCount": 2
+          },
+          {
+            "nodeId": "NodeID-FXL1XNt7FFvenb5wTh7EH4Yg8AivHXqF4",
+            "feePercent": 20,
+            "uptimePercent": 99.9877,
+            "connected": true,
+            "weight": "14000000000000000",
+            "delegatorCount": 13
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1470,6 +2100,16 @@
           "signingPolicy": "0xdA3DbEFdc13E86DCD5443F514aa11c1F63Db3Cbf",
           "delegation": "0xf8B1Dcf2594AfD082aae088661bF574CB9BbDC61"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-66rV9yEWSVGLC8fs9ynKptVf9f6bSbHC8",
+            "feePercent": 20,
+            "uptimePercent": 99.9766,
+            "connected": true,
+            "weight": "13390000000000000",
+            "delegatorCount": 10
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1511,6 +2151,16 @@
           "signingPolicy": "0xE7A203fF45E25519feE8C25bb257e466A9f6285A",
           "delegation": "0xb084575CaCedf7DEdd78329656715651F8f66712"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-D3QKd6XxLnrKowkziZJSG4RNLtffz8ESk",
+            "feePercent": 18,
+            "uptimePercent": 98.4635,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 34
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1552,6 +2202,16 @@
           "signingPolicy": "0xe5c465582969717375f38202d6f615581DAf2728",
           "delegation": "0xdd7B2Bac728f027f23aDD7128711ecB60f761aD5"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-4h6PNpK5oo9pjmE8zKSbm31S2LStg4tyF",
+            "feePercent": 20,
+            "uptimePercent": 99.8492,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 11
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1593,6 +2253,7 @@
           "signingPolicy": "0xE78B600D8daEc600C6ff98a1E6a22F28022830fC",
           "delegation": "0xc396b6f023f3A1C894a20FBa08432E847C05c7F9"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1634,6 +2295,24 @@
           "signingPolicy": "0x6bB880e2B19cbf6e683A7F6407c1Ad92ccFAF4c1",
           "delegation": "0x9e55a49D251324B1623dc2A81894D1AfBfB8bbdC"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-KzPd2Vx5WomGtur91B9K9R7to3mYyYga",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 5
+          },
+          {
+            "nodeId": "NodeID-DgK9ARwXacjijk37v4fndMm6kRd8NXadM",
+            "feePercent": 20,
+            "uptimePercent": 99.9994,
+            "connected": true,
+            "weight": "2000000000000000",
+            "delegatorCount": 3
+          }
+        ],
         "selfDeclared": {
           "privateNode": false,
           "algorithm": null
@@ -1675,6 +2354,24 @@
           "signingPolicy": "0xB591F31D60920Cc3cCAD36831e09Cc187CC742FB",
           "delegation": "0xb0421af2cFfB21D8a0Be4087448146E4f9cbD306"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-B9o4BTqdc1qkrAn5BxLHL7pimWf9UwBkd",
+            "feePercent": 20,
+            "uptimePercent": 99.9926,
+            "connected": true,
+            "weight": "8750000000000000",
+            "delegatorCount": 23
+          },
+          {
+            "nodeId": "NodeID-G7tmLU1k7vzv24kUhNi3KMJuiK8GLYcDq",
+            "feePercent": 10,
+            "uptimePercent": 99.9922,
+            "connected": true,
+            "weight": "6500000000000000",
+            "delegatorCount": 24
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -1716,6 +2413,16 @@
           "signingPolicy": "0xeE5901A88174CfA546a9c86631463a8d13572642",
           "delegation": "0x4429306b301a0EB573Fa5758BB40AA581255c624"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-P6nNyHc4QwyKoVSS7c9XatGp4Sityq7rM",
+            "feePercent": 10,
+            "uptimePercent": 99.4686,
+            "connected": true,
+            "weight": "5000000000000000",
+            "delegatorCount": 43
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -1757,6 +2464,16 @@
           "signingPolicy": "0x6fB160a4DF3aDF56618Ca8a591dfDcB858911E92",
           "delegation": "0x085841B253590281cc5c5222b09D4e59a605E774"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-J4nyqo44xFUxhAi9gDJXAkYyxP5z2a7UG",
+            "feePercent": 15,
+            "uptimePercent": 99.9954,
+            "connected": true,
+            "weight": "6450660000000000",
+            "delegatorCount": 36
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -1798,6 +2515,16 @@
           "signingPolicy": "0x80aE88ba9356C0De8426C5Bb23D8F7956254DB34",
           "delegation": "0x3D2c08eD9B2333cbce2b8A219e02F4Aa31ebcCd3"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-MN7sJduRdGUs3aWyYUmym2CFVsptzgKcJ",
+            "feePercent": 20,
+            "uptimePercent": 99.3781,
+            "connected": true,
+            "weight": "14000000000000000",
+            "delegatorCount": 8
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1839,6 +2566,16 @@
           "signingPolicy": "0x02048B215cB0A6B5fE960CB2E9b18381c2Ebd109",
           "delegation": "0x5F911C2C681f678e5A3a8D54f950d6b192CC16E3"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-MZKzjLDRo9bwDjaDR5c4PALEibYyDe4A7",
+            "feePercent": 20,
+            "uptimePercent": 99.7166,
+            "connected": true,
+            "weight": "1009119000000000",
+            "delegatorCount": 3
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1880,6 +2617,24 @@
           "signingPolicy": "0xB7603aB85c2C0b2eD85e5A148ecdD324F4c749Bd",
           "delegation": "0x3035364f988CfC4574D459009F9D3f68D9d734d7"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-Nznsv1tqRDam6SB17FW5PAiFVSpkWpMQ6",
+            "feePercent": 20,
+            "uptimePercent": 99.9944,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 21
+          },
+          {
+            "nodeId": "NodeID-BfDUbmZ4SJ8cDp9hcnAu1wjzeDRGsR9QZ",
+            "feePercent": 20,
+            "uptimePercent": 99.9895,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 10
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1921,6 +2676,16 @@
           "signingPolicy": "0x3F587672C6A33c975F7eFa2183E93e442c8fE88C",
           "delegation": "0xB6d68Ea6C4dE734Ec481F92AFD1C35F712441b73"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-2hCHs6H4Vde8mdGGKidMvT4Fjit7goCBT",
+            "feePercent": 20,
+            "uptimePercent": 99.9967,
+            "connected": true,
+            "weight": "5000000000000000",
+            "delegatorCount": 27
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -1962,6 +2727,16 @@
           "signingPolicy": "0xc80B78D40305ea9C6c249e65DF3aE856Ad3Cf7db",
           "delegation": "0x00031123b50cdD187dc4D2982164b5458061B463"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-4PEfmmKcyfndKx1EGkxeQS1eooxD8vEBS",
+            "feePercent": 20,
+            "uptimePercent": 99.9891,
+            "connected": true,
+            "weight": "7500000000000000",
+            "delegatorCount": 6
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2003,6 +2778,16 @@
           "signingPolicy": "0xDefaF698d59fE7BbB58950092e56dA492079FB75",
           "delegation": "0xF61B94dEdC5f23398997D73B7701D67556eaaD6F"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-4YtvwPgc578pqKhHoYtP4VTKVejXg7JBF",
+            "feePercent": 15,
+            "uptimePercent": 99.9947,
+            "connected": true,
+            "weight": "8500000000000000",
+            "delegatorCount": 74
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -2044,6 +2829,24 @@
           "signingPolicy": "0x21a3d0638aCC6F3B7A451cA9783895F1eec754A5",
           "delegation": "0xB1Aa0F2691Db6bBb2969EfC7BE70787F58DD2461"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-4zWvBNmsbaS9UKQf6wcWgWGWRfitcGAuV",
+            "feePercent": 10,
+            "uptimePercent": 99.9528,
+            "connected": true,
+            "weight": "14999990000000000",
+            "delegatorCount": 32
+          },
+          {
+            "nodeId": "NodeID-5JkXthgpWVDq6utrtV1YVG7aspsHjhezM",
+            "feePercent": 10,
+            "uptimePercent": 99.9961,
+            "connected": true,
+            "weight": "15000000000000000",
+            "delegatorCount": 47
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2085,6 +2888,16 @@
           "signingPolicy": "0x60dd33Ee053504E6033d89e74cf49b46b4d9f140",
           "delegation": "0x2e8320B92B640cF8CBdEaFFBe70d4bC407303b9F"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-8v2bk2uFqkmh7bhWQy8k8sfD4BGLsR7Fa",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "30000000000000000",
+            "delegatorCount": 36
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2126,6 +2939,16 @@
           "signingPolicy": "0xBcb9a85AB7AcE500a3A2eA8ecBA9c8A2B5b602CC",
           "delegation": "0x64D998BC81424131E5aF05071263fDeBD1a82986"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-5jV2rg4CGt6ewiDbB9QeWDEptVudskJeY",
+            "feePercent": 20,
+            "uptimePercent": 99.9967,
+            "connected": true,
+            "weight": "11700000000000000",
+            "delegatorCount": 6
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2167,6 +2990,16 @@
           "signingPolicy": "0x46FaD452141A7bC316348058ae4bC07AC4fB9D99",
           "delegation": "0xce73ADe61b0d0100BA1507D9fA1Dc2feA3046578"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-5tHXeYMb1oY5GcWjXEcTt9CHbq5GBgCjn",
+            "feePercent": 10,
+            "uptimePercent": 99.7167,
+            "connected": true,
+            "weight": "6024000000000000",
+            "delegatorCount": 91
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2208,6 +3041,40 @@
           "signingPolicy": "0x84756Ab06ff1Ed968B2e69300A46825af641df7c",
           "delegation": "0x6df84895f1f1f6F6767C59324F94089d4097051A"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-ZPP3u3NyjAbTeGUzgjgTLwiuwuojzAeG",
+            "feePercent": 15,
+            "uptimePercent": 99.9865,
+            "connected": true,
+            "weight": "13400000000000000",
+            "delegatorCount": 11
+          },
+          {
+            "nodeId": "NodeID-78MUvGDAGt5bJWKgxBbayhoq9cuYgw8rz",
+            "feePercent": 15,
+            "uptimePercent": 99.9341,
+            "connected": true,
+            "weight": "13400000000000000",
+            "delegatorCount": 11
+          },
+          {
+            "nodeId": "NodeID-7ady1Dgt1oZwpjQk9BpZaNA5d8LLjDbLi",
+            "feePercent": 15,
+            "uptimePercent": 99.9796,
+            "connected": true,
+            "weight": "13360000000000000",
+            "delegatorCount": 36
+          },
+          {
+            "nodeId": "NodeID-t3mLmFZJLYdPc4pBxunh585ahrHTAezm",
+            "feePercent": 15,
+            "uptimePercent": 99.9477,
+            "connected": true,
+            "weight": "8239942000000000",
+            "delegatorCount": 3
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2249,6 +3116,16 @@
           "signingPolicy": "0xd08dBe5a4E1887B07B304EB8BF3511dFA5500EFF",
           "delegation": "0xF33A0Ac50f2E85737af577ea68583f264C7A1f78"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-JFiAG1SiqUFh3EnkY8oXcXUg8RuT2guZp",
+            "feePercent": 20,
+            "uptimePercent": 99.989,
+            "connected": true,
+            "weight": "7500000000000000",
+            "delegatorCount": 12
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2290,6 +3167,40 @@
           "signingPolicy": "0x39a9F3Fb7b24d627C732E341472dA13Ea36252E7",
           "delegation": "0x535268cB19f2cC0c65D463be6Ab7751Ff4E9fC07"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-GGnTyHtMF7b8CELtUgFGTEHjEcjNF7RZ",
+            "feePercent": 20,
+            "uptimePercent": 98.7135,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 15
+          },
+          {
+            "nodeId": "NodeID-K9g6YJEhWiN2TF1RsFTA8SEXFAJWvikhu",
+            "feePercent": 15,
+            "uptimePercent": 98.8806,
+            "connected": true,
+            "weight": "10000000000000000",
+            "delegatorCount": 4
+          },
+          {
+            "nodeId": "NodeID-KH2o8xGFLYtCwseWgRbpDAf1n4zAcMNfN",
+            "feePercent": 20,
+            "uptimePercent": 97.9779,
+            "connected": true,
+            "weight": "14000000000000000",
+            "delegatorCount": 1
+          },
+          {
+            "nodeId": "NodeID-Q3WJQcoixGGKnFs41B18rnJB9PS54M5oF",
+            "feePercent": 15,
+            "uptimePercent": 98.6913,
+            "connected": true,
+            "weight": "10000000000000000",
+            "delegatorCount": 1
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2331,6 +3242,16 @@
           "signingPolicy": "0x41800CcAE0B9aBa34F9f581739372f853b54067d",
           "delegation": "0xA9C69eb9De79188A9ABa46c5336607F88A80eC89"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-4e5tHaeoLvpXjtY5uMXtuYJgEWZ2JiC4D",
+            "feePercent": 20,
+            "uptimePercent": 99.9947,
+            "connected": true,
+            "weight": "5000000000000000",
+            "delegatorCount": 12
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -2372,6 +3293,7 @@
           "signingPolicy": "0x0aAd8D0bAb50599b1669a36dBF1Fe4896242a093",
           "delegation": "0x27Cb5f4EbA81976617b75953053D33EF2002daDF"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2413,6 +3335,16 @@
           "signingPolicy": "0xd49fC3CdEeb888734734C485c4d1cA26372980e0",
           "delegation": "0xB53F6CFaB63CAbFc255c702ebeB273510DB541d7"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-MWNqxgXd8itY143jaNyq8aMYTeV1RXJgS",
+            "feePercent": 10,
+            "uptimePercent": 99.998,
+            "connected": true,
+            "weight": "25000000000000000",
+            "delegatorCount": 182
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2454,6 +3386,16 @@
           "signingPolicy": "0xfd9AbD602150d39D819Eb71eE8d6809c157d9a82",
           "delegation": "0x4E94Dbff86b7f1F5ac9FD849E8101A4d52E947eC"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-NCBqn9P8oAEkYn6McyQjhF67WarSTttz5",
+            "feePercent": 15,
+            "uptimePercent": 99.9801,
+            "connected": true,
+            "weight": "2750000000000000",
+            "delegatorCount": 43
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -2495,6 +3437,16 @@
           "signingPolicy": "0x593E0e7E089054C295f4fC943344aEa52CF499AF",
           "delegation": "0xAd9105BEF5E5df2Eacbe2De9037A96695b00cade"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-8dNfgpspPNDrZD2ksKCRJoGe4Xqe6qVtz",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "6000000000000000",
+            "delegatorCount": 0
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2536,6 +3488,16 @@
           "signingPolicy": "0x01D0CECDE6BE2AD69c4436590E66868Cd77a30Cc",
           "delegation": "0xc382325BddE0BAa40A03A34863fCE45C510a4bE9"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-Eg7CFfbcyZTwsMXDQnpdKx3tHRbAoCmfv",
+            "feePercent": 10,
+            "uptimePercent": 99.9986,
+            "connected": true,
+            "weight": "15000000000000000",
+            "delegatorCount": 23
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2577,6 +3539,40 @@
           "signingPolicy": "0x4DFEe82239b05D749abfa8Cd8Fa438146760CE00",
           "delegation": "0x6c23aa4C5A1dA47F8FDF9Df4A032904c062cB92B"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-Cv6y6wJeFujp94oWEd5L1iMoZBQgzpcir",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "delegatorCount": null
+          },
+          {
+            "nodeId": "NodeID-7aU2dDeBVu4btx4wbt44ACqyJeQRjCZMi",
+            "feePercent": 100,
+            "uptimePercent": 99.9778,
+            "connected": true,
+            "weight": "13500000000000000",
+            "delegatorCount": 2
+          },
+          {
+            "nodeId": "NodeID-JLAi1KM18TocQu9zvmSw6wND4hEvgkER6",
+            "feePercent": 100,
+            "uptimePercent": 99.9629,
+            "connected": true,
+            "weight": "13500000000000000",
+            "delegatorCount": 2
+          },
+          {
+            "nodeId": "NodeID-KywEC9cXm8P4KezUkovM5oA1rLTTFDe6e",
+            "feePercent": 100,
+            "uptimePercent": 99.9743,
+            "connected": true,
+            "weight": "13500000000000000",
+            "delegatorCount": 2
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2618,6 +3614,24 @@
           "signingPolicy": "0xAc30F31806e290782293F6e3d30cB5F46fb337AB",
           "delegation": "0x00c0fFEf480E392f5Fe7af592214855Ff872fa80"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-3RJrjDMzeZQVDyHDjZ6u1X3Y3WCKY5nbb",
+            "feePercent": 10,
+            "uptimePercent": 99.9967,
+            "connected": true,
+            "weight": "13340000000000000",
+            "delegatorCount": 32
+          },
+          {
+            "nodeId": "NodeID-9so5xxbAxuoqz5MANESDbLEQKetKP7AiW",
+            "feePercent": 20,
+            "uptimePercent": 99.9995,
+            "connected": true,
+            "weight": "20000000000000000",
+            "delegatorCount": 48
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2659,6 +3673,40 @@
           "signingPolicy": "0xAF249D4eb561673ADBF4aF97A09dB76617BA143f",
           "delegation": "0xfe532cB6Fb3C47940aeA7BeAd4d61C5e041D950e"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-N3GDYNsVNMxYTW4ULzrfRZpy3tRnhxKSQ",
+            "feePercent": 20,
+            "uptimePercent": 99.9637,
+            "connected": true,
+            "weight": "8500000000000000",
+            "delegatorCount": 0
+          },
+          {
+            "nodeId": "NodeID-2a7BPY7UeJv2njMuyUHfBSTeQCYZj6bwV",
+            "feePercent": 20,
+            "uptimePercent": 99.9929,
+            "connected": true,
+            "weight": "12000000000000000",
+            "delegatorCount": 12
+          },
+          {
+            "nodeId": "NodeID-2miZhA7JAnyf9s5rYzDeNciwg4448LKsP",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "delegatorCount": null
+          },
+          {
+            "nodeId": "NodeID-GEC63GVfeYLG5UUBPSgiiN4YMvT71jdP",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "delegatorCount": null
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2700,6 +3748,16 @@
           "signingPolicy": "0x1617CC98Fc6D6bfd386d57226ceB679e8f23D8A5",
           "delegation": "0x5e6e598D64b7e559dB91523067a3aD5699A9b77E"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-Dbh8RabyVE7hWiBFjKwsU8qhLGu92CpEj",
+            "feePercent": 10,
+            "uptimePercent": 96.453,
+            "connected": true,
+            "weight": "3363400000000000",
+            "delegatorCount": 5
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2741,6 +3799,40 @@
           "signingPolicy": "0x4DFCbC3a1529FB3c07245095FBA7830063d71c34",
           "delegation": "0xB95f930711DA83226416FFaAB084249B2e01e1F2"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-VpU9ehka7wy9C3KBjajfTop1vgkyXtzR",
+            "feePercent": 10,
+            "uptimePercent": 99.9951,
+            "connected": true,
+            "weight": "8500000000000000",
+            "delegatorCount": 265
+          },
+          {
+            "nodeId": "NodeID-7egxBVmPJsHRetTjbxWUwbnLjCxmeHXrj",
+            "feePercent": 12.5,
+            "uptimePercent": 99.9904,
+            "connected": true,
+            "weight": "3230000000000000",
+            "delegatorCount": 74
+          },
+          {
+            "nodeId": "NodeID-9BUEHTS9efRkLwiirEf9x7oQ6kZZBBsWZ",
+            "feePercent": 20,
+            "uptimePercent": 99.9768,
+            "connected": true,
+            "weight": "5999999990000000",
+            "delegatorCount": 22
+          },
+          {
+            "nodeId": "NodeID-Mvr4Mv2qL4xgHsuaASvRyDQD4JsgrohgZ",
+            "feePercent": 20,
+            "uptimePercent": 99.9936,
+            "connected": true,
+            "weight": "20700000000000000",
+            "delegatorCount": 0
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2782,6 +3874,7 @@
           "signingPolicy": "0x79280386DDA03f4AF8d6212582652a80332D29d7",
           "delegation": "0xfF2E51FBf9196eaf96978eC454C5acDCF4C46990"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2823,6 +3916,16 @@
           "signingPolicy": "0xE1514Fe4687fB5E10c21f2e3F1d1695BB2D56E37",
           "delegation": "0xF7909947bAf29c921BdbA9Cb844A08D144cA876d"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-5D7CQ8NbifLY1jj76oyvRU3VbUFTP1sLR",
+            "feePercent": 9,
+            "uptimePercent": 99.3066,
+            "connected": true,
+            "weight": "29999970000000000",
+            "delegatorCount": 55
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2864,6 +3967,24 @@
           "signingPolicy": "0x1B073BfE6BC73B48781757E6022063031e4f2497",
           "delegation": "0x62571dE064cAC560207b7116C6d87C818f7376cC"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-PSA7QAZ3s8cWwbuZ3qiCfodcRAa1DwHxA",
+            "feePercent": 20,
+            "uptimePercent": 99.7837,
+            "connected": true,
+            "weight": "13400000000000000",
+            "delegatorCount": 2
+          },
+          {
+            "nodeId": "NodeID-GZFJBtR95xYQf785nJwXK5dQ1MsEtbXEx",
+            "feePercent": 20,
+            "uptimePercent": 99.9835,
+            "connected": true,
+            "weight": "6100000000000000",
+            "delegatorCount": 1
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2905,6 +4026,16 @@
           "signingPolicy": "0x4324F4250cc838Aa418c2859168ccd7737cF1d34",
           "delegation": "0xeFb939Ebe430efD987c2650367a1b2c9f070d3f1"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-EBcyABp9i2wEgZbhiwnyLaqBwFFTdZXyd",
+            "feePercent": 15,
+            "uptimePercent": 97.8488,
+            "connected": true,
+            "weight": "10508500000000000",
+            "delegatorCount": 10
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2946,6 +4077,16 @@
           "signingPolicy": "0xfcDf1909Fab925B73361128bE01e5aCb6f281B3C",
           "delegation": "0xe08898B7B8b18dBCdDcC6339c8b9c19EFfA81413"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-FFdDVS1oHz6VaFweiBSSf4uaHrWEH5sbn",
+            "feePercent": 2,
+            "uptimePercent": 99.1189,
+            "connected": true,
+            "weight": "7999999000000000",
+            "delegatorCount": 147
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -2987,6 +4128,16 @@
           "signingPolicy": "0x0a0a5aa956df00A0a6D83A72Fe61c930eadeBE5B",
           "delegation": "0x8863eAD675DfF5Cf260D5FdC079d50996D1F3cd4"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-2q436GJKA5faTceNaAbu7CYxftv3K8fS4",
+            "feePercent": 13,
+            "uptimePercent": 99.9407,
+            "connected": true,
+            "weight": "7750000000000000",
+            "delegatorCount": 47
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3028,6 +4179,16 @@
           "signingPolicy": "0x0A466C8d69ECB2DB351e1d1dDE3Ce6B33EaDbFD2",
           "delegation": "0xf8Fb4cD8728F7def92b12F9de005Df934f0b69cB"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-PkNmRmrsQ9Grj98XNHrsK13YCMF44p3EQ",
+            "feePercent": 20,
+            "uptimePercent": 99.9908,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 10
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3069,6 +4230,7 @@
           "signingPolicy": "0xDA120015F32de47427663db78bc7339acE2213aC",
           "delegation": "0x1e68DC808A240C096F0261144dc41fd4c883Cfb0"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3110,6 +4272,16 @@
           "signingPolicy": "0x89018F53680A36fDF4abd2126a4f18774aed3458",
           "delegation": "0xf26Be97eB0d7a9fBf8d67f813D3Be411445885ce"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-LxpVHRQAYXPRf7q5oz1iT4N1z9XHz5rHU",
+            "feePercent": 15,
+            "uptimePercent": 99.9686,
+            "connected": true,
+            "weight": "30000000000000000",
+            "delegatorCount": 12
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3151,6 +4323,32 @@
           "signingPolicy": "0x2eEcbb469AF133d136F011ce3F27ecf9524Bb7c3",
           "delegation": "0x729589694a78FF2D8BACf75b7AC4389bd53ee533"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-F297gLgRxBndijAYvvvBGtQTwYCrScMQT",
+            "feePercent": 20,
+            "uptimePercent": 95.8407,
+            "connected": true,
+            "weight": "7761500000000000",
+            "delegatorCount": 37
+          },
+          {
+            "nodeId": "NodeID-2xbUrUGcj9HuntjA4YPHQFWiMuQz428SL",
+            "feePercent": 20,
+            "uptimePercent": 99.987,
+            "connected": true,
+            "weight": "3083000000000000",
+            "delegatorCount": 10
+          },
+          {
+            "nodeId": "NodeID-NV7ZpcJvqzmvvT4PaeHWbTELWKFT2Jqxw",
+            "feePercent": 20,
+            "uptimePercent": 99.9991,
+            "connected": true,
+            "weight": "3156500000000000",
+            "delegatorCount": 13
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3192,6 +4390,16 @@
           "signingPolicy": "0xEc263931499aB0BC7dC1FAd21767A0b9784125F4",
           "delegation": "0x1E8F916CE03F4ce86186531a8994d366581Ed4be"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-Cg8PLmdZ9JmEtUBCZhq2jt2JDS5gDaSsQ",
+            "feePercent": 5,
+            "uptimePercent": 99.0582,
+            "connected": true,
+            "weight": "13333334000000000",
+            "delegatorCount": 292
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3233,6 +4441,16 @@
           "signingPolicy": "0x1A199658f43D2045cBdB089e11a68cC4F2d38d06",
           "delegation": "0xbF55a6eb78487F49197806025CA82DdaF633204e"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-JZuVSDnBui1u82RmkbkWKJ1JxfdxuVYR9",
+            "feePercent": 20,
+            "uptimePercent": 91.9885,
+            "connected": true,
+            "weight": "30199999000000000",
+            "delegatorCount": 1
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3274,6 +4492,16 @@
           "signingPolicy": "0x6414B7EE57805130d186d99f653C241a0ffF2A9e",
           "delegation": "0xC8c1F188a891b8627e2cBcdc8a67A2Ed01aB8f10"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-JF4XWnC9PjZVXQuqLcpQvxztdMez3CpkR",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 21
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3315,6 +4543,24 @@
           "signingPolicy": "0x74042E2cc81e3e7973642A321D2144cd32a817f1",
           "delegation": "0xc93c8efbc500e8C78910d7DCFcaAa681CE18FB31"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-KiaPr2n8VH16oA7mGzveYgk2hceo2WYst",
+            "feePercent": 20,
+            "uptimePercent": 99.9954,
+            "connected": true,
+            "weight": "6000000000000000",
+            "delegatorCount": 0
+          },
+          {
+            "nodeId": "NodeID-7LN3mPba5goaud9iT8tMJYafTuoCSDZxx",
+            "feePercent": 20,
+            "uptimePercent": 99.994,
+            "connected": true,
+            "weight": "5775000000000000",
+            "delegatorCount": 0
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -3356,6 +4602,24 @@
           "signingPolicy": "0xaeC4EFacDc09Ebff3035b8A131953B20A8B4e968",
           "delegation": "0x96616c93747baBE136bB56310bE2AE665b18dA63"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-98RaC6gbJMhin1NXsBFUoicEqiF7VKWbL",
+            "feePercent": 15,
+            "uptimePercent": 98.9989,
+            "connected": true,
+            "weight": "13350000000000000",
+            "delegatorCount": 207
+          },
+          {
+            "nodeId": "NodeID-HocHt7RWAxksQj94zEJJ6He7gH2mRnzs1",
+            "feePercent": 20,
+            "uptimePercent": 98.1088,
+            "connected": true,
+            "weight": "13076425000000000",
+            "delegatorCount": 107
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3397,6 +4661,7 @@
           "signingPolicy": "0x53722AbC03b122d570adf3F256BcB75640c2968a",
           "delegation": "0xb6deD9D9CA19af10C67f9A8be8ca75e38E166faA"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3438,6 +4703,16 @@
           "signingPolicy": "0x450b58214EB789320A6685b52278D17E21997910",
           "delegation": "0xe3a76233885E355cFaF141D7dd3D92705C9db4D5"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-KtTdea6FeDDy5pERrZKHkkhtJFCbJNv1a",
+            "feePercent": 10,
+            "uptimePercent": 99.7758,
+            "connected": true,
+            "weight": "6000000000000000",
+            "delegatorCount": 53
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3479,6 +4754,7 @@
           "signingPolicy": "0x338119F38fc07f29aA96449251353d9e4684DA6D",
           "delegation": "0x35149714467F2FE71b46eEb4d11689ED8728Bd25"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -3520,6 +4796,16 @@
           "signingPolicy": "0x0c88A5cD336a2B2a81f16E09A23582300489F4DE",
           "delegation": "0xa288054b230DCbb8689Ac229D6DBd7Df39203181"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-MzMscku8ayAd2pBEmH8xWiAXBwtPgS2S5",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "11000000000000000",
+            "delegatorCount": 8
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3561,6 +4847,16 @@
           "signingPolicy": "0x493560BaC93dFc176E5663CFC830aF04209E95Fa",
           "delegation": "0x4A74e79738009711a6ddB6653614d43ba9F431b9"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-NbTToANYcdsreLC5PBcE9gsMBpBY7N7s1",
+            "feePercent": 20,
+            "uptimePercent": 99.9683,
+            "connected": true,
+            "weight": "6500000000000000",
+            "delegatorCount": 2
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3602,6 +4898,16 @@
           "signingPolicy": "0xAA4D1f2B94370229bc20c3582E1D940ec783DE12",
           "delegation": "0x4c1F288cAFECbbDac653C2170337c38e62c400E9"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-C3FRhsMBh3KNLKiVbc8xLY7gnVzmJ7EY9",
+            "feePercent": 20,
+            "uptimePercent": 99.9969,
+            "connected": true,
+            "weight": "3000000000000000",
+            "delegatorCount": 19
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3643,6 +4949,24 @@
           "signingPolicy": "0x725A5766c84ab2F507441EEB200a02a53761182b",
           "delegation": "0x112B1130BD78B5A520adeace6130151E07a270a7"
         },
+        "validators": [
+          {
+            "nodeId": "NodeID-B6sAUBEYn2fvHMeUnsUkh1yNrvTzKu8gZ",
+            "feePercent": 20,
+            "uptimePercent": 98.4504,
+            "connected": true,
+            "weight": "8500000000000000",
+            "delegatorCount": 18
+          },
+          {
+            "nodeId": "NodeID-HGNPxSh8dZqCNCmHfMMNWYC8CNQiUwDWK",
+            "feePercent": 20,
+            "uptimePercent": 99.6181,
+            "connected": true,
+            "weight": "12724000000000000",
+            "delegatorCount": 19
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3684,6 +5008,7 @@
           "signingPolicy": "0x276D718dD0B4E9271e3bFA776c112753a06Bc53F",
           "delegation": "0x35D73107A089Ac2b3b14a6681D8c408Aab9568D3"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3725,6 +5050,7 @@
           "signingPolicy": "0x558298090E6e5D439e792c9D1A3CdE189A14037c",
           "delegation": "0x9565d813a3a0CEa62B3bDB9A4e236dCb5910c4f0"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3766,6 +5092,7 @@
           "signingPolicy": "0xfB021c01f924C416D1FEd247161963EfC2Ae7604",
           "delegation": "0xaF31CA175bbE0C6dD667c8403B65a33b28238afa"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3807,6 +5134,7 @@
           "signingPolicy": "0x680cB53763D589B2835ff522cBEEA507Dba9F74C",
           "delegation": "0x2d7bf53ED6117aD1DCD6416d460481522a16aFdf"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3848,6 +5176,7 @@
           "signingPolicy": "0xeA851Ec9BA36F1741c4acddE72f5B41b1903af57",
           "delegation": "0x0501B6306b03A9EEDe8165d4B9abCB4915937b89"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3889,6 +5218,7 @@
           "signingPolicy": "0x285eE7a4ec946Ad5f6eDaE1611dBC4Bc0510C783",
           "delegation": "0xBF61Db1CDb43d196309824473fA82E5B17581159"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3930,6 +5260,7 @@
           "signingPolicy": "0x6b526660DCB12b70dD76595A886Fb7430e44c855",
           "delegation": "0x2De2C741658f0Ae7b2DdD8EAdD179911564af119"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -3971,6 +5302,7 @@
           "signingPolicy": "0x4f29816fDDfEceF74b05639718eB719F719DEF4e",
           "delegation": "0xB5ECB64526F777Eb6f02D4A83AbAB1FAD26b1C00"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4012,6 +5344,7 @@
           "signingPolicy": "0x493E5d0833646f99e4b414E9de5a10d8cb9B5C5a",
           "delegation": "0x499017ADB21D6f70480E4E6224cf4144071C1461"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4053,6 +5386,7 @@
           "signingPolicy": "0x86339BBF3e57c6026ce678617DEc27f2cc5dBD62",
           "delegation": "0x6d323e71E141cE2d7b752313C8A654a9C9d1b377"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4094,6 +5428,7 @@
           "signingPolicy": "0xa1c5ad0b4a24b70b786b6143b066a8C54388f01F",
           "delegation": "0x69141E890F3a79cd2CFf552c0B71508bE23712dC"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": null
@@ -4135,6 +5470,7 @@
           "signingPolicy": "0x7A85E157c0adA485915019f84Bc7DA2027589D68",
           "delegation": "0x580B729602c10c59B058c3C3b0Cec6c3db7Ae0c7"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -4176,6 +5512,7 @@
           "signingPolicy": "0x9E475034972D8ACC3Fe28E9A950d73A7631254E4",
           "delegation": "0x0d3852Ad415477fFC39ce9351bD4dEdbbd585833"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4217,6 +5554,7 @@
           "signingPolicy": "0x5B0FF409b17dF4b717Ea0c5035d0a961c502Fca8",
           "delegation": "0x1C602a30335187A97D8061Ffffd4522796DE82bF"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -4258,6 +5596,7 @@
           "signingPolicy": "0x295d1DCeafda82DcA22F6323B9b7889a2920c789",
           "delegation": "0x821BDE578955B35F9F2C9022268E5BC748994f71"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4299,6 +5638,7 @@
           "signingPolicy": "0x70538a23D7A825eABF80E26dFacfD8c9D61C205D",
           "delegation": "0x43cAb70e8EdefeF8C648C4Fc0863DD9D8FF5776A"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4340,6 +5680,7 @@
           "signingPolicy": "0xF9B5da7af59bF8C8B68Ef1743a4dcdCa213b583e",
           "delegation": "0xCa60cd408A5E447897258cDB1F699478c71Cc55E"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4381,6 +5722,7 @@
           "signingPolicy": "0xB25f584a52cC31541F6d783aBe700C078F618BB4",
           "delegation": "0x58Cd43E9FcdBd4D0F507aB4f6029dB8032746da8"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4422,6 +5764,7 @@
           "signingPolicy": "0x0E879D2836196f9BB212EAa5d6B206FA633a8370",
           "delegation": "0x0f80AF5b905a9A34f69E74412c4A00B231D26dAa"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4463,6 +5806,7 @@
           "signingPolicy": "0x526a35584129879950C1B044F5627812217B833a",
           "delegation": "0x86eC5c8Ce7a4DD7762Cff205d64Bfc0C272feB6d"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -4504,6 +5848,7 @@
           "signingPolicy": "0x91aBE8C9B87c7D48f4FD70AF31E418CE6D336896",
           "delegation": "0x633CE03ea66d910c15869e1552fDccC2bf9aAD87"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4545,6 +5890,7 @@
           "signingPolicy": "0xe627eB93529583A0F359E4b39Fc8Ad275cC93BFc",
           "delegation": "0xF24F04f1F886B2e09d9Cf76FbC7e02925c9f8CC8"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -4586,6 +5932,7 @@
           "signingPolicy": "0x5bb7e630a3C14d4f4d889B1C7488F7AfFC8dA0E1",
           "delegation": "0xDe4051b333b3063fd28267Cd4412DD25233D0Ae1"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4627,6 +5974,7 @@
           "signingPolicy": "0x519468FD9811661F490cB921B499d2388bc9426b",
           "delegation": "0x5f3C5991De3F0713715a733eE125785D516cEb16"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4668,6 +6016,7 @@
           "signingPolicy": "0xFE28f67f7e33f9702476da4A851148B8D594B453",
           "delegation": "0x1B00870092a929D160492daf8E734b4bCA033266"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4709,6 +6058,7 @@
           "signingPolicy": "0xF5E307Dc74656dde1A520B4319fba404f01Dbe22",
           "delegation": "0x3886E101Bb798Ab3180B52A393B5BEAb39f2dB1d"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4750,6 +6100,7 @@
           "signingPolicy": "0xc139F933a6B44aA698e649cc8F142cE02Fd19213",
           "delegation": "0xCcd522393233052Dd0DfeAadc124a0a9bB87FD08"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4791,6 +6142,7 @@
           "signingPolicy": "0x4eF3181091C42310c0D0957cA7b6a53cCC6104d8",
           "delegation": "0x833DDe54A28a3070A086Cc8919BeAa7a0134DE46"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4832,6 +6184,7 @@
           "signingPolicy": "0xe5c465582969717375f38202d6f615581DAf2728",
           "delegation": "0x664e070592063bFE5072F0aC25C6C11e5ccF9928"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4873,6 +6226,7 @@
           "signingPolicy": "0xE78B600D8daEc600C6ff98a1E6a22F28022830fC",
           "delegation": "0xc396b6f023f3A1C894a20FBa08432E847C05c7F9"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -4914,6 +6268,7 @@
           "signingPolicy": "0x0cD4562Cb47830cFC2acbcA68C99D4c50e962F88",
           "delegation": "0x7C255e428e95bEbc76e944D49D4F460C84b3A3c3"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": false,
           "algorithm": null
@@ -4955,6 +6310,7 @@
           "signingPolicy": "0x5DA692A7Ee11E292bDdf8eA15bD388F3beC1347a",
           "delegation": "0x0708a4C813594b7E0218CB4A5D8b75c76AbFc859"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -4996,6 +6352,7 @@
           "signingPolicy": "0x2A4baC7f442a4Cd30fAF3A1AEEE74940C456dDf1",
           "delegation": "0x2C293599ca61bb53e8fF82c8a19c2A8B883ea23f"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -5037,6 +6394,7 @@
           "signingPolicy": "0x5483a24B91fD1Fcb8bA1c5aE54C85d9b61D62198",
           "delegation": "0x0FA72D3912d1C530AB1f6a8A9fB61C672947E964"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5072,6 +6430,7 @@
         "delegatorRewardLastEpoch": null,
         "feeRewardLastEpoch": null,
         "entity": null,
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5113,6 +6472,7 @@
           "signingPolicy": "0x1c884cF954eC8f15D7BF16b9d50402cc5c94b5FD",
           "delegation": "0x819eaB111BD9A6E595187A914240529D2EFfF21f"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5154,6 +6514,7 @@
           "signingPolicy": "0xcD67D20a68801832A26Bc7877639A1f03dd480b7",
           "delegation": "0xA174D46EF49D7d4a0328f9910222689E9eAb2f45"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5195,6 +6556,7 @@
           "signingPolicy": "0x21EF03f609Aad7dB7224d3f8fd90f5593d2607cA",
           "delegation": "0x4619Ae2f09cF5e6da873C501a12D86AaCbD7962B"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5236,6 +6598,7 @@
           "signingPolicy": "0x81050097cbDc0B3D58fe0db4469775db7F538304",
           "delegation": "0xfB9197720329a80191BA140844E96DCcAD149014"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -5277,6 +6640,7 @@
           "signingPolicy": "0x0aAd8D0bAb50599b1669a36dBF1Fe4896242a093",
           "delegation": "0x27Cb5f4EbA81976617b75953053D33EF2002daDF"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5318,6 +6682,7 @@
           "signingPolicy": "0xfd9AbD602150d39D819Eb71eE8d6809c157d9a82",
           "delegation": "0xE304AF184b9ca77E3576Aef834A4dc1A43EBfA70"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -5359,6 +6724,7 @@
           "signingPolicy": "0xF0C331BdCF75295a726834194178c951d2281799",
           "delegation": "0x04a8b3171fBbfe4554B55190B43E709c4b672030"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5400,6 +6766,7 @@
           "signingPolicy": "0xEE02D89FbC7c61B0F6b0CE6bc20aCc3522f66295",
           "delegation": "0x92D6c2E99d5959F2e9c0a7aba5149D8A5ef22f23"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5435,6 +6802,7 @@
         "delegatorRewardLastEpoch": null,
         "feeRewardLastEpoch": null,
         "entity": null,
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5476,6 +6844,7 @@
           "signingPolicy": "0x4DFCbC3a1529FB3c07245095FBA7830063d71c34",
           "delegation": "0xEF4ef2f3B8C69282846a98341095baa018247553"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5517,6 +6886,7 @@
           "signingPolicy": "0x79280386DDA03f4AF8d6212582652a80332D29d7",
           "delegation": "0xfF2E51FBf9196eaf96978eC454C5acDCF4C46990"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5552,6 +6922,7 @@
         "delegatorRewardLastEpoch": null,
         "feeRewardLastEpoch": null,
         "entity": null,
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5593,6 +6964,7 @@
           "signingPolicy": "0x53Bce8B63C3357717d87a816E3414e2103a85d27",
           "delegation": "0x6c6b3560704Da8A2c33B1BB00E88bA343807E565"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5634,6 +7006,7 @@
           "signingPolicy": "0xDA120015F32de47427663db78bc7339acE2213aC",
           "delegation": "0x1e68DC808A240C096F0261144dc41fd4c883Cfb0"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5675,6 +7048,7 @@
           "signingPolicy": "0x2eEcbb469AF133d136F011ce3F27ecf9524Bb7c3",
           "delegation": "0x6Bf25C0256CBE8969424F6994e19Cf5e0A3C23Bb"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5716,6 +7090,7 @@
           "signingPolicy": "0x15687FCFcd693ff9f357C0b535a49072653e5d00",
           "delegation": "0x7394923453FC2F606cfb4D0ea1A5438BB8260D08"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5757,6 +7132,7 @@
           "signingPolicy": "0x85dDaaA17e3906BC1bE051F6161EBE2eF68998C5",
           "delegation": "0x04Bd6870d801D68CD58163900B8EED6BDDdA29cB"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5798,6 +7174,7 @@
           "signingPolicy": "0x40567b5f30c90f35A3D3a5c57702bEF6813D9A39",
           "delegation": "0x4eb408FA585a5C66E523a4aE5f5706374Ec9E8c7"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5839,6 +7216,7 @@
           "signingPolicy": "0x53722AbC03b122d570adf3F256BcB75640c2968a",
           "delegation": "0xb6deD9D9CA19af10C67f9A8be8ca75e38E166faA"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5880,6 +7258,7 @@
           "signingPolicy": "0x31E412E114629702281533CC657bE76aD928283B",
           "delegation": "0xb53D69B2519aC9F6D65cff8e7824Bf09F7064D61"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -5921,6 +7300,7 @@
           "signingPolicy": "0x338119F38fc07f29aA96449251353d9e4684DA6D",
           "delegation": "0x35149714467F2FE71b46eEb4d11689ED8728Bd25"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house"
@@ -5962,6 +7342,7 @@
           "signingPolicy": "0x0c88A5cD336a2B2a81f16E09A23582300489F4DE",
           "delegation": "0x53CAEDDA4339eD74272ECfEF85b657dEf18fA2e4"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -6003,6 +7384,7 @@
           "signingPolicy": "0x493560BaC93dFc176E5663CFC830aF04209E95Fa",
           "delegation": "0xD9200CC419BDe28B169AD8c904d2687a15A4Bf9F"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -6044,6 +7426,7 @@
           "signingPolicy": "0xAA4D1f2B94370229bc20c3582E1D940ec783DE12",
           "delegation": "0x78A99Aa32cDe18B33B150941fBF718715d15Af6a"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -6085,6 +7468,7 @@
           "signingPolicy": "0xB4d13CA9e17C52D61Ffc06c2bC75e3a751517B4B",
           "delegation": "0x2d3bdE536ad297f2EA74965f02C9E42f4780fB6A"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
@@ -6126,6 +7510,7 @@
           "signingPolicy": "0xC0d15f4B2d964D372f5Ae097F7bf73259A50513a",
           "delegation": "0xB0840104E84DA02254B043Fd4C205415E759Bf1E"
         },
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null
