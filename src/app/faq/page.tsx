@@ -18,6 +18,8 @@ const ENTRIES = [
   "logo",
   "addresses",
   "api",
+  "siteStale",
+  "askAdoption",
   "cost",
   "who",
 ] as const;
