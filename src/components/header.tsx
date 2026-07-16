@@ -40,6 +40,7 @@ export function Header() {
   const moreLinks: { href: string; label: string; external?: boolean }[] = [
     { href: "/why", label: t("nav.why") },
     { href: "/governance", label: t("nav.governance") },
+    { href: "/powered-by", label: t("nav.poweredBy") },
     { href: "/faq", label: t("nav.faq") },
   ];
   const navLinks = [...primaryLinks, ...moreLinks];
