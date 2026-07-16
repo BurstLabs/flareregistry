@@ -126,3 +126,35 @@ export async function sendLogoReportNotice(n: LogoReportNotice): Promise<void> {
     text,
   });
 }
+
+// Notify the operator when someone submits a "Powered by" consumer listing (new or an edit proposal)
+// for the /powered-by showcase. Best-effort: never fail the submission over the email.
+export interface ConsumerSubmissionNotice {
+  kind: "new" | "edit";
+  name: string;
+  url: string;
+  category: string;
+  contactEmail?: string;
+}
+
+export async function sendConsumerSubmissionNotice(n: ConsumerSubmissionNotice): Promise<void> {
+  if (!(SMTP_HOST && SMTP_USER && SMTP_PASS && LOGO_NOTICE_TO)) return;
+  const verb = n.kind === "edit" ? "An edit to a" : "A new";
+  const text = [
+    `${verb} "Powered by" consumer listing was submitted and is awaiting review.`,
+    ``,
+    `Type:     ${n.kind === "edit" ? "EDIT to existing listing" : "NEW listing"}`,
+    `Name:     ${n.name}`,
+    `URL:      ${n.url}`,
+    `Category: ${n.category}`,
+    ...(n.contactEmail ? [`Contact:  ${n.contactEmail}`] : []),
+    ``,
+    `Review it in the admin panel (Consumers).`,
+  ].join("\n");
+  await getTransport().sendMail({
+    from: SMTP_FROM,
+    to: LOGO_NOTICE_TO,
+    subject: `[Flare Registry] Consumer listing pending review (${n.kind}): ${n.name}`,
+    text,
+  });
+}

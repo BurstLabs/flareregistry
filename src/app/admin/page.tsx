@@ -7,7 +7,14 @@ import { useWalletSign } from "@/lib/useWalletSign";
 // Operator-only admin dashboard. English-only (internal tool, not a user-facing page). Access is
 // gated by ADMIN_ADDRESSES: sign in with an allowlisted wallet (reusing the SIWE flow) to unlock it.
 
-type Tab = "stats" | "providers" | "qualification" | "governance" | "reports" | "system";
+type Tab =
+  | "stats"
+  | "providers"
+  | "qualification"
+  | "governance"
+  | "reports"
+  | "consumers"
+  | "system";
 
 // Minimal English-only translator so the shared wallet-sign hook (which throws localised keys) shows
 // readable copy in this internal tool without pulling in the full i18n context.
@@ -113,6 +120,7 @@ export default function AdminPage() {
     { id: "qualification", label: "Qualification" },
     { id: "governance", label: "Governance" },
     { id: "reports", label: "Logo reports" },
+    { id: "consumers", label: "Consumers" },
     { id: "system", label: "System" },
   ];
 
@@ -145,6 +153,7 @@ export default function AdminPage() {
         {tab === "qualification" && <QualificationTab />}
         {tab === "governance" && <GovernanceTab />}
         {tab === "reports" && <ReportsTab />}
+        {tab === "consumers" && <ConsumersTab />}
         {tab === "system" && <SystemTab />}
       </div>
     </div>
@@ -528,6 +537,168 @@ function GovernanceTab() {
 // New uploads are held for a review window before auto-going-live. This panel lets the operator
 // eyeball each pending image and either approve it now (promote to live immediately) or reject it
 // (discard the upload). Without this, the only signal was a notification email with no matching action.
+// ---------- Consumers ("Powered by" showcase moderation) ----------
+function ConsumersTab() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState("");
+  const load = useCallback(async () => {
+    const r = await fetch("/api/admin/consumers");
+    const b = await r.json();
+    setRows(b.queue ?? []);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+  async function act(id: string, action: "approve" | "reject", name: string, kind: string) {
+    const label =
+      action === "approve"
+        ? kind === "edit"
+          ? "apply these changes"
+          : "approve and publish this listing"
+        : kind === "edit"
+          ? "discard this edit"
+          : "reject this listing";
+    if (!confirm(`Are you sure you want to ${label} for "${name}"?`)) return;
+    setBusy(id + action);
+    setMsg("");
+    try {
+      const r = await fetch("/api/admin/consumers", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, action }),
+      });
+      const b = await r.json();
+      setMsg(r.ok ? "Done." : b.error ?? "Failed.");
+      if (r.ok) load();
+    } finally {
+      setBusy("");
+    }
+  }
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between text-xs text-muted">
+        <span className="font-semibold text-fg">Powered-by submissions awaiting review</span>
+        <span>{msg}</span>
+      </div>
+      <Card>
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted">Nothing to review.</p>
+        ) : (
+          <ul className="space-y-4">
+            {rows.map((q) => {
+              const p = q.proposed ?? {};
+              const cur = q.current;
+              const name = p.name ?? cur?.name ?? "(unnamed)";
+              return (
+                <li
+                  key={q.id}
+                  className="border-t border-themed/50 pt-4 first:border-0 first:pt-0"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                          q.kind === "edit"
+                            ? "bg-amber-500/15 text-amber-500"
+                            : "bg-emerald-500/15 text-emerald-400"
+                        }`}
+                      >
+                        {q.kind}
+                      </span>
+                      <span className="text-sm font-medium">{name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <button
+                        onClick={() => act(q.id, "approve", name, q.kind)}
+                        disabled={!!busy}
+                        className="rounded bg-emerald-500/15 px-2.5 py-1 text-emerald-400 disabled:opacity-50"
+                      >
+                        {busy === q.id + "approve" ? "…" : q.kind === "edit" ? "apply" : "approve"}
+                      </button>
+                      <button
+                        onClick={() => act(q.id, "reject", name, q.kind)}
+                        disabled={!!busy}
+                        className="rounded bg-flare/15 px-2.5 py-1 text-flare disabled:opacity-50"
+                      >
+                        {busy === q.id + "reject" ? "…" : "reject"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2 grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+                    {q.kind === "edit" && cur && (
+                      <ConsumerFields title="Current (live)" v={cur} muted />
+                    )}
+                    <ConsumerFields
+                      title={q.kind === "edit" ? "Proposed" : "Submitted"}
+                      v={p}
+                      email={q.contactEmail}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function ConsumerFields({
+  title,
+  v,
+  email,
+  muted,
+}: {
+  title: string;
+  v: any;
+  email?: string | null;
+  muted?: boolean;
+}) {
+  return (
+    <div className={`rounded border border-themed/50 p-2 ${muted ? "opacity-70" : ""}`}>
+      <div className="mb-1 text-[10px] font-semibold uppercase text-faint">{title}</div>
+      <dl className="space-y-0.5">
+        <Row k="Category" val={v.category} />
+        <Row
+          k="URL"
+          val={
+            v.url ? (
+              <a href={v.url} target="_blank" rel="noreferrer" className="text-beacon hover:underline">
+                {v.url}
+              </a>
+            ) : (
+              "—"
+            )
+          }
+        />
+        <Row k="Blurb" val={v.blurb} />
+        {v.logoURL && (
+          <Row
+            k="Logo"
+            val={
+              <a href={v.logoURL} target="_blank" rel="noreferrer" className="text-beacon hover:underline">
+                image
+              </a>
+            }
+          />
+        )}
+        {email && <Row k="Contact" val={email} />}
+      </dl>
+    </div>
+  );
+}
+
+function Row({ k, val }: { k: string; val: React.ReactNode }) {
+  return (
+    <div className="flex gap-2">
+      <dt className="w-16 shrink-0 text-faint">{k}</dt>
+      <dd className="min-w-0 break-words text-fg">{val ?? "—"}</dd>
+    </div>
+  );
+}
+
 function PendingLogosPanel() {
   const [rows, setRows] = useState<any[]>([]);
   const [msg, setMsg] = useState("");

@@ -77,9 +77,9 @@ model LogoReport {
   providerId String
 
   // The logo URL that was reported (so the record stands even after the logo is later changed).
-  logoURI        String?
-  reporterAddress String  // lowercased MG-member address that signed the report
-  reporterVoter   String  // canonical member-entity voter for that address
+  logoURI         String?
+  reporterAddress String // lowercased MG-member address that signed the report
+  reporterVoter   String // canonical member-entity voter for that address
   reason          String
 
   // OPEN -> resolved by an admin. Rows are never deleted (history kept).
@@ -189,7 +189,7 @@ model ProviderValidator {
   // Validator staking fee, percent (e.g. 10.0). Distinct from the FTSO delegationFeeBIPS.
   feePercent     Float?
   uptimePercent  Float?
-  connected      Boolean @default(false)
+  connected      Boolean   @default(false)
   weight         String? // self+delegated stake weight (decimal string)
   delegatorCount Int?
   startTime      DateTime?
@@ -339,15 +339,15 @@ model ProviderFlagInitiation {
 // the member edits freely while the case is pre-vote, but no version is ever altered or removed,
 // so the public record shows exactly what changed and when.
 model ProviderFlagGroundsRevision {
-  id           String                 @id @default(cuid())
-  initiation   ProviderFlagInitiation @relation(fields: [initiationId], references: [id], onDelete: Cascade)
-  initiationId String
+  id            String                 @id @default(cuid())
+  initiation    ProviderFlagInitiation @relation(fields: [initiationId], references: [id], onDelete: Cascade)
+  initiationId  String
   // The grounds + title as of this version (title null = no subject at that time).
-  grounds      String
-  title        String?
+  grounds       String
+  title         String?
   // The address that signed this revision (the member's wallet at edit time).
   signerAddress String
-  createdAt    DateTime               @default(now())
+  createdAt     DateTime               @default(now())
 
   @@index([initiationId])
 }
@@ -459,14 +459,14 @@ model ProviderFlagDefenseRevision {
 // A supplemental response the provider adds after their first, each independently editable with its
 // own history. Mirrors ProviderFlagGroundsEntry for the members' side.
 model ProviderFlagDefenseEntry {
-  id        String              @id @default(cuid())
-  defense   ProviderFlagDefense @relation(fields: [defenseId], references: [id], onDelete: Cascade)
-  defenseId String
+  id         String              @id @default(cuid())
+  defense    ProviderFlagDefense @relation(fields: [defenseId], references: [id], onDelete: Cascade)
+  defenseId  String
   // Optional one-line subject (falls back to "Point N" in the UI when null).
-  title     String?
-  body      String
-  createdAt DateTime            @default(now())
-  editedAt  DateTime?
+  title      String?
+  body       String
+  createdAt  DateTime            @default(now())
+  editedAt   DateTime?
   // Reply target "<ownerType>:<ownerId>", or null for a top-level response. See ProviderFlagGroundsEntry.
   replyToRef String?
 
@@ -511,7 +511,7 @@ model ProviderFlagPointImage {
   height        Int
   bytes         Int
   signerAddress String
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
   // When the author removed the image. The file bytes are discarded on removal, but the row stays so
   // the public record shows an image was attached then removed (and when). Null = still attached.
   removedAt     DateTime?
@@ -528,14 +528,50 @@ model ProviderFlagPointImage {
 // best-effort daily salted hash kept only as a count, so this holds no personal data. Populated by
 // POST /api/track from the client on navigation; read by the admin stats endpoint.
 model PageView {
-  id      String   @id @default(cuid())
-  day     String // YYYY-MM-DD (UTC)
-  path    String // normalized pathname, e.g. "/", "/provider/[address]"
-  hits    Int      @default(0)
-  uniques Int      @default(0)
+  id        String   @id @default(cuid())
+  day       String // YYYY-MM-DD (UTC)
+  path      String // normalized pathname, e.g. "/", "/provider/[address]"
+  hits      Int      @default(0)
+  uniques   Int      @default(0)
   updatedAt DateTime @updatedAt
 
   @@unique([day, path])
   @@index([day])
 }
 
+// A Consumer is a third-party product (wallet, block explorer, dApp, analytics site, tooling) that
+// USES the Flare Registry feed, showcased on the public /powered-by page. Unlike a Provider it has no
+// on-chain identity, so there is no wallet signature: submissions are moderated. Anyone may propose a
+// NEW listing or an EDIT to an existing one; nothing goes live until an admin approves it (the admin
+// queue is the single trust gate). Edits do not touch the live fields - the proposed values sit in
+// pendingChanges until approval, so the current listing keeps showing meanwhile.
+model Consumer {
+  id           String  @id @default(cuid())
+  name         String
+  url          String
+  // One of: wallet | explorer | dapp | analytics | tooling | other. Free-typed but validated server-side.
+  category     String
+  // Short blurb: how they use the feed. Shown on the showcase card.
+  blurb        String
+  // Optional https logo URL (external, provider-hosted). No git-CDN upload pipeline for consumers in v1.
+  logoURL      String?
+  // Private, admin-only contact for follow-up. Never emitted to the public showcase.
+  contactEmail String?
+
+  // Moderation state. approved rows are the only ones shown publicly.
+  status String @default("pending") // pending | approved | rejected
+
+  // For an EDIT proposal against an approved row: the submitted values awaiting review, stored WITHOUT
+  // overwriting the live fields. On approve they merge into the row and this clears. Null when there is
+  // no proposal in flight (a plain approved listing, or a brand-new pending listing).
+  pendingChanges Json?
+  // "new" | "edit": drives the admin queue label. A brand-new pending row is "new"; a proposed change
+  // to an already-approved row is "edit".
+  pendingKind    String?
+
+  submittedAt DateTime  @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  @@index([status])
+}

@@ -33,6 +33,7 @@ export function Header() {
     { href: "/api", label: t("nav.api") },
     { href: "/why", label: t("nav.why") },
     { href: "/governance", label: t("nav.governance") },
+    { href: "/powered-by", label: t("nav.poweredBy") },
     { href: "/faq", label: t("nav.faq") },
   ];
 
@@ -88,6 +89,12 @@ export function Header() {
             className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline"
           >
             {t("nav.governance")}
+          </Link>
+          <Link
+            href="/powered-by"
+            className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline"
+          >
+            {t("nav.poweredBy")}
           </Link>
           <Link href="/faq" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
             {t("nav.faq")}
