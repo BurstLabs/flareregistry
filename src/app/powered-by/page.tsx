@@ -91,7 +91,7 @@ function ConsumerCard({ c }: { c: PublicConsumer }) {
       </div>
       <div className="min-w-0">
         <div className="truncate font-medium">{c.name}</div>
-        <div className="mt-0.5 line-clamp-2 text-sm text-muted">{c.blurb}</div>
+        <div className="mt-0.5 whitespace-pre-line text-sm text-muted">{c.blurb}</div>
       </div>
     </a>
   );
