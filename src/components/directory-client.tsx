@@ -289,6 +289,12 @@ export function DirectoryClient({
                       {t("card.qualification")} (
                       {p.checks.filter((c) => c.status === "pass").length}/{p.checks.length}{" "}
                       {t("card.checks")})
+                      {p.heldUntil && (
+                        <span className="ml-1 text-amber-500 dark:text-amber-400">
+                          {" · ⏳ "}
+                          {t("detail.newProviderHoldLabel")}
+                        </span>
+                      )}
                     </summary>
                     <ul className="mt-2 space-y-1">
                       {p.heldUntil && (
