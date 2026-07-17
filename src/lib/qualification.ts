@@ -116,16 +116,49 @@ export async function qualifyProvider(opts: {
         ? pass("submitting", "Submitting prices", `Active in epoch ${latestEpochId}.`)
         : fail("submitting", "Submitting prices", "Not active in the latest reward epoch.");
 
-    // 2) Sufficient vote power: registered with non-zero wNat weight and present in the signing
-    //    policy (signing weight set) for the latest epoch.
-    const hasVotePower =
-      latest != null &&
-      latest.wNatWeight != null &&
-      BigInt(latest.wNatWeight) > 0n &&
-      latest.signingWeight != null;
-    const votepower = hasVotePower
-      ? pass("votepower", "Sufficient vote power", "Enough vote power to participate.")
-      : fail("votepower", "Sufficient vote power", "Below the participation threshold.");
+    // 2) Sufficient vote power: the entity's EFFECTIVE consensus weight for the latest epoch is
+    //    non-zero. Flare normalises each entity's vote power into a uint16 signing weight (0..65535)
+    //    that is its share of total network vote power; an entity's price submissions and rewards
+    //    are counted with THIS weight. An entity can be registered and "submitting" yet have so
+    //    little wNat that its signing weight rounds to 0 -- it participates in name but contributes
+    //    nothing to the median and earns nothing. So "sufficient" means signingWeight > 0: its
+    //    weight actually counts. We surface the raw weight, the network total, and the share so the
+    //    check is transparent rather than a bare pass/fail. Total is the sum of all entities'
+    //    signing weights this epoch (one cheap aggregate, scoped to the latest epoch).
+    const sw = latest?.signingWeight != null ? BigInt(latest.signingWeight) : null;
+    let votepower: Check;
+    if (latest == null || sw == null) {
+      votepower = fail(
+        "votepower",
+        "Sufficient vote power",
+        "Not present in the signing policy for the latest epoch."
+      );
+    } else {
+      // signingWeight is stored as a decimal string, so sum in JS (Prisma cannot _sum a String).
+      const allWeights = await prisma.providerMetricEpoch.findMany({
+        where: { network, epochId: latestEpochId, signingWeight: { not: null } },
+        select: { signingWeight: true },
+      });
+      const total = allWeights.reduce((acc, r) => acc + BigInt(r.signingWeight as string), 0n);
+      // Share in basis points (two decimals of a percent), integer math to avoid float drift.
+      const shareBips = total > 0n ? Number((sw * 10000n) / total) : 0;
+      // A nonzero weight whose share rounds below 0.01% shows "<0.01%" rather than a misleading
+      // "0.00%" next to a passing check.
+      const sharePct =
+        sw > 0n && shareBips === 0 ? "<0.01" : (shareBips / 100).toFixed(2);
+      const detail =
+        total > 0n
+          ? `Signing weight ${sw} of ${total} (${sharePct}% of network vote power).`
+          : `Signing weight ${sw}.`;
+      votepower =
+        sw > 0n
+          ? pass("votepower", "Sufficient vote power", detail)
+          : fail(
+              "votepower",
+              "Sufficient vote power",
+              `Signing weight rounds to 0: vote power too low to count toward consensus this epoch.`
+            );
+    }
 
     // 3) ≥95% uptime over 30 days: present in >=95% of the last ~9 epochs. Honest "unknown" when
     //    there is not yet enough history.
