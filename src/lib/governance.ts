@@ -8,6 +8,14 @@ import { fetchManagementGroupMembers } from "./management-group";
 
 // Timing (days).
 export const NEW_PROVIDER_WINDOW_DAYS = 30; // a provider is flaggable only inside this window
+
+// New-provider listing hold: a qualifying provider is NOT listed until it has been claimed for
+// NEW_PROVIDER_WINDOW_DAYS, so a pre-warmed on-chain entity cannot register and instantly appear
+// in wallets before the Management Group can react. Providers claimed on/before this cutoff are
+// grandfathered (never held): the initial launch base was seeded in one bulk event on 2026-06-22
+// (+ Burst FTSO 2026-06-25), so their createdAt is an artifact of that import, not real onboarding.
+// The cutoff sits after that batch and before the first genuine post-launch claims.
+export const NEW_PROVIDER_HOLD_CUTOFF = new Date("2026-07-01T00:00:00Z");
 export const FLAG_PAUSE_DAYS = 14; // total added pause once a case opens
 export const DISCUSSION_DAYS = 3; // discussion-only portion at the start
 export const VOTING_DAYS = FLAG_PAUSE_DAYS - DISCUSSION_DAYS; // 11 days of voting
@@ -181,6 +189,20 @@ export function memberVoterFor(
 /** Is this provider currently inside the new-provider window (created, not yet qualified, <30d)? */
 export function inNewProviderWindow(createdAt: Date, now: Date): boolean {
   return now.getTime() - createdAt.getTime() < NEW_PROVIDER_WINDOW_DAYS * DAY_MS;
+}
+
+/**
+ * Is this provider currently HELD from listing? A provider claimed after NEW_PROVIDER_HOLD_CUTOFF
+ * is withheld from the listed feed (and shown as not-yet-Qualified) for its first
+ * NEW_PROVIDER_WINDOW_DAYS even if it already meets every qualification criterion, so a pre-warmed
+ * on-chain entity cannot register and immediately appear in wallets before the Management Group
+ * has a chance to notice and flag it. The clock is anchored on `createdAt` (the signed-claim
+ * moment), the same anchor the flag window uses. This is NOT MG-gated: after the window it lists
+ * automatically. Providers claimed on/before the cutoff (the seeded launch base) are grandfathered.
+ */
+export function isHeldNewProvider(createdAt: Date, now: Date): boolean {
+  if (createdAt <= NEW_PROVIDER_HOLD_CUTOFF) return false; // grandfathered launch base
+  return inNewProviderWindow(createdAt, now);
 }
 
 /** Compute the case deadlines from an open time. */

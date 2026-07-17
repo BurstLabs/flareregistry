@@ -7,6 +7,7 @@
 
 import { prisma } from "./db";
 import { toChecksum } from "./validation";
+import { isHeldNewProvider } from "./governance";
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
 
@@ -100,6 +101,7 @@ function resolveLogo(logoPath: string | null, sourceLogoURI: string | null): str
  * carries its own `listed` flag: verified entries are listed, imports keep the source's value.
  */
 export async function buildProviderList(): Promise<ProviderList> {
+  const now = new Date();
   const addresses = await prisma.providerAddress.findMany({
     // Exclude archived (soft-deleted, departed) providers from the live feed; they are served
     // read-only at /api/feed/archived.json. archivedAt:null AND (verified OR imported).
@@ -178,6 +180,11 @@ export async function buildProviderList(): Promise<ProviderList> {
     const gov = govByProvider.get(providerId);
     // A suspended provider (DENIED governance outcome) is never Qualified/listed.
     const qualified = (risk?.qualified ?? false) && !gov?.suspended;
+    // New-provider hold: even a qualifying provider is not LISTED until its 30-day new-provider
+    // window (anchored on the signed-claim date) has elapsed, so a pre-warmed on-chain entity
+    // cannot register and instantly appear in wallets before the Management Group can react. The
+    // Qualified badge still reflects `qualified`; only feed listing waits out the window.
+    const held = isHeldNewProvider(a.provider.createdAt, now);
     const managementGroup = mgByProvider.get(providerId) ?? false;
     // Emit extras if there's anything to report: on-chain match, verified owner, or qualified.
     const extras: FeedProviderExtras | undefined =
@@ -249,9 +256,9 @@ export async function buildProviderList(): Promise<ProviderList> {
       url: a.provider.url,
       address: toChecksum(a.address),
       logoURI: resolveLogo(a.provider.logoPath, a.provider.logoURI),
-      // listed now reflects the automatic qualification status (was the imported source flag),
-      // so wallets that filter on listed get the Qualified set.
-      listed: qualified,
+      // listed reflects automatic qualification, minus any provider still inside its 30-day
+      // new-provider hold, so wallets that filter on listed get the Qualified-and-settled set.
+      listed: qualified && !held,
       ...(extras ? { flareregistry: extras } : {}),
     };
   });

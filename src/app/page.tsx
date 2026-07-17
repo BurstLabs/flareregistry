@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProviders, formatWeiCompact } from "@/lib/metrics";
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
+import { isHeldNewProvider } from "@/lib/governance";
 import { DirectoryClient, type CardProvider } from "@/components/directory-client";
 
 // Public directory. Fetches + computes here, hands a serializable shape to the client component.
@@ -38,7 +39,17 @@ export default async function Home({
   );
   const qualifications = await qualifyProviders(all);
 
-  const isQualified = (id: string) => latched.get(id) ?? false;
+  // New-provider hold: a provider inside its 30-day new-provider window (anchored on the signed-
+  // claim date) is treated exactly like a not-yet-listed provider even if it already qualifies,
+  // so a pre-warmed on-chain entity cannot register and instantly show as Qualified/listed before
+  // the Management Group can react. Not MG-gated: it lists automatically once the window elapses.
+  const now = new Date();
+  const createdById = new Map(all.map((p) => [p.id, p.createdAt]));
+  const held = (id: string) => {
+    const c = createdById.get(id);
+    return c ? isHeldNewProvider(c, now) : false;
+  };
+  const isQualified = (id: string) => (latched.get(id) ?? false) && !held(id);
   // True if any qualification check passes. Zero passes = stale name, hidden even from "show all".
   const hasAnyPass = (id: string) =>
     (qualifications.get(id)?.checks ?? []).some((c) => c.status === "pass");

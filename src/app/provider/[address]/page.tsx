@@ -122,7 +122,12 @@ export default async function ProviderDetail({
       !p.flaggedOnce &&
       !p.suspended &&
       (await (await import("@/lib/governance")).inNewProviderWindow(p.createdAt, new Date())),
-    qualified: latchedMap.get(p.id) ?? false,
+    // New-provider hold: qualifying providers still inside their 30-day new-provider window are
+    // not shown as Qualified/listed yet (same effect as listed:false), matching the feed and the
+    // directory. Not MG-gated; auto-lists once the window elapses.
+    qualified:
+      (latchedMap.get(p.id) ?? false) &&
+      !(await import("@/lib/governance")).isHeldNewProvider(p.createdAt, new Date()),
     network: metrics?.network ?? null,
     votePower: formatWeiCompact(metrics?.wNatWeight ?? null),
     votePowerCapped: formatWeiCompact(metrics?.wNatCappedWeight ?? null),
