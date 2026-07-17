@@ -620,10 +620,6 @@ function SubmitPageInner() {
               <span className="text-muted">{t("submit.qual.uptimeBody")}</span>
             </li>
             <li>
-              <span className="font-medium">{t("submit.qual.addressLabel")}</span>{" "}
-              <span className="text-muted">{t("submit.qual.addressBody")}</span>
-            </li>
-            <li>
               <span className="font-medium">{t("submit.qual.oneLabel")}</span>{" "}
               <span className="text-muted">{t("submit.qual.oneBody")}</span>
             </li>

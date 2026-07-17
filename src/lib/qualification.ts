@@ -4,8 +4,8 @@
 //
 // Qualification LATCHES: once an entity qualifies it stays qualified, and the ONLY thing that
 // revokes it is not submitting prices for ~17 consecutive epochs (60 days). After a revocation
-// it must re-qualify from scratch (full criteria, including the website-required onboarding
-// window). The latched state lives in QualificationState and is advanced during ingestion
+// it must re-qualify from scratch (full criteria). The latched state lives in QualificationState
+// and is advanced during ingestion
 // (evaluateQualification). qualifyProvider() below computes the FRESH per-criterion checklist
 // (used to decide latch-on and for the UI); the persisted latch decides the displayed badge.
 //
@@ -13,7 +13,6 @@
 // identity signal, not a sybil guarantee.
 
 import { prisma } from "./db";
-import { addressContainsAddress } from "./website-check";
 
 // 30 days / 3.5-day epochs ~= 8.57 -> require ~9 epochs of history for a meaningful uptime read.
 const UPTIME_WINDOW_EPOCHS = 9;
@@ -22,11 +21,6 @@ const UPTIME_THRESHOLD = 0.95;
 // A qualified entity is revoked after this many consecutive epochs of not submitting (60 days
 // at ~3.5-day epochs).
 const NO_SUBMIT_REVOKE_EPOCHS = 17;
-
-// Address-on-website is required only for genuinely new providers. Once an entity has at least
-// this much ON-CHAIN tenure (~30 days), the requirement is waived (established provider). Tenure
-// is on-chain history, not claim date, so an established provider that just claimed is waived.
-const WEBSITE_REQUIRED_EPOCHS = 9; // ~30 days at 3.5-day epochs
 
 export type CheckStatus = "pass" | "fail" | "unknown";
 
@@ -55,13 +49,13 @@ function unknown(key: string, label: string, detail: string): Check {
 }
 
 /**
- * Compute qualification for a provider given its addresses, website url, and (optionally) a
- * precomputed website-match result. Reads the provider's ingested epoch metrics.
+ * Compute qualification for a provider given its addresses. Reads the provider's ingested epoch
+ * metrics. Qualification is purely on-chain performance: an FTSO signal provider's job is entirely
+ * on-chain, so we do not gate on a website (control of the address is already proven by the claim
+ * signature; a self-supplied URL proves nothing about identity).
  */
 export async function qualifyProvider(opts: {
   addresses: string[];
-  url: string | null;
-  websiteHasAddress?: boolean | null; // null/undefined => could not verify
 }): Promise<Qualification> {
   const addrs = opts.addresses.map((a) => a.toLowerCase());
 
@@ -82,64 +76,13 @@ export async function qualifyProvider(opts: {
   });
   const entity = matchedEntities[0] ?? null;
 
-  // Address-on-website is required only for genuinely NEW providers. "Established" is based on
-  // ON-CHAIN TENURE (how long the entity has existed in the reward data), not when they claimed
-  // on this site: an entity submitting for >= WEBSITE_REQUIRED_EPOCHS epochs is waived. Tenure
-  // is computed once we know the entity (below); compute it now if matched.
-  let websiteWaived = false;
-  if (entity) {
-    const span = await prisma.providerMetricEpoch.aggregate({
-      where: { network: entity.network, voter: entity.voter },
-      _min: { epochId: true },
-      _max: { epochId: true },
-    });
-    const minE = span._min.epochId;
-    const maxE = span._max.epochId;
-    const tenureEpochs = minE != null && maxE != null ? maxE - minE + 1 : 0;
-    websiteWaived = tenureEpochs >= WEBSITE_REQUIRED_EPOCHS;
-  } else {
-    // No on-chain match: cannot establish tenure, so the website requirement still applies.
-    websiteWaived = false;
-  }
-
-  // Precedence: for established providers the requirement is waived (uniform "Waived" status),
-  // but if their address is currently on-site we note that it is verified, so the positive
-  // signal is not lost. New providers must still have the address found.
-  let websiteCheck: Check;
-  if (websiteWaived) {
-    websiteCheck = pass(
-      "website",
-      "Address on website",
-      opts.websiteHasAddress === true
-        ? "Waived (established provider). Address verified on the website."
-        : "Waived (established provider)."
-    );
-  } else if (opts.websiteHasAddress === true) {
-    websiteCheck = pass("website", "Address on website", "Provider address found on the website.");
-  } else if (opts.websiteHasAddress == null) {
-    websiteCheck = unknown(
-      "website",
-      "Address on website",
-      opts.url
-        ? "Could not verify the website (required for new providers)."
-        : "No website provided."
-    );
-  } else {
-    websiteCheck = fail(
-      "website",
-      "Address on website",
-      "Provider address not found on the website (required for new providers)."
-    );
-  }
-
   if (!entity) {
-    // Not matched on-chain: only the website check is meaningful; the rest are unknown.
+    // Not matched on-chain: every criterion is on-chain, so none can be evaluated yet.
     return {
       network: null,
       voter: null,
       qualified: false,
       checks: [
-        websiteCheck,
         unknown("submitting", "Submitting prices", "Not matched to an on-chain FTSO entity."),
         unknown("votepower", "Sufficient vote power", "Not matched to an on-chain FTSO entity."),
         unknown("uptime", "Uptime (last 9 epochs)", "Not matched to an on-chain FTSO entity."),
@@ -215,7 +158,7 @@ export async function qualifyProvider(opts: {
       "Single registered entity matched on this network."
     );
 
-    const checks = [websiteCheck, submitting, votepower, uptime, oneper];
+    const checks = [submitting, votepower, uptime, oneper];
     const qualified = checks.every((c) => c.status === "pass");
     return { network, voter, qualified, checks };
   }
@@ -234,31 +177,22 @@ export async function qualifyProvider(opts: {
 }
 
 /**
- * Batch qualification for many providers WITHOUT live website fetches (uses cached website
- * results only), so it is fast enough for the directory grid. Providers with no cached website
- * result get websiteHasAddress = null (unknown).
+ * Batch qualification for many providers, fast enough for the directory grid. Qualification is
+ * purely on-chain, so this is just a fan-out over qualifyProvider with no extra I/O per provider.
+ * `url` is accepted for caller convenience but is not used by qualification.
  */
 export async function qualifyProviders(
   providers: {
     id: string;
-    url: string | null;
+    url?: string | null;
     addresses: { address: string }[];
   }[]
 ): Promise<Map<string, Qualification>> {
-  const urls = Array.from(new Set(providers.map((p) => p.url).filter(Boolean))) as string[];
-  const cached = urls.length
-    ? await prisma.websiteCheck.findMany({ where: { url: { in: urls } } })
-    : [];
-  const websiteByUrl = new Map(cached.map((c) => [c.url, c.found]));
-
   const out = new Map<string, Qualification>();
   await Promise.all(
     providers.map(async (p) => {
-      // Website waiver is by on-chain tenure (handled in qualifyProvider), not claim date.
       const q = await qualifyProvider({
         addresses: p.addresses.map((a) => a.address),
-        url: p.url,
-        websiteHasAddress: p.url ? (websiteByUrl.get(p.url) ?? null) : null,
       });
       out.set(p.id, q);
     })
@@ -289,21 +223,17 @@ export async function evaluateQualification(): Promise<{
     if (e.lastEpochSeen > cur) latestPerNetwork.set(e.network, e.lastEpochSeen);
   }
 
-  // Build a map from any entity address -> the Flare Registry provider listing (for website/since).
+  // Build a map from any entity address -> the Flare Registry provider listing (for its full
+  // address set, so the fresh checklist can match on any of the listing's addresses).
   const provs = await prisma.provider.findMany({
     select: {
       id: true,
-      url: true,
       addresses: { select: { address: true } },
     },
   });
   const listingByAddress = new Map<string, (typeof provs)[number]>();
   for (const p of provs)
     for (const a of p.addresses) listingByAddress.set(a.address.toLowerCase(), p);
-
-  // Cached website results.
-  const websiteRows = await prisma.websiteCheck.findMany();
-  const websiteByUrl = new Map(websiteRows.map((w) => [w.url, w.found]));
 
   let latchedOn = 0;
   let revoked = 0;
@@ -356,8 +286,6 @@ export async function evaluateQualification(): Promise<{
 
       const fresh = await qualifyProvider({
         addresses: listing ? listing.addresses.map((a) => a.address) : [e.voter],
-        url: listing?.url ?? null,
-        websiteHasAddress: listing?.url ? (websiteByUrl.get(listing.url) ?? null) : null,
       });
       if (fresh.qualified) {
         qualified = true;
@@ -601,6 +529,3 @@ export async function purgeStaleProviders(opts?: { dryRun?: boolean }): Promise<
   // `deleted` kept as the field name for backward compatibility with callers; it now means archived.
   return { deleted: toArchive, restored: toRestore, dryRun };
 }
-
-// Re-export for callers that only need the website primitive.
-export { addressContainsAddress };
