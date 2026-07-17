@@ -19,6 +19,7 @@ export interface CardProvider {
   url: string;
   logo: string;
   qualified: boolean;
+  heldUntil: string | null;
   registered: boolean;
   managementGroup: boolean;
   verified: boolean;
@@ -290,6 +291,24 @@ export function DirectoryClient({
                       {t("card.checks")})
                     </summary>
                     <ul className="mt-2 space-y-1">
+                      {p.heldUntil && (
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-500 dark:text-amber-400">⏳</span>
+                          <span className="text-muted">
+                            <span className="font-medium">
+                              {t("detail.newProviderHoldLabel")}
+                            </span>
+                            {": "}
+                            {t("detail.newProviderHold", {
+                              date: new Date(p.heldUntil).toLocaleDateString(undefined, {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }),
+                            })}
+                          </span>
+                        </li>
+                      )}
                       {p.checks.map((c) => (
                         <li key={c.key} className="flex items-start gap-2">
                           <span

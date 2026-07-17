@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProviders, formatWeiCompact } from "@/lib/metrics";
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
-import { isHeldNewProvider } from "@/lib/governance";
+import { isHeldNewProvider, NEW_PROVIDER_WINDOW_DAYS } from "@/lib/governance";
 import { DirectoryClient, type CardProvider } from "@/components/directory-client";
 
 // Public directory. Fetches + computes here, hands a serializable shape to the client component.
@@ -58,6 +58,16 @@ export default async function Home({
     return (c ? isHeldNewProvider(c, now) : false) || !!g?.underReview || !!g?.pending;
   };
   const isQualified = (id: string) => (latched.get(id) ?? false) && !held(id);
+  // The auto-list date for a provider held solely by the new-provider clock (no live case), mirroring
+  // the provider detail page so the directory card explains the hold instead of silently showing a
+  // qualifying-but-unlisted provider. Null when not window-held or when a live case has no fixed end.
+  const heldUntil = (id: string) => {
+    const c = createdById.get(id);
+    const g = govByProvider.get(id);
+    const liveCase = !!g?.underReview || !!g?.pending;
+    if (!c || liveCase || !isHeldNewProvider(c, now)) return null;
+    return new Date(c.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString();
+  };
   // True if any qualification check passes. Zero passes = stale name, hidden even from "show all".
   const hasAnyPass = (id: string) =>
     (qualifications.get(id)?.checks ?? []).some((c) => c.status === "pass");
@@ -92,6 +102,7 @@ export default async function Home({
       url: p.url,
       logo: cardLogo(p.logoPath, p.logoURI),
       qualified: isQualified(p.id),
+      heldUntil: heldUntil(p.id),
       registered: !!m?.registered,
       managementGroup: mgByProvider.get(p.id) ?? false,
       verified: p.source !== "imported",
