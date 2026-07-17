@@ -325,18 +325,23 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       {d.checks.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-lg font-semibold">{t("card.qualification")}</h2>
-          {d.heldUntil && (
-            <div className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
-              {t("detail.newProviderHold", {
-                date: new Date(d.heldUntil).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                }),
-              })}
-            </div>
-          )}
           <ul className="surface space-y-2 rounded-xl border p-5 text-sm">
+            {d.heldUntil && (
+              <li className="flex items-start gap-2">
+                <span className="text-amber-500 dark:text-amber-400">⏳</span>
+                <span className="text-muted">
+                  <span className="font-medium">{t("detail.newProviderHoldLabel")}</span>
+                  {": "}
+                  {t("detail.newProviderHold", {
+                    date: new Date(d.heldUntil).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }),
+                  })}
+                </span>
+              </li>
+            )}
             {d.checks.map((c) => (
               <li key={c.key} className="flex items-start gap-2">
                 <span
