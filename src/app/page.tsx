@@ -39,24 +39,28 @@ export default async function Home({
   );
   const qualifications = await qualifyProviders(all);
 
+  const { governanceByProvider } = await import("@/lib/governance");
+  const govByProvider = await governanceByProvider();
+  const isSuspended = (id: string) => govByProvider.get(id)?.suspended ?? false;
+
   // New-provider hold: a provider inside its 30-day new-provider window (anchored on the signed-
   // claim date) is treated exactly like a not-yet-listed provider even if it already qualifies,
   // so a pre-warmed on-chain entity cannot register and instantly show as Qualified/listed before
   // the Management Group can react. Not MG-gated: it lists automatically once the window elapses.
+  // A live governance case (pending or under review) also holds it, independent of the clock, so a
+  // case opened late in the window keeps it unlisted through the vote instead of auto-listing at
+  // day 30 mid-vote (matches feed.ts).
   const now = new Date();
   const createdById = new Map(all.map((p) => [p.id, p.createdAt]));
   const held = (id: string) => {
     const c = createdById.get(id);
-    return c ? isHeldNewProvider(c, now) : false;
+    const g = govByProvider.get(id);
+    return (c ? isHeldNewProvider(c, now) : false) || !!g?.underReview || !!g?.pending;
   };
   const isQualified = (id: string) => (latched.get(id) ?? false) && !held(id);
   // True if any qualification check passes. Zero passes = stale name, hidden even from "show all".
   const hasAnyPass = (id: string) =>
     (qualifications.get(id)?.checks ?? []).some((c) => c.status === "pass");
-
-  const { governanceByProvider } = await import("@/lib/governance");
-  const govByProvider = await governanceByProvider();
-  const isSuspended = (id: string) => govByProvider.get(id)?.suspended ?? false;
 
   const listable = all.filter((p) => hasAnyPass(p.id));
   // Qualified count and the default view both exclude suspended providers. The "show all" view

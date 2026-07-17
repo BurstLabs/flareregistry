@@ -103,14 +103,24 @@ export default async function ProviderDetail({
     ].filter((r): r is { roleKey: string; role: string; address: string } => !!r.address),
   }));
 
-  // New-provider hold: meets every criterion (latched) but still inside its 30-day window, so it
-  // is not yet listed/Qualified. `heldUntil` is when it lists automatically (createdAt + window).
+  const gov = (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null;
+
+  // New-provider hold, decomposed into its two independent axes so the flag/badge logic stays clear:
+  //  - heldWindow: the raw 30-day new-provider clock (createdAt-anchored), regardless of criteria.
+  //  - liveCase:   a pending or under-review governance case (holds listing past the clock).
+  // meetsCriteria is the on-chain qualification latch. A provider is effectively Qualified/listed
+  // only when it meets criteria AND is not held by either axis (mirrors feed.ts and the directory).
   const nowDate = new Date();
   const meetsCriteria = latchedMap.get(p.id) ?? false;
-  const held = meetsCriteria && isHeldNewProvider(p.createdAt, nowDate);
-  const heldUntil = held
-    ? new Date(p.createdAt.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString()
-    : null;
+  const heldWindow = isHeldNewProvider(p.createdAt, nowDate);
+  const liveCase = !!gov?.underReview || !!gov?.pending;
+  const held = meetsCriteria && (heldWindow || liveCase);
+  // heldUntil (the "lists on {date}" note) reflects only the clock; a live case has no fixed end
+  // date, so we only surface the auto-list date when the sole reason for the hold is the window.
+  const heldUntil =
+    held && heldWindow && !liveCase
+      ? new Date(p.createdAt.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString()
+      : null;
 
   const data: DetailData = {
     name: p.name,
@@ -120,24 +130,24 @@ export default async function ProviderDetail({
     verified: p.source !== "imported",
     registered: !!metrics?.registered,
     managementGroup: (await (await import("@/lib/management-group")).managementGroupByProvider()).get(p.id) ?? false,
-    governance: (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null,
+    governance: gov,
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
     hasLogo: !!p.logoURI,
     // Flaggable: matched on-chain, not yet EFFECTIVELY qualified (a provider that meets every
     // criterion but is still inside its 30-day hold is not listed yet and IS still flaggable, which
     // is the whole point of the review window), inside the new-provider window, not already flagged,
-    // and no open case. Uses `held`/`meetsCriteria` so a held-but-criteria-meeting provider (e.g. a
-    // pre-warmed entrant) stays flaggable instead of vanishing the moment it latches.
+    // and not suspended. Gate on the raw window (`heldWindow`) so a held-but-criteria-meeting
+    // provider (e.g. a pre-warmed entrant) stays flaggable instead of vanishing the moment it latches.
     flaggable:
       entities.length > 0 &&
-      !(meetsCriteria && !held) &&
+      !(meetsCriteria && !heldWindow) &&
       !p.flaggedOnce &&
       !p.suspended &&
       inNewProviderWindow(p.createdAt, nowDate),
-    // New-provider hold: qualifying providers still inside their 30-day new-provider window are
-    // not shown as Qualified/listed yet (same effect as listed:false), matching the feed and the
-    // directory. Not MG-gated; auto-lists once the window elapses. heldUntil explains the wait.
+    // New-provider hold: qualifying providers still inside their 30-day window (or with a live case)
+    // are not shown as Qualified/listed yet (same effect as listed:false), matching the feed and the
+    // directory. Not MG-gated; auto-lists once the window elapses and no case is open.
     qualified: meetsCriteria && !held,
     heldUntil,
     network: metrics?.network ?? null,

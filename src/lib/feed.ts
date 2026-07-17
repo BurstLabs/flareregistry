@@ -184,7 +184,16 @@ export async function buildProviderList(): Promise<ProviderList> {
     // window (anchored on the signed-claim date) has elapsed, so a pre-warmed on-chain entity
     // cannot register and instantly appear in wallets before the Management Group can react. The
     // Qualified badge still reflects `qualified`; only feed listing waits out the window.
-    const held = isHeldNewProvider(a.provider.createdAt, now);
+    //
+    // A live governance case ALSO holds listing, independent of the clock: a flag case can be
+    // opened as late as day 29 of the window and runs ~14 more days, outliving the hold. Without
+    // this, the provider would auto-list at day 30 while its suspension vote is still open, then get
+    // yanked back only at the verdict. Keep it unlisted while any case is pending or under review so
+    // it never reaches wallets mid-vote; a CLEARED/expired case lets it list normally afterwards.
+    const held =
+      isHeldNewProvider(a.provider.createdAt, now) ||
+      (gov?.underReview ?? false) ||
+      (gov?.pending ?? false);
     const managementGroup = mgByProvider.get(providerId) ?? false;
     // Emit extras if there's anything to report: on-chain match, verified owner, or qualified.
     const extras: FeedProviderExtras | undefined =
