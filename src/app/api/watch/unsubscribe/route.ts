@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 // Idempotent: an unknown/already-removed token still lands on the page, revealing nothing.
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token") ?? "";
-  const base = req.nextUrl.origin;
+  // Redirect to the PUBLIC base, not req.nextUrl.origin: behind Cloudflare the app's own origin is the
+  // internal host (e.g. http://localhost:3060), which is not reachable from the user's browser.
+  const base = process.env.PUBLIC_BASE_URL ?? req.nextUrl.origin;
 
   if (token) {
     // deleteMany (not delete) so a missing token is a no-op instead of a 404/throw.
