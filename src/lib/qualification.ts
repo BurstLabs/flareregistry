@@ -86,7 +86,6 @@ export async function qualifyProvider(opts: {
         unknown("submitting", "Submitting prices", "Not matched to an on-chain FTSO entity."),
         unknown("votepower", "Sufficient vote power", "Not matched to an on-chain FTSO entity."),
         unknown("uptime", "Uptime (last 9 epochs)", "Not matched to an on-chain FTSO entity."),
-        unknown("oneper", "One provider per network", "Not matched to an on-chain FTSO entity."),
       ],
     };
   }
@@ -184,14 +183,11 @@ export async function qualifyProvider(opts: {
             );
     }
 
-    // 4) One provider per network: this team has a single registered entity on this network.
-    const oneper = pass(
-      "oneper",
-      "One provider per network",
-      "Single registered entity matched on this network."
-    );
-
-    const checks = [submitting, votepower, uptime, oneper];
+    // Note: "one provider per network" is NOT a verifiable on-chain criterion. It is an
+    // operator attestation (we do not cluster entities by operator to detect entity-splitting;
+    // that is a case-by-case Management Group judgment). It is surfaced as a self-declared item
+    // in the UI, not as a pass/fail qualification check.
+    const checks = [submitting, votepower, uptime];
     const qualified = checks.every((c) => c.status === "pass");
     return { network, voter, qualified, checks };
   }

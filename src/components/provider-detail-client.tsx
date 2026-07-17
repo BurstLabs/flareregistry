@@ -378,26 +378,27 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       )}
 
       {/* Self-declared */}
-      {(d.privateNode || d.algorithm) && (
-        <section className="mt-8">
-          <h2 className="mb-1 text-lg font-semibold">{t("card.selfDeclared")}</h2>
-          <p className="mb-3 text-xs text-faint">{t("detail.selfDeclaredNote")}</p>
-          <div className="flex flex-wrap gap-2 text-sm">
-            {d.privateNode && (
-              <span className="rounded-md border border-themed px-3 py-1">
-                {t("card.privateNode")}
-              </span>
-            )}
-            {d.algorithm && (
-              <span className="rounded-md border border-themed px-3 py-1">
-                {d.algorithm === "in-house"
-                  ? t("card.algoInHouse")
-                  : t("card.algoOpenSource")}
-              </span>
-            )}
-          </div>
-        </section>
-      )}
+      <section className="mt-8">
+        <h2 className="mb-1 text-lg font-semibold">{t("card.selfDeclared")}</h2>
+        <p className="mb-3 text-xs text-faint">{t("detail.selfDeclaredNote")}</p>
+        <div className="flex flex-wrap gap-2 text-sm">
+          <span className="rounded-md border border-themed px-3 py-1">
+            {t("card.oneEntityDeclared")}
+          </span>
+          {d.privateNode && (
+            <span className="rounded-md border border-themed px-3 py-1">
+              {t("card.privateNode")}
+            </span>
+          )}
+          {d.algorithm && (
+            <span className="rounded-md border border-themed px-3 py-1">
+              {d.algorithm === "in-house"
+                ? t("card.algoInHouse")
+                : t("card.algoOpenSource")}
+            </span>
+          )}
+        </div>
+      </section>
 
       {/* History */}
       {d.history.length >= 2 && (

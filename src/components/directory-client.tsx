@@ -350,23 +350,24 @@ export function DirectoryClient({
                   ))}
                 </div>
 
-                {(p.privateNode || p.algorithm) && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-faint">
-                    <span>{t("card.selfDeclared")}:</span>
-                    {p.privateNode && (
-                      <span className="rounded-md border border-themed px-2 py-0.5">
-                        {t("card.privateNode")}
-                      </span>
-                    )}
-                    {p.algorithm && (
-                      <span className="rounded-md border border-themed px-2 py-0.5">
-                        {p.algorithm === "in-house"
-                          ? t("card.algoInHouse")
-                          : t("card.algoOpenSource")}
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-faint">
+                  <span>{t("card.selfDeclared")}:</span>
+                  <span className="rounded-md border border-themed px-2 py-0.5">
+                    {t("card.oneEntityDeclared")}
+                  </span>
+                  {p.privateNode && (
+                    <span className="rounded-md border border-themed px-2 py-0.5">
+                      {t("card.privateNode")}
+                    </span>
+                  )}
+                  {p.algorithm && (
+                    <span className="rounded-md border border-themed px-2 py-0.5">
+                      {p.algorithm === "in-house"
+                        ? t("card.algoInHouse")
+                        : t("card.algoOpenSource")}
+                    </span>
+                  )}
+                </div>
 
                 <a
                   href={safeExternalUrl(p.url)}
