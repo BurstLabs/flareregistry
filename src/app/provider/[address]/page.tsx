@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProvider, formatWeiCompact, listingAddressesForSigner } from "@/lib/metrics";
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
-import { isHeldNewProvider, NEW_PROVIDER_WINDOW_DAYS } from "@/lib/governance";
+import { isHeldNewProvider, inNewProviderWindow, NEW_PROVIDER_WINDOW_DAYS } from "@/lib/governance";
 import { ProviderDetailClient, type DetailData } from "@/components/provider-detail-client";
 
 export const dynamic = "force-dynamic";
@@ -124,14 +124,17 @@ export default async function ProviderDetail({
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
     hasLogo: !!p.logoURI,
-    // Flaggable: matched on-chain, not yet qualified, inside the new-provider window, not already
-    // flagged, and no open case. This gates whether the member Flag form is offered.
+    // Flaggable: matched on-chain, not yet EFFECTIVELY qualified (a provider that meets every
+    // criterion but is still inside its 30-day hold is not listed yet and IS still flaggable, which
+    // is the whole point of the review window), inside the new-provider window, not already flagged,
+    // and no open case. Uses `held`/`meetsCriteria` so a held-but-criteria-meeting provider (e.g. a
+    // pre-warmed entrant) stays flaggable instead of vanishing the moment it latches.
     flaggable:
       entities.length > 0 &&
-      !(latchedMap.get(p.id) ?? false) &&
+      !(meetsCriteria && !held) &&
       !p.flaggedOnce &&
       !p.suspended &&
-      (await (await import("@/lib/governance")).inNewProviderWindow(p.createdAt, new Date())),
+      inNewProviderWindow(p.createdAt, nowDate),
     // New-provider hold: qualifying providers still inside their 30-day new-provider window are
     // not shown as Qualified/listed yet (same effect as listed:false), matching the feed and the
     // directory. Not MG-gated; auto-lists once the window elapses. heldUntil explains the wait.
