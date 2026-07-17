@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProvider, formatWeiCompact, listingAddressesForSigner } from "@/lib/metrics";
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
+import { isHeldNewProvider, NEW_PROVIDER_WINDOW_DAYS } from "@/lib/governance";
 import { ProviderDetailClient, type DetailData } from "@/components/provider-detail-client";
 
 export const dynamic = "force-dynamic";
@@ -102,6 +103,15 @@ export default async function ProviderDetail({
     ].filter((r): r is { roleKey: string; role: string; address: string } => !!r.address),
   }));
 
+  // New-provider hold: meets every criterion (latched) but still inside its 30-day window, so it
+  // is not yet listed/Qualified. `heldUntil` is when it lists automatically (createdAt + window).
+  const nowDate = new Date();
+  const meetsCriteria = latchedMap.get(p.id) ?? false;
+  const held = meetsCriteria && isHeldNewProvider(p.createdAt, nowDate);
+  const heldUntil = held
+    ? new Date(p.createdAt.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString()
+    : null;
+
   const data: DetailData = {
     name: p.name,
     description: p.description,
@@ -124,10 +134,9 @@ export default async function ProviderDetail({
       (await (await import("@/lib/governance")).inNewProviderWindow(p.createdAt, new Date())),
     // New-provider hold: qualifying providers still inside their 30-day new-provider window are
     // not shown as Qualified/listed yet (same effect as listed:false), matching the feed and the
-    // directory. Not MG-gated; auto-lists once the window elapses.
-    qualified:
-      (latchedMap.get(p.id) ?? false) &&
-      !(await import("@/lib/governance")).isHeldNewProvider(p.createdAt, new Date()),
+    // directory. Not MG-gated; auto-lists once the window elapses. heldUntil explains the wait.
+    qualified: meetsCriteria && !held,
+    heldUntil,
     network: metrics?.network ?? null,
     votePower: formatWeiCompact(metrics?.wNatWeight ?? null),
     votePowerCapped: formatWeiCompact(metrics?.wNatCappedWeight ?? null),

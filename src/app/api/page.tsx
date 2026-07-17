@@ -87,7 +87,7 @@ export default function ApiDocs() {
   "verified": true,                 // owner proved control of this address by signature
   "registered": true,               // matched to a registered FTSO entity on-chain
   "managementGroup": true,          // member of Flare's on-chain FTSO Management Group
-  "qualified": true,                // meets all automatable qualification criteria
+  "qualified": true,                // meets all automatable qualification criteria (new providers are held 30d before listed flips true)
   "network": "flare",               // "flare" | "songbird"
   "feePercent": 20,                 // delegation fee, percent
   "votePower": "124071601...",      // wNat weight, wei-scale string

@@ -22,6 +22,9 @@ export interface DetailData {
   hasLogo: boolean;
   flaggable: boolean;
   qualified: boolean;
+  // Set (ISO date) only when the provider meets every criterion but is still inside its 30-day
+  // new-provider hold, so it is not yet listed/Qualified. The date is when it lists automatically.
+  heldUntil: string | null;
   network: string | null;
   votePower: string | null;
   votePowerCapped: string | null;
@@ -322,6 +325,17 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       {d.checks.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-lg font-semibold">{t("card.qualification")}</h2>
+          {d.heldUntil && (
+            <div className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-300">
+              {t("detail.newProviderHold", {
+                date: new Date(d.heldUntil).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }),
+              })}
+            </div>
+          )}
           <ul className="surface space-y-2 rounded-xl border p-5 text-sm">
             {d.checks.map((c) => (
               <li key={c.key} className="flex items-start gap-2">
