@@ -35,6 +35,8 @@ model Provider {
   privateNode Boolean? // null = not declared
   // algorithm: "in-house" | "open-source" | null (not declared).
   algorithm   String?
+  // singleEntity: operator attests they run one registered entity per network (no entity-splitting).
+  singleEntity Boolean? // null = not declared
 
   // Governance (new-provider flag mechanism, see docs/governance-flag-mechanism.md).
   // flaggedOnce: this account has already been through the flag process once (once-only guard).

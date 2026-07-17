@@ -47,6 +47,7 @@ export async function GET(
     // "imported" means seeded from the source list and not yet owner-claimed.
     source: p.source,
     privateNode: p.privateNode,
+    singleEntity: p.singleEntity,
     algorithm: p.algorithm,
     addresses: p.addresses.map((a) => ({
       chainId: a.chainId,

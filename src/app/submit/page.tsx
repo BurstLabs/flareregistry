@@ -211,6 +211,7 @@ function SubmitPageInner() {
   const [url, setUrl] = useState("");
   // Self-declared (provider-attested) fields.
   const [privateNode, setPrivateNode] = useState(false);
+  const [singleEntity, setSingleEntity] = useState(false);
   const [algorithm, setAlgorithm] = useState<"" | "in-house" | "open-source">("");
   const [busy, setBusy] = useState(false);
   // Set when the signed-in address already exists in the registry, so the form is a claim/edit.
@@ -339,6 +340,7 @@ function SubmitPageInner() {
       setExisting({ source: p.source ?? "submitted" });
       if (p.logoURI) setLogoUri(p.logoURI);
       setPrivateNode(!!p.privateNode);
+      setSingleEntity(!!p.singleEntity);
       if (p.algorithm === "in-house" || p.algorithm === "open-source") setAlgorithm(p.algorithm);
       // Pin chainId to the network the save should write. Priority:
       //  1. The network the user explicitly picked in the verify step (preferredChainId). This is the
@@ -513,6 +515,7 @@ function SubmitPageInner() {
           description,
           url,
           privateNode,
+          singleEntity,
           algorithm: algorithm || null,
           logoURI: logoUri || null,
           addresses: [{ chainId, address }],
@@ -786,6 +789,14 @@ function SubmitPageInner() {
             <p className="mb-2 text-sm font-medium">{t("submit.selfDeclared.title")}</p>
             <p className="mb-3 text-xs text-faint">{t("submit.selfDeclared.note")}</p>
             <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={singleEntity}
+                onChange={(e) => setSingleEntity(e.target.checked)}
+              />
+              {t("submit.selfDeclared.singleEntity")}
+            </label>
+            <label className="mt-3 flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 checked={privateNode}

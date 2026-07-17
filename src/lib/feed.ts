@@ -49,6 +49,7 @@ export interface FeedProviderExtras {
   selfDeclared: {
     privateNode: boolean | null;
     algorithm: string | null; // "in-house" | "open-source" | null
+    singleEntity: boolean | null; // operator attests one registered entity per network
   };
   // Qualification liveness/risk: how close a qualified provider is to losing Qualified. A
   // qualified provider is revoked after `revokeAfterEpochs` consecutive epochs of not submitting.
@@ -244,6 +245,7 @@ export async function buildProviderList(): Promise<ProviderList> {
             selfDeclared: {
               privateNode: a.provider.privateNode,
               algorithm: a.provider.algorithm,
+              singleEntity: a.provider.singleEntity,
             },
             qualification: {
               qualifiedSince: risk?.qualifiedSince ?? null,

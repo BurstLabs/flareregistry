@@ -43,6 +43,7 @@ export interface DetailData {
     connected: boolean | null;
   }[];
   privateNode: boolean;
+  singleEntity: boolean;
   algorithm: string | null;
   checks: { key: string; label: string; status: "pass" | "fail" | "unknown"; detail: string }[];
   addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
@@ -378,27 +379,31 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       )}
 
       {/* Self-declared */}
-      <section className="mt-8">
-        <h2 className="mb-1 text-lg font-semibold">{t("card.selfDeclared")}</h2>
-        <p className="mb-3 text-xs text-faint">{t("detail.selfDeclaredNote")}</p>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <span className="rounded-md border border-themed px-3 py-1">
-            {t("card.oneEntityDeclared")}
-          </span>
-          {d.privateNode && (
-            <span className="rounded-md border border-themed px-3 py-1">
-              {t("card.privateNode")}
-            </span>
-          )}
-          {d.algorithm && (
-            <span className="rounded-md border border-themed px-3 py-1">
-              {d.algorithm === "in-house"
-                ? t("card.algoInHouse")
-                : t("card.algoOpenSource")}
-            </span>
-          )}
-        </div>
-      </section>
+      {(d.singleEntity || d.privateNode || d.algorithm) && (
+        <section className="mt-8">
+          <h2 className="mb-1 text-lg font-semibold">{t("card.selfDeclared")}</h2>
+          <p className="mb-3 text-xs text-faint">{t("detail.selfDeclaredNote")}</p>
+          <div className="flex flex-wrap gap-2 text-sm">
+            {d.singleEntity && (
+              <span className="rounded-md border border-themed px-3 py-1">
+                {t("card.oneEntityDeclared")}
+              </span>
+            )}
+            {d.privateNode && (
+              <span className="rounded-md border border-themed px-3 py-1">
+                {t("card.privateNode")}
+              </span>
+            )}
+            {d.algorithm && (
+              <span className="rounded-md border border-themed px-3 py-1">
+                {d.algorithm === "in-house"
+                  ? t("card.algoInHouse")
+                  : t("card.algoOpenSource")}
+              </span>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* History */}
       {d.history.length >= 2 && (

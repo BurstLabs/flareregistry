@@ -189,6 +189,7 @@ export async function POST(req: NextRequest) {
       url: input.url,
       privateNode: input.privateNode ?? null,
       algorithm: input.algorithm ?? null,
+      singleEntity: input.singleEntity ?? null,
       source: "submitted",
       // A logo uploaded before publish goes through the SAME review window as any change: it is
       // stored as PENDING (held LOGO_REVIEW_DAYS, promoted by cron), not live. The /api/provider/logo

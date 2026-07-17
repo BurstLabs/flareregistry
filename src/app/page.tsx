@@ -140,6 +140,7 @@ export default async function Home({
         new Set(p.addresses.map((a) => getChain(a.chainId)?.name ?? `chain ${a.chainId}`))
       ),
       privateNode: !!p.privateNode,
+      singleEntity: !!p.singleEntity,
       algorithm: p.algorithm,
       detailAddress: p.addresses[0]?.address ?? "",
     };

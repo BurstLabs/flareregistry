@@ -163,6 +163,7 @@ export default async function ProviderDetail({
     rewardEpoch: metrics?.lastEpoch ?? null,
     validators,
     privateNode: !!p.privateNode,
+    singleEntity: !!p.singleEntity,
     algorithm: p.algorithm,
     checks: (qual?.checks ?? []).map((c) => ({
       key: c.key,
