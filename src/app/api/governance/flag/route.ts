@@ -196,5 +196,20 @@ export async function POST(req: NextRequest) {
   });
 
   if (result.opened) await publishFeedToRepo();
+
+  // Notify watchers (best-effort, never blocks the flag). Two distinct events:
+  //  - the case just OPENED (2nd co-initiator) -> "is now in a Management Group vote"
+  //  - the FIRST flag was raised (pending, needs a 2nd) -> "has been flagged"
+  try {
+    const { notifyWatchers } = await import("@/lib/watch");
+    if (result.opened) {
+      await notifyWatchers(providerId, "is now in a Management Group vote");
+    } else if (result.initiations === 1) {
+      await notifyWatchers(providerId, "has been flagged by a Management Group member");
+    }
+  } catch (e) {
+    console.error("[watch] flag notify failed:", e instanceof Error ? e.message : e);
+  }
+
   return NextResponse.json({ ok: true, ...result, required: CO_INITIATORS_REQUIRED });
 }

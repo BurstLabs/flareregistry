@@ -145,6 +145,10 @@ export default async function ProviderDetail({
       !p.flaggedOnce &&
       !p.suspended &&
       inNewProviderWindow(p.createdAt, nowDate),
+    // Watchable: a new provider still in its review window. Anyone may subscribe to be emailed if it
+    // is flagged; the subscription is shredded once it lists/qualifies (or is denied). Uses the raw
+    // window (heldWindow) so it is offered throughout review regardless of criteria state.
+    watchable: heldWindow && !p.suspended,
     // New-provider hold: qualifying providers still inside their 30-day window (or with a live case)
     // are not shown as Qualified/listed yet (same effect as listed:false), matching the feed and the
     // directory. Not MG-gated; auto-lists once the window elapses and no case is open.

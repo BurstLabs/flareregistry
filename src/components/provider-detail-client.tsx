@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
 import { FlagAction, ReportLogoAction } from "./governance-actions";
+import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { ManageListingButton } from "./manage-listing-button";
 
@@ -21,6 +22,9 @@ export interface DetailData {
   providerId: string;
   hasLogo: boolean;
   flaggable: boolean;
+  // True while the provider is a new provider in its review window: anyone may subscribe to be
+  // emailed if it is flagged. Drives the self-service watch box.
+  watchable: boolean;
   qualified: boolean;
   // Set (ISO date) only when the provider meets every criterion but is still inside its 30-day
   // new-provider hold, so it is not yet listed/Qualified. The date is when it lists automatically.
@@ -250,6 +254,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
 
       {/* Management Group flag action (new providers only, when not already under review). */}
       {d.flaggable && !d.governance?.underReview && <FlagAction providerId={d.providerId} />}
+
+      {/* Self-service watch: anyone can be emailed if this new provider is flagged, during review. */}
+      {d.watchable && (
+        <div className="mt-3">
+          <WatchAction providerId={d.providerId} />
+        </div>
+      )}
 
       {/* Metrics (the FTSO delegation fee is intentionally not shown - the validator fee, shown per
           node in the Validators section, is the relevant one). */}

@@ -28,6 +28,35 @@ function getTransport(): nodemailer.Transporter {
   return transporter;
 }
 
+// ---------------------------------------------------------------------------
+// Public (subscriber-facing) sender. Operator notices above go to ONE internal
+// inbox over the Zoho SMTP above. Subscriber mail (provider-watch flag alerts) goes to arbitrary
+// external addresses, so it sends from a flareregistry.com identity over Resend for deliverability
+// (SPF/DKIM aligned on our own domain), NOT from the operator's Zoho address. Resend speaks plain
+// SMTP, so we reuse nodemailer: host smtp.resend.com, user "resend", pass = RESEND_API_KEY.
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+// From identity for subscriber mail. Defaults to a no-reply flareregistry.com address; override via env.
+const PUBLIC_FROM = process.env.PUBLIC_MAIL_FROM ?? "Flare Registry <noreply@flareregistry.com>";
+// Public site base for links in subscriber emails (confirm / unsubscribe).
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? "https://flareregistry.com";
+
+export function publicMailerConfigured(): boolean {
+  return !!RESEND_API_KEY;
+}
+
+let publicTransporter: nodemailer.Transporter | null = null;
+function getPublicTransport(): nodemailer.Transporter {
+  if (!publicTransporter) {
+    publicTransporter = nodemailer.createTransport({
+      host: "smtp.resend.com",
+      port: 587,
+      secure: false, // STARTTLS on 587
+      auth: { user: "resend", pass: RESEND_API_KEY },
+    });
+  }
+  return publicTransporter;
+}
+
 export interface ContactMessage {
   name: string;
   email: string; // the sender's address (so we can reply); shown in the body only
@@ -155,6 +184,73 @@ export async function sendConsumerSubmissionNotice(n: ConsumerSubmissionNotice):
     from: SMTP_FROM,
     to: LOGO_NOTICE_TO,
     subject: `[Flare Registry] Consumer listing pending review (${n.kind}): ${n.name}`,
+    text,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Provider-watch (subscriber-facing) mail. Sent from the public flareregistry.com identity via the
+// Resend transport. All best-effort: a send failure must never break the user action that triggered
+// it. providerName is untrusted, so it is passed through safeName() before landing in a header/subject.
+
+/**
+ * Double opt-in confirmation for a new provider watch. Sends the subscriber a link that confirms the
+ * watch (and doubles as the unsubscribe link). No-op if the public mailer is not configured.
+ */
+export async function sendWatchConfirmEmail(opts: {
+  to: string;
+  providerName: string;
+  token: string;
+}): Promise<void> {
+  if (!publicMailerConfigured()) return;
+  const name = safeName(opts.providerName);
+  const confirmUrl = `${PUBLIC_BASE_URL}/api/watch/confirm?token=${encodeURIComponent(opts.token)}`;
+  const text = [
+    `You asked to be notified if the new Flare Registry provider "${name}" is flagged by the`,
+    `Management Group during its review window.`,
+    ``,
+    `Confirm this so we can email you:`,
+    `${confirmUrl}`,
+    ``,
+    `If you did not request this, ignore this email and nothing will be sent. Your address is kept`,
+    `only until "${name}" finishes review (it lists, qualifies, or is denied), then it is deleted.`,
+  ].join("\n");
+  await getPublicTransport().sendMail({
+    from: PUBLIC_FROM,
+    to: opts.to,
+    subject: `Confirm your watch on ${name}`,
+    text,
+  });
+}
+
+/**
+ * Notify one confirmed watcher about a governance event on the provider they watch. `event` is a
+ * short human phrase (e.g. "has been flagged", "is now in a Management Group vote", "case was
+ * decided: DENIED"). The link goes to the provider page. Best-effort; no-op if not configured.
+ */
+export async function sendWatchFlagNotice(opts: {
+  to: string;
+  providerName: string;
+  providerPath: string; // e.g. /provider/0xabc...
+  event: string;
+  token: string; // for the one-click unsubscribe link
+}): Promise<void> {
+  if (!publicMailerConfigured()) return;
+  const name = safeName(opts.providerName);
+  const providerUrl = `${PUBLIC_BASE_URL}${opts.providerPath}`;
+  const unsubUrl = `${PUBLIC_BASE_URL}/api/watch/unsubscribe?token=${encodeURIComponent(opts.token)}`;
+  const text = [
+    `The Flare Registry provider you are watching, "${name}", ${opts.event}.`,
+    ``,
+    `See the provider and its governance case: ${providerUrl}`,
+    ``,
+    `You are receiving this because you subscribed to watch this provider during its review window.`,
+    `Unsubscribe: ${unsubUrl}`,
+  ].join("\n");
+  await getPublicTransport().sendMail({
+    from: PUBLIC_FROM,
+    to: opts.to,
+    subject: `${name}: ${opts.event}`,
     text,
   });
 }

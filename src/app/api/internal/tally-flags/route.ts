@@ -109,6 +109,19 @@ export async function POST(req: NextRequest) {
         await tx.provider.update({ where: { id: c.providerId }, data: { suspended: suspend } });
       });
       transitions.push({ caseId: c.id, to: decided });
+
+      // Notify watchers of the verdict, then shred their emails: the case is now decided, so the
+      // provider has left review (denied -> permanently off the feed; cleared -> will list), and we
+      // retain subscriber emails only during review. Best-effort; never fail the tally over email.
+      try {
+        const { notifyWatchers, shredWatches } = await import("@/lib/watch");
+        if (!c.isReVote) {
+          await notifyWatchers(c.providerId, `Management Group case was decided: ${decided}`);
+        }
+        await shredWatches(c.providerId);
+      } catch (e) {
+        console.error("[watch] verdict notify/shred failed:", e instanceof Error ? e.message : e);
+      }
     }
   }
 

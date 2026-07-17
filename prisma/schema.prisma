@@ -63,9 +63,35 @@ model Provider {
   addresses   ProviderAddress[]
   flagCases   ProviderFlagCase[]
   logoReports LogoReport[]
+  watches     ProviderWatch[]
 
   @@index([archivedAt])
   @@index([logoPendingAt])
+}
+
+// A self-service, per-provider email watch. Anyone (no wallet) can ask to be emailed if a NEW
+// provider is flagged, while it is still in its review window. Privacy by design: these rows exist
+// ONLY while the provider is under review. When the provider lists/qualifies (or is denied and thus
+// permanently off the feed), every watch for it is DELETED (the email is shredded), so we never
+// retain a subscriber's address once there is nothing left to notify them about.
+//
+// Double opt-in: a watch is created unconfirmed with a random token; a confirmation link flips
+// `confirmed` true. Only confirmed watches are emailed, so nobody can subscribe a stranger's inbox.
+model ProviderWatch {
+  id         String   @id @default(cuid())
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  // Lowercased email address. Unique per provider so a re-subscribe updates rather than duplicates.
+  email      String
+  // Double opt-in: false until the confirmation link is followed. Only confirmed watches are sent.
+  confirmed  Boolean  @default(false)
+  // Random URL-safe token for the confirm (and one-click unsubscribe) link. Single value reused for both.
+  token      String   @unique
+  createdAt  DateTime @default(now())
+  confirmedAt DateTime?
+
+  @@unique([providerId, email])
+  @@index([providerId])
 }
 
 // Append-only record of a logo being reported as inappropriate by a Management Group member. History

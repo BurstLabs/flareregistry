@@ -42,7 +42,13 @@ export type ApiErrorCode =
   | "ADDRESS_OTHER_LISTING"
   | "ADDRESS_NOT_ON_LISTING"
   | "TESTNET_NOT_SUPPORTED"
-  | "NETWORK_ALREADY_LINKED";
+  | "NETWORK_ALREADY_LINKED"
+  // provider-watch (email notifications)
+  | "MAIL_UNCONFIGURED"
+  | "WATCH_INVALID"
+  | "PROVIDER_NOT_FOUND"
+  | "NOT_WATCHABLE"
+  | "MAIL_FAILED";
 
 // The map from code to the i18n key the client should render. Kept here so server and client agree.
 export const API_ERROR_I18N: Record<ApiErrorCode, string> = {
@@ -75,6 +81,11 @@ export const API_ERROR_I18N: Record<ApiErrorCode, string> = {
   ADDRESS_NOT_ON_LISTING: "apiErr.addressNotOnListing",
   TESTNET_NOT_SUPPORTED: "apiErr.testnetNotSupported",
   NETWORK_ALREADY_LINKED: "apiErr.networkAlreadyLinked",
+  MAIL_UNCONFIGURED: "apiErr.mailUnconfigured",
+  WATCH_INVALID: "apiErr.watchInvalid",
+  PROVIDER_NOT_FOUND: "apiErr.providerNotFound",
+  NOT_WATCHABLE: "apiErr.notWatchable",
+  MAIL_FAILED: "apiErr.mailFailed",
 };
 
 // Helper to build a coded error response: { error, code }, with the given HTTP status.

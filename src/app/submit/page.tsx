@@ -18,7 +18,7 @@ import { apiErrorMessage } from "@/lib/i18n";
 // Kept deliberately minimal: one address (the connected wallet) per submission. Additional
 // addresses on other chains are added by repeating the flow with that wallet/chain.
 
-type Step = "connect" | "verify" | "form";
+type Step = "connect" | "verify" | "form" | "notify";
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -220,6 +220,10 @@ function SubmitPageInner() {
   // Cross-network linking state (add a second network's address to this listing).
   const [logoMsg, setLogoMsg] = useState<string>("");
   const [logoOk, setLogoOk] = useState(false);
+  // After a brand-new listing is saved, the canonical listing address (to link to) and providerId
+  // (to offer the flag-alert opt-in for). Set only for genuinely new providers, not edits/claims.
+  const [savedAddress, setSavedAddress] = useState<string>("");
+  const [savedProviderId, setSavedProviderId] = useState<string>("");
 
   // Clicking "List your provider" in the nav (-> /submit, no manage param) means "start fresh".
   // If we're sitting on a signed-in, prefilled listing, reset back to the empty connect step so
@@ -518,9 +522,18 @@ function SubmitPageInner() {
       if (!res.ok) {
         throw new Error(explainError(body.error, t) ?? t("submit.err.saveFailed"));
       }
-      // On success, send the owner to their live listing. Use the canonical address the server
-      // returns (the connected wallet may be a role address that is not itself a listing page).
-      router.push(`/provider/${(body.address ?? address).toLowerCase()}`);
+      // On success, use the canonical address the server returns (the connected wallet may be a role
+      // address that is not itself a listing page).
+      const canonical = (body.address ?? address).toLowerCase();
+      if (!existing) {
+        // Brand-new listing: offer the flag-alert opt-in before sending them to their page. New
+        // providers are the party most affected by a flag, so this is the natural moment to ask.
+        setSavedAddress(canonical);
+        setSavedProviderId(body.id ?? "");
+        setStep("notify");
+      } else {
+        router.push(`/provider/${canonical}`);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : t("submit.err.saveFailed"));
     } finally {
@@ -848,6 +861,117 @@ function SubmitPageInner() {
         </div>
       )}
 
+      {step === "notify" && (
+        <NotifyStep
+          providerId={savedProviderId}
+          onDone={() => router.push(`/provider/${savedAddress}`)}
+          t={t}
+        />
+      )}
+
+    </div>
+  );
+}
+
+// Final step for a brand-new listing: offer the flag-alert opt-in before sending the owner to their
+// page. Posts to the same /api/watch endpoint (double opt-in). Skipping just proceeds to the listing.
+function NotifyStep({
+  providerId,
+  onDone,
+  t,
+}: {
+  providerId: string;
+  onDone: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function subscribe(e: React.FormEvent) {
+    e.preventDefault();
+    setErr("");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/watch", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ providerId, email, website }),
+      });
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        setErr(explainError(b.error, t) ?? t("watch.error"));
+        return;
+      }
+      setSent(true);
+    } catch {
+      setErr(t("watch.error"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-6 rounded border border-themed bg-elev p-5">
+      <p className="text-sm font-medium">{t("submit.notify.heading")}</p>
+      <p className="mt-1 text-sm text-muted">{t("submit.notify.body")}</p>
+      {sent ? (
+        <div className="mt-3">
+          <p className="text-sm text-emerald-400">{t("watch.checkEmail")}</p>
+          <button
+            type="button"
+            onClick={onDone}
+            className="mt-3 rounded border border-themed px-4 py-2 text-sm hover:border-beacon/60"
+          >
+            {t("submit.notify.continue")}
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={subscribe} className="mt-3">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              maxLength={160}
+              placeholder={t("watch.emailPlaceholder")}
+              className="block w-full rounded border border-themed bg-elev px-3 py-2 text-sm outline-none focus:border-beacon/60"
+            />
+            <input
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              className="hidden"
+              aria-hidden="true"
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className="rounded border border-beacon/60 px-4 py-2 text-sm text-beacon hover:bg-beacon/10 disabled:opacity-50"
+            >
+              {busy ? t("watch.submitting") : t("watch.submit")}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-faint">{t("watch.privacyNote")}</p>
+          {err && (
+            <p role="alert" className="mt-2 text-sm text-flare">
+              {err}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={onDone}
+            className="mt-3 text-sm text-faint underline hover:text-muted"
+          >
+            {t("submit.notify.skip")}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
