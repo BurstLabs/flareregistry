@@ -58,14 +58,19 @@ export default async function Home({
     return (c ? isHeldNewProvider(c, now) : false) || !!g?.underReview || !!g?.pending;
   };
   const isQualified = (id: string) => (latched.get(id) ?? false) && !held(id);
-  // The auto-list date for a provider held solely by the new-provider clock (no live case), mirroring
-  // the provider detail page so the directory card explains the hold instead of silently showing a
-  // qualifying-but-unlisted provider. Null when not window-held or when a live case has no fixed end.
+  // The auto-list date for a provider held SOLELY by the new-provider clock, mirroring the provider
+  // detail page so the directory card explains the hold instead of silently showing a qualifying-but-
+  // unlisted provider. Gated on meetsCriteria: the hold is only the reason a provider isn't listed
+  // when it already passes every on-chain check. A provider still failing a check (e.g. uptime) is
+  // unlisted because of that failure, not the clock, so surfacing "lists on {date}" would be
+  // misleading (the date is irrelevant until the check passes). Null then, and null when a live case
+  // has no fixed end date. Matches provider/[address]/page.tsx exactly.
   const heldUntil = (id: string) => {
     const c = createdById.get(id);
     const g = govByProvider.get(id);
     const liveCase = !!g?.underReview || !!g?.pending;
-    if (!c || liveCase || !isHeldNewProvider(c, now)) return null;
+    const meetsCriteria = latched.get(id) ?? false;
+    if (!c || !meetsCriteria || liveCase || !isHeldNewProvider(c, now)) return null;
     return new Date(c.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString();
   };
   // True if any qualification check passes. Zero passes = stale name, hidden even from "show all".
