@@ -3,12 +3,21 @@
 import Link from "next/link";
 import { useApp } from "@/components/providers";
 
-// Card bodies may contain a [governance] token that is rendered as an internal link.
-const LINKS: Record<string, { href: string; labelKey: string }> = {
+// Card bodies may contain a [token] that is rendered as a link. Internal tokens
+// route via next/link; external ones (e.g. [repo]) open the source in a new tab.
+const LINKS: Record<
+  string,
+  { href: string; labelKey: string; external?: boolean }
+> = {
   governance: { href: "/governance", labelKey: "nav.governance" },
+  repo: {
+    href: "https://github.com/BurstLabs/flareregistry",
+    labelKey: "why.card.openSource.repoLabel",
+    external: true,
+  },
 };
 
-// Render a body string, turning [token] into an internal link.
+// Render a body string, turning [token] into a link.
 function Body({ text, t }: { text: string; t: (k: string) => string }) {
   const parts = text.split(/(\[[a-z]+\])/g);
   return (
@@ -16,7 +25,20 @@ function Body({ text, t }: { text: string; t: (k: string) => string }) {
       {parts.map((part, i) => {
         const m = part.match(/^\[([a-z]+)\]$/);
         if (m && LINKS[m[1]]) {
-          const { href, labelKey } = LINKS[m[1]];
+          const { href, labelKey, external } = LINKS[m[1]];
+          if (external) {
+            return (
+              <a
+                key={i}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-beacon hover:underline"
+              >
+                {t(labelKey)}
+              </a>
+            );
+          }
           return (
             <Link key={i} href={href} className="text-beacon hover:underline">
               {t(labelKey)}
