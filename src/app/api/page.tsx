@@ -7,6 +7,7 @@ import { useApp } from "@/components/providers";
 const PUBLIC_BASE_URL = "https://flareregistry.com";
 const ASSETS_FEED =
   "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/providerlist.json";
+const REPO_URL = "https://github.com/BurstLabs/flareregistry";
 
 function Endpoint({
   method,
@@ -50,6 +51,29 @@ export default function ApiDocs() {
         </a>
         .
       </Endpoint>
+
+      <div className="mb-6 rounded-lg border border-beacon/40 bg-beacon/5 p-4">
+        <p className="text-sm font-semibold text-beacon">{t("api.repo.heading")}</p>
+        <p className="mt-1 text-sm text-muted">
+          {t("api.repo.body")}{" "}
+          <a className="text-beacon underline break-all" href={REPO_URL}>
+            {REPO_URL}
+          </a>
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded bg-elev p-3 text-xs text-muted">
+          <code>{`# Fetch just the file
+curl -O ${ASSETS_FEED}
+
+# Or add the repo as a git submodule and read providerlist.json
+git submodule add ${REPO_URL}.git vendor/flareregistry
+cat vendor/flareregistry/providerlist.json
+
+# Or clone and pin a commit for a reproducible snapshot
+git clone ${REPO_URL}.git
+git -C flareregistry checkout <commit-sha>`}</code>
+        </pre>
+        <p className="mt-3 text-sm text-muted">{t("api.repo.note")}</p>
+      </div>
 
       <Endpoint method="GET" path="/api/feed/archived.json">
         {t("api.ep.archived")}
