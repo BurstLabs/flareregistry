@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-20T16:27:04.380Z",
+  "timestamp": "2026-07-20T16:28:54.230Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -4226,6 +4226,49 @@
     },
     {
       "chainId": 14,
+      "name": "StakeCore",
+      "description": "An infrastructure provider that recognizes the importance of reliable data for an oracle-based chain.",
+      "url": "https://stakecore.org",
+      "address": "0x1e68DC808A240C096F0261144dc41fd4c883Cfb0",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x1e68DC808A240C096F0261144dc41fd4c883Cfb0.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "73095345367183636457206990",
+        "votePowerCapped": "73095345367183636457206990",
+        "feedCount": 63,
+        "lastEpoch": 416,
+        "delegatorRewardLastEpoch": "70188841982528304316272",
+        "feeRewardLastEpoch": "17547210495632076071472",
+        "entity": {
+          "identity": "0xCDEAE85d8cEF99a6433F341c3DcE6096C3c5598c",
+          "submit": "0x6a4121a29839b446052640655818B4c7F9Bb569f",
+          "submitSignatures": "0x53cBf076AC8D35d40057e653b53F7e8B77D3b5fa",
+          "signingPolicy": "0xDA120015F32de47427663db78bc7339acE2213aC",
+          "delegation": "0x1e68DC808A240C096F0261144dc41fd4c883Cfb0"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:19.728Z",
+          "lastSubmittedEpoch": 416,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
       "name": "Stakeway",
       "description": "Stakeway by Gateway.fm is a premier staking provider offering Enterprise Grade Infrastructure tailored for customers seeking reliable and secure staking solutions. With a focus on performance and trust, we deliver a robust platform. Our services are designed to optimize staking experience, ensuring seamless operation and maximum returns",
       "url": "https://stakeway.com",
@@ -6987,7 +7030,7 @@
     },
     {
       "chainId": 19,
-      "name": "Stakecore",
+      "name": "StakeCore",
       "description": "An infrastructure provider that recognizes the importance of reliable data for an oracle-based chain.",
       "url": "https://stakecore.org",
       "address": "0x1e68DC808A240C096F0261144dc41fd4c883Cfb0",
@@ -7015,9 +7058,9 @@
         },
         "validators": [],
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.728Z",
