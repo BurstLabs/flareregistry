@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-19T22:18:11.888Z",
+  "timestamp": "2026-07-20T02:44:33.256Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -2643,7 +2643,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x819eaB111BD9A6E595187A914240529D2EFfF21f.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -2681,9 +2681,9 @@
           }
         ],
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.345Z",
@@ -6517,49 +6517,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.367Z",
-          "lastSubmittedEpoch": 415,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 19,
-      "name": "HEWG",
-      "description": "HEWG strikes to provide best FTSO price data.",
-      "url": "https://hewg.org",
-      "address": "0x819eaB111BD9A6E595187A914240529D2EFfF21f",
-      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x819eaB111BD9A6E595187A914240529D2EFfF21f.png",
-      "listed": true,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": true,
-        "qualified": true,
-        "network": "songbird",
-        "feePercent": 20,
-        "votePower": "159853841759627780495444865",
-        "votePowerCapped": "159853841759627780495444865",
-        "feedCount": 63,
-        "lastEpoch": 415,
-        "delegatorRewardLastEpoch": "138905607158501915041850",
-        "feeRewardLastEpoch": "34726401789625478750648",
-        "entity": {
-          "identity": "0x4ddd9f80F88F53c730CE7C6041f17583447DD968",
-          "submit": "0xC58b13d32dcf08Eb23d2105159982377982b2777",
-          "submitSignatures": "0x099aE1A237a4a7696672986c2155FE8B80abE906",
-          "signingPolicy": "0x1c884cF954eC8f15D7BF16b9d50402cc5c94b5FD",
-          "delegation": "0x819eaB111BD9A6E595187A914240529D2EFfF21f"
-        },
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.345Z",
           "lastSubmittedEpoch": 415,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
