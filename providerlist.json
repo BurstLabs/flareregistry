@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-20T16:29:48.883Z",
+  "timestamp": "2026-07-20T16:40:14.717Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -2216,14 +2216,14 @@
         "registered": true,
         "managementGroup": false,
         "qualified": true,
-        "network": "songbird",
+        "network": "flare",
         "feePercent": 20,
-        "votePower": "81945346157523728917404951",
-        "votePowerCapped": "81945346157523728917404951",
+        "votePower": "113730348020576525968657590",
+        "votePowerCapped": "113730348020576525968657590",
         "feedCount": 63,
         "lastEpoch": 416,
-        "delegatorRewardLastEpoch": "74837696096019620829777",
-        "feeRewardLastEpoch": "18709424024004905200507",
+        "delegatorRewardLastEpoch": "56652406040857116000634",
+        "feeRewardLastEpoch": "18917246957303032692327",
         "entity": {
           "identity": "0x05D8F084bf6aC2267A5ca699740E9236DB6E2bDb",
           "submit": "0xC967d1Fd27A94E4FC5C085C0AdfA9bcD2418d1a0",
@@ -2231,7 +2231,24 @@
           "signingPolicy": "0xE78B600D8daEc600C6ff98a1E6a22F28022830fC",
           "delegation": "0xc396b6f023f3A1C894a20FBa08432E847C05c7F9"
         },
-        "validators": [],
+        "validators": [
+          {
+            "nodeId": "NodeID-4qa2aH7gEksskHU2nYna1mNX37U1yfdAp",
+            "feePercent": 15,
+            "uptimePercent": 99.992,
+            "connected": true,
+            "weight": "5200000000000000",
+            "delegatorCount": 66
+          },
+          {
+            "nodeId": "NodeID-FFDXvxz7zusH2wec4DM5eKPT4gxfJKSDe",
+            "feePercent": 15,
+            "uptimePercent": 99.9975,
+            "connected": true,
+            "weight": "1000001000000000",
+            "delegatorCount": 39
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null,
@@ -3283,14 +3300,14 @@
         "registered": true,
         "managementGroup": true,
         "qualified": true,
-        "network": "songbird",
+        "network": "flare",
         "feePercent": 20,
-        "votePower": "65303090422236432590209067",
-        "votePowerCapped": "65303090422236432590209067",
+        "votePower": "137650743961844705515648683",
+        "votePowerCapped": "137650743961844705515648683",
         "feedCount": 63,
         "lastEpoch": 416,
-        "delegatorRewardLastEpoch": "53557635099420590495157",
-        "feeRewardLastEpoch": "13389408774855147616230",
+        "delegatorRewardLastEpoch": "61967350011024617715469",
+        "feeRewardLastEpoch": "24088008359192926121047",
         "entity": {
           "identity": "0x1A34A80deB40D2a1A6c0E2959785058A975AD900",
           "submit": "0xC3B54c0AC337Cb33eed108f1a23a95983C8C58aA",
@@ -3298,7 +3315,24 @@
           "signingPolicy": "0x0aAd8D0bAb50599b1669a36dBF1Fe4896242a093",
           "delegation": "0x27Cb5f4EbA81976617b75953053D33EF2002daDF"
         },
-        "validators": [],
+        "validators": [
+          {
+            "nodeId": "NodeID-JGAJGcDbg1kqnfwCpDiJ5VeNGkSDRxGra",
+            "feePercent": 20,
+            "uptimePercent": 99.9927,
+            "connected": true,
+            "weight": "6000000000000000",
+            "delegatorCount": 15
+          },
+          {
+            "nodeId": "NodeID-KDzgUwGve1qisM4BM7VSmrJXK5UT9yB31",
+            "feePercent": 20,
+            "uptimePercent": 99.9955,
+            "connected": true,
+            "weight": "6205000000000000",
+            "delegatorCount": 10
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null,
@@ -3874,14 +3908,14 @@
         "registered": true,
         "managementGroup": false,
         "qualified": true,
-        "network": "songbird",
+        "network": "flare",
         "feePercent": 20,
-        "votePower": "29956393355326924960433819",
-        "votePowerCapped": "29956393355326924960433819",
+        "votePower": "22249289686653245579141028",
+        "votePowerCapped": "22249289686653245579141028",
         "feedCount": 63,
         "lastEpoch": 416,
-        "delegatorRewardLastEpoch": "32897256236248649641561",
-        "feeRewardLastEpoch": "8224314059062162403240",
+        "delegatorRewardLastEpoch": "14949961704962269719852",
+        "feeRewardLastEpoch": "3839466870797558698898",
         "entity": {
           "identity": "0xEcAFe633830Fa27b4912a5588c28B7D994e1f203",
           "submit": "0x232b3ceCC2e4EAae6122952AD0b1bBC60f85A829",
@@ -3889,7 +3923,24 @@
           "signingPolicy": "0x79280386DDA03f4AF8d6212582652a80332D29d7",
           "delegation": "0xfF2E51FBf9196eaf96978eC454C5acDCF4C46990"
         },
-        "validators": [],
+        "validators": [
+          {
+            "nodeId": "NodeID-KnnQc8YZ1fQVkJPp3XyDiHnCwcxuMUurU",
+            "feePercent": 10,
+            "uptimePercent": 99.9917,
+            "connected": true,
+            "weight": "1000001000000000",
+            "delegatorCount": 0
+          },
+          {
+            "nodeId": "NodeID-PWzNhHemVzK2mTTjsXnAV5FViBUf3Wwt4",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "delegatorCount": null
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null,
@@ -4237,14 +4288,14 @@
         "registered": true,
         "managementGroup": true,
         "qualified": true,
-        "network": "songbird",
+        "network": "flare",
         "feePercent": 20,
-        "votePower": "73095345367183636457206990",
-        "votePowerCapped": "73095345367183636457206990",
+        "votePower": "185177225997437462294392793",
+        "votePowerCapped": "185177225997437462294392793",
         "feedCount": 63,
         "lastEpoch": 416,
-        "delegatorRewardLastEpoch": "70188841982528304316272",
-        "feeRewardLastEpoch": "17547210495632076071472",
+        "delegatorRewardLastEpoch": "87123489015726517640068",
+        "feeRewardLastEpoch": "25644646551279935614359",
         "entity": {
           "identity": "0xCDEAE85d8cEF99a6433F341c3DcE6096C3c5598c",
           "submit": "0x6a4121a29839b446052640655818B4c7F9Bb569f",
@@ -4252,7 +4303,24 @@
           "signingPolicy": "0xDA120015F32de47427663db78bc7339acE2213aC",
           "delegation": "0x1e68DC808A240C096F0261144dc41fd4c883Cfb0"
         },
-        "validators": [],
+        "validators": [
+          {
+            "nodeId": "NodeID-KiAUisCU8UvXGnMRiUvoeyWneSdUm987",
+            "feePercent": 50,
+            "uptimePercent": 99.9944,
+            "connected": true,
+            "weight": "1010000000000000",
+            "delegatorCount": 9
+          },
+          {
+            "nodeId": "NodeID-9phg2KMyH6nrwkf6G46d4SUWuNqf6jUqr",
+            "feePercent": 20,
+            "uptimePercent": 99.9483,
+            "connected": true,
+            "weight": "3999999000000000",
+            "delegatorCount": 6
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house",
@@ -4676,14 +4744,14 @@
         "registered": true,
         "managementGroup": true,
         "qualified": true,
-        "network": "songbird",
+        "network": "flare",
         "feePercent": 20,
-        "votePower": "22858823319573962739257594",
-        "votePowerCapped": "22858823319573962739257594",
+        "votePower": "51842599654702008894333080",
+        "votePowerCapped": "51842599654702008894333080",
         "feedCount": 63,
         "lastEpoch": 416,
-        "delegatorRewardLastEpoch": "0",
-        "feeRewardLastEpoch": "0",
+        "delegatorRewardLastEpoch": "24254945768698044883436",
+        "feeRewardLastEpoch": "7380874232730335601343",
         "entity": {
           "identity": "0xD03a130079430a5d8fd1caEA3535a80dDc6bFc0D",
           "submit": "0x85D134f68c3c564bb935479490E5C8Df5F4F1124",
@@ -4691,7 +4759,16 @@
           "signingPolicy": "0x53722AbC03b122d570adf3F256BcB75640c2968a",
           "delegation": "0xb6deD9D9CA19af10C67f9A8be8ca75e38E166faA"
         },
-        "validators": [],
+        "validators": [
+          {
+            "nodeId": "NodeID-Ckyh9cpfkkXSo5PYNNFactcrKkY2XhkXR",
+            "feePercent": 20,
+            "uptimePercent": 97.3123,
+            "connected": false,
+            "weight": "4000000000000000",
+            "delegatorCount": 5
+          }
+        ],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null,
@@ -4779,22 +4856,39 @@
         "registered": true,
         "managementGroup": true,
         "qualified": true,
-        "network": "songbird",
+        "network": "flare",
         "feePercent": 20,
-        "votePower": "83362177053548582618241102",
-        "votePowerCapped": "83362177053548582618241102",
+        "votePower": "183904441303303753725269383",
+        "votePowerCapped": "183904441303303753725269383",
         "feedCount": 63,
         "lastEpoch": 416,
-        "delegatorRewardLastEpoch": "76947286541969351320963",
-        "feeRewardLastEpoch": "19236821635492337821629",
+        "delegatorRewardLastEpoch": "92843241574350214735096",
+        "feeRewardLastEpoch": "41849319191695296895335",
         "entity": {
-          "identity": "0x01CaAAA7B40AA13aB2a04087d262B5558E695607",
-          "submit": "0xBE9f00D70c357c663b63cf5972D4c59c851a7618",
-          "submitSignatures": "0x7E5A5371517f855e10d27394483dBAB123dA5d9D",
-          "signingPolicy": "0x338119F38fc07f29aA96449251353d9e4684DA6D",
+          "identity": "0x19e655BB5F25cCbB88Ca26F69694cD83641F3B78",
+          "submit": "0x878614F253E5F6039D8755dbdd97b4eAf5FeD2d9",
+          "submitSignatures": "0x88475c54231EE7d686d2e7272De935cf8823AdC7",
+          "signingPolicy": "0x3007C7F6BF48a83a39cA442777564a6d5d99cF44",
           "delegation": "0x35149714467F2FE71b46eEb4d11689ED8728Bd25"
         },
-        "validators": [],
+        "validators": [
+          {
+            "nodeId": "NodeID-LcbbZYhBHn8HVjTzPASuHtFVAckcdctWS",
+            "feePercent": 10,
+            "uptimePercent": 99.999,
+            "connected": true,
+            "weight": "13500000000000000",
+            "delegatorCount": 313
+          },
+          {
+            "nodeId": "NodeID-8qMWVar3hLdLSSgbTV57brpqUNjJuU2H8",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "13340000000000000",
+            "delegatorCount": 10
+          }
+        ],
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house",
