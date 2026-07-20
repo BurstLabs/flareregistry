@@ -13,16 +13,34 @@
   --text: 245 245 245; /* neutral-100 */
   --text-muted: 163 163 163; /* neutral-400 */
   --text-faint: 115 115 115; /* neutral-500 */
+  /* Amber accent for TEXT/links. On near-black the brand #f5a623 has ~9.8:1 contrast, so use it
+     directly in dark mode. (Fills, borders, glows keep using the `beacon` Tailwind color.) */
+  --beacon-text: 245 166 35; /* #f5a623 */
+  /* Elevation shadow: barely-there on dark (dark UIs read depth from the bg gap, not shadow). */
+  --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --hero-accent: 245 166 35 / 0; /* no hero tint needed on dark */
 }
 
 .light {
   color-scheme: light;
-  --bg: 250 250 250; /* neutral-50 */
+  /* #1: page sits on a clearly-grey layer (zinc-100) so pure-white cards read as elevated. The old
+     neutral-50 page (250) vs white card (255) was only 5 values apart and looked like one flat wash. */
+  --bg: 244 244 245; /* zinc-100 */
   --bg-elev: 255 255 255; /* white */
-  --border: 229 229 229; /* neutral-200 */
-  --text: 23 23 23; /* neutral-900 */
-  --text-muted: 82 82 82; /* neutral-600 */
-  --text-faint: 115 115 115; /* neutral-500 */
+  /* #2: darker border so card edges, inputs and table dividers are actually visible on the grey page. */
+  --border: 212 212 216; /* zinc-300 */
+  --text: 24 24 27; /* zinc-900 */
+  --text-muted: 82 82 91; /* zinc-600 */
+  --text-faint: 113 113 122; /* zinc-500 */
+  /* #3: the brand amber only hits ~2:1 on white (fails WCAG for text), so light-mode amber TEXT uses
+     a deeper amber-700 (~4.7:1) while fills/borders/logo keep the bright brand hue. */
+  --beacon-text: 180 83 9; /* amber-700 #b45309 */
+  /* #3: a real, soft shadow so white cards lift off the grey page in light mode. */
+  --card-shadow:
+    0 1px 2px 0 rgb(24 24 27 / 0.06),
+    0 2px 8px -2px rgb(24 24 27 / 0.08);
+  /* #4: faint warm tint to anchor the hero/header region against the flat page. */
+  --hero-accent: 245 166 35 / 0.06;
 }
 
 @layer base {
@@ -40,6 +58,7 @@
   .surface {
     background-color: rgb(var(--bg-elev));
     border-color: rgb(var(--border));
+    box-shadow: var(--card-shadow);
   }
   .text-muted {
     color: rgb(var(--text-muted));
@@ -52,6 +71,21 @@
   }
   .bg-elev {
     background-color: rgb(var(--bg-elev));
+  }
+  /* Amber accent for text/links, theme-aware: bright brand hue on dark, WCAG-safe deep amber on
+     light. Every existing `text-beacon` class picks this up automatically. `!important` so it wins
+     over Tailwind's generated `.text-beacon` color utility regardless of source order. */
+  .text-beacon {
+    color: rgb(var(--beacon-text)) !important;
+  }
+  /* #4: soft warm wash behind the hero to anchor it against the flat light page. Invisible on dark
+     (token opacity 0). A radial gradient fading to transparent, so it never shows a hard edge. */
+  .hero-accent {
+    background-image: radial-gradient(
+      120% 90% at 0% 0%,
+      rgb(var(--hero-accent)),
+      transparent 60%
+    );
   }
 }
 

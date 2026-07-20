@@ -82,7 +82,7 @@ export function DirectoryClient({
 
   return (
     <div>
-      <section className="mb-12">
+      <section className="hero-accent -mx-4 mb-12 rounded-2xl px-4 py-8 sm:-mx-6 sm:px-6">
         <h1 className="mb-3 text-4xl font-bold tracking-tight">{t("home.title")}</h1>
         <p className="max-w-2xl leading-relaxed text-muted">{t("home.intro")}</p>
         <Link
