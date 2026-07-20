@@ -8,6 +8,7 @@
 import { prisma } from "./db";
 import { toChecksum } from "./validation";
 import { isHeldNewProvider } from "./governance";
+import { getChain } from "./chains";
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
 
@@ -155,7 +156,12 @@ export async function buildProviderList(): Promise<ProviderList> {
         latestByVoter.set(key, { epochId: m.epochId, feeReward: m.feeReward, delegatorReward: m.delegatorReward });
     }
   }
-  const entityByAddress = new Map<string, (typeof entities)[number]>();
+  // Key by `${network}:${address}`, NOT address alone: a provider can register the SAME role address
+  // (commonly the delegation address) on both Flare and Songbird. An address-only map lets whichever
+  // entity is processed last clobber the key, so both networks' feed entries would resolve to the same
+  // (wrong-network) entity - e.g. a Flare (chainId 14) entry reporting Songbird metrics. Scoping by
+  // network keeps each chain's entry matched to its own on-chain entity.
+  const entityByNetworkAddress = new Map<string, (typeof entities)[number]>();
   for (const e of entities) {
     for (const addr of [
       e.voter,
@@ -164,7 +170,7 @@ export async function buildProviderList(): Promise<ProviderList> {
       e.submitSignaturesAddress,
       e.signingPolicyAddress,
     ]) {
-      if (addr) entityByAddress.set(addr.toLowerCase(), e);
+      if (addr) entityByNetworkAddress.set(`${e.network}:${addr.toLowerCase()}`, e);
     }
   }
 
@@ -174,7 +180,12 @@ export async function buildProviderList(): Promise<ProviderList> {
   const validatorByNetworkNode = await allValidatorsByNetworkNode();
 
   const providers: FeedProvider[] = addresses.map((a) => {
-    const entity = entityByAddress.get(a.address.toLowerCase());
+    // Match the entity on THIS entry's network (derived from its chainId), not address alone, so a
+    // role address shared across Flare and Songbird resolves to the right-network entity.
+    const entryNetwork = getChain(a.chainId)?.key ?? null;
+    const entity = entryNetwork
+      ? entityByNetworkAddress.get(`${entryNetwork}:${a.address.toLowerCase()}`)
+      : undefined;
     const latest = entity ? latestByVoter.get(`${entity.network}:${entity.voter}`) : undefined;
     const providerId = providerIdByAddress.get(a.address.toLowerCase()) ?? "";
     const risk = riskByProvider.get(providerId);
