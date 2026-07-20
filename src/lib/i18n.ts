@@ -92,7 +92,7 @@ const en: Dict = {
   "poweredBy.form.category": "Category",
   "poweredBy.form.url": "Website URL",
   "poweredBy.form.logo": "Logo URL",
-  "poweredBy.form.logoHint": "optional, square PNG/SVG on your own host",
+  "poweredBy.form.logoHint": "optional; a direct link to a square image file (ends in .png/.svg/.jpg), not your site homepage",
   "poweredBy.form.blurb": "How you use the feed",
   "poweredBy.form.contact": "Contact email",
   "poweredBy.form.contactHint": "optional, private, for us to reach you",

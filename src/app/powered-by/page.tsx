@@ -72,6 +72,10 @@ export default function PoweredByPage() {
 }
 
 function ConsumerCard({ c }: { c: PublicConsumer }) {
+  // A logoURL that doesn't resolve to an image (e.g. someone entered the site homepage) would render
+  // as the browser's broken-image glyph; fall back to the name initial instead.
+  const [logoBroken, setLogoBroken] = useState(false);
+  const showLogo = c.logoURL && !logoBroken;
   return (
     <a
       href={c.url}
@@ -80,11 +84,17 @@ function ConsumerCard({ c }: { c: PublicConsumer }) {
       className="flex gap-3 rounded-lg border border-themed bg-elev p-3 transition hover:border-beacon"
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-black/5 dark:bg-white/5">
-        {c.logoURL ? (
+        {showLogo ? (
           // Consumer logos are arbitrary external URLs, so use a plain <img> (not next/image, which
-          // would require host allowlisting). Broken/oversized images just fail to render.
+          // would require host allowlisting). A broken URL flips to the initial fallback via onError.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={c.logoURL} alt="" className="h-10 w-10 object-contain" loading="lazy" />
+          <img
+            src={c.logoURL ?? ""}
+            alt=""
+            className="h-10 w-10 object-contain"
+            loading="lazy"
+            onError={() => setLogoBroken(true)}
+          />
         ) : (
           <span className="text-sm font-semibold text-faint">{c.name.slice(0, 1)}</span>
         )}
