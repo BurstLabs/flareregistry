@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-21T16:18:22.334Z",
+  "timestamp": "2026-07-21T20:53:37.994Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -2982,13 +2982,13 @@
     {
       "chainId": 14,
       "name": "Juice Nodes",
-      "description": "Juice Nodes is an independently owned and operated validator focused on providing fast and accurate data for the Flare ecosystem.",
+      "description": "Juice Nodes is an independently owned and operated validator, squeezing every drop of performance to deliver fast, accurate data for the Flare ecosystem. No pulp.",
       "url": "https://juicenodes.com",
       "address": "0xce73ADe61b0d0100BA1507D9fA1Dc2feA3046578",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xce73ADe61b0d0100BA1507D9fA1Dc2feA3046578.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": false,
         "qualified": true,
@@ -3018,9 +3018,9 @@
           }
         ],
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.554Z",
