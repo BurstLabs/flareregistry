@@ -10,6 +10,7 @@ import { useWalletSign } from "@/lib/useWalletSign";
 type Tab =
   | "stats"
   | "providers"
+  | "imports"
   | "qualification"
   | "governance"
   | "reports"
@@ -117,6 +118,7 @@ export default function AdminPage() {
   const TABS: { id: Tab; label: string }[] = [
     { id: "stats", label: "Statistics" },
     { id: "providers", label: "Providers" },
+    { id: "imports", label: "Imports" },
     { id: "qualification", label: "Qualification" },
     { id: "governance", label: "Governance" },
     { id: "reports", label: "Logo reports" },
@@ -150,6 +152,7 @@ export default function AdminPage() {
       <div className="mt-6">
         {tab === "stats" && <StatsTab />}
         {tab === "providers" && <ProvidersTab />}
+        {tab === "imports" && <ImportsTab />}
         {tab === "qualification" && <QualificationTab />}
         {tab === "governance" && <GovernanceTab />}
         {tab === "reports" && <ReportsTab />}
@@ -538,6 +541,181 @@ function GovernanceTab() {
 // eyeball each pending image and either approve it now (promote to live immediately) or reject it
 // (discard the upload). Without this, the only signal was a notification email with no matching action.
 // ---------- Consumers ("Powered by" showcase moderation) ----------
+// ---------- Imports (TowoLabs legacy list) ----------
+// The TowoLabs ftso-signal-providers list is the legacy PR-based provider list wallets historically
+// consumed. A daily scan (plus "Scan now" here) diffs it against our registry and stages entries we
+// don't have as pending candidates. Approving one creates an UNCLAIMED source="imported" provider: it
+// appears in the feed only once it qualifies on-chain or the real owner claims it by signature.
+// Dismissing keeps a tombstone so it is not re-surfaced. It is not an assertion of ownership.
+function ImportsTab() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState("");
+  const load = useCallback(async () => {
+    const r = await fetch("/api/admin/import-candidates");
+    const b = await r.json();
+    setRows(b.candidates ?? []);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function scan() {
+    setBusy("scan");
+    setMsg("Scanning TowoLabs list…");
+    try {
+      const r = await fetch("/api/admin/import-candidates", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "scan" }),
+      });
+      const b = await r.json();
+      if (r.ok) {
+        const s = b.result ?? {};
+        setMsg(
+          s.error
+            ? `Scan error: ${s.error}`
+            : `Scanned ${s.fetched} entries · ${s.staged} new staged · ${s.refreshed} refreshed · ${s.absorbed} absorbed.`
+        );
+        load();
+      } else {
+        setMsg(b.error ?? "Scan failed.");
+      }
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function act(id: string, action: "approve" | "dismiss", name: string) {
+    const label = action === "approve" ? "import this provider (unclaimed)" : "dismiss this entry";
+    if (!confirm(`Are you sure you want to ${label} for "${name}"?`)) return;
+    setBusy(id + action);
+    setMsg("");
+    try {
+      const r = await fetch("/api/admin/import-candidates", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, id }),
+      });
+      const b = await r.json();
+      setMsg(r.ok ? (b.absorbed ? "Already in registry - absorbed." : "Done.") : b.error ?? "Failed.");
+      if (r.ok) load();
+    } finally {
+      setBusy("");
+    }
+  }
+
+  const pending = rows.filter((c) => c.status === "pending");
+  const actioned = rows.filter((c) => c.status !== "pending");
+  const STATUS_STYLE: Record<string, string> = {
+    approved: "bg-emerald-500/15 text-emerald-400",
+    dismissed: "bg-neutral-500/15 text-neutral-400",
+    absorbed: "bg-sky-500/15 text-sky-400",
+  };
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-2 text-xs text-muted">
+        <span className="font-semibold text-fg">
+          TowoLabs additions not yet in our registry ({pending.length} pending)
+        </span>
+        <div className="flex items-center gap-3">
+          <span>{msg}</span>
+          <button
+            onClick={scan}
+            disabled={busy === "scan"}
+            className="rounded-md border border-beacon px-2.5 py-1 font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
+          >
+            {busy === "scan" ? "Scanning…" : "Scan now"}
+          </button>
+        </div>
+      </div>
+      <Card>
+        {pending.length === 0 ? (
+          <p className="text-sm text-muted">
+            No new additions to review. Run a scan to check the TowoLabs list.
+          </p>
+        ) : (
+          <ul className="space-y-4">
+            {pending.map((c) => (
+              <li
+                key={c.id}
+                className="border-t border-themed/50 pt-4 first:border-0 first:pt-0"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-500">
+                        {CHAIN_NAME[c.chainId] ?? c.chainId}
+                      </span>
+                      <span className="text-sm font-medium">{c.name}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted">{c.description}</p>
+                    <p className="mt-1 break-all font-mono text-[11px] text-faint">
+                      {c.address}
+                    </p>
+                    {c.url && (
+                      <a
+                        href={c.url}
+                        target="_blank"
+                        rel="noreferrer nofollow"
+                        className="text-xs text-beacon hover:underline"
+                      >
+                        {c.url}
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      onClick={() => act(c.id, "approve", c.name)}
+                      disabled={busy === c.id + "approve"}
+                      className="rounded-md bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/25 disabled:opacity-50"
+                    >
+                      Import
+                    </button>
+                    <button
+                      onClick={() => act(c.id, "dismiss", c.name)}
+                      disabled={busy === c.id + "dismiss"}
+                      className="rounded-md border border-themed px-2.5 py-1 text-xs text-muted hover:text-fg disabled:opacity-50"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {actioned.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-2 text-xs font-semibold text-muted">History</p>
+          <Card>
+            <ul className="space-y-1 text-xs">
+              {actioned.map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-2">
+                  <span className="truncate">
+                    <span className="text-faint">{CHAIN_NAME[c.chainId] ?? c.chainId} · </span>
+                    {c.name}
+                  </span>
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                      STATUS_STYLE[c.status] ?? "bg-neutral-500/15 text-neutral-400"
+                    }`}
+                  >
+                    {c.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ConsumersTab() {
   const [rows, setRows] = useState<any[]>([]);
   const [msg, setMsg] = useState("");

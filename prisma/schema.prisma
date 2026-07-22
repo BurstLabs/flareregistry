@@ -32,9 +32,9 @@ model Provider {
   // Self-declared fields: things the TowoLabs extended requirements list but that cannot be
   // verified on-chain, so they are provider-attested and shown labeled as "self-declared".
   // privateNode: submits prices from a private (not shared) node.
-  privateNode Boolean? // null = not declared
+  privateNode  Boolean? // null = not declared
   // algorithm: "in-house" | "open-source" | null (not declared).
-  algorithm   String?
+  algorithm    String?
   // singleEntity: operator attests they run one registered entity per network (no entity-splitting).
   singleEntity Boolean? // null = not declared
 
@@ -80,16 +80,16 @@ model Provider {
 // Double opt-in: a watch is created unconfirmed with a random token; a confirmation link flips
 // `confirmed` true. Only confirmed watches are emailed, so nobody can subscribe a stranger's inbox.
 model ProviderWatch {
-  id         String   @id @default(cuid())
-  providerId String
-  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  providerId  String
+  provider    Provider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
   // Lowercased email address. Unique per provider so a re-subscribe updates rather than duplicates.
-  email      String
+  email       String
   // Double opt-in: false until the confirmation link is followed. Only confirmed watches are sent.
-  confirmed  Boolean  @default(false)
+  confirmed   Boolean   @default(false)
   // Random URL-safe token for the confirm (and one-click unsubscribe) link. Single value reused for both.
-  token      String   @unique
-  createdAt  DateTime @default(now())
+  token       String    @unique
+  createdAt   DateTime  @default(now())
   confirmedAt DateTime?
 
   @@unique([providerId, email])
@@ -601,5 +601,42 @@ model Consumer {
   reviewedAt  DateTime?
   reviewedBy  String?
 
+  @@index([status])
+}
+
+// An ImportCandidate is a provider entry that exists on an EXTERNAL legacy list (the TowoLabs
+// ftso-signal-providers list, which wallets historically consumed) but is NOT yet in our registry.
+// A scan fetches that list, diffs it against our ProviderAddress set, and records new-to-us entries
+// here as `pending`. An admin reviews the queue and either APPROVES (creates an unclaimed
+// source="imported" Provider, which then follows the normal path: it appears in the feed only once it
+// qualifies on-chain or the real owner claims it by signature) or DISMISSES (kept as a tombstone so
+// the same entry is not re-surfaced every scan). Candidates whose address later appears in our DB by
+// any means are auto-resolved to `absorbed`.
+model ImportCandidate {
+  id      String @id @default(cuid())
+  // Source list identifier, for when we add more upstreams later. "towolabs" for now.
+  source  String @default("towolabs")
+  chainId Int
+  // Lowercased 0x address (the dedupe key against ProviderAddress).
+  address String
+
+  // Snapshot of the upstream entry at first sight (and refreshed each scan while still pending).
+  name        String
+  description String
+  url         String
+  logoURI     String?
+
+  // pending  = awaiting admin review
+  // approved = admin accepted; an imported Provider was created
+  // dismissed = admin declined; kept so we don't re-surface it
+  // absorbed = the address now exists in our registry by other means (owner claimed, native submit)
+  status String @default("pending")
+
+  firstSeenAt DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  @@unique([chainId, address])
   @@index([status])
 }
