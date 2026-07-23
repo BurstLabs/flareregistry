@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/admin";
 import { publishFeedToRepo } from "@/lib/feed";
 import { scanTowolabsImports } from "@/lib/import-scan";
 import { getAdminAddress } from "@/lib/admin";
+import { normalizeName } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -104,22 +105,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, absorbed: true });
     }
 
-    // Create the unclaimed imported provider. verified/listed=false: it appears in the feed only once
-    // it qualifies on-chain, or when the real owner claims it by wallet signature (source flips to
-    // "submitted" then). The upstream logo URL is kept verbatim until the owner uploads their own.
+    // Merge under an existing same-name provider if one exists, so a dual-network provider (same name
+    // on Flare and Songbird, e.g. FlareWatch) becomes ONE listing with two ProviderAddress rows rather
+    // than two separate cards - matching the native submit/link merge behaviour. We only merge into
+    // another IMPORTED provider: never attach an unverified imported address to a claimed listing (that
+    // would be listing contamination), and the name check uses the same normaliser as the native flow.
+    const wantName = normalizeName(c.name);
+    const sameName = await prisma.provider.findMany({
+      where: { source: "imported" },
+      select: { id: true, name: true },
+    });
+    const mergeTarget = sameName.find((p) => normalizeName(p.name) === wantName);
+
+    // Create the unclaimed imported provider (or attach to the merge target). verified/listed=false:
+    // it appears in the feed only once it qualifies on-chain, or when the real owner claims it by
+    // wallet signature (source flips to "submitted" then). The upstream logo URL is kept verbatim
+    // until the owner uploads their own.
     await prisma.$transaction(async (tx) => {
-      const provider = await tx.provider.create({
-        data: {
-          name: c.name,
-          description: c.description,
-          url: c.url,
-          logoURI: c.logoURI,
-          source: "imported",
-        },
-      });
+      const providerId =
+        mergeTarget?.id ??
+        (
+          await tx.provider.create({
+            data: {
+              name: c.name,
+              description: c.description,
+              url: c.url,
+              logoURI: c.logoURI,
+              source: "imported",
+            },
+          })
+        ).id;
       await tx.providerAddress.create({
         data: {
-          providerId: provider.id,
+          providerId,
           chainId: c.chainId,
           address: c.address,
           verified: false,
