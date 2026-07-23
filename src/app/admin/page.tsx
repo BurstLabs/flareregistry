@@ -32,6 +32,8 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("stats");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // Counts of items awaiting admin action, shown as (n) badges on the relevant tabs.
+  const [counts, setCounts] = useState<Partial<Record<Tab, number>>>({});
   const connectAndSign = useWalletSign(adminT);
   // The live connected wallet. The admin session (a cookie) and the connected wallet are independent,
   // so we must reconcile them: access is granted only when the session is an admin AND the wallet
@@ -63,6 +65,27 @@ export default function AdminPage() {
     !!address &&
     walletAddress.toLowerCase() === address.toLowerCase();
   const hasAccess = admin === true && walletMatchesSession;
+
+  // Pull the pending-action counts for the tab badges once access is granted. Maps the API's keys to
+  // the tabs that surface a review queue; other tabs get no badge.
+  const loadCounts = useCallback(async () => {
+    try {
+      const r = await fetch("/api/admin/pending-counts");
+      if (!r.ok) return;
+      const b = await r.json();
+      setCounts({
+        imports: b.imports ?? 0,
+        governance: b.governance ?? 0,
+        reports: b.reports ?? 0,
+        consumers: b.consumers ?? 0,
+      });
+    } catch {
+      /* best-effort; badges just don't show */
+    }
+  }, []);
+  useEffect(() => {
+    if (hasAccess) loadCounts();
+  }, [hasAccess, loadCounts]);
 
   async function connect() {
     setErr("");
@@ -135,10 +158,16 @@ export default function AdminPage() {
         </span>
       </div>
       <div className="mt-4 flex flex-wrap gap-1 border-b border-themed">
-        {TABS.map((tb) => (
+        {TABS.map((tb) => {
+          const n = counts[tb.id] ?? 0;
+          return (
           <button
             key={tb.id}
-            onClick={() => setTab(tb.id)}
+            onClick={() => {
+              setTab(tb.id);
+              // Refresh badges on navigation so a queue you just cleared updates without a page reload.
+              loadCounts();
+            }}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
               tab === tb.id
                 ? "border-beacon text-fg"
@@ -146,8 +175,14 @@ export default function AdminPage() {
             }`}
           >
             {tb.label}
+            {n > 0 && (
+              <span className="ml-1.5 rounded-full bg-beacon/20 px-1.5 py-0.5 text-[11px] font-semibold text-beacon">
+                {n}
+              </span>
+            )}
           </button>
-        ))}
+          );
+        })}
       </div>
       <div className="mt-6">
         {tab === "stats" && <StatsTab />}
