@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-23T20:47:02.043Z",
+  "timestamp": "2026-07-23T21:28:33.277Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -2040,58 +2040,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.764Z",
-          "lastSubmittedEpoch": 416,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "FlareWatch",
-      "description": "Operated by the team behind FlareWatch.io - the validator-scoring + DeFi dashboard the Flare community uses daily. All yield from this validator funds FlareWatch's public infrastructure: monitoring, dashboards, and ecosystem tooling. Transparent methodology, no protocol affiliations. Delegate to support the tools you already use.",
-      "url": "https://www.flarewatch.io",
-      "address": "0x973B899Fe1422efDdeBE1d54E9A6487a70966aC5",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xaf4eF2A0Ecf8d914Db6b721D3eb79C46CA612796.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "30314781783862849849409933",
-        "votePowerCapped": "30314781783862849849409933",
-        "feedCount": 63,
-        "lastEpoch": 416,
-        "delegatorRewardLastEpoch": "17534670434238248476837",
-        "feeRewardLastEpoch": "5594029398630401114838",
-        "entity": {
-          "identity": "0xBdeb203e55e65451fABf0e7B778b32ac174918fF",
-          "submit": "0x24DC4e640Ac8F95dfA20F0aA1f5Bb300d9689bd2",
-          "submitSignatures": "0xfa04c0EA9bE8412340D5738FFCF635f9e9299616",
-          "signingPolicy": "0x6Ff199C3BDbB4482bf73638D17dEBfEB892b9823",
-          "delegation": "0x973B899Fe1422efDdeBE1d54E9A6487a70966aC5"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-6aKkPwTjFa3A5SH9H678r48MmNwyKFjQj",
-            "feePercent": 8,
-            "uptimePercent": 99.8837,
-            "connected": true,
-            "weight": "2500000000000000",
-            "delegatorCount": 5
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-07-03T10:18:38.594Z",
           "lastSubmittedEpoch": 416,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -6341,7 +6289,7 @@
       "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xaf4eF2A0Ecf8d914Db6b721D3eb79C46CA612796.png",
       "listed": false,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": false,
         "qualified": true,
@@ -6367,7 +6315,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-07-03T10:18:38.594Z",
+          "qualifiedSince": "2026-07-03T10:18:38.516Z",
           "lastSubmittedEpoch": 416,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
