@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-22T23:47:02.237Z",
+  "timestamp": "2026-07-23T00:25:07.562Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -5760,6 +5760,49 @@
           "lastSubmittedEpoch": 416,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "CosmicData",
+      "description": "CosmicData operates production-grade oracle infrastructure on the Songbird and Flare networks. Custom multi-exchange FTSO price aggregation, in-house FDC verifier stack (BTC/DOGE/XRPL/ETH), and high-availability validator nodes - engineered for accuracy, uptime, and the FAssets era.",
+      "url": "https://cosmicdata.io",
+      "address": "0x3bE85b604E6EEd1384Fac798A7919cBEBAdb8337",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x3bE85b604E6EEd1384Fac798A7919cBEBAdb8337.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "14456491599551297849724669",
+        "votePowerCapped": "14456491599551297849724669",
+        "feedCount": 63,
+        "lastEpoch": 401,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x9fb51f3a51C5dB3238369b0a7D10F0EC289554B4",
+          "submit": "0x7E9875dcaf7beFf96959A6a9FAb3CB537CD6488A",
+          "submitSignatures": "0xC542a0A01a02C790d0310e79a2c7A52dfF443881",
+          "signingPolicy": "0x68e8B07EFA615188657fb0bCB0D430b0275eFFBf",
+          "delegation": "0x3bE85b604E6EEd1384Fac798A7919cBEBAdb8337"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
         }
       }
