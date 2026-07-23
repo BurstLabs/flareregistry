@@ -54,12 +54,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `candidate is ${c.status}` }, { status: 409 });
     }
 
-    // Guard: if the address now exists in our registry (claimed since the scan), don't create a
-    // duplicate - just absorb the candidate.
+    // Guard: don't create a duplicate. The candidate is already ours if EITHER its exact address is a
+    // ProviderAddress, OR it is a role address of an on-chain entity we already list under a different
+    // role address (upstream lists commonly use a different one of the five role addresses than we do,
+    // e.g. delegation vs identity). In either case, absorb rather than create.
+    const addr = c.address.toLowerCase();
     const clash = await prisma.providerAddress.findUnique({
       where: { chainId_address: { chainId: c.chainId, address: c.address } },
     });
-    if (clash) {
+    let entityAlreadyOurs = false;
+    if (!clash) {
+      const entity = await prisma.providerOnchain.findFirst({
+        where: {
+          OR: [
+            { voter: addr },
+            { delegationAddress: addr },
+            { submitAddress: addr },
+            { submitSignaturesAddress: addr },
+            { signingPolicyAddress: addr },
+          ],
+        },
+        select: {
+          voter: true,
+          delegationAddress: true,
+          submitAddress: true,
+          submitSignaturesAddress: true,
+          signingPolicyAddress: true,
+        },
+      });
+      if (entity) {
+        const roles = [
+          entity.voter,
+          entity.delegationAddress,
+          entity.submitAddress,
+          entity.submitSignaturesAddress,
+          entity.signingPolicyAddress,
+        ].filter((r): r is string => !!r);
+        entityAlreadyOurs =
+          (await prisma.providerAddress.count({
+            where: { address: { in: roles.map((r) => r.toLowerCase()) } },
+          })) > 0;
+      }
+    }
+    if (clash || entityAlreadyOurs) {
       await prisma.importCandidate.update({
         where: { id },
         data: { status: "absorbed", reviewedAt: new Date(), reviewedBy: who },

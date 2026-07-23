@@ -59,9 +59,41 @@ export async function scanTowolabsImports(): Promise<ScanResult> {
   const providers = Array.isArray(list.providers) ? list.providers : [];
   result.fetched = providers.length;
 
-  // Our known addresses (by chain) so we can tell "new to us" from "already have".
-  const ours = await prisma.providerAddress.findMany({ select: { chainId: true, address: true } });
-  const ourKeys = new Set(ours.map((a) => `${a.chainId}:${a.address.toLowerCase()}`));
+  // Our known addresses. A provider registers ONE of its five on-chain role addresses (identity,
+  // submit, submitSignatures, signingPolicy, delegation), but an upstream list may list the SAME
+  // provider under a DIFFERENT role address - so an exact ProviderAddress match is not enough to say
+  // "we have this". We must also treat as ours any role address of an on-chain entity we already list.
+  // (Example: we list Quicknode by its identity address; TowoLabs lists it by its delegation address.)
+  //
+  // Match is by address alone (not chain-scoped): the five role addresses identify one operator, and
+  // an upstream entry we'd import on network X is the same operator we already cover on network Y.
+  const ours = await prisma.providerAddress.findMany({ select: { address: true } });
+  const ourAddrs = new Set(ours.map((a) => a.address.toLowerCase()));
+
+  // Every on-chain entity whose voter (or any role address) is one we already list; collect ALL of
+  // that entity's role addresses so an upstream entry under any of them is recognised as ours.
+  const entities = await prisma.providerOnchain.findMany({
+    select: {
+      voter: true,
+      delegationAddress: true,
+      submitAddress: true,
+      submitSignaturesAddress: true,
+      signingPolicyAddress: true,
+    },
+  });
+  for (const e of entities) {
+    const roles = [
+      e.voter,
+      e.delegationAddress,
+      e.submitAddress,
+      e.submitSignaturesAddress,
+      e.signingPolicyAddress,
+    ].filter((r): r is string => !!r);
+    // If we already list this entity by ANY of its role addresses, mark every role address as ours.
+    if (roles.some((r) => ourAddrs.has(r.toLowerCase()))) {
+      for (const r of roles) ourAddrs.add(r.toLowerCase());
+    }
+  }
 
   // Existing candidates, keyed the same way, so we update snapshots / auto-absorb rather than dupe.
   const existing = await prisma.importCandidate.findMany();
@@ -88,8 +120,9 @@ export async function scanTowolabsImports(): Promise<ScanResult> {
       logoURI: typeof p.logoURI === "string" ? p.logoURI.slice(0, 300) : null,
     };
 
-    if (ourKeys.has(key)) {
-      // We already have this provider. If a stale candidate exists, mark it absorbed.
+    if (ourAddrs.has(addr)) {
+      // We already have this provider (by this address OR another role address of the same entity).
+      // If a stale candidate exists for it, mark it absorbed.
       const c = candByKey.get(key);
       if (c && (c.status === "pending" || c.status === "dismissed")) {
         await prisma.importCandidate.update({
