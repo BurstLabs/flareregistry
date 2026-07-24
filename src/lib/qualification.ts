@@ -22,6 +22,52 @@ const UPTIME_THRESHOLD = 0.95;
 // at ~3.5-day epochs).
 const NO_SUBMIT_REVOKE_EPOCHS = 17;
 
+// An epoch counts as SETTLED once its participant count reaches this share of the previous epoch's.
+// Upstream (fsp-rewards) publishes an epoch incrementally, so a freshly-ingested epoch can hold only
+// a fraction of its eventual entities; treating it as "latest" would mark every missing provider as
+// not-submitting and silently drop it from the directory until the epoch filled in.
+const SETTLED_EPOCH_MIN_RATIO = 0.8;
+
+// Per-network cache of the newest settled epoch, memoised for the lifetime of one module load. Keyed
+// by `${network}:${newestEpochId}` so a newly ingested epoch invalidates the entry naturally.
+const settledEpochCache = new Map<string, number>();
+
+/**
+ * The newest epoch safe to treat as "the latest reward epoch" for qualification: walk back from the
+ * newest ingested epoch while an epoch looks partially published (its participant count is well below
+ * the epoch before it). Falls back to the newest epoch when there is nothing to compare against.
+ */
+async function settledLatestEpoch(network: string, windowEpochIds: number[]): Promise<number> {
+  const newest = windowEpochIds[0];
+  if (newest == null) return newest;
+  const cacheKey = `${network}:${newest}`;
+  const cached = settledEpochCache.get(cacheKey);
+  if (cached != null) return cached;
+
+  // Participant count per epoch in the window, so we can compare consecutive epochs.
+  const counts = await prisma.providerMetricEpoch.groupBy({
+    by: ["epochId"],
+    where: { network, epochId: { in: windowEpochIds } },
+    _count: { _all: true },
+  });
+  const countByEpoch = new Map(counts.map((c) => [c.epochId, c._count._all]));
+
+  // windowEpochIds is newest-first. Accept the first epoch that is not obviously partial.
+  let settled = newest;
+  for (let i = 0; i < windowEpochIds.length - 1; i++) {
+    const cur = countByEpoch.get(windowEpochIds[i]) ?? 0;
+    const prev = countByEpoch.get(windowEpochIds[i + 1]) ?? 0;
+    if (prev === 0 || cur >= prev * SETTLED_EPOCH_MIN_RATIO) {
+      settled = windowEpochIds[i];
+      break;
+    }
+    // Current epoch looks partial - step back and test the next one.
+    settled = windowEpochIds[i + 1];
+  }
+  settledEpochCache.set(cacheKey, settled);
+  return settled;
+}
+
 export type CheckStatus = "pass" | "fail" | "unknown";
 
 export interface Check {
@@ -97,11 +143,20 @@ export async function qualifyProvider(opts: {
       where: { network },
       distinct: ["epochId"],
       orderBy: { epochId: "desc" },
-      take: UPTIME_WINDOW_EPOCHS,
+      // One extra: if the newest epoch is still filling upstream we discard it below, and the uptime
+      // window must still have UPTIME_WINDOW_EPOCHS settled epochs to read (otherwise every provider
+      // would flip to "Insufficient history" the moment a new epoch landed).
+      take: UPTIME_WINDOW_EPOCHS + 1,
       select: { epochId: true },
     });
     const windowEpochIds = epochs.map((e) => e.epochId);
-    const latestEpochId = windowEpochIds[0];
+    // The newest epoch may still be PARTIALLY published upstream: fsp-rewards fills an epoch in over
+    // time, so we can ingest it while most entities are still missing from it. Anchoring "submitting"
+    // on such an epoch makes every not-yet-included provider look inactive and drops it out of the
+    // directory until the epoch completes. So use the newest SETTLED epoch as the yardstick: one whose
+    // participant count is not far below the epoch before it. (settledLatestEpoch is memoised per
+    // network for this call.)
+    const latestEpochId = await settledLatestEpoch(network, windowEpochIds);
 
     const mine = await prisma.providerMetricEpoch.findMany({
       where: { network, voter, epochId: { in: windowEpochIds } },
@@ -160,26 +215,32 @@ export async function qualifyProvider(opts: {
     }
 
     // 3) ≥95% uptime over 30 days: present in >=95% of the last ~9 epochs. Honest "unknown" when
-    //    there is not yet enough history.
+    //    there is not yet enough history. Epochs NEWER than the settled one are excluded: a still-
+    //    filling epoch would otherwise count as a miss for every provider not yet written into it
+    //    (8/9 = 89% < 95% -> a spurious uptime failure on top of the submitting failure).
+    const uptimeEpochIds = windowEpochIds
+      .filter((e) => e <= latestEpochId)
+      .slice(0, UPTIME_WINDOW_EPOCHS);
     let uptime: Check;
-    if (windowEpochIds.length < UPTIME_WINDOW_EPOCHS) {
+    if (uptimeEpochIds.length < UPTIME_WINDOW_EPOCHS) {
       uptime = unknown(
         "uptime",
         "Uptime (last 9 epochs)",
-        `Insufficient history (${windowEpochIds.length}/${UPTIME_WINDOW_EPOCHS} epochs).`
+        `Insufficient history (${uptimeEpochIds.length}/${UPTIME_WINDOW_EPOCHS} epochs).`
       );
     } else {
-      const presentCount = mine.length;
-      const ratio = presentCount / windowEpochIds.length;
-      const needed = Math.ceil(UPTIME_THRESHOLD * windowEpochIds.length);
-      const present = `Present in ${presentCount} of ${windowEpochIds.length} epochs.`;
+      const uptimeSet = new Set(uptimeEpochIds);
+      const presentCount = mine.filter((m) => uptimeSet.has(m.epochId)).length;
+      const ratio = presentCount / uptimeEpochIds.length;
+      const needed = Math.ceil(UPTIME_THRESHOLD * uptimeEpochIds.length);
+      const present = `Present in ${presentCount} of ${uptimeEpochIds.length} epochs.`;
       uptime =
         ratio >= UPTIME_THRESHOLD
           ? pass("uptime", "Uptime (last 9 epochs)", present)
           : fail(
               "uptime",
               "Uptime (last 9 epochs)",
-              `${present} Needs at least ${needed} of ${windowEpochIds.length}.`
+              `${present} Needs at least ${needed} of ${uptimeEpochIds.length}.`
             );
     }
 
