@@ -16,7 +16,6 @@ import { prisma } from "./db";
 
 // 30 days / 3.5-day epochs ~= 8.57 -> require ~9 epochs of history for a meaningful uptime read.
 const UPTIME_WINDOW_EPOCHS = 9;
-const UPTIME_THRESHOLD = 0.95;
 
 // A qualified entity is revoked after this many consecutive epochs of not submitting (60 days
 // at ~3.5-day epochs).
@@ -158,17 +157,47 @@ export async function qualifyProvider(opts: {
     // network for this call.)
     const latestEpochId = await settledLatestEpoch(network, windowEpochIds);
 
+    // The settled evaluation window: the last UPTIME_WINDOW_EPOCHS epochs at or before the settled
+    // one. Everything below (activity, vote power, uptime) is judged against exactly this set.
+    const uptimeEpochIds = windowEpochIds
+      .filter((e) => e <= latestEpochId)
+      .slice(0, UPTIME_WINDOW_EPOCHS);
+    const uptimeWindowIds = new Set(uptimeEpochIds);
+
     const mine = await prisma.providerMetricEpoch.findMany({
       where: { network, voter, epochId: { in: windowEpochIds } },
     });
-    const latest = mine.find((m) => m.epochId === latestEpochId);
+    // Judge activity over the WHOLE window, not just the newest epoch: an operator restart or a brief
+    // outage costs one epoch, and dropping a provider off the directory for ~3.5 days over a single
+    // blip is far harsher than "is this provider still operating?" warrants. A provider fails only
+    // when it is absent from EVERY epoch in the window. `latest` is therefore its most recent
+    // appearance inside the window (used for the point-in-time weight read below), not strictly the
+    // newest epoch.
+    const inWindow = mine
+      .filter((m) => uptimeWindowIds.has(m.epochId))
+      .sort((a, b) => b.epochId - a.epochId);
+    const latest = inWindow[0];
+    const activeEpochs = inWindow.filter(
+      (m) => m.signingWeight != null || BigInt(m.feeReward ?? "0") > 0n
+    );
+    const lastActive = activeEpochs[0];
 
-    // 1) Submitting prices: present in the latest epoch with a signing weight (i.e. in the
-    //    signing policy and participating), or earning rewards.
-    const submitting =
-      latest && (latest.signingWeight != null || BigInt(latest.feeReward ?? "0") > 0n)
-        ? pass("submitting", "Submitting prices", `Active in epoch ${latestEpochId}.`)
-        : fail("submitting", "Submitting prices", "Not active in the latest reward epoch.");
+    // 1) Submitting prices: active in at least one epoch of the window (present in the signing policy
+    //    and participating, or earning rewards). Only a provider that submitted in NONE of the last
+    //    ~9 epochs is treated as not submitting.
+    const submitting = lastActive
+      ? pass(
+          "submitting",
+          "Submitting prices",
+          lastActive.epochId === latestEpochId
+            ? `Active in epoch ${latestEpochId}.`
+            : `Last active in epoch ${lastActive.epochId}.`
+        )
+      : fail(
+          "submitting",
+          "Submitting prices",
+          `Not active in any of the last ${uptimeWindowIds.size} reward epochs.`
+        );
 
     // 2) Sufficient vote power: the entity's EFFECTIVE consensus weight for the latest epoch is
     //    non-zero. Flare normalises each entity's vote power into a uint16 signing weight (0..65535)
@@ -185,12 +214,16 @@ export async function qualifyProvider(opts: {
       votepower = fail(
         "votepower",
         "Sufficient vote power",
-        "Not present in the signing policy for the latest epoch."
+        `Not present in the signing policy for any of the last ${uptimeEpochIds.length} epochs.`
       );
     } else {
+      // Compare the weight against the network total for the SAME epoch it was read from (the
+      // entity's most recent appearance), not the newest epoch - mixing epochs would misstate the
+      // share for a provider that missed the newest one.
+      const weightEpochId = latest.epochId;
       // signingWeight is stored as a decimal string, so sum in JS (Prisma cannot _sum a String).
       const allWeights = await prisma.providerMetricEpoch.findMany({
-        where: { network, epochId: latestEpochId, signingWeight: { not: null } },
+        where: { network, epochId: weightEpochId, signingWeight: { not: null } },
         select: { signingWeight: true },
       });
       const total = allWeights.reduce((acc, r) => acc + BigInt(r.signingWeight as string), 0n);
@@ -214,13 +247,11 @@ export async function qualifyProvider(opts: {
             );
     }
 
-    // 3) ≥95% uptime over 30 days: present in >=95% of the last ~9 epochs. Honest "unknown" when
-    //    there is not yet enough history. Epochs NEWER than the settled one are excluded: a still-
-    //    filling epoch would otherwise count as a miss for every provider not yet written into it
-    //    (8/9 = 89% < 95% -> a spurious uptime failure on top of the submitting failure).
-    const uptimeEpochIds = windowEpochIds
-      .filter((e) => e <= latestEpochId)
-      .slice(0, UPTIME_WINDOW_EPOCHS);
+    // 3) Uptime: present in at least ONE of the last ~9 epochs. A provider only fails when it has been
+    //    absent from the ENTIRE window, i.e. it has genuinely stopped operating. Requiring near-perfect
+    //    attendance punished a single missed epoch (a restart or brief outage) with ~3.5 days off the
+    //    directory, which is far harsher than an availability signal should be. Honest "unknown" when
+    //    there is not yet enough history.
     let uptime: Check;
     if (uptimeEpochIds.length < UPTIME_WINDOW_EPOCHS) {
       uptime = unknown(
@@ -229,18 +260,15 @@ export async function qualifyProvider(opts: {
         `Insufficient history (${uptimeEpochIds.length}/${UPTIME_WINDOW_EPOCHS} epochs).`
       );
     } else {
-      const uptimeSet = new Set(uptimeEpochIds);
-      const presentCount = mine.filter((m) => uptimeSet.has(m.epochId)).length;
-      const ratio = presentCount / uptimeEpochIds.length;
-      const needed = Math.ceil(UPTIME_THRESHOLD * uptimeEpochIds.length);
+      const presentCount = mine.filter((m) => uptimeWindowIds.has(m.epochId)).length;
       const present = `Present in ${presentCount} of ${uptimeEpochIds.length} epochs.`;
       uptime =
-        ratio >= UPTIME_THRESHOLD
+        presentCount > 0
           ? pass("uptime", "Uptime (last 9 epochs)", present)
           : fail(
               "uptime",
               "Uptime (last 9 epochs)",
-              `${present} Needs at least ${needed} of ${uptimeEpochIds.length}.`
+              `${present} Absent from all ${uptimeEpochIds.length} epochs.`
             );
     }
 
