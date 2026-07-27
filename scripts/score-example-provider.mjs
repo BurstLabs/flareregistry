@@ -235,6 +235,14 @@ async function main() {
 const OFFSET = 0x80000000; // 2^31, the encoder's zero point
 const decodeValue = (raw, decimals) => (raw - OFFSET) / 10 ** decimals; // raw uint32 -> real price
 
+// Median of a numeric array (averages the two central values for even length). Non-mutating.
+function median(arr) {
+  if (!arr.length) return NaN;
+  const s = [...arr].sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
 // Scoring for one round. reveals index i corresponds to canonical[i] = {name, decimals}. We decode each
 // provider's raw ints to REAL values via decimals, then compare (per feed, in real-value space) each
 // provider to our reference instances vs the field median. Signal lives on DISCRIMINATING feeds (where
@@ -243,13 +251,18 @@ const decodeValue = (raw, decimals) => (raw - OFFSET) / 10 ** decimals; // raw u
 const variantOf = (instanceId) => String(instanceId).split(":")[0];
 
 // How many times a CONFIRMED-CUSTOM provider's similarity counts toward the field/negative distribution
-// (vs 1 for an anonymous field sample). Trusted negatives should pull the boundary harder, but not so
-// hard that a couple of them dominate - keep it modest.
+// (vs 1 for an anonymous field sample). NOTE: under EW with A=0.02 and ~94 field samples/round, a couple
+// of known customs at this weight only nudge the field distribution slightly - the PRIMARY correction
+// that makes known-customs read ~0% is the baseline rescale in the API layer. This weighting is a
+// secondary nudge that sharpens the field mean toward verified negatives over many rounds.
 const KNOWN_CUSTOM_WEIGHT = 8;
 
 async function scoreRound(round, refs, reveals, canonical) {
   const providers = [...reveals.entries()];
-  const nFeeds = Math.min(canonical.length, ...providers.map(([, v]) => v.length));
+  // Use the full canonical feed count. A provider whose reveal array is SHORT is handled per-provider
+  // (decodeValue returns NaN past its length, which is filtered), so one short reveal no longer collapses
+  // the feed set for EVERYONE (the old min-across-providers did exactly that).
+  const nFeeds = canonical.length;
 
   // Verified-custom set (trusted negatives): their similarity is fed into the field distribution with
   // extra weight, sharpening the anchor-vs-field boundary against providers we KNOW aren't the example.
@@ -275,15 +288,13 @@ async function scoreRound(round, refs, reveals, canonical) {
       .map(([, v]) => decodeValue(v[f], decimals))
       .filter((x) => Number.isFinite(x) && x > 0);
     if (vals.length < 5) { perFeed.push(null); continue; }
-    const sorted = [...vals].sort((a, b) => a - b);
-    const median = sorted[Math.floor(sorted.length / 2)];
+    const med = median(vals);
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length) || median * 1e-9;
-    const relSpread = median > 0 ? sd / median : 0; // fractional cross-provider disagreement
+    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length) || med * 1e-9;
+    const relSpread = med > 0 ? sd / med : 0; // fractional cross-provider disagreement
     // MAD (median absolute deviation), scaled; the robust spread for excursion flagging.
-    const absDev = vals.map((x) => Math.abs(x - median)).sort((a, b) => a - b);
-    const mad = (absDev[Math.floor(absDev.length / 2)] || median * 1e-9) * 1.4826;
-    perFeed.push({ name, median, sd, mad, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
+    const mad = (median(vals.map((x) => Math.abs(x - med))) || med * 1e-9) * 1.4826;
+    perFeed.push({ name, median: med, sd, mad, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
   }
 
   // Excursion of a single value on feed f: {sign:-1|0|1, mag} where mag is deviation in MADs. sign 0 =
@@ -298,6 +309,9 @@ async function scoreRound(round, refs, reveals, canonical) {
 
   // Similarity of a target value series against a per-feed reference-value set, over discriminating
   // feeds. `getVal(f)` -> target's real value; `refSet(f)` -> array of reference values for feed f.
+  // Distance is to the reference MEDIAN (count-invariant), NOT nearest-of-N: min-over-instances shrinks
+  // with instance count and made higher-N variants look artificially more similar, plus it created an
+  // anchor(N-1) vs field(N) asymmetry that biased the two distributions toward each other.
   function similarityOf(getVal, refSet) {
     let simSum = 0, devSum = 0, cnt = 0;
     for (let f = 0; f < nFeeds; f++) {
@@ -307,8 +321,9 @@ async function scoreRound(round, refs, reveals, canonical) {
       if (!Number.isFinite(val) || val <= 0) continue;
       const rr = refSet(f);
       if (!rr || rr.length === 0) continue;
+      const refMed = median(rr);
       const fieldDist = Math.abs(val - pf.median) / pf.sd;
-      const refDist = Math.min(...rr.map((r) => Math.abs(val - r))) / pf.sd;
+      const refDist = Math.abs(val - refMed) / pf.sd;
       simSum += fieldDist - refDist;
       devSum += fieldDist;
       cnt++;
@@ -324,7 +339,7 @@ async function scoreRound(round, refs, reveals, canonical) {
     cals.set(
       vk,
       (await prisma.detectionCalibration.findUnique({ where: { id: vk } })) ??
-        { anchorMean: 0, anchorVar: 0.01, anchorN: 0, fieldMean: 0, fieldVar: 0.01, fieldN: 0 }
+        { anchorMean: 0, anchorVar: 0, anchorN: 0, fieldMean: 0, fieldVar: 0, fieldN: 0 }
     );
   }
 
@@ -363,22 +378,36 @@ async function scoreRound(round, refs, reveals, canonical) {
     if (!pf || !pf.discriminating) continue;
     const rv = refs.map((r) => r.values[pf.name]).filter((x) => Number.isFinite(x) && x > 0);
     if (rv.length === 0) continue;
-    const refMed = [...rv].sort((a, b) => a - b)[Math.floor(rv.length / 2)];
+    const refMed = median(rv);
     const e = excursion(f, refMed);
     if (e.sign !== 0) { refExcursion[f] = e.sign; refExcursionFeeds.push(f); }
   }
 
-  // Co-excursion of a target on the feeds where the REFERENCE excursioned this round: fraction where the
-  // target excursioned the SAME direction. Returns {matches, opps} to accumulate a rate. Only meaningful
-  // when the reference actually excursioned somewhere (refExcursionFeeds non-empty).
+  // Per reference-excursion feed, the FIELD baseline: fraction of all providers that excursioned the SAME
+  // direction as the reference. When the reference spikes because the TRUE price genuinely moved, most of
+  // the field co-moves too, so this baseline is high - the "chance" same-direction rate is NOT 0.5. A
+  // provider only carries signal when it matches MORE often than the field baseline predicts.
+  const fieldMatchRate = new Map(); // feed -> baseline same-direction fraction
+  for (const f of refExcursionFeeds) {
+    let m = 0, n = 0;
+    for (const [, v] of providers) {
+      const e = excursion(f, decodeValue(v[f], canonical[f].decimals));
+      if (e.sign !== 0) { n++; if (e.sign === refExcursion[f]) m++; }
+    }
+    fieldMatchRate.set(f, n ? m / n : 0.5);
+  }
+
+  // Co-excursion of a target: over feeds where the reference excursioned, its EXCESS same-direction rate
+  // above the field baseline. Returns {excess, opps}: excess in [-1,1], averaged over opportunities.
   function coExcursionOf(getVal) {
-    let matches = 0, opps = 0;
+    let excessSum = 0, opps = 0;
     for (const f of refExcursionFeeds) {
       const e = excursion(f, getVal(f));
+      const matched = e.sign === refExcursion[f] ? 1 : 0;
+      excessSum += matched - fieldMatchRate.get(f); // how much more than the field baseline
       opps++;
-      if (e.sign === refExcursion[f]) matches++;
     }
-    return { matches, opps };
+    return { excess: opps ? excessSum / opps : 0, opps };
   }
 
   // Score each provider against every variant. Select the best variant by RAW SIMILARITY (closest fit),
@@ -411,19 +440,20 @@ async function scoreRound(round, refs, reveals, canonical) {
     const existing = await prisma.providerSimilarity.findUnique({
       where: { network_voter: { network: "flare", voter: addr } },
     });
+    // coExcursionRate now stores the EW mean EXCESS same-direction rate above the field baseline
+    // (centered at 0; positive = co-moves with the reference MORE than the field does).
     let mean, varr, dev, rounds, coRate, coN;
     if (!existing) {
       mean = best.sim; varr = 0; dev = best.dev; rounds = 1;
-      coRate = co.opps ? co.matches / co.opps : 0; coN = co.opps;
+      coRate = co.opps ? co.excess : 0; coN = co.opps;
     } else {
       mean = existing.refSimilarityMean + EW_ALPHA * (best.sim - existing.refSimilarityMean);
       varr = (1 - EW_ALPHA) * (existing.refSimilarityVar + EW_ALPHA * (best.sim - existing.refSimilarityMean) ** 2);
       dev = existing.fieldDeviationMean + EW_ALPHA * (best.dev - existing.fieldDeviationMean);
       rounds = existing.roundsObserved + 1;
-      // Only update the co-excursion rate on rounds that presented an opportunity (reference excursioned).
+      // Only update on rounds that presented an opportunity (reference excursioned somewhere).
       if (co.opps > 0) {
-        const roundRate = co.matches / co.opps;
-        coRate = existing.coExcursionRate + EW_ALPHA * (roundRate - existing.coExcursionRate);
+        coRate = existing.coExcursionRate + EW_ALPHA * (co.excess - existing.coExcursionRate);
         coN = existing.coExcursionN + co.opps;
       } else {
         coRate = existing.coExcursionRate; coN = existing.coExcursionN;
@@ -431,11 +461,11 @@ async function scoreRound(round, refs, reveals, canonical) {
     }
     const confidence = Math.min(1, rounds / 500);
     const probability = confidence * best.prob;
-    // Combined probability folds value-similarity and co-excursion. Co-excursion only earns trust after
-    // enough joint opportunities (excursions are rare); until then it defers to the value-similarity
-    // probability. Chance co-excursion rate is ~0.5 (same sign by luck), so map rate through that.
+    // Combined probability folds value-similarity and co-excursion. coRate is already the EXCESS over the
+    // field baseline (0 = moves with the reference no more than the field; 1 = always matches when the
+    // field doesn't). Gated by its own confidence since excursions are rare.
     const coConfidence = Math.min(1, coN / 40); // ~40 joint excursions to trust the rate
-    const coSignal = Math.max(0, (coRate - 0.5) / 0.5); // 0 at chance, 1 at always-same-direction
+    const coSignal = Math.max(0, coRate); // excess already centered at 0
     // Combine: a provider that is BOTH value-similar and co-excursions is high-confidence. Use a soft OR
     // (noisy-or) so either strong signal lifts it, but co-excursion is gated by its own confidence.
     const combinedProbability =
@@ -461,31 +491,40 @@ function npdf(x, mean, varr) {
   const v = Math.max(varr, 1e-6);
   return Math.exp(-((x - mean) ** 2) / (2 * v)) / Math.sqrt(2 * Math.PI * v);
 }
-// Posterior P(example | similarity), equal priors, anchor vs field Gaussians. Falls back to 0 until we
-// have enough anchor samples to trust the anchor distribution.
+// Posterior P(example | similarity), equal priors, anchor vs field Gaussians. Falls back to 0 until BOTH
+// distributions have enough samples AND their seed variance has decayed - otherwise the posterior would
+// be computed against a fabricated 0.01-seed Gaussian (mean~0, sd~0.1) and assert confident nonsense.
+// Require at least this many samples in EACH distribution before asserting any probability.
+const CAL_MIN_N = 40;
 function posteriorExample(sim, cal) {
-  if (!cal || cal.anchorN < 20) return 0; // not enough anchor data yet -> no probability asserted
+  if (!cal) return 0;
+  // Gate on BOTH anchor and field sample counts. fieldN grows ~50x faster than anchorN, so anchorN is the
+  // binding constraint; require enough of each that the 0.01 seed no longer dominates either variance.
+  if (cal.anchorN < CAL_MIN_N || cal.fieldN < CAL_MIN_N) return 0;
   const la = npdf(sim, cal.anchorMean, cal.anchorVar);
   const lf = npdf(sim, cal.fieldMean, cal.fieldVar);
   const denom = la + lf;
   return denom > 0 ? la / denom : 0;
 }
 // EW-update a variant's running (mean, var, n) anchor + field accumulators with this round's samples.
+// Lazily SEED each distribution from its first sample (mean=first value, var stays near 0 and grows from
+// real spread) instead of EW-nudging from the arbitrary 0.01 seed, which otherwise lingers ~30 rounds and
+// distorts the Gaussian likelihoods. `n` starting at 0 marks "unseeded".
 async function updateCalibration(variantKey, cal, anchorSamples, fieldSamples) {
   const A = 0.02; // slow EW so the distributions are stable
   let { anchorMean, anchorVar, anchorN, fieldMean, fieldVar, fieldN } = cal;
-  for (const s of anchorSamples) {
-    const d = s - anchorMean;
-    anchorMean += A * d;
-    anchorVar = (1 - A) * (anchorVar + A * d * d);
-    anchorN++;
-  }
-  for (const s of fieldSamples) {
-    const d = s - fieldMean;
-    fieldMean += A * d;
-    fieldVar = (1 - A) * (fieldVar + A * d * d);
-    fieldN++;
-  }
+  const fold = (samples, mean, varr, n) => {
+    for (const s of samples) {
+      if (n === 0) { mean = s; varr = 0; n = 1; continue; } // seed from first real sample
+      const d = s - mean;
+      mean += A * d;
+      varr = (1 - A) * (varr + A * d * d);
+      n++;
+    }
+    return [mean, varr, n];
+  };
+  [anchorMean, anchorVar, anchorN] = fold(anchorSamples, anchorMean, anchorVar, anchorN);
+  [fieldMean, fieldVar, fieldN] = fold(fieldSamples, fieldMean, fieldVar, fieldN);
   await prisma.detectionCalibration.upsert({
     where: { id: variantKey },
     create: { id: variantKey, anchorMean, anchorVar, anchorN, fieldMean, fieldVar, fieldN },

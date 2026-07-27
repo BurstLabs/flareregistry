@@ -1290,7 +1290,7 @@ function ExampleProviderTab() {
                 <SortTh
                   label="Co-spike"
                   col="coExcursionRate"
-                  tip="When our reference example provider spikes sharply away from the network median on a feed, how often this provider spikes the SAME direction at the same round. ~50% = chance; high = moves with the example provider's shared data sources (strong fingerprint). N = joint spike opportunities seen so far."
+                  tip="EXCESS co-movement: when our reference spikes sharply from the network median on a feed, how much MORE often this provider spikes the same direction than the field does (baselined against the field, since a real price move makes everyone co-move). 0 = no more than the field; positive = moves with the example provider's shared sources beyond chance (fingerprint); negative = less than the field. N = joint spike opportunities seen."
                 />
                 <SortTh
                   label="Variant"
@@ -1350,7 +1350,10 @@ function ExampleProviderTab() {
                   <td className="py-1.5 text-right tabular-nums text-muted">
                     {r.coExcursionN > 0 ? (
                       <>
-                        {pct(r.coExcursionRate)}
+                        <span className={r.coExcursionRate > 0.1 ? "text-amber-500" : undefined}>
+                          {r.coExcursionRate >= 0 ? "+" : ""}
+                          {pct(r.coExcursionRate)}
+                        </span>
                         <span className="ml-1 text-[10px] text-faint">n={r.coExcursionN}</span>
                       </>
                     ) : (
