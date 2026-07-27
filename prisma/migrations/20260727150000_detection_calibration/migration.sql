@@ -1,0 +1,11 @@
+CREATE TABLE "DetectionCalibration" (
+    "id" TEXT NOT NULL DEFAULT 'flare',
+    "anchorMean" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "anchorVar" DOUBLE PRECISION NOT NULL DEFAULT 0.01,
+    "anchorN" INTEGER NOT NULL DEFAULT 0,
+    "fieldMean" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "fieldVar" DOUBLE PRECISION NOT NULL DEFAULT 0.01,
+    "fieldN" INTEGER NOT NULL DEFAULT 0,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "DetectionCalibration_pkey" PRIMARY KEY ("id")
+);

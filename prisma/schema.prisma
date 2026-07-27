@@ -687,3 +687,23 @@ model ProviderSimilarity {
   @@unique([network, voter])
   @@index([voter])
 }
+
+// Singleton running calibration state for the example-provider probability (Flare). Holds the two
+// distributions the probability is computed against, each as EW mean/var:
+//   - anchor*: the similarity score our OWN reference instances receive when scored as if they were
+//     providers (distance to the OTHER reference vs the field). This is the "known example provider"
+//     positive anchor - the only trusted label, since we control these instances.
+//   - field*: the similarity score of the whole provider field (mostly custom) - the negative baseline.
+// A provider's probability is the posterior that its similarity was drawn from the anchor distribution
+// rather than the field distribution (equal priors), so it is calibrated to real, measured spreads
+// rather than arbitrary constants.
+model DetectionCalibration {
+  id         String   @id @default("flare")
+  anchorMean Float    @default(0)
+  anchorVar  Float    @default(0.01)
+  anchorN    Int      @default(0)
+  fieldMean  Float    @default(0)
+  fieldVar   Float    @default(0.01)
+  fieldN     Int      @default(0)
+  updatedAt  DateTime @updatedAt
+}

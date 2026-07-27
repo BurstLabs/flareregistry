@@ -12,6 +12,7 @@ const VOTING_EPOCH_DURATION = 90;
 const INSTANCES = [
   { id: "ref1", url: "http://localhost:3101" },
   { id: "ref2", url: "http://localhost:3102" },
+  { id: "ref3", url: "http://localhost:3103" },
 ];
 // Canonical feed order from the example provider's own config (index-aligned with on-chain reveals).
 const FEEDS_CONFIG = process.env.FEEDS_CONFIG ?? "/home/deploy/ftso-ref/src/config/feeds.json";
