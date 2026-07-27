@@ -486,25 +486,23 @@ async function scoreRound(round, refs, reveals, canonical) {
   }
 }
 
-// Gaussian pdf.
-function npdf(x, mean, varr) {
-  const v = Math.max(varr, 1e-6);
-  return Math.exp(-((x - mean) ** 2) / (2 * v)) / Math.sqrt(2 * Math.PI * v);
-}
-// Posterior P(example | similarity), equal priors, anchor vs field Gaussians. Falls back to 0 until BOTH
-// distributions have enough samples AND their seed variance has decayed - otherwise the posterior would
-// be computed against a fabricated 0.01-seed Gaussian (mean~0, sd~0.1) and assert confident nonsense.
 // Require at least this many samples in EACH distribution before asserting any probability.
 const CAL_MIN_N = 40;
+// Probability that a provider's similarity belongs to the example-provider (anchor) class rather than the
+// field. We deliberately do NOT use a raw Gaussian likelihood ratio: with a WIDE anchor and NARROW field
+// (which is what the data actually shows - anchor SD ~0.8, field SD ~0.18) the ratio is NON-MONOTONIC and
+// RISES AGAIN in the far-below-field tail, so a provider that diverges MOST from the example would wrongly
+// score high (observed: verified-custom 1FTSO topping the list). Instead use a MONOTONIC logistic on where
+// `sim` sits between the field mean (~0) and the anchor mean (~1). Monotonic in sim by construction:
+// more-similar always => higher probability, and a low-similarity provider always reads low.
 function posteriorExample(sim, cal) {
   if (!cal) return 0;
-  // Gate on BOTH anchor and field sample counts. fieldN grows ~50x faster than anchorN, so anchorN is the
-  // binding constraint; require enough of each that the 0.01 seed no longer dominates either variance.
   if (cal.anchorN < CAL_MIN_N || cal.fieldN < CAL_MIN_N) return 0;
-  const la = npdf(sim, cal.anchorMean, cal.anchorVar);
-  const lf = npdf(sim, cal.fieldMean, cal.fieldVar);
-  const denom = la + lf;
-  return denom > 0 ? la / denom : 0;
+  const gap = cal.anchorMean - cal.fieldMean;
+  if (!(gap > 1e-6)) return 0; // classes not separated (anchor must sit above field)
+  const mid = (cal.anchorMean + cal.fieldMean) / 2; // 50% decision point
+  const k = 6 / gap; // steepness: ~full 0->1 swing across the anchor-field gap
+  return 1 / (1 + Math.exp(-k * (sim - mid)));
 }
 // EW-update a variant's running (mean, var, n) anchor + field accumulators with this round's samples.
 // Lazily SEED each distribution from its first sample (mean=first value, var stays near 0 and grows from
