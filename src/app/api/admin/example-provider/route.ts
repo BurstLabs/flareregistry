@@ -16,11 +16,21 @@ export async function GET() {
     orderBy: { refSimilarityMean: "desc" },
   });
 
-  // Resolve voter (on-chain identity) -> our provider name/address for display. A voter is an entity's
-  // identity address; match it to a ProviderOnchain, then to a listed ProviderAddress -> Provider.
-  const voters = rows.map((r) => r.voter.toLowerCase());
+  // Resolve the similarity row's address -> our provider name for display. IMPORTANT: the address we
+  // stored is the reveal tx sender = the entity's SUBMIT address, not its identity/voter. So match it
+  // against ANY of the 5 role addresses of a ProviderOnchain entity, then map that entity's roles to the
+  // listing. `key` here is the similarity row's stored address (submit address).
+  const keys = rows.map((r) => r.voter.toLowerCase());
   const entities = await prisma.providerOnchain.findMany({
-    where: { voter: { in: voters } },
+    where: {
+      OR: [
+        { voter: { in: keys } },
+        { submitAddress: { in: keys } },
+        { delegationAddress: { in: keys } },
+        { submitSignaturesAddress: { in: keys } },
+        { signingPolicyAddress: { in: keys } },
+      ],
+    },
     select: {
       voter: true,
       delegationAddress: true,
@@ -29,14 +39,16 @@ export async function GET() {
       signingPolicyAddress: true,
     },
   });
-  // Map any of an entity's role addresses -> its voter, so we can find the listing by whichever address
-  // the provider registered.
-  const roleToVoter = new Map<string, string>();
+  // Map: each role address of an entity -> a stable entity key (its voter). Then map the SIMILARITY row's
+  // stored address to that entity key, so we can look up the listing.
+  const roleToEntity = new Map<string, string>();
   for (const e of entities) {
-    for (const a of [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]) {
-      if (a) roleToVoter.set(a.toLowerCase(), e.voter.toLowerCase());
-    }
+    const roles = [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress];
+    for (const a of roles) if (a) roleToEntity.set(a.toLowerCase(), e.voter.toLowerCase());
   }
+  // roleToVoter here maps a similarity key (submit addr) -> the entity voter, AND every role addr -> voter
+  // (so the listing lookup by any registered address works).
+  const roleToVoter = roleToEntity;
   const addrs = [...roleToVoter.keys()];
   const listings = await prisma.providerAddress.findMany({
     where: { address: { in: addrs } },
@@ -49,7 +61,8 @@ export async function GET() {
   }
 
   const report = rows.map((r) => {
-    const p = nameByVoter.get(r.voter.toLowerCase());
+    const entityVoter = roleToEntity.get(r.voter.toLowerCase());
+    const p = entityVoter ? nameByVoter.get(entityVoter) : undefined;
     return {
       voter: r.voter,
       name: p?.name ?? null,
