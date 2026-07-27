@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const threshold = Math.min(1, Math.max(0, Number(new URL(req.url).searchParams.get("threshold") ?? "0.5")));
+  const tRaw = Number(new URL(req.url).searchParams.get("threshold") ?? "0.5");
+  const threshold = Number.isFinite(tRaw) ? Math.min(1, Math.max(0, tRaw)) : 0.5;
 
   const rows = await prisma.providerSimilarity.findMany({
     orderBy: { combinedProbability: "desc" },
@@ -56,11 +57,20 @@ export async function GET(req: NextRequest) {
 
   const weiToTokens = (s: string | null) => (s ? Number(BigInt(s) / 10n ** 15n) / 1000 : 0);
 
-  // Admin display-name overrides.
+  // Admin display-name overrides + verified-custom flags.
   const labels = await prisma.detectionLabel.findMany({ where: { address: { in: keys } } });
   const labelByAddr = new Map(labels.map((l) => [l.address.toLowerCase(), l.label]));
+  const knownCustomAddr = new Set(labels.filter((l) => l.knownCustom).map((l) => l.address.toLowerCase()));
 
-  // Assemble + filter to probable users.
+  // Match the tab's baseline calibration: rescale the combined probability so a verified-custom provider
+  // reads ~0, i.e. p' = max(0, (p - baseline)/(1 - baseline)) with baseline = max known-custom raw prob.
+  // Without this the report would filter on the un-rescaled value and disagree with what the tab shows.
+  const knownRaw = rows.filter((r) => knownCustomAddr.has(r.voter.toLowerCase()));
+  const baseline = knownRaw.length ? Math.max(...knownRaw.map((r) => r.combinedProbability)) : 0;
+  const rescale = (p: number) =>
+    baseline > 0 && baseline < 1 ? Math.max(0, (p - baseline) / (1 - baseline)) : p;
+
+  // Assemble.
   const all = rows.map((r) => {
     const ev = roleToEntity.get(r.voter.toLowerCase());
     const listing = ev ? listingByVoter.get(ev) : undefined;
@@ -70,7 +80,8 @@ export async function GET(req: NextRequest) {
       url: listing?.url ?? "",
       submitAddress: r.voter,
       identity: ev ?? "",
-      combinedProbability: r.combinedProbability,
+      knownCustom: knownCustomAddr.has(r.voter.toLowerCase()),
+      combinedProbability: rescale(r.combinedProbability),
       valueSimilarity: r.refSimilarityMean,
       coExcursionRate: r.coExcursionRate,
       coExcursionN: r.coExcursionN,
@@ -83,15 +94,20 @@ export async function GET(req: NextRequest) {
       rounds: r.roundsObserved,
     };
   });
-  const probable = all.filter((x) => x.combinedProbability >= threshold);
+  // Probable users: above threshold AND not verified-custom (never accuse a provider we KNOW is custom).
+  const probable = all.filter((x) => !x.knownCustom && x.combinedProbability >= threshold);
 
   const totalWeightAll = all.reduce((s, x) => s + x.weightTokens, 0);
   const totalWeightProbable = probable.reduce((s, x) => s + x.weightTokens, 0);
   const sharePct = totalWeightAll > 0 ? (totalWeightProbable / totalWeightAll) * 100 : 0;
 
   // Build CSV. Summary lines are prefixed with # so they don't interfere with the data table.
+  // esc() also neutralizes CSV FORMULA INJECTION: provider name/url come from public submissions, and
+  // the file is opened in spreadsheets, so a leading = + - @ tab or CR would execute as a formula.
+  // Prefix any such value with a single quote, then quote-wrap if it contains , " or newline.
   const esc = (v: unknown) => {
-    const s = String(v ?? "");
+    let s = String(v ?? "");
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines: string[] = [];
@@ -105,7 +121,7 @@ export async function GET(req: NextRequest) {
   lines.push(`# NOTE: suspicion score, not proof. For human review only; not for automated action.`);
   lines.push("");
   const cols = [
-    "rank", "provider", "combined_probability", "value_similarity", "co_excursion_rate",
+    "rank", "provider", "combined_probability", "value_similarity", "co_excursion_excess",
     "co_excursion_n", "best_variant", "accuracy_dev", "weight_tokens", "weight_share_pct",
     "fee_percent", "management_group", "confidence", "rounds", "submit_address", "identity_address", "url",
   ];
