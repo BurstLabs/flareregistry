@@ -87,15 +87,26 @@ async function candidateEpochs() {
 }
 
 let rpcId = 0;
-async function rpc(method, params) {
-  const r = await fetch(RPC, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }),
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(`${method}: ${j.error.message}`);
-  return j.result;
+// Retry transient RPC failures. The reveal decoder makes hundreds of block fetches per round, and the
+// public Flare RPC intermittently times out under that load; without retries one hiccup aborts the whole
+// run and the tab goes empty. Exponential backoff, small jitter via attempt index.
+async function rpc(method, params, attempt = 0) {
+  try {
+    const r = await fetch(RPC, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    if (j.error) throw new Error(`${method}: ${j.error.message}`);
+    return j.result;
+  } catch (e) {
+    if (attempt >= 5) throw e;
+    await new Promise((res) => setTimeout(res, 300 * 2 ** attempt + attempt * 50));
+    return rpc(method, params, attempt + 1);
+  }
 }
 
 // --- calldata decode (mirrors FTSO-Scaling PayloadMessage + FeedValueEncoder) ---
@@ -197,17 +208,23 @@ async function main() {
   }
 
   for (const round of rounds) {
-    const refs = await prisma.referenceSample.findMany({ where: { round } });
-    if (refs.length === 0) continue;
-    const reveals = await revealsForRound(round, latest);
-    if (reveals.size === 0) {
-      console.log(`round ${round}: no reveals decoded, skip`);
-      continue;
+    // Isolate each round: a round that fails (even after RPC retries) is skipped, never aborts the run,
+    // so a transient hiccup can't wipe the whole pass and leave the tab empty.
+    try {
+      const refs = await prisma.referenceSample.findMany({ where: { round } });
+      if (refs.length === 0) continue;
+      const reveals = await revealsForRound(round, latest);
+      if (reveals.size === 0) {
+        console.log(`round ${round}: no reveals decoded, skip`);
+        continue;
+      }
+      const canonical = await canonicalFeeds(round);
+      if (!canonical) { console.log(`round ${round}: no canonical feed order, skip`); continue; }
+      await scoreRound(round, refs, reveals, canonical);
+      console.log(`round ${round}: scored ${reveals.size} providers against ${refs.length} ref instances`);
+    } catch (e) {
+      console.error(`round ${round}: failed, skipping - ${e.message}`);
     }
-    const canonical = await canonicalFeeds(round);
-    if (!canonical) { console.log(`round ${round}: no canonical feed order, skip`); continue; }
-    await scoreRound(round, refs, reveals, canonical);
-    console.log(`round ${round}: scored ${reveals.size} providers against ${refs.length} ref instances`);
   }
   await prisma.$disconnect();
 }
