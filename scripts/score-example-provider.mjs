@@ -22,20 +22,15 @@ const VOTING_EPOCH_DURATION = 90;
 const REVEAL_SELECTOR = "0x9d00c9fd"; // submit2 (reveal) on Flare
 // EW smoothing for the rolling accumulators (~ decays over a few hundred rounds).
 const EW_ALPHA = 0.02;
-// A feed is USABLE this round if it carries potential signal. Two ways to qualify (either suffices):
-//  (a) cross-provider dispersion exceeds DISCRIMINATING_CV - providers disagree, so where you sit means
-//      something; OR
-//  (b) our REFERENCE sits at least REF_DISTANCE_CV (fractionally) away from the field median - even if
-//      providers currently AGREE, the reference is distinguishable, so tracking it is informative.
-// (b) is essential: if many providers run the example provider they AGREE with each other and the
-// reference, collapsing dispersion - a pure-dispersion gate (the old single 0.0008 rule) would then drop
-// exactly the feeds where the example cohort lives, hiding them. Threshold lowered from 0.0008 so the
-// mid-liquidity feeds (HNT, RENDER, FIL, PYTH, S/USD ...) where implementations actually differ are kept.
-const DISCRIMINATING_CV = 0.0002;
-const REF_DISTANCE_CV = 0.0002;
-// Floor for the distance-normalization scale, as a fraction of the feed median, so tight-agreement feeds
-// don't blow up distances. Roughly the "meaningful difference" resolution on a feed.
-const SCALE_FLOOR_CV = 0.0001;
+// NO hard feed filter. We use ALL feeds and WEIGHT each by how discriminating it is this round, so a
+// liquid feed where everyone agrees contributes ~nothing automatically (its weight -> 0) while a feed
+// where the reference genuinely differs from the field contributes proportionally. This removes the
+// self-defeating dropout of the old keep/drop gate (agreement among example users collapsed dispersion
+// and dropped exactly their feeds) and needs no arbitrary threshold. A feed's weight is how far the
+// REFERENCE sits from the field median, in fractional (per-median) terms - i.e. how much signal the feed
+// can carry - floored below so numerical noise doesn't create weight, and the distance itself is measured
+// in the same fractional units (dimensionless), so feeds combine on a common scale regardless of price.
+const WEIGHT_FLOOR_CV = 0.00005; // fractional ref-field gap below which a feed carries ~no signal
 // A value is an EXCURSION when it sits this many MADs from the network median (a sharp spike away from
 // consensus). Providers running the same shared-source code excursion together on the same feeds/rounds.
 const EXCURSION_K = 4;
@@ -300,57 +295,58 @@ async function scoreRound(round, refs, reveals, canonical) {
       .filter((x) => Number.isFinite(x) && x > 0);
     if (vals.length < 5) { perFeed.push(null); continue; }
     const med = median(vals);
-    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length) || med * 1e-9;
-    const relSpread = med > 0 ? sd / med : 0; // fractional cross-provider disagreement
     // MAD (median absolute deviation), scaled; the robust spread for excursion flagging.
     const mad = (median(vals.map((x) => Math.abs(x - med))) || med * 1e-9) * 1.4826;
-    // Reference position on this feed (median across all our instances) + its fractional distance from
-    // the field median. Feeds where the reference is distinguishable from the field are usable even when
-    // providers agree (which is what happens when many run the example provider).
+    // Reference position on this feed (median across all instances) and its fractional gap from the field
+    // median. That gap IS the feed's discriminating power: if the reference sits on the field, the feed
+    // can't distinguish anyone (weight ~0); the further the reference is, the more a provider's position
+    // relative to it tells us. No keep/drop - every feed participates, weighted by this.
     const rv = refs.map((r) => r.values[name]).filter((x) => Number.isFinite(x) && x > 0);
     const refMed = rv.length ? median(rv) : null;
-    const refDistCv = refMed != null && med > 0 ? Math.abs(refMed - med) / med : 0;
-    const discriminating = relSpread > DISCRIMINATING_CV || refDistCv > REF_DISTANCE_CV;
-    // Normalization SCALE for distances: the field sd, but floored to a small fraction of the median so a
-    // feed where providers agree tightly (sd -> ~0) doesn't produce an exploding distance that dominates
-    // the similarity mean. This matters now that ref-distinguishable-but-low-dispersion feeds are kept.
-    const scale = Math.max(sd, med * SCALE_FLOOR_CV);
-    perFeed.push({ name, median: med, sd, mad, scale, relSpread, refDistCv, discriminating });
+    const refFieldGapCv = refMed != null && med > 0 ? Math.abs(refMed - med) / med : 0;
+    const weight = Math.max(0, refFieldGapCv - WEIGHT_FLOOR_CV);
+    perFeed.push({ name, median: med, mad, refMed, refFieldGapCv, weight });
   }
 
   // Excursion of a single value on feed f: {sign:-1|0|1, mag} where mag is deviation in MADs. sign 0 =
   // within band (not an excursion). Only discriminating feeds carry signal.
   function excursion(f, val) {
     const pf = perFeed[f];
-    if (!pf || !pf.discriminating || !Number.isFinite(val) || val <= 0) return { sign: 0, mag: 0 };
-    const z = (val - pf.median) / Math.max(pf.mad, pf.median * SCALE_FLOOR_CV);
+    if (!pf || pf.weight <= 0 || !Number.isFinite(val) || val <= 0) return { sign: 0, mag: 0 };
+    const z = (val - pf.median) / Math.max(pf.mad, pf.median * 1e-6);
     if (Math.abs(z) < EXCURSION_K) return { sign: 0, mag: Math.abs(z) };
     return { sign: Math.sign(z), mag: Math.abs(z) };
   }
 
-  // Similarity of a target value series against a per-feed reference-value set, over discriminating
-  // feeds. `getVal(f)` -> target's real value; `refSet(f)` -> array of reference values for feed f.
-  // Distance is to the reference MEDIAN (count-invariant), NOT nearest-of-N: min-over-instances shrinks
-  // with instance count and made higher-N variants look artificially more similar, plus it created an
-  // anchor(N-1) vs field(N) asymmetry that biased the two distributions toward each other.
+  // Similarity of a target against a per-feed reference-value set, over ALL feeds, WEIGHTED by each
+  // feed's discriminating power (perFeed[f].weight = fractional ref-field gap). `getVal(f)` -> target's
+  // real value; `refSet(f)` -> array of reference values for that feed (variant-specific).
+  //
+  // Per feed we ask: is the target closer to the reference or to the field, in FRACTIONAL terms
+  // (dimensionless, so all feeds combine on one scale)? Contribution = (fieldDist - refDist)/gap, which
+  // is +1 when the target sits exactly on the reference, -1 when it sits on the field, and interpolates
+  // between - then averaged with the feed weights. Liquid feeds have weight ~0 and drop out on their own.
   function similarityOf(getVal, refSet) {
-    let simSum = 0, devSum = 0, cnt = 0;
+    let simW = 0, devW = 0, wSum = 0;
     for (let f = 0; f < nFeeds; f++) {
       const pf = perFeed[f];
-      if (!pf || !pf.discriminating) continue;
+      if (!pf || pf.weight <= 0 || pf.median <= 0) continue;
       const val = getVal(f);
       if (!Number.isFinite(val) || val <= 0) continue;
       const rr = refSet(f);
       if (!rr || rr.length === 0) continue;
       const refMed = median(rr);
-      const fieldDist = Math.abs(val - pf.median) / pf.scale;
-      const refDist = Math.abs(val - refMed) / pf.scale;
-      simSum += fieldDist - refDist;
-      devSum += fieldDist;
-      cnt++;
+      const gap = Math.abs(refMed - pf.median) / pf.median; // fractional ref-field gap for THIS ref set
+      if (gap <= 0) continue;
+      const fieldDist = Math.abs(val - pf.median) / pf.median;
+      const refDist = Math.abs(val - refMed) / pf.median;
+      // (fieldDist - refDist)/gap in [-1, 1]: +1 on the reference, -1 on the field. Clamp for outliers.
+      const s = Math.max(-1, Math.min(1, (fieldDist - refDist) / gap));
+      simW += pf.weight * s;
+      devW += pf.weight * fieldDist; // weighted accuracy proxy (distance from field consensus)
+      wSum += pf.weight;
     }
-    return { sim: cnt ? simSum / cnt : null, dev: cnt ? devSum / cnt : null, cnt };
+    return { sim: wSum ? simW / wSum : null, dev: wSum ? devW / wSum : null, cnt: wSum ? 1 : 0 };
   }
 
   const now = new Date();
@@ -397,7 +393,7 @@ async function scoreRound(round, refs, reveals, canonical) {
   const refExcursionFeeds = [];
   for (let f = 0; f < nFeeds; f++) {
     const pf = perFeed[f];
-    if (!pf || !pf.discriminating) continue;
+    if (!pf || pf.weight <= 0) continue;
     const rv = refs.map((r) => r.values[pf.name]).filter((x) => Number.isFinite(x) && x > 0);
     if (rv.length === 0) continue;
     const refMed = median(rv);
