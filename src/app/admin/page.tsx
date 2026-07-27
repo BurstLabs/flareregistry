@@ -1113,7 +1113,7 @@ function ExampleProviderTab() {
   const [maxRounds, setMaxRounds] = useState(0);
   const [loading, setLoading] = useState(true);
   // Sort state: which column key, and direction. Default = probability, descending (most suspect first).
-  const [sortKey, setSortKey] = useState<string>("probability");
+  const [sortKey, setSortKey] = useState<string>("combinedProbability");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const load = useCallback(async () => {
     setLoading(true);
@@ -1236,13 +1236,18 @@ function ExampleProviderTab() {
                 />
                 <SortTh
                   label="P(example)"
-                  col="probability"
-                  tip="Calibrated probability this provider runs the unmodified example provider. It is confidence-gated, so it stays low until ~12h of rounds accumulate. A suspicion score, not proof."
+                  col="combinedProbability"
+                  tip="Combined calibrated probability this provider runs the unmodified example provider, folding BOTH signals: value-similarity to our reference AND co-excursion (spiking away from the median at the same time as our reference). Confidence-gated, so it stays low until rounds accumulate. A suspicion score, not proof."
                 />
                 <SortTh
                   label="Similarity"
                   col="similarity"
                   tip="How much more closely this provider's on-chain values track our reference example provider than the field does, on divergent (long-tail) feeds. Higher (more positive) = more example-provider-like; negative = diverges from it (custom)."
+                />
+                <SortTh
+                  label="Co-spike"
+                  col="coExcursionRate"
+                  tip="When our reference example provider spikes sharply away from the network median on a feed, how often this provider spikes the SAME direction at the same round. ~50% = chance; high = moves with the example provider's shared data sources (strong fingerprint). N = joint spike opportunities seen so far."
                 />
                 <SortTh
                   label="Variant"
@@ -1283,13 +1288,23 @@ function ExampleProviderTab() {
                     <span className="font-mono text-[11px] text-faint">{r.voter.slice(0, 18)}…</span>
                   </td>
                   <td className="py-1.5 text-right tabular-nums">
-                    <span className={r.probability > 0.5 ? "font-semibold text-flare" : "text-muted"}>
-                      {pct(r.probability)}
+                    <span className={r.combinedProbability > 0.5 ? "font-semibold text-flare" : "text-muted"}>
+                      {pct(r.combinedProbability)}
                     </span>
                   </td>
                   <td className={`py-1.5 text-right tabular-nums ${simColor(r.similarity)}`}>
                     {r.similarity >= 0 ? "+" : ""}
                     {r.similarity.toFixed(3)}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-muted">
+                    {r.coExcursionN > 0 ? (
+                      <>
+                        {pct(r.coExcursionRate)}
+                        <span className="ml-1 text-[10px] text-faint">n={r.coExcursionN}</span>
+                      </>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
                   </td>
                   <td className="py-1.5 text-center">
                     {r.variant ? (

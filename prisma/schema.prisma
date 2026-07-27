@@ -678,12 +678,19 @@ model ProviderSimilarity {
   // example-provider question).
   fieldDeviationMean Float @default(0)
 
-  roundsObserved Int     @default(0)
-  probability    Float   @default(0)
-  confidence     Float   @default(0)
+  roundsObserved      Int     @default(0)
+  probability         Float   @default(0)
+  confidence          Float   @default(0)
   // Which reference VARIANT (full|top5|top10) this provider best matches - reveals their likely
   // exchange config when they run the example code.
-  bestVariant    String?
+  bestVariant         String?
+  // CO-EXCURSION signal: when our reference example provider deviates sharply from the network median on
+  // a feed (a shared-source "spike"), does THIS provider deviate the same way at the same round? EW rate
+  // of same-direction co-excursion with the reference (0..1), the count of joint opportunities, and the
+  // combined probability that folds value-similarity AND co-excursion together.
+  coExcursionRate     Float   @default(0)
+  coExcursionN        Int     @default(0)
+  combinedProbability Float   @default(0)
 
   updatedAt DateTime @updatedAt
 

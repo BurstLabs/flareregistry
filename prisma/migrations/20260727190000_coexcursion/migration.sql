@@ -1,0 +1,3 @@
+ALTER TABLE "ProviderSimilarity" ADD COLUMN "coExcursionRate" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "ProviderSimilarity" ADD COLUMN "coExcursionN" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "ProviderSimilarity" ADD COLUMN "combinedProbability" DOUBLE PRECISION NOT NULL DEFAULT 0;

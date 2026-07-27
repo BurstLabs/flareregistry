@@ -25,6 +25,9 @@ const EW_ALPHA = 0.02;
 // A feed is "discriminating" this round if the coefficient-of-variation of provider values exceeds
 // this. Below it, everyone agrees (liquid) and it carries no signal.
 const DISCRIMINATING_CV = 0.0008;
+// A value is an EXCURSION when it sits this many MADs from the network median (a sharp spike away from
+// consensus). Providers running the same shared-source code excursion together on the same feeds/rounds.
+const EXCURSION_K = 4;
 
 const FSP_BASE = "https://raw.githubusercontent.com/flare-foundation/fsp-rewards/main/flare";
 const REWARD_EPOCH_DURATION_ROUNDS = 3360; // 3.5 days / 90s
@@ -252,7 +255,9 @@ async function scoreRound(round, refs, reveals, canonical) {
     byVariant.get(vk).push(r);
   }
 
-  // Per feed: decode all providers' real values, compute median + relative dispersion.
+  // Per feed: decode all providers' real values, compute median, dispersion, and a robust MAD used for
+  // EXCURSION detection (a value is an "excursion" when it sits > EXCURSION_K MADs from the median - a
+  // sharp deviation from the network consensus this round).
   const perFeed = [];
   for (let f = 0; f < nFeeds; f++) {
     const { name, decimals } = canonical[f];
@@ -265,7 +270,20 @@ async function scoreRound(round, refs, reveals, canonical) {
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
     const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length) || median * 1e-9;
     const relSpread = median > 0 ? sd / median : 0; // fractional cross-provider disagreement
-    perFeed.push({ name, median, sd, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
+    // MAD (median absolute deviation), scaled; the robust spread for excursion flagging.
+    const absDev = vals.map((x) => Math.abs(x - median)).sort((a, b) => a - b);
+    const mad = (absDev[Math.floor(absDev.length / 2)] || median * 1e-9) * 1.4826;
+    perFeed.push({ name, median, sd, mad, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
+  }
+
+  // Excursion of a single value on feed f: {sign:-1|0|1, mag} where mag is deviation in MADs. sign 0 =
+  // within band (not an excursion). Only discriminating feeds carry signal.
+  function excursion(f, val) {
+    const pf = perFeed[f];
+    if (!pf || !pf.discriminating || !Number.isFinite(val) || val <= 0) return { sign: 0, mag: 0 };
+    const z = (val - pf.median) / (pf.mad || 1);
+    if (Math.abs(z) < EXCURSION_K) return { sign: 0, mag: Math.abs(z) };
+    return { sign: Math.sign(z), mag: Math.abs(z) };
   }
 
   // Similarity of a target value series against a per-feed reference-value set, over discriminating
@@ -324,6 +342,35 @@ async function scoreRound(round, refs, reveals, canonical) {
     fieldByVariant.set(vk, []);
   }
 
+  // --- REFERENCE EXCURSION SIGNATURE for this round ---
+  // For each discriminating feed, does OUR reference example provider excursion from the network median,
+  // and which direction? Use the reference median value across ALL instances (variants included) as the
+  // reference position on that feed. refExcursion[f] = sign in {-1,0,1}; sign 0 = no reference excursion.
+  const refExcursion = new Array(nFeeds).fill(0);
+  const refExcursionFeeds = [];
+  for (let f = 0; f < nFeeds; f++) {
+    const pf = perFeed[f];
+    if (!pf || !pf.discriminating) continue;
+    const rv = refs.map((r) => r.values[pf.name]).filter((x) => Number.isFinite(x) && x > 0);
+    if (rv.length === 0) continue;
+    const refMed = [...rv].sort((a, b) => a - b)[Math.floor(rv.length / 2)];
+    const e = excursion(f, refMed);
+    if (e.sign !== 0) { refExcursion[f] = e.sign; refExcursionFeeds.push(f); }
+  }
+
+  // Co-excursion of a target on the feeds where the REFERENCE excursioned this round: fraction where the
+  // target excursioned the SAME direction. Returns {matches, opps} to accumulate a rate. Only meaningful
+  // when the reference actually excursioned somewhere (refExcursionFeeds non-empty).
+  function coExcursionOf(getVal) {
+    let matches = 0, opps = 0;
+    for (const f of refExcursionFeeds) {
+      const e = excursion(f, getVal(f));
+      opps++;
+      if (e.sign === refExcursion[f]) matches++;
+    }
+    return { matches, opps };
+  }
+
   // Score each provider against every variant. Select the best variant by RAW SIMILARITY (closest fit),
   // NOT by posterior: the posterior is variance-sensitive, and a narrower-exchange variant has a tighter
   // anchor, so max-posterior would make that variant a catch-all that absorbs almost everyone regardless
@@ -344,23 +391,47 @@ async function scoreRound(round, refs, reveals, canonical) {
     // Probability from the SELECTED variant's calibration.
     best.prob = posteriorExample(best.sim, cals.get(best.vk));
 
+    // Co-excursion: on feeds where our reference excursioned this round, did this provider excursion the
+    // same way? (Only contributes when the reference excursioned somewhere.)
+    const co = coExcursionOf((f) => decodeValue(v[f], canonical[f].decimals));
+
     const existing = await prisma.providerSimilarity.findUnique({
       where: { network_voter: { network: "flare", voter: addr } },
     });
-    let mean, varr, dev, rounds;
+    let mean, varr, dev, rounds, coRate, coN;
     if (!existing) {
       mean = best.sim; varr = 0; dev = best.dev; rounds = 1;
+      coRate = co.opps ? co.matches / co.opps : 0; coN = co.opps;
     } else {
       mean = existing.refSimilarityMean + EW_ALPHA * (best.sim - existing.refSimilarityMean);
       varr = (1 - EW_ALPHA) * (existing.refSimilarityVar + EW_ALPHA * (best.sim - existing.refSimilarityMean) ** 2);
       dev = existing.fieldDeviationMean + EW_ALPHA * (best.dev - existing.fieldDeviationMean);
       rounds = existing.roundsObserved + 1;
+      // Only update the co-excursion rate on rounds that presented an opportunity (reference excursioned).
+      if (co.opps > 0) {
+        const roundRate = co.matches / co.opps;
+        coRate = existing.coExcursionRate + EW_ALPHA * (roundRate - existing.coExcursionRate);
+        coN = existing.coExcursionN + co.opps;
+      } else {
+        coRate = existing.coExcursionRate; coN = existing.coExcursionN;
+      }
     }
     const confidence = Math.min(1, rounds / 500);
     const probability = confidence * best.prob;
+    // Combined probability folds value-similarity and co-excursion. Co-excursion only earns trust after
+    // enough joint opportunities (excursions are rare); until then it defers to the value-similarity
+    // probability. Chance co-excursion rate is ~0.5 (same sign by luck), so map rate through that.
+    const coConfidence = Math.min(1, coN / 40); // ~40 joint excursions to trust the rate
+    const coSignal = Math.max(0, (coRate - 0.5) / 0.5); // 0 at chance, 1 at always-same-direction
+    // Combine: a provider that is BOTH value-similar and co-excursions is high-confidence. Use a soft OR
+    // (noisy-or) so either strong signal lifts it, but co-excursion is gated by its own confidence.
+    const combinedProbability =
+      1 - (1 - probability) * (1 - coConfidence * coSignal * confidence);
     const data = {
       refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
-      roundsObserved: rounds, confidence, probability, bestVariant: best.vk, updatedAt: now,
+      roundsObserved: rounds, confidence, probability,
+      coExcursionRate: coRate, coExcursionN: coN, combinedProbability,
+      bestVariant: best.vk, updatedAt: now,
     };
     if (!existing) await prisma.providerSimilarity.create({ data: { network: "flare", voter: addr, ...data } });
     else await prisma.providerSimilarity.update({ where: { id: existing.id }, data });

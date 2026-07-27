@@ -80,6 +80,9 @@ export async function GET() {
       variance: r.refSimilarityVar,
       accuracy: r.fieldDeviationMean, // deviation from field consensus (lower = more accurate)
       probability: r.probability,
+      combinedProbability: r.combinedProbability, // value-similarity + co-excursion
+      coExcursionRate: r.coExcursionRate, // same-direction spike rate with our reference (0..1)
+      coExcursionN: r.coExcursionN, // joint excursion opportunities observed
       confidence: r.confidence,
       rounds: r.roundsObserved,
       variant: r.bestVariant, // which exchange-subset variant (full|top5|top10) fits best
