@@ -73,19 +73,34 @@ function currentRound() {
 
 // Collect all providers' revealed raw-int arrays for a given round by scanning the blocks whose
 // timestamps fall in that round's reveal window. Returns Map<providerAddr, uint32[]>.
+async function blockAtOrAfterTs(targetTs, latestBlock) {
+  // Binary search for the lowest block whose timestamp >= targetTs.
+  let lo = 1, hi = latestBlock, ans = latestBlock;
+  const tsCache = new Map();
+  const tsOf = async (b) => {
+    if (tsCache.has(b)) return tsCache.get(b);
+    const blk = await rpc("eth_getBlockByNumber", [`0x${b.toString(16)}`, false]);
+    const t = parseInt(blk.timestamp, 16);
+    tsCache.set(b, t);
+    return t;
+  };
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if ((await tsOf(mid)) >= targetTs) { ans = mid; hi = mid - 1; }
+    else lo = mid + 1;
+  }
+  return ans;
+}
+
 async function revealsForRound(round, latestBlock) {
-  // Reveal for round R happens during round R+1. Approximate block range by timestamp.
+  // Reveal for round R happens during round R+1. Find the exact block range by timestamp (binary
+  // search), not a block-time estimate - the estimate under-captured reveals on some rounds.
   const revealStartTs = FIRST_VOTING_ROUND_TS + (round + 1) * VOTING_EPOCH_DURATION;
   const revealEndTs = revealStartTs + VOTING_EPOCH_DURATION;
-  // Walk back from latest to find the block range for [revealStartTs, revealEndTs]. Flare ~1.8s blocks.
   const byProvider = new Map();
-  // Binary-search-ish: fetch latest, step back by estimated blocks.
-  let hi = latestBlock;
-  let hiBlk = await rpc("eth_getBlockByNumber", [`0x${hi.toString(16)}`, false]);
-  let hiTs = parseInt(hiBlk.timestamp, 16);
-  const approxBlocks = Math.ceil((hiTs - revealEndTs) / 1.8);
-  let start = Math.max(1, hi - approxBlocks - 60);
-  for (let b = start; b <= hi; b++) {
+  const startBlock = await blockAtOrAfterTs(revealStartTs, latestBlock);
+  const endBlock = await blockAtOrAfterTs(revealEndTs + 1, latestBlock);
+  for (let b = startBlock; b <= endBlock; b++) {
     const blk = await rpc("eth_getBlockByNumber", [`0x${b.toString(16)}`, true]);
     const ts = parseInt(blk.timestamp, 16);
     if (ts < revealStartTs) continue;
@@ -145,16 +160,21 @@ async function scoreRound(round, refs, reveals) {
   const nFeeds = Math.min(feedNames.length, ...providers.map(([, v]) => v.length));
 
   // Per feed: gather provider raw ints, compute median + dispersion (CV) to decide discriminating.
+  const OFFSET = 0x80000000; // 2^31, the encoder's zero point
   const perFeed = [];
   for (let f = 0; f < nFeeds; f++) {
-    const vals = providers.map(([, v]) => v[f]).filter((x) => Number.isFinite(x));
+    const vals = providers.map(([, v]) => v[f]).filter((x) => Number.isFinite(x) && x > 0);
     if (vals.length < 5) { perFeed.push(null); continue; }
     const sorted = [...vals].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)];
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
     const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
-    const cv = mean > 0 ? sd / Math.abs(mean - 0x80000000 || 1) : 0; // dispersion around the encoded offset
-    perFeed.push({ median, sd: sd || 1, discriminating: cv > DISCRIMINATING_CV });
+    // The encoded magnitude is (raw - 2^31); dispersion relative to THAT is the real cross-provider
+    // disagreement. Feeds where providers agree tightly (liquid) have tiny relative spread and carry no
+    // signal; discriminating feeds have meaningful relative spread.
+    const magnitude = Math.abs(median - OFFSET) || 1;
+    const relSpread = sd / magnitude;
+    perFeed.push({ median, sd: sd || 1, magnitude, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
   }
 
   // Reference raw-int per feed: convert each ref instance's value to the SAME raw space by matching the
@@ -162,16 +182,20 @@ async function scoreRound(round, refs, reveals) {
   // feed from the provider distribution: raw ~= offset + value*scale. We estimate scale by assuming the
   // provider MEDIAN raw corresponds to the reference MEDIAN value for that feed (robust anchor), then
   // place each ref instance relative to that. This keeps the comparison in raw space without decimals.
+  // Map each reference instance's value into the on-chain raw-int space. Both use the same encoding
+  // raw = round(value*10^dec) + 2^31; we don't know `dec`, but the provider distribution gives us the
+  // scale: the provider median raw corresponds to the reference median value, so
+  //   scale = (providerMedian - OFFSET) / refMedianValue,  rawRef = OFFSET + refValue * scale.
+  // This anchors ref and providers on the same feed's true price without needing decimals.
   const refByFeed = perFeed.map((pf, f) => {
     if (!pf) return null;
     const name = feedNames[f];
-    const refVals = refs.map((r) => r.values[name]).filter((x) => Number.isFinite(x));
+    const refVals = refs.map((r) => r.values[name]).filter((x) => Number.isFinite(x) && x > 0);
     if (refVals.length === 0) return null;
     const refMed = [...refVals].sort((a, b) => a - b)[Math.floor(refVals.length / 2)];
-    // Map ref values into raw space: rawRef = providerMedian + (refValue - refMed)/refMed * providerMedianMagnitude.
-    // We use a proportional mapping so a ref value 1% above the ref median sits ~1% (in raw offset terms)
-    // above the provider median. Magnitude uses the provider spread as the raw-per-fractional unit.
-    return refVals.map((rv) => pf.median + ((rv - refMed) / (refMed || 1)) * (pf.sd * 50));
+    if (refMed <= 0) return null;
+    const scale = (pf.median - OFFSET) / refMed;
+    return refVals.map((rv) => OFFSET + rv * scale);
   });
 
   // For each provider, over DISCRIMINATING feeds only: distance to field median vs distance to nearest
