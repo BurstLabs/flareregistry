@@ -98,11 +98,28 @@ export async function GET() {
   });
 
   const maxRounds = rows.reduce((m, r) => Math.max(m, r.roundsObserved), 0);
+
+  // BASELINE CALIBRATION against verified customs: a confirmed-custom provider should read ~0%. The raw
+  // combined probability has a non-zero floor early on (poorly-scaled posterior + noisy-OR), so rescale
+  // so the known-custom level maps to 0 and 1 stays 1: p' = max(0, (p - baseline) / (1 - baseline)).
+  // This expresses "how much MORE suspicious than a provider we KNOW is custom" - the honest scale.
+  const knownRowsRaw = report.filter((x) => x.knownCustom);
+  const baseline =
+    knownRowsRaw.length > 0
+      ? Math.max(...knownRowsRaw.map((x) => x.combinedProbability))
+      : 0;
+  if (baseline > 0 && baseline < 1) {
+    for (const x of report) {
+      x.combinedProbabilityRaw = x.combinedProbability;
+      x.combinedProbability = Math.max(0, (x.combinedProbability - baseline) / (1 - baseline));
+    }
+  }
+
   // Live false-positive check: of the verified-custom providers, how many the detector would still flag
-  // above 0.5 combined probability. A non-zero rate means the detector is over-firing - a calibration
-  // warning, not an accusation of those providers.
+  // above 0.5 combined probability (on the RAW scale, before baseline rescaling). A non-zero rate means
+  // the detector is over-firing - a calibration warning, not an accusation of those providers.
   const knownRows = report.filter((x) => x.knownCustom);
-  const falsePositives = knownRows.filter((x) => x.combinedProbability >= 0.5);
+  const falsePositives = knownRows.filter((x) => (x.combinedProbabilityRaw ?? x.combinedProbability) >= 0.5);
   const fpRate = knownRows.length ? falsePositives.length / knownRows.length : null;
   return NextResponse.json({
     report,
