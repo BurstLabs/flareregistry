@@ -15,6 +15,7 @@ type Tab =
   | "governance"
   | "reports"
   | "consumers"
+  | "detection"
   | "system";
 
 // Minimal English-only translator so the shared wallet-sign hook (which throws localised keys) shows
@@ -146,6 +147,7 @@ export default function AdminPage() {
     { id: "governance", label: "Governance" },
     { id: "reports", label: "Logo reports" },
     { id: "consumers", label: "Consumers" },
+    { id: "detection", label: "Detection" },
     { id: "system", label: "System" },
   ];
 
@@ -192,6 +194,7 @@ export default function AdminPage() {
         {tab === "governance" && <GovernanceTab />}
         {tab === "reports" && <ReportsTab />}
         {tab === "consumers" && <ConsumersTab />}
+        {tab === "detection" && <ExampleProviderTab />}
         {tab === "system" && <SystemTab />}
       </div>
     </div>
@@ -1095,6 +1098,124 @@ function ReportsTab() {
             )}
           </tbody>
         </table>
+      </Card>
+    </div>
+  );
+}
+
+// ---------- Detection (example-provider similarity) ----------
+// Flare-only. Ranks registered providers by how closely their on-chain long-tail submissions track our
+// own reference instances of the example Feed Value Provider, vs the field. A SUSPICION SCORE, not
+// proof - the example provider is non-deterministic, so high similarity means "behaves like the example
+// provider," never certainty. Never auto-acts; evidence for human judgment only.
+function ExampleProviderTab() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [maxRounds, setMaxRounds] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const load = useCallback(async () => {
+    setLoading(true);
+    const r = await fetch("/api/admin/example-provider");
+    const b = await r.json();
+    setRows(b.report ?? []);
+    setMaxRounds(b.maxRounds ?? 0);
+    setLoading(false);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Confidence is low until the accumulators mature (~500 rounds, ~12h). Flag the warm-up state.
+  const warming = maxRounds < 200;
+
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
+  const simColor = (s: number) =>
+    s > 0.25 ? "text-flare font-semibold" : s > 0 ? "text-amber-500" : "text-muted";
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-fg">
+          Example-provider similarity <span className="text-faint">(Flare)</span>
+        </span>
+        <button
+          onClick={load}
+          className="rounded-md border border-themed px-2.5 py-1 text-xs text-muted hover:text-beacon"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div className="mb-4 rounded-lg border border-beacon/40 bg-beacon/5 p-3 text-xs leading-relaxed text-muted">
+        A <strong className="text-fg">suspicion score</strong>, not proof. We run our own instances of
+        the reference example Feed Value Provider and measure how closely each provider&apos;s on-chain
+        submissions on divergent (long-tail) feeds track ours, relative to the field. The example
+        provider is non-deterministic, so a high score means &quot;behaves like the example provider&quot;
+        &mdash; never certainty. Use as evidence for human judgment; it never drives listing changes
+        automatically.
+        {warming && (
+          <div className="mt-2 rounded bg-amber-500/15 px-2 py-1 text-amber-500">
+            Warming up: only {maxRounds} rounds observed so far. Scores stabilise over ~12h of data.
+            Treat current values as provisional.
+          </div>
+        )}
+      </div>
+
+      <Card>
+        {loading ? (
+          <p className="text-sm text-muted">Loading…</p>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted">No similarity data yet. The scorer runs every 5 minutes.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-faint">
+                <th className="pb-2 font-normal">Provider</th>
+                <th className="pb-2 text-right font-normal" title="Calibrated probability (warming up)">
+                  P(example)
+                </th>
+                <th className="pb-2 text-right font-normal" title="Raw similarity to our reference vs the field. Higher = more example-provider-like.">
+                  Similarity
+                </th>
+                <th className="pb-2 text-right font-normal" title="Mean deviation from the field consensus. Lower = more accurate.">
+                  Accuracy dev
+                </th>
+                <th className="pb-2 text-right font-normal">Conf.</th>
+                <th className="pb-2 text-right font-normal">Rounds</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.voter} className="border-t border-themed/40">
+                  <td className="py-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{r.name ?? "(unlisted)"}</span>
+                      {r.source === "imported" && (
+                        <span className="rounded bg-neutral-500/15 px-1 text-[10px] text-neutral-400">
+                          imported
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-mono text-[11px] text-faint">{r.voter.slice(0, 18)}…</span>
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums">
+                    <span className={r.probability > 0.5 ? "font-semibold text-flare" : "text-muted"}>
+                      {pct(r.probability)}
+                    </span>
+                  </td>
+                  <td className={`py-1.5 text-right tabular-nums ${simColor(r.similarity)}`}>
+                    {r.similarity >= 0 ? "+" : ""}
+                    {r.similarity.toFixed(3)}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-muted">
+                    {r.accuracy.toFixed(3)}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-faint">{pct(r.confidence)}</td>
+                  <td className="py-1.5 text-right tabular-nums text-faint">{r.rounds}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Card>
     </div>
   );
