@@ -44,26 +44,31 @@ async function canonicalFeeds(round) {
   // The reward-epoch NUMBER in fsp-rewards is not round/3360 directly; find it by trying nearby epochs.
   // Simpler + robust: the info file is per reward epoch dir; we locate the epoch whose range covers the
   // round via the reward-epoch-info's votingRoundId range if present. Fall back to scanning recent dirs.
-  if (canonicalCache.has(rewardEpoch)) return canonicalCache.get(rewardEpoch);
-  // Try a small window of epoch numbers around a heuristic guess.
-  for (const ep of await candidateEpochs(round)) {
+  if (canonicalCache.has("resolved")) return canonicalCache.get("resolved");
+  // Reward-epoch dirs (newest first). The epoch covering the CURRENT round may not be published yet,
+  // so: pick the epoch whose voting-round range contains `round`; if none (round is in an in-progress
+  // epoch past the latest published), fall back to the NEWEST published epoch's order - canonicalFeedOrder
+  // changes only at epoch boundaries and is stable across adjacent epochs, so this is safe for scoring.
+  const eps = await candidateEpochs();
+  let newest = null;
+  for (const ep of eps) {
     try {
       const r = await fetch(`${FSP_BASE}/${ep}/reward-epoch-info.json`, { cache: "no-store" });
       if (!r.ok) continue;
       const info = await r.json();
-      const cfo = info.canonicalFeedOrder;
-      const start = info.startVotingRoundId ?? info.signingPolicy?.startVotingRoundId;
-      const end = info.endVotingRoundId ?? (start != null ? start + REWARD_EPOCH_DURATION_ROUNDS : null);
-      if (!Array.isArray(cfo)) continue;
-      // Accept if the round falls in this epoch's range, or if range unknown accept the newest.
-      if (start == null || (round >= start && (end == null || round < end))) {
-        const feeds = cfo.map((f) => ({ name: feedIdToName(f.id), decimals: f.decimals ?? 5 }));
-        canonicalCache.set(rewardEpoch, feeds);
+      if (!Array.isArray(info.canonicalFeedOrder)) continue;
+      const feeds = info.canonicalFeedOrder.map((f) => ({ name: feedIdToName(f.id), decimals: f.decimals ?? 5 }));
+      const start = info.expectedStartVotingRoundId ?? info.signingPolicy?.startVotingRoundId;
+      const end = info.expectedEndVotingRoundId ?? info.endVotingRoundId;
+      if (newest == null) newest = feeds; // eps is newest-first
+      if (start != null && round >= start && (end == null || round <= end)) {
+        canonicalCache.set("resolved", feeds);
         return feeds;
       }
     } catch { /* try next */ }
   }
-  return null;
+  if (newest) canonicalCache.set("resolved", newest);
+  return newest;
 }
 
 // Candidate reward-epoch dir numbers to probe for a given voting round: list the fsp-rewards flare dir
