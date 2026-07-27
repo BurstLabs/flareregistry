@@ -640,3 +640,50 @@ model ImportCandidate {
   @@unique([chainId, address])
   @@index([status])
 }
+
+// A per-round snapshot of OUR reference example-provider instances' values (Flare only). We run N
+// independent instances of flare-foundation/ftso-v2-example-value-provider; each round we record each
+// instance's value per feed. Kept only for a short window (the scorer consumes them, then they are
+// pruned) - this is not long-term storage. `values` is a JSON map feedName -> number, `instance` is
+// the reference instance id (e.g. "ref1"/"ref2"). Two instances let us measure the example provider's
+// own non-determinism floor, which calibrates the similarity score.
+model ReferenceSample {
+  id        String   @id @default(cuid())
+  round     Int
+  instance  String
+  values    Json // { "BTC/USD": 64601.57, ... }
+  createdAt DateTime @default(now())
+
+  @@unique([round, instance])
+  @@index([round])
+  @@index([createdAt])
+}
+
+// Rolling per-provider similarity accumulators (Flare only). NOT raw values: each round we score every
+// provider's LONG-TAIL feed submissions against our reference instances and against the field, then
+// fold the result into these exponentially-weighted accumulators. `probability` is the calibrated
+// output (0..1) that a provider runs the unmodified example provider; `confidence` scales with
+// roundsObserved. See docs and import-scan sibling for the scoring method.
+model ProviderSimilarity {
+  id      String @id @default(cuid())
+  network String @default("flare")
+  voter   String // provider identity (lowercased)
+
+  // EW-mean of the standardized "tracks our reference more tightly than the field" signal, over the
+  // long-tail feeds. Higher = more example-provider-like.
+  refSimilarityMean  Float @default(0)
+  // EW-variance of the same, for confidence/consistency.
+  refSimilarityVar   Float @default(0)
+  // EW-mean deviation from the field consensus median (a reusable ACCURACY signal, independent of the
+  // example-provider question).
+  fieldDeviationMean Float @default(0)
+
+  roundsObserved Int   @default(0)
+  probability    Float @default(0)
+  confidence     Float @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([network, voter])
+  @@index([voter])
+}
