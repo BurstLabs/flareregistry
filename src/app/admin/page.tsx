@@ -1185,11 +1185,6 @@ function ExampleProviderTab() {
                   <td className="py-1.5">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{r.name ?? "(unlisted)"}</span>
-                      {r.source === "imported" && (
-                        <span className="rounded bg-neutral-500/15 px-1 text-[10px] text-neutral-400">
-                          imported
-                        </span>
-                      )}
                     </div>
                     <span className="font-mono text-[11px] text-faint">{r.voter.slice(0, 18)}…</span>
                   </td>
