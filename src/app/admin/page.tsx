@@ -1218,6 +1218,7 @@ function ExampleProviderTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-faint">
+                <th className="pb-2 pr-2 text-right font-normal">#</th>
                 <SortTh
                   label="Provider"
                   col="name"
@@ -1258,8 +1259,9 @@ function ExampleProviderTab() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((r) => (
+              {sorted.map((r, i) => (
                 <tr key={r.voter} className="border-t border-themed/40">
+                  <td className="py-1.5 pr-2 text-right tabular-nums text-faint">{i + 1}</td>
                   <td className="py-1.5">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{r.name ?? "(unlisted)"}</span>
