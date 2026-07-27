@@ -1115,6 +1115,7 @@ function ExampleProviderTab() {
   // Sort state: which column key, and direction. Default = probability, descending (most suspect first).
   const [sortKey, setSortKey] = useState<string>("combinedProbability");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [reportThreshold, setReportThreshold] = useState("0.5");
   const load = useCallback(async () => {
     setLoading(true);
     const r = await fetch("/api/admin/example-provider");
@@ -1195,16 +1196,38 @@ function ExampleProviderTab() {
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-semibold text-fg">
           Example-provider similarity <span className="text-faint">(Flare)</span>
         </span>
-        <button
-          onClick={load}
-          className="rounded-md border border-themed px-2.5 py-1 text-xs text-muted hover:text-beacon"
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1 text-xs text-muted" title="Minimum combined probability for a provider to be included in the downloaded report.">
+            Report threshold
+            <select
+              value={reportThreshold}
+              onChange={(e) => setReportThreshold(e.target.value)}
+              className="rounded-md border border-themed bg-elev px-1.5 py-1 text-xs"
+            >
+              <option value="0.3">30%</option>
+              <option value="0.5">50%</option>
+              <option value="0.7">70%</option>
+              <option value="0.9">90%</option>
+            </select>
+          </label>
+          <a
+            href={`/api/admin/example-provider/report?threshold=${reportThreshold}`}
+            className="rounded-md border border-beacon px-2.5 py-1 text-xs font-medium text-beacon hover:bg-beacon/10"
+            title="Download a CSV report of probable example-provider users, with total network weight they hold and full detection data."
+          >
+            Download report
+          </a>
+          <button
+            onClick={load}
+            className="rounded-md border border-themed px-2.5 py-1 text-xs text-muted hover:text-beacon"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 rounded-lg border border-beacon/40 bg-beacon/5 p-3 text-xs leading-relaxed text-muted">

@@ -64,15 +64,20 @@ export async function GET() {
     if (v && !nameByVoter.has(v)) nameByVoter.set(v, l.provider);
   }
 
+  // Admin display-name overrides (for entities with no registry listing).
+  const labels = await prisma.detectionLabel.findMany({ where: { address: { in: keys } } });
+  const labelByAddr = new Map(labels.map((l) => [l.address.toLowerCase(), l.label]));
+
   const report = rows.map((r) => {
     const entityVoter = roleToEntity.get(r.voter.toLowerCase());
     const p = entityVoter ? nameByVoter.get(entityVoter) : undefined;
+    const override = labelByAddr.get(r.voter.toLowerCase());
     // On-chain wNat weight in whole tokens (wei-scale string / 1e18). Number is fine for display scale.
     const weiStr = entityVoter ? weightByVoter.get(entityVoter) : null;
     const weight = weiStr ? Number(BigInt(weiStr) / 10n ** 15n) / 1000 : null;
     return {
       voter: r.voter,
-      name: p?.name ?? null,
+      name: override ?? p?.name ?? null,
       url: p?.url ?? null,
       source: p?.source ?? null,
       weight, // on-chain vote power (wNat weight), whole tokens

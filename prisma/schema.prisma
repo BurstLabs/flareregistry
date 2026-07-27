@@ -717,3 +717,13 @@ model DetectionCalibration {
   fieldN     Int      @default(0)
   updatedAt  DateTime @updatedAt
 }
+
+// Admin-only display-name overrides for the Detection surfaces (Flare example-provider report). Some
+// entities submit on-chain but have no registry listing, so they show as "(unlisted)"; an operator can
+// pin a human label (e.g. a known test entity they run) keyed by the submit address (the address stored
+// in ProviderSimilarity.voter). Detection-only - never affects the public registry/feed.
+model DetectionLabel {
+  address   String   @id // lowercased submit address
+  label     String
+  updatedAt DateTime @updatedAt
+}
