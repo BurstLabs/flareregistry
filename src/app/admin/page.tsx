@@ -1111,6 +1111,11 @@ function ReportsTab() {
 function ExampleProviderTab() {
   const [rows, setRows] = useState<any[]>([]);
   const [maxRounds, setMaxRounds] = useState(0);
+  const [fp, setFp] = useState<{ rate: number | null; count: number; names: string[] }>({
+    rate: null,
+    count: 0,
+    names: [],
+  });
   const [loading, setLoading] = useState(true);
   // Sort state: which column key, and direction. Default = probability, descending (most suspect first).
   const [sortKey, setSortKey] = useState<string>("combinedProbability");
@@ -1122,6 +1127,7 @@ function ExampleProviderTab() {
     const b = await r.json();
     setRows(b.report ?? []);
     setMaxRounds(b.maxRounds ?? 0);
+    setFp({ rate: b.falsePositiveRate ?? null, count: b.knownCustomCount ?? 0, names: b.falsePositiveNames ?? [] });
     setLoading(false);
   }, []);
   useEffect(() => {
@@ -1239,6 +1245,20 @@ function ExampleProviderTab() {
             Treat current values as provisional.
           </div>
         )}
+        {fp.count > 0 && (
+          <div className="mt-2 text-[11px] text-faint">
+            Calibration check: {fp.count} verified-custom provider{fp.count === 1 ? "" : "s"} used as
+            trusted negatives.{" "}
+            {fp.rate === 0 ? (
+              <span className="text-emerald-500">None falsely flagged (FP rate 0%).</span>
+            ) : (
+              <span className="text-flare">
+                False-positive rate {Math.round((fp.rate ?? 0) * 100)}% ({fp.names.join(", ")}) — the
+                detector may be over-firing; tune before trusting high scores.
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <Card>
@@ -1307,6 +1327,14 @@ function ExampleProviderTab() {
                   <td className="py-1.5">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{r.name ?? "(unlisted)"}</span>
+                      {r.knownCustom && (
+                        <span
+                          className="rounded bg-emerald-500/15 px-1 text-[10px] text-emerald-400"
+                          title="Verified NOT running the example provider. Used as a trusted negative in calibration."
+                        >
+                          verified custom
+                        </span>
+                      )}
                     </div>
                     <span className="font-mono text-[11px] text-faint">{r.voter.slice(0, 18)}…</span>
                   </td>

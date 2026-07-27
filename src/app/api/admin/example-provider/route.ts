@@ -64,14 +64,16 @@ export async function GET() {
     if (v && !nameByVoter.has(v)) nameByVoter.set(v, l.provider);
   }
 
-  // Admin display-name overrides (for entities with no registry listing).
+  // Admin display-name overrides + verified-custom flags.
   const labels = await prisma.detectionLabel.findMany({ where: { address: { in: keys } } });
   const labelByAddr = new Map(labels.map((l) => [l.address.toLowerCase(), l.label]));
+  const knownCustomAddr = new Set(labels.filter((l) => l.knownCustom).map((l) => l.address.toLowerCase()));
 
   const report = rows.map((r) => {
     const entityVoter = roleToEntity.get(r.voter.toLowerCase());
     const p = entityVoter ? nameByVoter.get(entityVoter) : undefined;
     const override = labelByAddr.get(r.voter.toLowerCase());
+    const knownCustom = knownCustomAddr.has(r.voter.toLowerCase());
     // On-chain wNat weight in whole tokens (wei-scale string / 1e18). Number is fine for display scale.
     const weiStr = entityVoter ? weightByVoter.get(entityVoter) : null;
     const weight = weiStr ? Number(BigInt(weiStr) / 10n ** 15n) / 1000 : null;
@@ -91,9 +93,22 @@ export async function GET() {
       confidence: r.confidence,
       rounds: r.roundsObserved,
       variant: r.bestVariant, // which exchange-subset variant (full|top5|top10) fits best
+      knownCustom, // verified NOT the example provider (trusted negative)
     };
   });
 
   const maxRounds = rows.reduce((m, r) => Math.max(m, r.roundsObserved), 0);
-  return NextResponse.json({ report, maxRounds });
+  // Live false-positive check: of the verified-custom providers, how many the detector would still flag
+  // above 0.5 combined probability. A non-zero rate means the detector is over-firing - a calibration
+  // warning, not an accusation of those providers.
+  const knownRows = report.filter((x) => x.knownCustom);
+  const falsePositives = knownRows.filter((x) => x.combinedProbability >= 0.5);
+  const fpRate = knownRows.length ? falsePositives.length / knownRows.length : null;
+  return NextResponse.json({
+    report,
+    maxRounds,
+    knownCustomCount: knownRows.length,
+    falsePositiveRate: fpRate,
+    falsePositiveNames: falsePositives.map((x) => x.name),
+  });
 }

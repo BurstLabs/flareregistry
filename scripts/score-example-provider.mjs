@@ -242,9 +242,19 @@ const decodeValue = (raw, decimals) => (raw - OFFSET) / 10 ** decimals; // raw u
 // Variant of a reference instance id "variant:n" -> "variant".
 const variantOf = (instanceId) => String(instanceId).split(":")[0];
 
+// How many times a CONFIRMED-CUSTOM provider's similarity counts toward the field/negative distribution
+// (vs 1 for an anonymous field sample). Trusted negatives should pull the boundary harder, but not so
+// hard that a couple of them dominate - keep it modest.
+const KNOWN_CUSTOM_WEIGHT = 8;
+
 async function scoreRound(round, refs, reveals, canonical) {
   const providers = [...reveals.entries()];
   const nFeeds = Math.min(canonical.length, ...providers.map(([, v]) => v.length));
+
+  // Verified-custom set (trusted negatives): their similarity is fed into the field distribution with
+  // extra weight, sharpening the anchor-vs-field boundary against providers we KNOW aren't the example.
+  const knownCustomRows = await prisma.detectionLabel.findMany({ where: { knownCustom: true } });
+  const knownCustom = new Set(knownCustomRows.map((r) => r.address.toLowerCase()));
 
   // Group reference samples by variant (full|top5|top10). Each variant is matched independently; a
   // provider's probability comes from the BEST-matching variant, which also reveals their likely config.
@@ -377,6 +387,7 @@ async function scoreRound(round, refs, reveals, canonical) {
   // of genuine fit. Pick the variant the provider's values actually sit closest to, THEN compute the
   // probability from that variant's calibration.
   for (const [addr, v] of providers) {
+    const isKnownCustom = knownCustom.has(addr.toLowerCase());
     let best = null;
     for (const vk of variantKeys) {
       const s = similarityOf(
@@ -384,7 +395,9 @@ async function scoreRound(round, refs, reveals, canonical) {
         refSetByVariant.get(vk)
       );
       if (s.cnt === 0 || s.sim == null) continue;
-      fieldByVariant.get(vk).push(s.sim);
+      // Field/negative distribution: a confirmed-custom provider is a TRUSTED negative, weighted heavier.
+      const weight = isKnownCustom ? KNOWN_CUSTOM_WEIGHT : 1;
+      for (let w = 0; w < weight; w++) fieldByVariant.get(vk).push(s.sim);
       if (!best || s.sim > best.sim) best = { vk, sim: s.sim, dev: s.dev };
     }
     if (!best) continue;

@@ -1,0 +1,2 @@
+ALTER TABLE "DetectionLabel" ALTER COLUMN "label" DROP NOT NULL;
+ALTER TABLE "DetectionLabel" ADD COLUMN "knownCustom" BOOLEAN NOT NULL DEFAULT false;
