@@ -26,6 +26,61 @@ const EW_ALPHA = 0.02;
 // this. Below it, everyone agrees (liquid) and it carries no signal.
 const DISCRIMINATING_CV = 0.0008;
 
+const FSP_BASE = "https://raw.githubusercontent.com/flare-foundation/fsp-rewards/main/flare";
+const REWARD_EPOCH_DURATION_ROUNDS = 3360; // 3.5 days / 90s
+
+// Decode a feed id (hex) -> "NAME" (category byte dropped; we key by name, matching reference config).
+function feedIdToName(idHex) {
+  const b = Buffer.from(idHex.slice(2), "hex");
+  return b.subarray(1).toString("ascii").replace(/\0+$/, "");
+}
+
+// Canonical feed order (index -> {name, decimals}) for the reward epoch covering a voting round. This
+// is the PROTOCOL order the reveal value array uses - it is NOT the example provider's config order, so
+// we must map by this to align reveal indices with feed names. Cached per reward epoch.
+const canonicalCache = new Map();
+async function canonicalFeeds(round) {
+  const rewardEpoch = Math.floor(round / REWARD_EPOCH_DURATION_ROUNDS);
+  // The reward-epoch NUMBER in fsp-rewards is not round/3360 directly; find it by trying nearby epochs.
+  // Simpler + robust: the info file is per reward epoch dir; we locate the epoch whose range covers the
+  // round via the reward-epoch-info's votingRoundId range if present. Fall back to scanning recent dirs.
+  if (canonicalCache.has(rewardEpoch)) return canonicalCache.get(rewardEpoch);
+  // Try a small window of epoch numbers around a heuristic guess.
+  for (const ep of await candidateEpochs(round)) {
+    try {
+      const r = await fetch(`${FSP_BASE}/${ep}/reward-epoch-info.json`, { cache: "no-store" });
+      if (!r.ok) continue;
+      const info = await r.json();
+      const cfo = info.canonicalFeedOrder;
+      const start = info.startVotingRoundId ?? info.signingPolicy?.startVotingRoundId;
+      const end = info.endVotingRoundId ?? (start != null ? start + REWARD_EPOCH_DURATION_ROUNDS : null);
+      if (!Array.isArray(cfo)) continue;
+      // Accept if the round falls in this epoch's range, or if range unknown accept the newest.
+      if (start == null || (round >= start && (end == null || round < end))) {
+        const feeds = cfo.map((f) => ({ name: feedIdToName(f.id), decimals: f.decimals ?? 5 }));
+        canonicalCache.set(rewardEpoch, feeds);
+        return feeds;
+      }
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
+// Candidate reward-epoch dir numbers to probe for a given voting round: list the fsp-rewards flare dir
+// and return numeric epoch names, newest first (bounded).
+let epochListCache = null;
+async function candidateEpochs() {
+  if (epochListCache) return epochListCache;
+  try {
+    const r = await fetch("https://api.github.com/repos/flare-foundation/fsp-rewards/contents/flare", { cache: "no-store" });
+    const arr = await r.json();
+    epochListCache = arr.filter((x) => /^\d+$/.test(x.name)).map((x) => +x.name).sort((a, b) => b - a).slice(0, 6);
+  } catch {
+    epochListCache = [];
+  }
+  return epochListCache;
+}
+
 let rpcId = 0;
 async function rpc(method, params) {
   const r = await fetch(RPC, {
@@ -144,75 +199,63 @@ async function main() {
       console.log(`round ${round}: no reveals decoded, skip`);
       continue;
     }
-    await scoreRound(round, refs, reveals);
+    const canonical = await canonicalFeeds(round);
+    if (!canonical) { console.log(`round ${round}: no canonical feed order, skip`); continue; }
+    await scoreRound(round, refs, reveals, canonical);
     console.log(`round ${round}: scored ${reveals.size} providers against ${refs.length} ref instances`);
   }
   await prisma.$disconnect();
 }
 
-// Scoring for one round. refs: ReferenceSample[] (values keyed by feed NAME). reveals: Map<addr,uint32[]>.
-// We need the canonical feed order to map reveal indices -> feed names. It is the same order the
-// reference config uses; collect-reference.mjs writes an ordered `values` object, so we read names from
-// the first ref sample's key order.
-async function scoreRound(round, refs, reveals) {
-  const feedNames = Object.keys(refs[0].values); // canonical order (index-aligned with reveals)
-  const providers = [...reveals.entries()];
-  const nFeeds = Math.min(feedNames.length, ...providers.map(([, v]) => v.length));
+const OFFSET = 0x80000000; // 2^31, the encoder's zero point
+const decodeValue = (raw, decimals) => (raw - OFFSET) / 10 ** decimals; // raw uint32 -> real price
 
-  // Per feed: gather provider raw ints, compute median + dispersion (CV) to decide discriminating.
-  const OFFSET = 0x80000000; // 2^31, the encoder's zero point
+// Scoring for one round. reveals index i corresponds to canonical[i] = {name, decimals}. We decode each
+// provider's raw ints to REAL values via decimals, then compare (per feed, in real-value space) each
+// provider to our reference instances vs the field median. Signal lives on DISCRIMINATING feeds (where
+// providers actually disagree); liquid feeds where everyone converges carry none.
+async function scoreRound(round, refs, reveals, canonical) {
+  const providers = [...reveals.entries()];
+  const nFeeds = Math.min(canonical.length, ...providers.map(([, v]) => v.length));
+
+  // Per feed: decode all providers' real values, compute median + relative dispersion.
   const perFeed = [];
   for (let f = 0; f < nFeeds; f++) {
-    const vals = providers.map(([, v]) => v[f]).filter((x) => Number.isFinite(x) && x > 0);
+    const { name, decimals } = canonical[f];
+    const vals = providers
+      .map(([, v]) => decodeValue(v[f], decimals))
+      .filter((x) => Number.isFinite(x) && x > 0);
     if (vals.length < 5) { perFeed.push(null); continue; }
     const sorted = [...vals].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)];
     const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
-    // The encoded magnitude is (raw - 2^31); dispersion relative to THAT is the real cross-provider
-    // disagreement. Feeds where providers agree tightly (liquid) have tiny relative spread and carry no
-    // signal; discriminating feeds have meaningful relative spread.
-    const magnitude = Math.abs(median - OFFSET) || 1;
-    const relSpread = sd / magnitude;
-    perFeed.push({ median, sd: sd || 1, magnitude, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
+    const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length) || median * 1e-9;
+    const relSpread = median > 0 ? sd / median : 0; // fractional cross-provider disagreement
+    perFeed.push({ name, median, sd, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
   }
 
-  // Reference raw-int per feed: convert each ref instance's value to the SAME raw space by matching the
-  // provider median scale. Since we lack decimals in calldata, we approximate the encoding scale per
-  // feed from the provider distribution: raw ~= offset + value*scale. We estimate scale by assuming the
-  // provider MEDIAN raw corresponds to the reference MEDIAN value for that feed (robust anchor), then
-  // place each ref instance relative to that. This keeps the comparison in raw space without decimals.
-  // Map each reference instance's value into the on-chain raw-int space. Both use the same encoding
-  // raw = round(value*10^dec) + 2^31; we don't know `dec`, but the provider distribution gives us the
-  // scale: the provider median raw corresponds to the reference median value, so
-  //   scale = (providerMedian - OFFSET) / refMedianValue,  rawRef = OFFSET + refValue * scale.
-  // This anchors ref and providers on the same feed's true price without needing decimals.
-  const refByFeed = perFeed.map((pf, f) => {
+  // Reference real values per feed (by name), directly comparable now that both are real prices.
+  const refByFeed = perFeed.map((pf) => {
     if (!pf) return null;
-    const name = feedNames[f];
-    const refVals = refs.map((r) => r.values[name]).filter((x) => Number.isFinite(x) && x > 0);
-    if (refVals.length === 0) return null;
-    const refMed = [...refVals].sort((a, b) => a - b)[Math.floor(refVals.length / 2)];
-    if (refMed <= 0) return null;
-    const scale = (pf.median - OFFSET) / refMed;
-    return refVals.map((rv) => OFFSET + rv * scale);
+    const rv = refs.map((r) => r.values[pf.name]).filter((x) => Number.isFinite(x) && x > 0);
+    return rv.length ? rv : null;
   });
 
   // For each provider, over DISCRIMINATING feeds only: distance to field median vs distance to nearest
-  // reference. Signal = how much closer to reference than the field baseline predicts.
+  // reference, both normalized by the feed's spread. Signal = how much closer to our reference than the
+  // field baseline predicts (positive => example-provider-like).
   const now = new Date();
   for (const [addr, v] of providers) {
     let simSum = 0, devSum = 0, cnt = 0;
     for (let f = 0; f < nFeeds; f++) {
       const pf = perFeed[f];
       if (!pf || !pf.discriminating) continue;
-      const raw = v[f];
-      if (!Number.isFinite(raw)) continue;
-      const fieldDist = Math.abs(raw - pf.median) / pf.sd;
+      const val = decodeValue(v[f], canonical[f].decimals);
+      if (!Number.isFinite(val) || val <= 0) continue;
+      const fieldDist = Math.abs(val - pf.median) / pf.sd;
       const rr = refByFeed[f];
-      if (!rr || rr.length === 0) continue;
-      const refDist = Math.min(...rr.map((r) => Math.abs(raw - r))) / pf.sd;
-      // Positive when the provider is closer to our reference than to the field median.
+      if (!rr) continue;
+      const refDist = Math.min(...rr.map((r) => Math.abs(val - r))) / pf.sd;
       simSum += fieldDist - refDist;
       devSum += fieldDist; // reusable accuracy signal
       cnt++;
