@@ -87,7 +87,8 @@ export async function GET() {
       variance: r.refSimilarityVar,
       accuracy: r.fieldDeviationMean, // deviation from field consensus (lower = more accurate)
       probability: r.probability,
-      combinedProbability: r.combinedProbability, // value-similarity + co-excursion
+      combinedProbability: r.combinedProbability, // value-similarity + co-excursion (rescaled below)
+      combinedProbabilityRaw: r.combinedProbability as number, // pre-baseline-rescale copy
       coExcursionRate: r.coExcursionRate, // same-direction spike rate with our reference (0..1)
       coExcursionN: r.coExcursionN, // joint excursion opportunities observed
       confidence: r.confidence,
@@ -110,8 +111,7 @@ export async function GET() {
       : 0;
   if (baseline > 0 && baseline < 1) {
     for (const x of report) {
-      x.combinedProbabilityRaw = x.combinedProbability;
-      x.combinedProbability = Math.max(0, (x.combinedProbability - baseline) / (1 - baseline));
+      x.combinedProbability = Math.max(0, (x.combinedProbabilityRaw - baseline) / (1 - baseline));
     }
   }
 
@@ -119,7 +119,7 @@ export async function GET() {
   // above 0.5 combined probability (on the RAW scale, before baseline rescaling). A non-zero rate means
   // the detector is over-firing - a calibration warning, not an accusation of those providers.
   const knownRows = report.filter((x) => x.knownCustom);
-  const falsePositives = knownRows.filter((x) => (x.combinedProbabilityRaw ?? x.combinedProbability) >= 0.5);
+  const falsePositives = knownRows.filter((x) => x.combinedProbabilityRaw >= 0.5);
   const fpRate = knownRows.length ? falsePositives.length / knownRows.length : null;
   return NextResponse.json({
     report,
