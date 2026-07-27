@@ -1112,6 +1112,9 @@ function ExampleProviderTab() {
   const [rows, setRows] = useState<any[]>([]);
   const [maxRounds, setMaxRounds] = useState(0);
   const [loading, setLoading] = useState(true);
+  // Sort state: which column key, and direction. Default = probability, descending (most suspect first).
+  const [sortKey, setSortKey] = useState<string>("probability");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const load = useCallback(async () => {
     setLoading(true);
     const r = await fetch("/api/admin/example-provider");
@@ -1130,6 +1133,56 @@ function ExampleProviderTab() {
   const pct = (x: number) => `${Math.round(x * 100)}%`;
   const simColor = (s: number) =>
     s > 0.25 ? "text-flare font-semibold" : s > 0 ? "text-amber-500" : "text-muted";
+
+  // Click a header to sort by it; clicking the active one flips direction.
+  function toggleSort(key: string) {
+    if (sortKey === key) setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+  const sorted = [...rows].sort((a, b) => {
+    let av = a[sortKey];
+    let bv = b[sortKey];
+    if (sortKey === "name") {
+      av = (a.name ?? "").toLowerCase();
+      bv = (b.name ?? "").toLowerCase();
+    } else if (sortKey === "variant") {
+      av = a.variant ?? "";
+      bv = b.variant ?? "";
+    }
+    if (av == null) av = -Infinity;
+    if (bv == null) bv = -Infinity;
+    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+    return sortDir === "desc" ? -cmp : cmp;
+  });
+
+  // Sortable header cell: tooltip + click-to-sort + active-direction arrow.
+  const SortTh = ({
+    label,
+    col,
+    tip,
+    align = "right",
+  }: {
+    label: string;
+    col: string;
+    tip: string;
+    align?: "left" | "right" | "center";
+  }) => (
+    <th
+      className={`cursor-pointer select-none pb-2 font-normal hover:text-beacon ${
+        align === "left" ? "text-left" : align === "center" ? "text-center" : "text-right"
+      }`}
+      title={tip}
+      onClick={() => toggleSort(col)}
+    >
+      {label}
+      <span className="ml-0.5 inline-block w-2 text-beacon">
+        {sortKey === col ? (sortDir === "desc" ? "▾" : "▴") : ""}
+      </span>
+    </th>
+  );
 
   return (
     <div>
@@ -1164,26 +1217,48 @@ function ExampleProviderTab() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-faint">
-                <th className="pb-2 font-normal">Provider</th>
-                <th className="pb-2 text-right font-normal" title="Calibrated probability (warming up)">
-                  P(example)
-                </th>
-                <th className="pb-2 text-right font-normal" title="Raw similarity to our reference vs the field. Higher = more example-provider-like.">
-                  Similarity
-                </th>
-                <th className="pb-2 text-center font-normal" title="Which exchange-subset variant of the example provider best matches (full = all exchanges, top5/top10 = only the most popular). Hints at their config.">
-                  Variant
-                </th>
-                <th className="pb-2 text-right font-normal" title="Mean deviation from the field consensus. Lower = more accurate.">
-                  Accuracy dev
-                </th>
-                <th className="pb-2 text-right font-normal">Conf.</th>
-                <th className="pb-2 text-right font-normal">Rounds</th>
+              <tr className="text-xs text-faint">
+                <SortTh
+                  label="Provider"
+                  col="name"
+                  align="left"
+                  tip="The registered provider (identified by its on-chain submit address). '(unlisted)' = submits on-chain but has no listing in our registry."
+                />
+                <SortTh
+                  label="P(example)"
+                  col="probability"
+                  tip="Calibrated probability this provider runs the unmodified example provider. It is confidence-gated, so it stays low until ~12h of rounds accumulate. A suspicion score, not proof."
+                />
+                <SortTh
+                  label="Similarity"
+                  col="similarity"
+                  tip="How much more closely this provider's on-chain values track our reference example provider than the field does, on divergent (long-tail) feeds. Higher (more positive) = more example-provider-like; negative = diverges from it (custom)."
+                />
+                <SortTh
+                  label="Variant"
+                  col="variant"
+                  align="center"
+                  tip="Which exchange-subset variant of the example provider it best matches: full = all ~18 exchanges (default), top5 / top10 = only the most popular exchanges. Hints at how they edited feeds.json."
+                />
+                <SortTh
+                  label="Accuracy dev"
+                  col="accuracy"
+                  tip="Mean deviation of this provider's submissions from the field consensus median, in spread units. LOWER = more accurate / closer to consensus. Independent of the example-provider question."
+                />
+                <SortTh
+                  label="Conf."
+                  col="confidence"
+                  tip="Confidence in this provider's score, scaling with how many rounds we've observed it (full after ~500 rounds / ~12h). Low confidence = treat the probability as provisional."
+                />
+                <SortTh
+                  label="Rounds"
+                  col="rounds"
+                  tip="Number of voting rounds this provider has been scored over. More rounds = more stable score."
+                />
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {sorted.map((r) => (
                 <tr key={r.voter} className="border-t border-themed/40">
                   <td className="py-1.5">
                     <div className="flex items-center gap-2">
