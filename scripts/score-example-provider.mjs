@@ -307,7 +307,11 @@ async function scoreRound(round, refs, reveals, canonical) {
     fieldByVariant.set(vk, []);
   }
 
-  // Score each provider against every variant; keep the BEST (max probability). Store which variant.
+  // Score each provider against every variant. Select the best variant by RAW SIMILARITY (closest fit),
+  // NOT by posterior: the posterior is variance-sensitive, and a narrower-exchange variant has a tighter
+  // anchor, so max-posterior would make that variant a catch-all that absorbs almost everyone regardless
+  // of genuine fit. Pick the variant the provider's values actually sit closest to, THEN compute the
+  // probability from that variant's calibration.
   for (const [addr, v] of providers) {
     let best = null;
     for (const vk of variantKeys) {
@@ -317,12 +321,11 @@ async function scoreRound(round, refs, reveals, canonical) {
       );
       if (s.cnt === 0 || s.sim == null) continue;
       fieldByVariant.get(vk).push(s.sim);
-      const prob = posteriorExample(s.sim, cals.get(vk));
-      if (!best || prob > best.prob || (prob === best.prob && s.sim > best.sim)) {
-        best = { vk, sim: s.sim, dev: s.dev, prob };
-      }
+      if (!best || s.sim > best.sim) best = { vk, sim: s.sim, dev: s.dev };
     }
     if (!best) continue;
+    // Probability from the SELECTED variant's calibration.
+    best.prob = posteriorExample(best.sim, cals.get(best.vk));
 
     const existing = await prisma.providerSimilarity.findUnique({
       where: { network_voter: { network: "flare", voter: addr } },
