@@ -1115,7 +1115,7 @@ function ExampleProviderTab() {
   // Sort state: which column key, and direction. Default = probability, descending (most suspect first).
   const [sortKey, setSortKey] = useState<string>("combinedProbability");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [reportThreshold, setReportThreshold] = useState("0.5");
+  const [reportThreshold, setReportThreshold] = useState("50"); // percent, 0-100
   const load = useCallback(async () => {
     setLoading(true);
     const r = await fetch("/api/admin/example-provider");
@@ -1201,21 +1201,21 @@ function ExampleProviderTab() {
           Example-provider similarity <span className="text-faint">(Flare)</span>
         </span>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1 text-xs text-muted" title="Minimum combined probability for a provider to be included in the downloaded report.">
+          <label className="flex items-center gap-1 text-xs text-muted" title="Minimum combined probability (%) for a provider to be included in the downloaded report. Any value 0-100.">
             Report threshold
-            <select
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={1}
               value={reportThreshold}
               onChange={(e) => setReportThreshold(e.target.value)}
-              className="rounded-md border border-themed bg-elev px-1.5 py-1 text-xs"
-            >
-              <option value="0.3">30%</option>
-              <option value="0.5">50%</option>
-              <option value="0.7">70%</option>
-              <option value="0.9">90%</option>
-            </select>
+              className="w-16 rounded-md border border-themed bg-elev px-1.5 py-1 text-xs tabular-nums"
+            />
+            <span className="text-faint">%</span>
           </label>
           <a
-            href={`/api/admin/example-provider/report?threshold=${reportThreshold}`}
+            href={`/api/admin/example-provider/report?threshold=${(Math.min(100, Math.max(0, Number(reportThreshold) || 0)) / 100).toFixed(4)}`}
             className="rounded-md border border-beacon px-2.5 py-1 text-xs font-medium text-beacon hover:bg-beacon/10"
             title="Download a CSV report of probable example-provider users, with total network weight they hold and full detection data."
           >
