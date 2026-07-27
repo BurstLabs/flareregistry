@@ -1146,12 +1146,8 @@ function ExampleProviderTab() {
       </div>
 
       <div className="mb-4 rounded-lg border border-beacon/40 bg-beacon/5 p-3 text-xs leading-relaxed text-muted">
-        A <strong className="text-fg">suspicion score</strong>, not proof. We run our own instances of
-        the reference example Feed Value Provider and measure how closely each provider&apos;s on-chain
-        submissions on divergent (long-tail) feeds track ours, relative to the field. The example
-        provider is non-deterministic, so a high score means &quot;behaves like the example provider&quot;
-        &mdash; never certainty. Use as evidence for human judgment; it never drives listing changes
-        automatically.
+        A <strong className="text-fg">suspicion score</strong>, not proof. Use as evidence for human
+        judgment; it never drives listing changes automatically.
         {warming && (
           <div className="mt-2 rounded bg-amber-500/15 px-2 py-1 text-amber-500">
             Warming up: only {maxRounds} rounds observed so far. Scores stabilise over ~12h of data.
