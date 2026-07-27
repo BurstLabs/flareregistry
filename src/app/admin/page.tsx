@@ -1131,6 +1131,15 @@ function ExampleProviderTab() {
   const warming = maxRounds < 200;
 
   const pct = (x: number) => `${Math.round(x * 100)}%`;
+  // Compact whole-token weight: 187.8M / 21.4K / 640.
+  const compact = (n: number) =>
+    n >= 1e9
+      ? `${(n / 1e9).toFixed(1)}B`
+      : n >= 1e6
+        ? `${(n / 1e6).toFixed(1)}M`
+        : n >= 1e3
+          ? `${(n / 1e3).toFixed(1)}K`
+          : `${Math.round(n)}`;
   const simColor = (s: number) =>
     s > 0.25 ? "text-flare font-semibold" : s > 0 ? "text-amber-500" : "text-muted";
 
@@ -1242,6 +1251,11 @@ function ExampleProviderTab() {
                   tip="Which exchange-subset variant of the example provider it best matches: full = all ~18 exchanges (default), top5 / top10 = only the most popular exchanges. Hints at how they edited feeds.json."
                 />
                 <SortTh
+                  label="Weight"
+                  col="weight"
+                  tip="On-chain vote power (wNat weight) of this provider's entity, in whole tokens. Context for how much influence a suspected example-provider user actually has."
+                />
+                <SortTh
                   label="Accuracy dev"
                   col="accuracy"
                   tip="Mean deviation of this provider's submissions from the field consensus median, in spread units. LOWER = more accurate / closer to consensus. Independent of the example-provider question."
@@ -1285,6 +1299,9 @@ function ExampleProviderTab() {
                     ) : (
                       <span className="text-faint">—</span>
                     )}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-muted">
+                    {r.weight != null ? compact(r.weight) : <span className="text-faint">—</span>}
                   </td>
                   <td className="py-1.5 text-right tabular-nums text-muted">
                     {r.accuracy.toFixed(3)}
