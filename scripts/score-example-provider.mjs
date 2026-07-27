@@ -22,9 +22,20 @@ const VOTING_EPOCH_DURATION = 90;
 const REVEAL_SELECTOR = "0x9d00c9fd"; // submit2 (reveal) on Flare
 // EW smoothing for the rolling accumulators (~ decays over a few hundred rounds).
 const EW_ALPHA = 0.02;
-// A feed is "discriminating" this round if the coefficient-of-variation of provider values exceeds
-// this. Below it, everyone agrees (liquid) and it carries no signal.
-const DISCRIMINATING_CV = 0.0008;
+// A feed is USABLE this round if it carries potential signal. Two ways to qualify (either suffices):
+//  (a) cross-provider dispersion exceeds DISCRIMINATING_CV - providers disagree, so where you sit means
+//      something; OR
+//  (b) our REFERENCE sits at least REF_DISTANCE_CV (fractionally) away from the field median - even if
+//      providers currently AGREE, the reference is distinguishable, so tracking it is informative.
+// (b) is essential: if many providers run the example provider they AGREE with each other and the
+// reference, collapsing dispersion - a pure-dispersion gate (the old single 0.0008 rule) would then drop
+// exactly the feeds where the example cohort lives, hiding them. Threshold lowered from 0.0008 so the
+// mid-liquidity feeds (HNT, RENDER, FIL, PYTH, S/USD ...) where implementations actually differ are kept.
+const DISCRIMINATING_CV = 0.0002;
+const REF_DISTANCE_CV = 0.0002;
+// Floor for the distance-normalization scale, as a fraction of the feed median, so tight-agreement feeds
+// don't blow up distances. Roughly the "meaningful difference" resolution on a feed.
+const SCALE_FLOOR_CV = 0.0001;
 // A value is an EXCURSION when it sits this many MADs from the network median (a sharp spike away from
 // consensus). Providers running the same shared-source code excursion together on the same feeds/rounds.
 const EXCURSION_K = 4;
@@ -294,7 +305,18 @@ async function scoreRound(round, refs, reveals, canonical) {
     const relSpread = med > 0 ? sd / med : 0; // fractional cross-provider disagreement
     // MAD (median absolute deviation), scaled; the robust spread for excursion flagging.
     const mad = (median(vals.map((x) => Math.abs(x - med))) || med * 1e-9) * 1.4826;
-    perFeed.push({ name, median: med, sd, mad, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
+    // Reference position on this feed (median across all our instances) + its fractional distance from
+    // the field median. Feeds where the reference is distinguishable from the field are usable even when
+    // providers agree (which is what happens when many run the example provider).
+    const rv = refs.map((r) => r.values[name]).filter((x) => Number.isFinite(x) && x > 0);
+    const refMed = rv.length ? median(rv) : null;
+    const refDistCv = refMed != null && med > 0 ? Math.abs(refMed - med) / med : 0;
+    const discriminating = relSpread > DISCRIMINATING_CV || refDistCv > REF_DISTANCE_CV;
+    // Normalization SCALE for distances: the field sd, but floored to a small fraction of the median so a
+    // feed where providers agree tightly (sd -> ~0) doesn't produce an exploding distance that dominates
+    // the similarity mean. This matters now that ref-distinguishable-but-low-dispersion feeds are kept.
+    const scale = Math.max(sd, med * SCALE_FLOOR_CV);
+    perFeed.push({ name, median: med, sd, mad, scale, relSpread, refDistCv, discriminating });
   }
 
   // Excursion of a single value on feed f: {sign:-1|0|1, mag} where mag is deviation in MADs. sign 0 =
@@ -302,7 +324,7 @@ async function scoreRound(round, refs, reveals, canonical) {
   function excursion(f, val) {
     const pf = perFeed[f];
     if (!pf || !pf.discriminating || !Number.isFinite(val) || val <= 0) return { sign: 0, mag: 0 };
-    const z = (val - pf.median) / (pf.mad || 1);
+    const z = (val - pf.median) / Math.max(pf.mad, pf.median * SCALE_FLOOR_CV);
     if (Math.abs(z) < EXCURSION_K) return { sign: 0, mag: Math.abs(z) };
     return { sign: Math.sign(z), mag: Math.abs(z) };
   }
@@ -322,8 +344,8 @@ async function scoreRound(round, refs, reveals, canonical) {
       const rr = refSet(f);
       if (!rr || rr.length === 0) continue;
       const refMed = median(rr);
-      const fieldDist = Math.abs(val - pf.median) / pf.sd;
-      const refDist = Math.abs(val - refMed) / pf.sd;
+      const fieldDist = Math.abs(val - pf.median) / pf.scale;
+      const refDist = Math.abs(val - refMed) / pf.scale;
       simSum += fieldDist - refDist;
       devSum += fieldDist;
       cnt++;
