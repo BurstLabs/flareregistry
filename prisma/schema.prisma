@@ -678,9 +678,12 @@ model ProviderSimilarity {
   // example-provider question).
   fieldDeviationMean Float @default(0)
 
-  roundsObserved Int   @default(0)
-  probability    Float @default(0)
-  confidence     Float @default(0)
+  roundsObserved Int     @default(0)
+  probability    Float   @default(0)
+  confidence     Float   @default(0)
+  // Which reference VARIANT (full|top5|top10) this provider best matches - reveals their likely
+  // exchange config when they run the example code.
+  bestVariant    String?
 
   updatedAt DateTime @updatedAt
 

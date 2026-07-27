@@ -219,14 +219,21 @@ const decodeValue = (raw, decimals) => (raw - OFFSET) / 10 ** decimals; // raw u
 // provider's raw ints to REAL values via decimals, then compare (per feed, in real-value space) each
 // provider to our reference instances vs the field median. Signal lives on DISCRIMINATING feeds (where
 // providers actually disagree); liquid feeds where everyone converges carry none.
+// Variant of a reference instance id "variant:n" -> "variant".
+const variantOf = (instanceId) => String(instanceId).split(":")[0];
+
 async function scoreRound(round, refs, reveals, canonical) {
   const providers = [...reveals.entries()];
   const nFeeds = Math.min(canonical.length, ...providers.map(([, v]) => v.length));
 
-  // Running calibration distributions (anchor = known example provider, field = provider baseline).
-  const cal =
-    (await prisma.detectionCalibration.findUnique({ where: { id: "flare" } })) ??
-    { anchorMean: 0, anchorVar: 0.01, anchorN: 0, fieldMean: 0, fieldVar: 0.01, fieldN: 0 };
+  // Group reference samples by variant (full|top5|top10). Each variant is matched independently; a
+  // provider's probability comes from the BEST-matching variant, which also reveals their likely config.
+  const byVariant = new Map();
+  for (const r of refs) {
+    const vk = variantOf(r.instance);
+    if (!byVariant.has(vk)) byVariant.set(vk, []);
+    byVariant.get(vk).push(r);
+  }
 
   // Per feed: decode all providers' real values, compute median + relative dispersion.
   const perFeed = [];
@@ -244,14 +251,8 @@ async function scoreRound(round, refs, reveals, canonical) {
     perFeed.push({ name, median, sd, relSpread, discriminating: relSpread > DISCRIMINATING_CV });
   }
 
-  // Reference real values per feed (by name). refValsByFeed[f] = array of each instance's value.
-  const refValsByFeed = perFeed.map((pf) =>
-    pf ? refs.map((r) => r.values[pf.name]).filter((x) => Number.isFinite(x) && x > 0) : null
-  );
-
-  // Similarity of a target value series against a reference set, over discriminating feeds. Returns
-  // {sim, dev, cnt}. `getVal(f)` -> the target's real value for feed f; `refSet(f)` -> the reference
-  // values to compare against (excluding the target itself when the target IS a reference instance).
+  // Similarity of a target value series against a per-feed reference-value set, over discriminating
+  // feeds. `getVal(f)` -> target's real value; `refSet(f)` -> array of reference values for feed f.
   function similarityOf(getVal, refSet) {
     let simSum = 0, devSum = 0, cnt = 0;
     for (let f = 0; f < nFeeds; f++) {
@@ -270,60 +271,85 @@ async function scoreRound(round, refs, reveals, canonical) {
     return { sim: cnt ? simSum / cnt : null, dev: cnt ? devSum / cnt : null, cnt };
   }
 
-  // --- CALIBRATION SAMPLES for THIS round ---
-  // Positive anchor: score each reference instance as if it were a provider, comparing it to the OTHER
-  // reference instance(s). This is the similarity a KNOWN example provider receives - the trusted label.
-  const anchorSamples = [];
-  for (let i = 0; i < refs.length; i++) {
-    const self = refs[i].values;
-    const others = refs.filter((_, j) => j !== i);
-    const s = similarityOf(
-      (f) => self[perFeed[f]?.name],
-      (f) => others.map((o) => o.values[perFeed[f]?.name]).filter((x) => Number.isFinite(x) && x > 0)
-    );
-    if (s.sim != null) anchorSamples.push(s.sim);
-  }
-  // Field baseline: collected from the provider sims below.
-  const fieldSamples = [];
-
   const now = new Date();
-  for (const [addr, v] of providers) {
-    const s = similarityOf(
-      (f) => decodeValue(v[f], canonical[f].decimals),
-      (f) => refValsByFeed[f]
+  // Load all variants' calibration state up front.
+  const variantKeys = [...byVariant.keys()];
+  const cals = new Map();
+  for (const vk of variantKeys) {
+    cals.set(
+      vk,
+      (await prisma.detectionCalibration.findUnique({ where: { id: vk } })) ??
+        { anchorMean: 0, anchorVar: 0.01, anchorN: 0, fieldMean: 0, fieldVar: 0.01, fieldN: 0 }
     );
-    let { sim: roundSim, dev: roundDev, cnt } = s;
-    if (cnt === 0) continue;
-    fieldSamples.push(roundSim);
-    {
-      const existing = await prisma.providerSimilarity.findUnique({
-        where: { network_voter: { network: "flare", voter: addr } },
-      });
-      let mean, varr, dev, rounds;
-      if (!existing) {
-        mean = roundSim; varr = 0; dev = roundDev; rounds = 1;
-      } else {
-        mean = existing.refSimilarityMean + EW_ALPHA * (roundSim - existing.refSimilarityMean);
-        varr = (1 - EW_ALPHA) * (existing.refSimilarityVar + EW_ALPHA * (roundSim - existing.refSimilarityMean) ** 2);
-        dev = existing.fieldDeviationMean + EW_ALPHA * (roundDev - existing.fieldDeviationMean);
-        rounds = existing.roundsObserved + 1;
-      }
-      const confidence = Math.min(1, rounds / 500); // full confidence after ~500 rounds (~12h)
-      // Calibrated probability: posterior that the provider's ROLLING-MEAN similarity was drawn from the
-      // known-example-provider (anchor) distribution rather than the field distribution, under equal
-      // priors and Gaussian likelihoods. Gated by confidence so a few rounds never reads as certainty.
-      const probability = confidence * posteriorExample(mean, cal);
-      const data = {
-        refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
-        roundsObserved: rounds, confidence, probability, updatedAt: now,
-      };
-      if (!existing) await prisma.providerSimilarity.create({ data: { network: "flare", voter: addr, ...data } });
-      else await prisma.providerSimilarity.update({ where: { id: existing.id }, data });
-    }
   }
 
-  // Fold this round's calibration samples into the running anchor/field distributions.
-  await updateCalibration(cal, anchorSamples, fieldSamples);
+  // Per-variant reference value sets + this round's anchor samples (each instance scored vs its OWN
+  // variant's other instances). Field samples accumulate per variant from the provider sims below.
+  const anchorByVariant = new Map(); // vk -> number[]
+  const fieldByVariant = new Map(); // vk -> number[]
+  const refSetByVariant = new Map(); // vk -> (f)=>values[]
+  for (const vk of variantKeys) {
+    const vinsts = byVariant.get(vk);
+    refSetByVariant.set(vk, (f) =>
+      vinsts.map((r) => r.values[perFeed[f]?.name]).filter((x) => Number.isFinite(x) && x > 0)
+    );
+    const anchor = [];
+    for (let i = 0; i < vinsts.length; i++) {
+      const self = vinsts[i].values;
+      const others = vinsts.filter((_, j) => j !== i);
+      const s = similarityOf(
+        (f) => self[perFeed[f]?.name],
+        (f) => others.map((o) => o.values[perFeed[f]?.name]).filter((x) => Number.isFinite(x) && x > 0)
+      );
+      if (s.sim != null) anchor.push(s.sim);
+    }
+    anchorByVariant.set(vk, anchor);
+    fieldByVariant.set(vk, []);
+  }
+
+  // Score each provider against every variant; keep the BEST (max probability). Store which variant.
+  for (const [addr, v] of providers) {
+    let best = null;
+    for (const vk of variantKeys) {
+      const s = similarityOf(
+        (f) => decodeValue(v[f], canonical[f].decimals),
+        refSetByVariant.get(vk)
+      );
+      if (s.cnt === 0 || s.sim == null) continue;
+      fieldByVariant.get(vk).push(s.sim);
+      const prob = posteriorExample(s.sim, cals.get(vk));
+      if (!best || prob > best.prob || (prob === best.prob && s.sim > best.sim)) {
+        best = { vk, sim: s.sim, dev: s.dev, prob };
+      }
+    }
+    if (!best) continue;
+
+    const existing = await prisma.providerSimilarity.findUnique({
+      where: { network_voter: { network: "flare", voter: addr } },
+    });
+    let mean, varr, dev, rounds;
+    if (!existing) {
+      mean = best.sim; varr = 0; dev = best.dev; rounds = 1;
+    } else {
+      mean = existing.refSimilarityMean + EW_ALPHA * (best.sim - existing.refSimilarityMean);
+      varr = (1 - EW_ALPHA) * (existing.refSimilarityVar + EW_ALPHA * (best.sim - existing.refSimilarityMean) ** 2);
+      dev = existing.fieldDeviationMean + EW_ALPHA * (best.dev - existing.fieldDeviationMean);
+      rounds = existing.roundsObserved + 1;
+    }
+    const confidence = Math.min(1, rounds / 500);
+    const probability = confidence * best.prob;
+    const data = {
+      refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
+      roundsObserved: rounds, confidence, probability, bestVariant: best.vk, updatedAt: now,
+    };
+    if (!existing) await prisma.providerSimilarity.create({ data: { network: "flare", voter: addr, ...data } });
+    else await prisma.providerSimilarity.update({ where: { id: existing.id }, data });
+  }
+
+  // Fold this round's per-variant anchor/field samples into each variant's calibration.
+  for (const vk of variantKeys) {
+    await updateCalibration(vk, cals.get(vk), anchorByVariant.get(vk), fieldByVariant.get(vk));
+  }
 }
 
 // Gaussian pdf.
@@ -340,8 +366,8 @@ function posteriorExample(sim, cal) {
   const denom = la + lf;
   return denom > 0 ? la / denom : 0;
 }
-// EW-update a running (mean, var, n) accumulator with new samples.
-async function updateCalibration(cal, anchorSamples, fieldSamples) {
+// EW-update a variant's running (mean, var, n) anchor + field accumulators with this round's samples.
+async function updateCalibration(variantKey, cal, anchorSamples, fieldSamples) {
   const A = 0.02; // slow EW so the distributions are stable
   let { anchorMean, anchorVar, anchorN, fieldMean, fieldVar, fieldN } = cal;
   for (const s of anchorSamples) {
@@ -357,8 +383,8 @@ async function updateCalibration(cal, anchorSamples, fieldSamples) {
     fieldN++;
   }
   await prisma.detectionCalibration.upsert({
-    where: { id: "flare" },
-    create: { id: "flare", anchorMean, anchorVar, anchorN, fieldMean, fieldVar, fieldN },
+    where: { id: variantKey },
+    create: { id: variantKey, anchorMean, anchorVar, anchorN, fieldMean, fieldVar, fieldN },
     update: { anchorMean, anchorVar, anchorN, fieldMean, fieldVar, fieldN },
   });
 }

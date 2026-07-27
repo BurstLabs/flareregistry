@@ -1172,6 +1172,9 @@ function ExampleProviderTab() {
                 <th className="pb-2 text-right font-normal" title="Raw similarity to our reference vs the field. Higher = more example-provider-like.">
                   Similarity
                 </th>
+                <th className="pb-2 text-center font-normal" title="Which exchange-subset variant of the example provider best matches (full = all exchanges, top5/top10 = only the most popular). Hints at their config.">
+                  Variant
+                </th>
                 <th className="pb-2 text-right font-normal" title="Mean deviation from the field consensus. Lower = more accurate.">
                   Accuracy dev
                 </th>
@@ -1196,6 +1199,15 @@ function ExampleProviderTab() {
                   <td className={`py-1.5 text-right tabular-nums ${simColor(r.similarity)}`}>
                     {r.similarity >= 0 ? "+" : ""}
                     {r.similarity.toFixed(3)}
+                  </td>
+                  <td className="py-1.5 text-center">
+                    {r.variant ? (
+                      <span className="rounded bg-elev px-1.5 py-0.5 text-[10px] text-muted">
+                        {r.variant}
+                      </span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
                   </td>
                   <td className="py-1.5 text-right tabular-nums text-muted">
                     {r.accuracy.toFixed(3)}

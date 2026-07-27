@@ -9,10 +9,18 @@ const prisma = new PrismaClient();
 const FIRST_VOTING_ROUND_TS = 1658429955;
 const VOTING_EPOCH_DURATION = 90;
 // Both local reference instances.
+// Reference fleet: multiple exchange-subset VARIANTS, 2 instances each. Providers who run the example
+// code typically edit feeds.json to keep only the top-N exchanges, so each variant is a distinct
+// fingerprint. `instance` is stored as "<variant>:<n>"; the scorer groups by variant and takes the
+// best-matching one per provider. Two instances per variant give the non-determinism floor for that
+// variant's anchor.
 const INSTANCES = [
-  { id: "ref1", url: "http://localhost:3101" },
-  { id: "ref2", url: "http://localhost:3102" },
-  { id: "ref3", url: "http://localhost:3103" },
+  { id: "full:1", url: "http://localhost:3101" },
+  { id: "full:2", url: "http://localhost:3102" },
+  { id: "top5:1", url: "http://localhost:3111" },
+  { id: "top5:2", url: "http://localhost:3112" },
+  { id: "top10:1", url: "http://localhost:3121" },
+  { id: "top10:2", url: "http://localhost:3122" },
 ];
 // Canonical feed order from the example provider's own config (index-aligned with on-chain reveals).
 const FEEDS_CONFIG = process.env.FEEDS_CONFIG ?? "/home/deploy/ftso-ref/src/config/feeds.json";

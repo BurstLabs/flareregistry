@@ -74,6 +74,7 @@ export async function GET() {
       probability: r.probability,
       confidence: r.confidence,
       rounds: r.roundsObserved,
+      variant: r.bestVariant, // which exchange-subset variant (full|top5|top10) fits best
     };
   });
 
