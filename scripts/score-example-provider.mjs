@@ -105,16 +105,25 @@ async function revealsForRound(round, latestBlock) {
 
 async function main() {
   const latest = parseInt(await rpc("eth_blockNumber", []), 16);
-  // Process rounds that are settled (reveal complete) but recent: [cur-4 .. cur-2].
   const cur = currentRound();
-  const rounds = [cur - 3, cur - 2];
+  // Drive off the rounds we actually HAVE reference samples for, that are also SETTLED (reveal for
+  // round R completes during R+1, so R must be <= cur-2). Take the most recent few unscored such rounds.
+  const sampled = await prisma.referenceSample.groupBy({
+    by: ["round"],
+    where: { round: { lte: cur - 2 } },
+    orderBy: { round: "desc" },
+    take: 3,
+  });
+  const rounds = sampled.map((s) => s.round).sort((a, b) => a - b);
+  if (rounds.length === 0) {
+    console.log(`no settled reference rounds yet (cur=${cur}); need samples for a round <= ${cur - 2}`);
+    await prisma.$disconnect();
+    return;
+  }
 
   for (const round of rounds) {
     const refs = await prisma.referenceSample.findMany({ where: { round } });
-    if (refs.length === 0) {
-      console.log(`round ${round}: no reference samples yet, skip`);
-      continue;
-    }
+    if (refs.length === 0) continue;
     const reveals = await revealsForRound(round, latest);
     if (reveals.size === 0) {
       console.log(`round ${round}: no reveals decoded, skip`);
