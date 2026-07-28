@@ -48,40 +48,48 @@ function feedIdToName(idHex) {
   return b.subarray(1).toString("ascii").replace(/\0+$/, "");
 }
 
-// Canonical feed order (index -> {name, decimals}) for the reward epoch covering a voting round. This
-// is the PROTOCOL order the reveal value array uses - it is NOT the example provider's config order, so
-// we must map by this to align reveal indices with feed names. Cached per reward epoch.
-const canonicalCache = new Map();
+// Canonical feed order (index -> {name, decimals}) for the reward epoch covering a voting round. It is
+// the PROTOCOL order the reveal value array uses (NOT the example provider's config order). Cached in the
+// DB (canonicalJson + range) so the scorer does not hit GitHub's rate-limited contents API every run -
+// it only refetches when the round leaves the cached range. In-process cache on top for one run.
+let canonicalMem = null;
 async function canonicalFeeds(round) {
-  const rewardEpoch = Math.floor(round / REWARD_EPOCH_DURATION_ROUNDS);
-  // The reward-epoch NUMBER in fsp-rewards is not round/3360 directly; find it by trying nearby epochs.
-  // Simpler + robust: the info file is per reward epoch dir; we locate the epoch whose range covers the
-  // round via the reward-epoch-info's votingRoundId range if present. Fall back to scanning recent dirs.
-  if (canonicalCache.has("resolved")) return canonicalCache.get("resolved");
-  // Reward-epoch dirs (newest first). The epoch covering the CURRENT round may not be published yet,
-  // so: pick the epoch whose voting-round range contains `round`; if none (round is in an in-progress
-  // epoch past the latest published), fall back to the NEWEST published epoch's order - canonicalFeedOrder
-  // changes only at epoch boundaries and is stable across adjacent epochs, so this is safe for scoring.
-  const eps = await candidateEpochs();
-  let newest = null;
-  for (const ep of eps) {
-    try {
-      const r = await fetch(`${FSP_BASE}/${ep}/reward-epoch-info.json`, { cache: "no-store" });
-      if (!r.ok) continue;
-      const info = await r.json();
-      if (!Array.isArray(info.canonicalFeedOrder)) continue;
-      const feeds = info.canonicalFeedOrder.map((f) => ({ name: feedIdToName(f.id), decimals: f.decimals ?? 5 }));
-      const start = info.expectedStartVotingRoundId ?? info.signingPolicy?.startVotingRoundId;
-      const end = info.expectedEndVotingRoundId ?? info.endVotingRoundId;
-      if (newest == null) newest = feeds; // eps is newest-first
-      if (start != null && round >= start && (end == null || round <= end)) {
-        canonicalCache.set("resolved", feeds);
-        return feeds;
-      }
-    } catch { /* try next */ }
+  if (canonicalMem && round >= canonicalMem.from && round <= canonicalMem.to) return canonicalMem.feeds;
+  // DB cache.
+  const cur = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
+  if (cur?.canonicalJson && cur.canonicalFrom != null && cur.canonicalTo != null &&
+      round >= cur.canonicalFrom && round <= cur.canonicalTo) {
+    canonicalMem = { feeds: cur.canonicalJson, from: cur.canonicalFrom, to: cur.canonicalTo };
+    return canonicalMem.feeds;
   }
-  if (newest) canonicalCache.set("resolved", newest);
-  return newest;
+  // Miss -> fetch from GitHub (rate-limited; only happens ~once per reward epoch now). Pick the epoch
+  // whose voting-round range contains `round`; fall back to the newest published epoch (canonicalFeedOrder
+  // is stable across adjacent epochs). Throws on total failure so the caller treats it as transient.
+  const eps = await candidateEpochs();
+  let newest = null, newestRange = null;
+  for (const ep of eps) {
+    const r = await fetch(`${FSP_BASE}/${ep}/reward-epoch-info.json`, { cache: "no-store" });
+    if (!r.ok) { if (r.status === 429 || r.status >= 500) throw new Error(`fsp-rewards HTTP ${r.status}`); continue; }
+    const info = await r.json();
+    if (!Array.isArray(info.canonicalFeedOrder)) continue;
+    const feeds = info.canonicalFeedOrder.map((f) => ({ name: feedIdToName(f.id), decimals: f.decimals ?? 5 }));
+    const start = info.expectedStartVotingRoundId ?? info.signingPolicy?.startVotingRoundId ?? 0;
+    const end = info.expectedEndVotingRoundId ?? info.endVotingRoundId ?? start + REWARD_EPOCH_DURATION_ROUNDS;
+    if (newest == null) { newest = feeds; newestRange = [start, end]; }
+    if (round >= start && round <= end) { await cacheCanonical(feeds, start, end); return feeds; }
+  }
+  // Round is past the latest published epoch: use the newest order but cache it only for rounds at/after
+  // its start (open-ended forward), so future in-epoch rounds hit the cache.
+  if (newest) { await cacheCanonical(newest, newestRange[0], round + REWARD_EPOCH_DURATION_ROUNDS); return newest; }
+  throw new Error("no canonical feed order available");
+}
+async function cacheCanonical(feeds, from, to) {
+  canonicalMem = { feeds, from, to };
+  await prisma.detectionCursor.upsert({
+    where: { id: "flare" },
+    create: { id: "flare", lastRound: 0, canonicalJson: feeds, canonicalFrom: from, canonicalTo: to },
+    update: { canonicalJson: feeds, canonicalFrom: from, canonicalTo: to },
+  });
 }
 
 // Candidate reward-epoch dir numbers to probe for a given voting round: list the fsp-rewards flare dir
@@ -91,10 +99,11 @@ async function candidateEpochs() {
   if (epochListCache) return epochListCache;
   try {
     const r = await fetch("https://api.github.com/repos/flare-foundation/fsp-rewards/contents/flare", { cache: "no-store" });
+    if (!r.ok) throw new Error(`contents HTTP ${r.status}`); // rate-limited -> transient, don't cache []
     const arr = await r.json();
     epochListCache = arr.filter((x) => /^\d+$/.test(x.name)).map((x) => +x.name).sort((a, b) => b - a).slice(0, 6);
   } catch {
-    epochListCache = [];
+    return []; // do NOT cache the empty result; retry next call
   }
   return epochListCache;
 }
@@ -238,8 +247,7 @@ async function main() {
     try {
       const refs = await prisma.referenceSample.findMany({ where: { round } });
       if (refs.length === 0) { if (round === maxDone + 1) maxDone = round; continue; }
-      const canonical = await canonicalFeeds(round);
-      if (!canonical) { console.log(`round ${round}: no canonical feed order (transient), will retry`); break; }
+      const canonical = await canonicalFeeds(round); // throws on transient fetch failure -> caught below
       const reveals = await revealsForRound(round, latest);
       if (reveals.size === 0) {
         console.log(`round ${round}: no reveals decoded`);
