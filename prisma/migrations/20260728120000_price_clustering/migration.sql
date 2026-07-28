@@ -1,0 +1,2 @@
+ALTER TABLE "ProviderSimilarity" ADD COLUMN "clusterPeers" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "ProviderSimilarity" ADD COLUMN "clusterPeersMax" INTEGER NOT NULL DEFAULT 0;
