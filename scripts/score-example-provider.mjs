@@ -611,15 +611,10 @@ async function scoreRound(round, refs, reveals, canonical) {
     }
     const confidence = Math.min(1, rounds / 500);
     const probability = confidence * best.prob;
-    // Combined probability folds value-similarity and co-excursion. coRate is already the EXCESS over the
-    // field baseline (0 = moves with the reference no more than the field; 1 = always matches when the
-    // field doesn't). Gated by its own confidence since excursions are rare.
-    const coConfidence = Math.min(1, coN / 40); // ~40 joint excursions to trust the rate
-    const coSignal = Math.max(0, coRate); // excess already centered at 0
-    // Combine: a provider that is BOTH value-similar and co-excursions is high-confidence. Use a soft OR
-    // (noisy-or) so either strong signal lifts it, but co-excursion is gated by its own confidence.
-    const combinedProbability =
-      1 - (1 - probability) * (1 - coConfidence * coSignal * confidence);
+    // Probability is the VALUE-SIMILARITY signal only. Co-excursion (co-spike) is still measured and
+    // stored for display context, but no longer folded into P: its null-rate assumptions made it noisy,
+    // so P now reflects value similarity alone.
+    const combinedProbability = probability;
     const data = {
       refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
       roundsObserved: rounds, confidence, probability,
