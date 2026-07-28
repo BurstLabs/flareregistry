@@ -1293,11 +1293,6 @@ function ExampleProviderTab() {
                   tip="EXCESS co-movement: when our reference spikes sharply from the network median on a feed, how much MORE often this provider spikes the same direction than the field does (baselined against the field, since a real price move makes everyone co-move). 0 = no more than the field; positive = moves with the example provider's shared sources beyond chance (fingerprint); negative = less than the field. N = joint spike opportunities seen."
                 />
                 <SortTh
-                  label="Clustering"
-                  col="clusterPeers"
-                  tip="Price clustering: the average number of OTHER providers submitting a near-duplicate value (within ~0.02% of the median) to this one, per discriminating feed. High = this provider moves as part of a value-identical block - a shared-code/shared-source fingerprint, independent of our reference. The /N shows the max possible (field size - 1)."
-                />
-                <SortTh
                   label="Variant"
                   col="variant"
                   align="center"
@@ -1360,18 +1355,6 @@ function ExampleProviderTab() {
                           {pct(r.coExcursionRate)}
                         </span>
                         <span className="ml-1 text-[10px] text-faint">n={r.coExcursionN}</span>
-                      </>
-                    ) : (
-                      <span className="text-faint">—</span>
-                    )}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted">
-                    {r.clusterPeersMax > 0 ? (
-                      <>
-                        <span className={r.clusterPeers >= 3 ? "text-amber-500" : undefined}>
-                          {r.clusterPeers.toFixed(1)}
-                        </span>
-                        <span className="ml-1 text-[10px] text-faint">/{r.clusterPeersMax}</span>
                       </>
                     ) : (
                       <span className="text-faint">—</span>

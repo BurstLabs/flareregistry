@@ -691,12 +691,6 @@ model ProviderSimilarity {
   coExcursionRate     Float   @default(0)
   coExcursionN        Int     @default(0)
   combinedProbability Float   @default(0)
-  // PRICE CLUSTERING: EW rolling average, over the discriminating feeds, of how many OTHER providers
-  // submit a value within a tiny epsilon of this provider (near-duplicate prices). High = this provider
-  // moves as part of a value-identical block - a shared-code/shared-source fingerprint independent of our
-  // reference. clusterPeersMax is the max possible (field size - 1) at last measure, for context.
-  clusterPeers        Float   @default(0)
-  clusterPeersMax     Int     @default(0)
 
   updatedAt DateTime @updatedAt
 
