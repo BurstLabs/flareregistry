@@ -723,12 +723,20 @@ model DetectionCalibration {
 // pin a human label (e.g. a known test entity they run) keyed by the submit address (the address stored
 // in ProviderSimilarity.voter). Detection-only - never affects the public registry/feed.
 model DetectionLabel {
-  address String @id // lowercased submit address
-  label   String?
+  address     String   @id // lowercased submit address
+  label       String?
   // VERIFIED-custom flag: an operator has confirmed this provider does NOT run the example provider (e.g.
   // our own FTSO, or a team whose custom infra we've verified). Used as a TRUSTED NEGATIVE in calibration
   // - fed into the field distribution as a confirmed non-example-provider, sharpening the anchor-vs-field
   // boundary. Only set on providers verified out-of-band; never a guess.
   knownCustom Boolean  @default(false)
   updatedAt   DateTime @updatedAt
+}
+
+// Cursor: the last voting round the scorer has processed, so each run picks up every NEW settled round
+// since then (not just a fixed last-3 window that fell behind wall-clock). Single row id="flare".
+model DetectionCursor {
+  id        String   @id
+  lastRound Int      @default(0)
+  updatedAt DateTime @updatedAt
 }

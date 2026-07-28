@@ -62,8 +62,10 @@ async function main() {
       console.error(`round ${round} ${instance.id}: ${e.message}`);
     }
   }
-  // Prune samples older than ~2h (the scorer only looks a few rounds back).
-  const cutoff = new Date(Date.now() - 2 * 3600 * 1000);
+  // Prune samples older than ~6h. The scorer advances via a cursor and normally stays within a few
+  // rounds of live, but a wider retention window means a temporary scorer outage (or catch-up after one)
+  // still has the reference samples it needs rather than losing those rounds permanently.
+  const cutoff = new Date(Date.now() - 6 * 3600 * 1000);
   const del = await prisma.referenceSample.deleteMany({ where: { createdAt: { lt: cutoff } } });
   if (del.count) console.log(`pruned ${del.count} old reference samples`);
   await prisma.$disconnect();

@@ -205,40 +205,61 @@ async function revealsForRound(round, latestBlock) {
 async function main() {
   const latest = parseInt(await rpc("eth_blockNumber", []), 16);
   const cur = currentRound();
-  // Drive off the rounds we actually HAVE reference samples for, that are also SETTLED (reveal for
-  // round R completes during R+1, so R must be <= cur-2). Take the most recent few unscored such rounds.
+  // Process every NEW settled round since the cursor, so accumulation tracks wall-clock 1:1 and never
+  // double-counts a round or falls behind (the old fixed last-3 window couldn't keep up: ~3.3 rounds
+  // happen per 5-min cron but it only looked at 3, so any skip made it lose ground permanently). Reveal
+  // for round R settles during R+1, so R must be <= cur-2. Bounded below by the cursor (last scored) and
+  // by the oldest reference sample we still retain; capped per run so a long gap doesn't run unbounded.
+  const cursor = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
+  const lastScored = cursor?.lastRound ?? 0;
+  const oldestSample = await prisma.referenceSample.aggregate({ _min: { round: true } });
+  const floor = Math.max(lastScored, (oldestSample._min.round ?? 1) - 1);
   const sampled = await prisma.referenceSample.groupBy({
     by: ["round"],
-    where: { round: { lte: cur - 2 } },
-    orderBy: { round: "desc" },
-    take: 3,
+    where: { round: { lte: cur - 2, gt: floor } },
+    orderBy: { round: "asc" },
+    take: 200, // safety cap per run
   });
-  const rounds = sampled.map((s) => s.round).sort((a, b) => a - b);
+  const rounds = sampled.map((s) => s.round); // already ascending
   if (rounds.length === 0) {
-    console.log(`no settled reference rounds yet (cur=${cur}); need samples for a round <= ${cur - 2}`);
+    console.log(`no new settled rounds (cur=${cur}, lastScored=${lastScored})`);
     await prisma.$disconnect();
     return;
   }
+  let maxDone = lastScored;
 
+  // Advance the cursor only through rounds we've DEFINITIVELY handled in ascending order. A transient
+  // failure (RPC error, missing canonical order) stops the advance so that round is retried next run; a
+  // real decision (scored, stale-skip, or no-reveals) advances past it. This guarantees no round is
+  // permanently lost to a transient hiccup AND none is double-counted.
   for (const round of rounds) {
-    // Isolate each round: a round that fails (even after RPC retries) is skipped, never aborts the run,
-    // so a transient hiccup can't wipe the whole pass and leave the tab empty.
     try {
       const refs = await prisma.referenceSample.findMany({ where: { round } });
-      if (refs.length === 0) continue;
+      if (refs.length === 0) { if (round === maxDone + 1) maxDone = round; continue; }
+      const canonical = await canonicalFeeds(round);
+      if (!canonical) { console.log(`round ${round}: no canonical feed order (transient), will retry`); break; }
       const reveals = await revealsForRound(round, latest);
       if (reveals.size === 0) {
-        console.log(`round ${round}: no reveals decoded, skip`);
+        console.log(`round ${round}: no reveals decoded`);
+        if (round === maxDone + 1) maxDone = round;
         continue;
       }
-      const canonical = await canonicalFeeds(round);
-      if (!canonical) { console.log(`round ${round}: no canonical feed order, skip`); continue; }
       const res = await scoreRound(round, refs, reveals, canonical);
-      if (res?.skipped) continue; // stale reference -> already logged, don't claim a score
-      console.log(`round ${round}: scored ${reveals.size} providers against ${refs.length} ref instances`);
+      if (!res?.skipped) {
+        console.log(`round ${round}: scored ${reveals.size} providers against ${refs.length} ref instances`);
+      }
+      if (round === maxDone + 1) maxDone = round; // handled (scored or stale-skip) -> advance
     } catch (e) {
-      console.error(`round ${round}: failed, skipping - ${e.message}`);
+      console.error(`round ${round}: transient failure, will retry - ${e.message}`);
+      break; // stop advancing; retry from here next run
     }
+  }
+  if (maxDone > lastScored) {
+    await prisma.detectionCursor.upsert({
+      where: { id: "flare" },
+      create: { id: "flare", lastRound: maxDone },
+      update: { lastRound: maxDone },
+    });
   }
   await prisma.$disconnect();
 }
