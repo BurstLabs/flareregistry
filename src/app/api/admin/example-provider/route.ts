@@ -91,6 +91,8 @@ export async function GET() {
       combinedProbabilityRaw: r.combinedProbability as number, // pre-baseline-rescale copy
       coExcursionRate: r.coExcursionRate, // same-direction spike rate with our reference (0..1)
       coExcursionN: r.coExcursionN, // joint excursion opportunities observed
+      clusterPeers: r.clusterPeers, // avg # of near-duplicate-price peers per discriminating feed
+      clusterPeersMax: r.clusterPeersMax, // field size - 1 (max possible peers), for context
       confidence: r.confidence,
       rounds: r.roundsObserved,
       variant: r.bestVariant, // which exchange-subset variant (full|top5|top10) fits best

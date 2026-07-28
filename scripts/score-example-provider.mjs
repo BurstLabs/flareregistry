@@ -46,6 +46,9 @@ const REF_STALE_OFFSET_CV = 0.002;
 // A value is an EXCURSION when it sits this many MADs from the network median (a sharp spike away from
 // consensus). Providers running the same shared-source code excursion together on the same feeds/rounds.
 const EXCURSION_K = 4;
+// Price-clustering epsilon: two providers "match" on a feed if their values are within this fraction of
+// the feed median (near-duplicate prices). Tight, so it captures value-identical blocks, not mere agreement.
+const CLUSTER_EPS_CV = 0.0002;
 
 const FSP_BASE = "https://raw.githubusercontent.com/flare-foundation/fsp-rewards/main/flare";
 const REWARD_EPOCH_DURATION_ROUNDS = 3360; // 3.5 days / 90s
@@ -364,6 +367,17 @@ function median(arr) {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
+// Index of the first element >= target in a SORTED array (lower_bound).
+function lowerBound(sorted, target) {
+  let lo = 0, hi = sorted.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sorted[mid] < target) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
 // Scoring for one round. reveals index i corresponds to canonical[i] = {name, decimals}. We decode each
 // provider's raw ints to REAL values via decimals, then compare (per feed, in real-value space) each
 // provider to our reference instances vs the field median. Signal lives on DISCRIMINATING feeds (where
@@ -560,6 +574,38 @@ async function scoreRound(round, refs, reveals, canonical) {
     return { excess: opps ? excessSum / opps : 0, opps };
   }
 
+  // PRICE CLUSTERING setup: per discriminating feed, all providers' sorted values, so we can count how
+  // many OTHER providers sit within a tiny epsilon of a given provider's value (near-duplicate prices).
+  // Epsilon is fractional (CLUSTER_EPS_CV of the feed median) so it scales with price. Only discriminating
+  // feeds count (liquid feeds trivially cluster for everyone and carry no signal).
+  const clusterFeeds = [];
+  for (let f = 0; f < nFeeds; f++) {
+    const pf = perFeed[f];
+    if (!pf || pf.weight <= 0 || pf.median <= 0) continue;
+    const vals = providers
+      .map(([, v]) => decodeValue(v[f], canonical[f].decimals))
+      .filter((x) => Number.isFinite(x) && x > 0)
+      .sort((a, b) => a - b);
+    if (vals.length >= 5) clusterFeeds.push({ f, vals, eps: pf.median * CLUSTER_EPS_CV });
+  }
+  const clusterFieldMax = providers.length - 1; // most peers a provider could match
+  // Near-duplicate peer count for a target over the clustering feeds: fraction of OTHER providers within
+  // epsilon, averaged and scaled back to a peer count. Returns {peers, feeds}.
+  function clusterPeersOf(getVal) {
+    let sum = 0, n = 0;
+    for (const { f, vals, eps } of clusterFeeds) {
+      const val = getVal(f);
+      if (!Number.isFinite(val) || val <= 0) continue;
+      // count values in [val-eps, val+eps] via binary search bounds, minus the target itself.
+      const lo = lowerBound(vals, val - eps);
+      const hi = lowerBound(vals, val + eps + 1e-12);
+      const within = Math.max(0, hi - lo - 1); // exclude self
+      sum += within;
+      n++;
+    }
+    return { peers: n ? sum / n : 0, feeds: n };
+  }
+
   // Score each provider against every variant. Select the best variant by RAW SIMILARITY (closest fit),
   // NOT by posterior: the posterior is variance-sensitive, and a narrower-exchange variant has a tighter
   // anchor, so max-posterior would make that variant a catch-all that absorbs almost everyone regardless
@@ -586,16 +632,19 @@ async function scoreRound(round, refs, reveals, canonical) {
     // Co-excursion: on feeds where our reference excursioned this round, did this provider excursion the
     // same way? (Only contributes when the reference excursioned somewhere.)
     const co = coExcursionOf((f) => decodeValue(v[f], canonical[f].decimals));
+    // Price clustering: avg # of OTHER providers submitting near-duplicate values to this one this round.
+    const cl = clusterPeersOf((f) => decodeValue(v[f], canonical[f].decimals));
 
     const existing = await prisma.providerSimilarity.findUnique({
       where: { network_voter: { network: "flare", voter: addr } },
     });
     // coExcursionRate now stores the EW mean EXCESS same-direction rate above the field baseline
     // (centered at 0; positive = co-moves with the reference MORE than the field does).
-    let mean, varr, dev, rounds, coRate, coN;
+    let mean, varr, dev, rounds, coRate, coN, clusterPeers;
     if (!existing) {
       mean = best.sim; varr = 0; dev = best.dev; rounds = 1;
       coRate = co.opps ? co.excess : 0; coN = co.opps;
+      clusterPeers = cl.feeds ? cl.peers : 0;
     } else {
       mean = existing.refSimilarityMean + EW_ALPHA * (best.sim - existing.refSimilarityMean);
       varr = (1 - EW_ALPHA) * (existing.refSimilarityVar + EW_ALPHA * (best.sim - existing.refSimilarityMean) ** 2);
@@ -608,6 +657,9 @@ async function scoreRound(round, refs, reveals, canonical) {
       } else {
         coRate = existing.coExcursionRate; coN = existing.coExcursionN;
       }
+      clusterPeers = cl.feeds
+        ? existing.clusterPeers + EW_ALPHA * (cl.peers - existing.clusterPeers)
+        : existing.clusterPeers;
     }
     const confidence = Math.min(1, rounds / 500);
     const probability = confidence * best.prob;
@@ -619,6 +671,7 @@ async function scoreRound(round, refs, reveals, canonical) {
       refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
       roundsObserved: rounds, confidence, probability,
       coExcursionRate: coRate, coExcursionN: coN, combinedProbability,
+      clusterPeers, clusterPeersMax: clusterFieldMax,
       bestVariant: best.vk, updatedAt: now,
     };
     if (!existing) await prisma.providerSimilarity.create({ data: { network: "flare", voter: addr, ...data } });
@@ -640,13 +693,17 @@ const CAL_MIN_N = 40;
 // score high (observed: verified-custom 1FTSO topping the list). Instead use a MONOTONIC logistic on where
 // `sim` sits between the field mean (~0) and the anchor mean (~1). Monotonic in sim by construction:
 // more-similar always => higher probability, and a low-similarity provider always reads low.
+// Logistic steepness in units of "full swings across the anchor-field gap". Higher = MORE SENSITIVE:
+// small similarity differences produce larger P differences, spreading the pack instead of compressing
+// most providers near 0. Bumped from 6 -> 11 on request for a more sensitive P.
+const POSTERIOR_STEEPNESS = 11;
 function posteriorExample(sim, cal) {
   if (!cal) return 0;
   if (cal.anchorN < CAL_MIN_N || cal.fieldN < CAL_MIN_N) return 0;
   const gap = cal.anchorMean - cal.fieldMean;
   if (!(gap > 1e-6)) return 0; // classes not separated (anchor must sit above field)
   const mid = (cal.anchorMean + cal.fieldMean) / 2; // 50% decision point
-  const k = 6 / gap; // steepness: ~full 0->1 swing across the anchor-field gap
+  const k = POSTERIOR_STEEPNESS / gap;
   return 1 / (1 + Math.exp(-k * (sim - mid)));
 }
 // EW-update a variant's running (mean, var, n) anchor + field accumulators with this round's samples.
