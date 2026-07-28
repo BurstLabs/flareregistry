@@ -157,6 +157,45 @@ async function rpc(method, params, requireResult = false) {
 // null from our node falls back to the public RPC instead of poisoning the binary search.
 const getBlock = (numHex, full) => rpc("eth_getBlockByNumber", [numHex, full], true);
 
+// BATCH-fetch a contiguous inclusive block range [from..to] in ONE JSON-RPC request. This is the key
+// throughput fix: the reverse tunnel adds ~0.4s round-trip PER request, so ~40 sequential fetches per
+// round = ~20s; batching makes it 1 round-trip. Tries our node first, public fallback; every block in
+// range exists (<= head) so any null/missing entry fails the whole batch to trigger the fallback.
+async function getBlockRange(from, to, full) {
+  const reqs = [];
+  for (let b = from; b <= to; b++) {
+    reqs.push({ jsonrpc: "2.0", id: b, method: "eth_getBlockByNumber", params: [`0x${b.toString(16)}`, full] });
+  }
+  if (reqs.length === 0) return new Map();
+  let lastErr;
+  for (const url of RPC_ENDPOINTS) {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const r = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(reqs),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const arr = await r.json();
+        if (!Array.isArray(arr)) throw new Error("batch: non-array response");
+        const byNum = new Map();
+        for (const item of arr) {
+          if (item.error || item.result == null) throw new Error("batch: missing block");
+          byNum.set(parseInt(item.result.number, 16), item.result);
+        }
+        if (byNum.size !== reqs.length) throw new Error("batch: incomplete");
+        return byNum; // Map<blockNumber, block>
+      } catch (e) {
+        lastErr = e;
+        await new Promise((res) => setTimeout(res, 200 * 2 ** attempt));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 // --- calldata decode (mirrors FTSO-Scaling PayloadMessage + FeedValueEncoder) ---
 function decodePayloads(inputHex) {
   const b = Buffer.from(inputHex.slice(10), "hex"); // drop 0x + 4-byte selector
@@ -192,41 +231,27 @@ function currentRound() {
 
 // Collect all providers' revealed raw-int arrays for a given round by scanning the blocks whose
 // timestamps fall in that round's reveal window. Returns Map<providerAddr, uint32[]>.
-// Estimate the block number at a target timestamp from a known anchor (head block ts), using Flare's
-// ~1.8s block time, then refine to the first block whose ts >= target with a short linear walk. This
-// replaces a full binary search (~26 fetches) with ~2-4 fetches - the old search dominated per-round
-// latency and made the scorer fall behind. `latestBlock`/`headTs` are the anchor.
+// Flare block time (~1.8s), used to estimate a block number from a target timestamp given a head anchor.
 const FLARE_BLOCK_SECONDS = 1.8;
-async function blockAtOrAfterTs(targetTs, latestBlock, headTs) {
-  let b = Math.max(1, Math.min(latestBlock, latestBlock - Math.round((headTs - targetTs) / FLARE_BLOCK_SECONDS)));
-  let ts = parseInt((await getBlock(`0x${b.toString(16)}`, false)).timestamp, 16);
-  // Walk toward the target (block times aren't exactly 1.8s). Bounded to avoid pathological loops.
-  let guard = 0;
-  while (ts < targetTs && b < latestBlock && guard++ < 200) {
-    b++;
-    ts = parseInt((await getBlock(`0x${b.toString(16)}`, false)).timestamp, 16);
-  }
-  while (b > 1 && ts >= targetTs && guard++ < 400) {
-    const prevTs = parseInt((await getBlock(`0x${(b - 1).toString(16)}`, false)).timestamp, 16);
-    if (prevTs < targetTs) break;
-    b--; ts = prevTs;
-  }
-  return b;
-}
 
 async function revealsForRound(round, latestBlock, headTs) {
-  // Reveal for round R happens during round R+1. Locate the block range by timestamp estimate (fast),
-  // then scan it filtering by exact timestamp so the estimate's slack doesn't matter.
+  // Reveal for round R happens during round R+1 (a 90s window). Estimate the window's block range from
+  // block-time, pad generously, and BATCH-fetch it in one request (the tunnel's per-request latency makes
+  // per-block fetching too slow). Then filter to the exact timestamp window.
   const revealStartTs = FIRST_VOTING_ROUND_TS + (round + 1) * VOTING_EPOCH_DURATION;
   const revealEndTs = revealStartTs + VOTING_EPOCH_DURATION;
   const byProvider = new Map();
-  const startBlock = await blockAtOrAfterTs(revealStartTs, latestBlock, headTs);
-  const endBlock = Math.min(latestBlock, await blockAtOrAfterTs(revealEndTs + 1, latestBlock, headTs) + 2);
-  for (let b = startBlock; b <= endBlock; b++) {
-    const blk = await getBlock(`0x${b.toString(16)}`, true); // exists (<= latest); non-null enforced
+  // Estimate center block from the head anchor; pad by the window width in blocks + margin on each side.
+  const est = latestBlock - Math.round((headTs - (revealStartTs + VOTING_EPOCH_DURATION / 2)) / FLARE_BLOCK_SECONDS);
+  const pad = Math.ceil(VOTING_EPOCH_DURATION / FLARE_BLOCK_SECONDS) + 15; // ~65 blocks
+  const from = Math.max(1, est - pad);
+  const to = Math.min(latestBlock, est + pad);
+  const blocks = await getBlockRange(from, to, true);
+  for (let b = from; b <= to; b++) {
+    const blk = blocks.get(b);
+    if (!blk) continue;
     const ts = parseInt(blk.timestamp, 16);
-    if (ts < revealStartTs) continue;
-    if (ts > revealEndTs) break;
+    if (ts < revealStartTs || ts > revealEndTs) continue;
     for (const tx of blk.transactions) {
       if (!tx.to || tx.to.toLowerCase() !== SUBMISSION) continue;
       if (!tx.input.startsWith(REVEAL_SELECTOR)) continue;
