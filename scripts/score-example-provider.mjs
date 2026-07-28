@@ -14,7 +14,14 @@
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-const RPC = process.env.FLARE_RPC_URL ?? "https://flare-api.flare.network/ext/C/rpc";
+// RPC endpoints tried IN ORDER: our OWN Flare node first (via the reverse SSH tunnel from the dev box,
+// exposed on Hetzner at 127.0.0.1:19650) - no rate limits - then the public RPC as automatic fallback if
+// the tunnel/node is down, so the pipeline never fully breaks. Override the primary with FLARE_RPC_URL.
+const RPC_ENDPOINTS = [
+  process.env.FLARE_RPC_URL ?? "http://127.0.0.1:19650/ext/bc/C/rpc",
+  "https://flare-api.flare.network/ext/C/rpc",
+];
+const RPC = RPC_ENDPOINTS[0]; // kept for logs/back-compat; rpc() below tries all endpoints
 const SUBMISSION = (process.env.SUBMISSION_ADDR ?? "0x2cA6571Daa15ce734Bbd0Bf27D5C9D16787fc33f").toLowerCase();
 const FTSO_PROTOCOL_ID = 100;
 const FIRST_VOTING_ROUND_TS = 1658429955;
@@ -109,26 +116,36 @@ async function candidateEpochs() {
 }
 
 let rpcId = 0;
-// Retry transient RPC failures. The reveal decoder makes hundreds of block fetches per round, and the
-// public Flare RPC intermittently times out under that load; without retries one hiccup aborts the whole
-// run and the tab goes empty. Exponential backoff, small jitter via attempt index.
-async function rpc(method, params, attempt = 0) {
-  try {
-    const r = await fetch(RPC, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const j = await r.json();
-    if (j.error) throw new Error(`${method}: ${j.error.message}`);
-    return j.result;
-  } catch (e) {
-    if (attempt >= 5) throw e;
-    await new Promise((res) => setTimeout(res, 300 * 2 ** attempt + attempt * 50));
-    return rpc(method, params, attempt + 1);
+// Single attempt against one endpoint.
+async function rpcOnce(url, method, params) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j = await r.json();
+  if (j.error) throw new Error(`${method}: ${j.error.message}`);
+  return j.result;
+}
+// Try each endpoint in order (our own node first, public fallback), each with retry + exponential
+// backoff. The reveal decoder makes hundreds of block fetches per round; our own node avoids the public
+// RPC's rate limits, and the fallback keeps the pipeline alive if the tunnel/node is briefly down.
+async function rpc(method, params) {
+  let lastErr;
+  for (const url of RPC_ENDPOINTS) {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        return await rpcOnce(url, method, params);
+      } catch (e) {
+        lastErr = e;
+        await new Promise((res) => setTimeout(res, 200 * 2 ** attempt));
+      }
+    }
+    // exhausted retries on this endpoint -> fall through to the next
   }
+  throw lastErr;
 }
 
 // --- calldata decode (mirrors FTSO-Scaling PayloadMessage + FeedValueEncoder) ---
