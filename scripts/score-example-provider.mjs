@@ -31,6 +31,10 @@ const EW_ALPHA = 0.02;
 // can carry - floored below so numerical noise doesn't create weight, and the distance itself is measured
 // in the same fractional units (dimensionless), so feeds combine on a common scale regardless of price.
 const WEIGHT_FLOOR_CV = 0.00005; // fractional ref-field gap below which a feed carries ~no signal
+// Freshness gate: if the reference's MEDIAN signed offset from the field across all feeds exceeds this,
+// the reference is drifted/stale (systematically one-directional) and the round is skipped. A healthy
+// reference scatters around 0; the observed stale bias was ~0.08-0.14% one-directional.
+const REF_STALE_OFFSET_CV = 0.0004;
 // A value is an EXCURSION when it sits this many MADs from the network median (a sharp spike away from
 // consensus). Providers running the same shared-source code excursion together on the same feeds/rounds.
 const EXCURSION_K = 4;
@@ -229,7 +233,8 @@ async function main() {
       }
       const canonical = await canonicalFeeds(round);
       if (!canonical) { console.log(`round ${round}: no canonical feed order, skip`); continue; }
-      await scoreRound(round, refs, reveals, canonical);
+      const res = await scoreRound(round, refs, reveals, canonical);
+      if (res?.skipped) continue; // stale reference -> already logged, don't claim a score
       console.log(`round ${round}: scored ${reveals.size} providers against ${refs.length} ref instances`);
     } catch (e) {
       console.error(`round ${round}: failed, skipping - ${e.message}`);
@@ -304,8 +309,25 @@ async function scoreRound(round, refs, reveals, canonical) {
     const rv = refs.map((r) => r.values[name]).filter((x) => Number.isFinite(x) && x > 0);
     const refMed = rv.length ? median(rv) : null;
     const refFieldGapCv = refMed != null && med > 0 ? Math.abs(refMed - med) / med : 0;
+    // SIGNED fractional offset of the reference from the field (for the staleness gate below).
+    const refSignedCv = refMed != null && med > 0 ? (refMed - med) / med : null;
     const weight = Math.max(0, refFieldGapCv - WEIGHT_FLOOR_CV);
-    perFeed.push({ name, median: med, mad, refMed, refFieldGapCv, weight });
+    perFeed.push({ name, median: med, mad, refMed, refFieldGapCv, refSignedCv, weight });
+  }
+
+  // FRESHNESS GATE - never score against a STALE reference. A healthy reference's per-feed offsets from
+  // the live field (= the on-chain consensus, our ground truth) scatter around zero; a stale reference
+  // (drifted CCXT buffers) sits SYSTEMATICALLY on one side of the field on nearly every feed. Detect that
+  // as a large-magnitude MEDIAN signed offset across feeds, and if so, SKIP the round entirely rather than
+  // record biased scores. This makes staleness impossible to poison a score, independent of restart timing.
+  const signedOffsets = perFeed.filter((p) => p && p.refSignedCv != null).map((p) => p.refSignedCv);
+  const medianOffset = signedOffsets.length ? median(signedOffsets) : 0;
+  if (Math.abs(medianOffset) > REF_STALE_OFFSET_CV) {
+    console.log(
+      `round ${round}: SKIP - reference looks stale (median offset ${(medianOffset * 100).toFixed(3)}% ` +
+      `across ${signedOffsets.length} feeds, threshold ${(REF_STALE_OFFSET_CV * 100).toFixed(3)}%)`
+    );
+    return { skipped: "stale-reference", medianOffset };
   }
 
   // Excursion of a single value on feed f: {sign:-1|0|1, mag} where mag is deviation in MADs. sign 0 =
