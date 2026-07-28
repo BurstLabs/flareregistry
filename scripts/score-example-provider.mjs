@@ -132,12 +132,18 @@ async function rpcOnce(url, method, params) {
 // Try each endpoint in order (our own node first, public fallback), each with retry + exponential
 // backoff. The reveal decoder makes hundreds of block fetches per round; our own node avoids the public
 // RPC's rate limits, and the fallback keeps the pipeline alive if the tunnel/node is briefly down.
-async function rpc(method, params) {
+// `requireResult`: when true, a null/undefined result is treated as a FAILURE (retry / fall to the next
+// endpoint) rather than a valid answer - used for block fetches where a null means "this endpoint doesn't
+// have that block right now", NOT "the block doesn't exist". Treating a spurious null as real corrupted
+// the block-timestamp binary search (it collapsed to block 1).
+async function rpc(method, params, requireResult = false) {
   let lastErr;
   for (const url of RPC_ENDPOINTS) {
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
-        return await rpcOnce(url, method, params);
+        const res = await rpcOnce(url, method, params);
+        if (requireResult && res == null) throw new Error("null result");
+        return res;
       } catch (e) {
         lastErr = e;
         await new Promise((res) => setTimeout(res, 200 * 2 ** attempt));
@@ -147,6 +153,9 @@ async function rpc(method, params) {
   }
   throw lastErr;
 }
+// Fetch a block that IS expected to exist (number <= head). Requires a non-null result, so a transient
+// null from our node falls back to the public RPC instead of poisoning the binary search.
+const getBlock = (numHex, full) => rpc("eth_getBlockByNumber", [numHex, full], true);
 
 // --- calldata decode (mirrors FTSO-Scaling PayloadMessage + FeedValueEncoder) ---
 function decodePayloads(inputHex) {
@@ -189,10 +198,10 @@ async function blockAtOrAfterTs(targetTs, latestBlock) {
   const tsCache = new Map();
   const tsOf = async (b) => {
     if (tsCache.has(b)) return tsCache.get(b);
-    const blk = await rpc("eth_getBlockByNumber", [`0x${b.toString(16)}`, false]);
-    // A null block (not yet synced on our node / above head) is treated as "in the future" (Infinity) so
-    // the binary search moves DOWN to a block that exists, rather than crashing on blk.timestamp.
-    const t = blk ? parseInt(blk.timestamp, 16) : Infinity;
+    // Blocks in [1, latestBlock] all exist; getBlock requires a non-null result (falling back to public
+    // RPC on a transient null), so the timestamps stay monotonic and the binary search is correct.
+    const blk = await getBlock(`0x${b.toString(16)}`, false);
+    const t = parseInt(blk.timestamp, 16);
     tsCache.set(b, t);
     return t;
   };
@@ -213,8 +222,7 @@ async function revealsForRound(round, latestBlock) {
   const startBlock = await blockAtOrAfterTs(revealStartTs, latestBlock);
   const endBlock = await blockAtOrAfterTs(revealEndTs + 1, latestBlock);
   for (let b = startBlock; b <= endBlock; b++) {
-    const blk = await rpc("eth_getBlockByNumber", [`0x${b.toString(16)}`, true]);
-    if (!blk) break; // reached beyond our node's head; the rest of the window isn't available yet
+    const blk = await getBlock(`0x${b.toString(16)}`, true); // exists (<= latest); non-null enforced
     const ts = parseInt(blk.timestamp, 16);
     if (ts < revealStartTs) continue;
     if (ts > revealEndTs) break;
