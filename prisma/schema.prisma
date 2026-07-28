@@ -736,7 +736,13 @@ model DetectionLabel {
 // Cursor: the last voting round the scorer has processed, so each run picks up every NEW settled round
 // since then (not just a fixed last-3 window that fell behind wall-clock). Single row id="flare".
 model DetectionCursor {
-  id        String   @id
-  lastRound Int      @default(0)
-  updatedAt DateTime @updatedAt
+  id        String @id
+  lastRound Int    @default(0)
+  // DB-cached canonical feed order [{name,decimals}] + the round range it covers, so the scorer does not
+  // hit GitHub's rate-limited contents API every 5-min run. Refreshed only when the round leaves the
+  // cached range (i.e. per reward epoch, ~3.5 days).
+  canonicalJson Json?
+  canonicalFrom Int?
+  canonicalTo   Int?
+  updatedAt     DateTime @updatedAt
 }
