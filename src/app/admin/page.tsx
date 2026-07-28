@@ -1280,7 +1280,7 @@ function ExampleProviderTab() {
                 <SortTh
                   label="P(example)"
                   col="combinedProbability"
-                  tip="Combined calibrated probability this provider runs the unmodified example provider, folding BOTH signals: value-similarity to our reference AND co-excursion (spiking away from the median at the same time as our reference). Confidence-gated, so it stays low until rounds accumulate. A suspicion score, not proof."
+                  tip="Calibrated probability this provider runs the unmodified example provider, based on value-similarity: how closely its on-chain values track our reference instances on the discriminating feeds, relative to the field. Confidence-gated, so it stays low until rounds accumulate. Co-spike is shown separately and is NOT folded into this number. A suspicion score, not proof."
                 />
                 <SortTh
                   label="Similarity"
