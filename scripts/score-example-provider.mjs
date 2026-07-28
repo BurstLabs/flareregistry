@@ -39,9 +39,10 @@ const EW_ALPHA = 0.02;
 // in the same fractional units (dimensionless), so feeds combine on a common scale regardless of price.
 const WEIGHT_FLOOR_CV = 0.00005; // fractional ref-field gap below which a feed carries ~no signal
 // Freshness gate: if the reference's MEDIAN signed offset from the field across all feeds exceeds this,
-// the reference is drifted/stale (systematically one-directional) and the round is skipped. A healthy
-// reference scatters around 0; the observed stale bias was ~0.08-0.14% one-directional.
-const REF_STALE_OFFSET_CV = 0.0004;
+// the reference is drifted/stale (systematically one-directional) and the round is skipped. Set from the
+// observed distribution: routine jitter is ~0.05-0.15% (median 0.07%), genuinely-stale drift is >~0.2%.
+// 0.04% over-rejected 2/3 of rounds as "stale" when they were fine; 0.2% catches real staleness only.
+const REF_STALE_OFFSET_CV = 0.002;
 // A value is an EXCURSION when it sits this many MADs from the network median (a sharp spike away from
 // consensus). Providers running the same shared-source code excursion together on the same feeds/rounds.
 const EXCURSION_K = 4;
@@ -270,17 +271,18 @@ async function main() {
   const headTs = parseInt((await getBlock(`0x${latest.toString(16)}`, false)).timestamp, 16); // anchor for block-time estimate
   const cur = currentRound();
   // Process every NEW settled round since the cursor, so accumulation tracks wall-clock 1:1 and never
-  // double-counts a round or falls behind (the old fixed last-3 window couldn't keep up: ~3.3 rounds
-  // happen per 5-min cron but it only looked at 3, so any skip made it lose ground permanently). Reveal
-  // for round R settles during R+1, so R must be <= cur-2. Bounded below by the cursor (last scored) and
-  // by the oldest reference sample we still retain; capped per run so a long gap doesn't run unbounded.
+  // double-counts a round or falls behind. Reveal for round R settles DURING R+1, but to be safe against
+  // our node being a block behind and the run landing mid-round, we wait until cur-SETTLE_ROUNDS before
+  // scoring (and cursor-advancing past) a round - otherwise a too-fresh round decodes "no reveals" and is
+  // lost permanently. Bounded below by the cursor and the oldest retained reference sample; capped per run.
+  const SETTLE_ROUNDS = 3;
   const cursor = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
   const lastScored = cursor?.lastRound ?? 0;
   const oldestSample = await prisma.referenceSample.aggregate({ _min: { round: true } });
   const floor = Math.max(lastScored, (oldestSample._min.round ?? 1) - 1);
   const sampled = await prisma.referenceSample.groupBy({
     by: ["round"],
-    where: { round: { lte: cur - 2, gt: floor } },
+    where: { round: { lte: cur - SETTLE_ROUNDS, gt: floor } },
     orderBy: { round: "asc" },
     take: 200, // safety cap per run
   });
@@ -305,8 +307,13 @@ async function main() {
       const canonical = await canonicalFeeds(round); // throws on transient fetch failure -> caught below
       const reveals = await revealsForRound(round, latest, headTs);
       if (reveals.size === 0) {
-        console.log(`round ${round}: no reveals decoded`);
-        if (round === maxDone + 1) maxDone = round;
+        // No reveals could mean the round is still too fresh (reveals not on our node yet) OR a decode
+        // problem. Don't advance past a RECENT round - retry it next run once it's had more time. Only
+        // give up (advance) on an OLD round where reveals will never appear (stale data / genuine gap).
+        const old = round <= cur - 8;
+        console.log(`round ${round}: no reveals decoded${old ? " (old, skipping)" : " (recent, will retry)"}`);
+        if (old && round === maxDone + 1) maxDone = round;
+        if (!old) break; // stop advancing; retry from here next run
         continue;
       }
       const res = await scoreRound(round, refs, reveals, canonical);
