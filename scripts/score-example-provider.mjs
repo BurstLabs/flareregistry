@@ -190,7 +190,9 @@ async function blockAtOrAfterTs(targetTs, latestBlock) {
   const tsOf = async (b) => {
     if (tsCache.has(b)) return tsCache.get(b);
     const blk = await rpc("eth_getBlockByNumber", [`0x${b.toString(16)}`, false]);
-    const t = parseInt(blk.timestamp, 16);
+    // A null block (not yet synced on our node / above head) is treated as "in the future" (Infinity) so
+    // the binary search moves DOWN to a block that exists, rather than crashing on blk.timestamp.
+    const t = blk ? parseInt(blk.timestamp, 16) : Infinity;
     tsCache.set(b, t);
     return t;
   };
@@ -212,6 +214,7 @@ async function revealsForRound(round, latestBlock) {
   const endBlock = await blockAtOrAfterTs(revealEndTs + 1, latestBlock);
   for (let b = startBlock; b <= endBlock; b++) {
     const blk = await rpc("eth_getBlockByNumber", [`0x${b.toString(16)}`, true]);
+    if (!blk) break; // reached beyond our node's head; the rest of the window isn't available yet
     const ts = parseInt(blk.timestamp, 16);
     if (ts < revealStartTs) continue;
     if (ts > revealEndTs) break;
