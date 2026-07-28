@@ -232,22 +232,34 @@ function currentRound() {
 
 // Collect all providers' revealed raw-int arrays for a given round by scanning the blocks whose
 // timestamps fall in that round's reveal window. Returns Map<providerAddr, uint32[]>.
-// Flare block time (~1.8s), used to estimate a block number from a target timestamp given a head anchor.
-const FLARE_BLOCK_SECONDS = 1.8;
-
-async function revealsForRound(round, latestBlock, headTs) {
+async function revealsForRound(round, latestBlock, headTs, blockSeconds) {
   // Reveal for round R happens during round R+1 (a 90s window). Estimate the window's block range from
   // block-time, pad generously, and BATCH-fetch it in one request (the tunnel's per-request latency makes
   // per-block fetching too slow). Then filter to the exact timestamp window.
   const revealStartTs = FIRST_VOTING_ROUND_TS + (round + 1) * VOTING_EPOCH_DURATION;
   const revealEndTs = revealStartTs + VOTING_EPOCH_DURATION;
+  const centerTs = revealStartTs + VOTING_EPOCH_DURATION / 2;
   const byProvider = new Map();
-  // Estimate center block from the head anchor; pad by the window width in blocks + margin on each side.
-  const est = latestBlock - Math.round((headTs - (revealStartTs + VOTING_EPOCH_DURATION / 2)) / FLARE_BLOCK_SECONDS);
-  const pad = Math.ceil(VOTING_EPOCH_DURATION / FLARE_BLOCK_SECONDS) + 15; // ~65 blocks
-  const from = Math.max(1, est - pad);
-  const to = Math.min(latestBlock, est + pad);
-  const blocks = await getBlockRange(from, to, true);
+  // Window is ~VOTING_EPOCH_DURATION/blockSeconds blocks wide; pad by that + margin. Estimate the center
+  // block from the head anchor using the MEASURED block time. If the fetched batch doesn't actually cover
+  // the timestamp window (block-time drift over a long distance), recentre on a real block and refetch.
+  const windowBlocks = Math.ceil(VOTING_EPOCH_DURATION / blockSeconds);
+  const pad = windowBlocks + 25;
+  let est = latestBlock - Math.round((headTs - centerTs) / blockSeconds);
+  let from, to, blocks;
+  for (let tries = 0; tries < 3; tries++) {
+    from = Math.max(1, est - pad);
+    to = Math.min(latestBlock, est + pad);
+    blocks = await getBlockRange(from, to, true);
+    const firstTs = parseInt(blocks.get(from).timestamp, 16);
+    const lastTs = parseInt(blocks.get(to).timestamp, 16);
+    if (firstTs <= revealStartTs && lastTs >= revealEndTs) break; // window fully covered
+    if (to >= latestBlock && lastTs < revealStartTs) break; // window is past head (too fresh); give up
+    // Re-estimate from a real anchor inside this batch (accurate local block time near the target).
+    const anchorTs = firstTs > revealStartTs ? firstTs : lastTs;
+    const anchorBlk = firstTs > revealStartTs ? from : to;
+    est = anchorBlk - Math.round((anchorTs - centerTs) / blockSeconds);
+  }
   for (let b = from; b <= to; b++) {
     const blk = blocks.get(b);
     if (!blk) continue;
@@ -268,7 +280,12 @@ async function revealsForRound(round, latestBlock, headTs) {
 
 async function main() {
   const latest = parseInt(await rpc("eth_blockNumber", []), 16);
-  const headTs = parseInt((await getBlock(`0x${latest.toString(16)}`, false)).timestamp, 16); // anchor for block-time estimate
+  const headTs = parseInt((await getBlock(`0x${latest.toString(16)}`, false)).timestamp, 16);
+  // Measure the ACTUAL avg block time from a second anchor 20k blocks back (it is ~1.13s, not the 1.8s we
+  // assumed - that error placed the estimated block window off by minutes and dropped reveals).
+  const anchorBack = Math.max(1, latest - 20000);
+  const anchorTs = parseInt((await getBlock(`0x${anchorBack.toString(16)}`, false)).timestamp, 16);
+  const blockSeconds = (headTs - anchorTs) / (latest - anchorBack) || 1.13;
   const cur = currentRound();
   // Process every NEW settled round since the cursor, so accumulation tracks wall-clock 1:1 and never
   // double-counts a round or falls behind. Reveal for round R settles DURING R+1, but to be safe against
@@ -305,7 +322,7 @@ async function main() {
       const refs = await prisma.referenceSample.findMany({ where: { round } });
       if (refs.length === 0) { if (round === maxDone + 1) maxDone = round; continue; }
       const canonical = await canonicalFeeds(round); // throws on transient fetch failure -> caught below
-      const reveals = await revealsForRound(round, latest, headTs);
+      const reveals = await revealsForRound(round, latest, headTs, blockSeconds);
       if (reveals.size === 0) {
         // No reveals could mean the round is still too fresh (reveals not on our node yet) OR a decode
         // problem. Don't advance past a RECENT round - retry it next run once it's had more time. Only
