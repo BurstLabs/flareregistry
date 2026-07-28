@@ -192,35 +192,36 @@ function currentRound() {
 
 // Collect all providers' revealed raw-int arrays for a given round by scanning the blocks whose
 // timestamps fall in that round's reveal window. Returns Map<providerAddr, uint32[]>.
-async function blockAtOrAfterTs(targetTs, latestBlock) {
-  // Binary search for the lowest block whose timestamp >= targetTs.
-  let lo = 1, hi = latestBlock, ans = latestBlock;
-  const tsCache = new Map();
-  const tsOf = async (b) => {
-    if (tsCache.has(b)) return tsCache.get(b);
-    // Blocks in [1, latestBlock] all exist; getBlock requires a non-null result (falling back to public
-    // RPC on a transient null), so the timestamps stay monotonic and the binary search is correct.
-    const blk = await getBlock(`0x${b.toString(16)}`, false);
-    const t = parseInt(blk.timestamp, 16);
-    tsCache.set(b, t);
-    return t;
-  };
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if ((await tsOf(mid)) >= targetTs) { ans = mid; hi = mid - 1; }
-    else lo = mid + 1;
+// Estimate the block number at a target timestamp from a known anchor (head block ts), using Flare's
+// ~1.8s block time, then refine to the first block whose ts >= target with a short linear walk. This
+// replaces a full binary search (~26 fetches) with ~2-4 fetches - the old search dominated per-round
+// latency and made the scorer fall behind. `latestBlock`/`headTs` are the anchor.
+const FLARE_BLOCK_SECONDS = 1.8;
+async function blockAtOrAfterTs(targetTs, latestBlock, headTs) {
+  let b = Math.max(1, Math.min(latestBlock, latestBlock - Math.round((headTs - targetTs) / FLARE_BLOCK_SECONDS)));
+  let ts = parseInt((await getBlock(`0x${b.toString(16)}`, false)).timestamp, 16);
+  // Walk toward the target (block times aren't exactly 1.8s). Bounded to avoid pathological loops.
+  let guard = 0;
+  while (ts < targetTs && b < latestBlock && guard++ < 200) {
+    b++;
+    ts = parseInt((await getBlock(`0x${b.toString(16)}`, false)).timestamp, 16);
   }
-  return ans;
+  while (b > 1 && ts >= targetTs && guard++ < 400) {
+    const prevTs = parseInt((await getBlock(`0x${(b - 1).toString(16)}`, false)).timestamp, 16);
+    if (prevTs < targetTs) break;
+    b--; ts = prevTs;
+  }
+  return b;
 }
 
-async function revealsForRound(round, latestBlock) {
-  // Reveal for round R happens during round R+1. Find the exact block range by timestamp (binary
-  // search), not a block-time estimate - the estimate under-captured reveals on some rounds.
+async function revealsForRound(round, latestBlock, headTs) {
+  // Reveal for round R happens during round R+1. Locate the block range by timestamp estimate (fast),
+  // then scan it filtering by exact timestamp so the estimate's slack doesn't matter.
   const revealStartTs = FIRST_VOTING_ROUND_TS + (round + 1) * VOTING_EPOCH_DURATION;
   const revealEndTs = revealStartTs + VOTING_EPOCH_DURATION;
   const byProvider = new Map();
-  const startBlock = await blockAtOrAfterTs(revealStartTs, latestBlock);
-  const endBlock = await blockAtOrAfterTs(revealEndTs + 1, latestBlock);
+  const startBlock = await blockAtOrAfterTs(revealStartTs, latestBlock, headTs);
+  const endBlock = Math.min(latestBlock, await blockAtOrAfterTs(revealEndTs + 1, latestBlock, headTs) + 2);
   for (let b = startBlock; b <= endBlock; b++) {
     const blk = await getBlock(`0x${b.toString(16)}`, true); // exists (<= latest); non-null enforced
     const ts = parseInt(blk.timestamp, 16);
@@ -241,6 +242,7 @@ async function revealsForRound(round, latestBlock) {
 
 async function main() {
   const latest = parseInt(await rpc("eth_blockNumber", []), 16);
+  const headTs = parseInt((await getBlock(`0x${latest.toString(16)}`, false)).timestamp, 16); // anchor for block-time estimate
   const cur = currentRound();
   // Process every NEW settled round since the cursor, so accumulation tracks wall-clock 1:1 and never
   // double-counts a round or falls behind (the old fixed last-3 window couldn't keep up: ~3.3 rounds
@@ -276,7 +278,7 @@ async function main() {
       const refs = await prisma.referenceSample.findMany({ where: { round } });
       if (refs.length === 0) { if (round === maxDone + 1) maxDone = round; continue; }
       const canonical = await canonicalFeeds(round); // throws on transient fetch failure -> caught below
-      const reveals = await revealsForRound(round, latest);
+      const reveals = await revealsForRound(round, latest, headTs);
       if (reveals.size === 0) {
         console.log(`round ${round}: no reveals decoded`);
         if (round === maxDone + 1) maxDone = round;
