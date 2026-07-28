@@ -226,7 +226,9 @@ async function main() {
     await prisma.$disconnect();
     return;
   }
-  let maxDone = lastScored;
+  // Contiguity anchor: one below the first round we're processing (the cursor may sit far below the
+  // actual round numbers, e.g. 0 on first run, so we can't compare against lastScored directly).
+  let maxDone = rounds[0] - 1;
 
   // Advance the cursor only through rounds we've DEFINITIVELY handled in ascending order. A transient
   // failure (RPC error, missing canonical order) stops the advance so that round is retried next run; a
