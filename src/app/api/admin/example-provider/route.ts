@@ -44,7 +44,11 @@ export async function GET() {
   // implementation-specific structure. Measured effect: verified-custom controls fall to rank 37 and 55 of
   // 95, and a tight top cluster separates at 0.93-0.95 with a clear gap below.
   const cursorRow = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
-  const refProfile = (cursorRow?.refFeedErrorsJson ?? null) as Record<string, number> | null;
+  // refFeedErrorsJson is keyed by instance id: { "full:1": {feed: lnDev}, "top3:1": {...}, ... }
+  const allRefProfiles = (cursorRow?.refFeedErrorsJson ?? {}) as Record<string, Record<string, number>>;
+  const refInstanceIds = Object.keys(allRefProfiles);
+  const yardstickId = refInstanceIds.find((k) => k.startsWith("full")) ?? refInstanceIds[0];
+  const refProfile = yardstickId ? allRefProfiles[yardstickId] : null;
   const profiles = new Map<string, Record<string, number>>();
   for (const r of rows) {
     const p = r.feedErrorsJson as Record<string, number> | null;
@@ -61,20 +65,64 @@ export async function GET() {
       if (vals.length >= 20) difficulty.set(f, med(vals));
     }
   }
+  // Correlate any profile against the yardstick, both de-meaned by feed difficulty.
+  const corrTo = (p: Record<string, number>, ref: Record<string, number>): number => {
+    const xs: number[] = [], ys: number[] = [];
+    for (const [f, d] of difficulty) {
+      const pv = p[f], rv = ref[f];
+      if (!Number.isFinite(pv) || !Number.isFinite(rv)) continue;
+      xs.push(pv - d);
+      ys.push(rv - d);
+    }
+    return pearson(xs, ys);
+  };
   const corrByVoter = new Map<string, number>();
+  // POSITIVE CLASS for the fingerprint: our OTHER-CONFIG reference instances scored against the
+  // yardstick. Each is a genuine example provider whose exchange config differs from it - the realistic,
+  // attainable bar. Same-config instances are excluded: they are byte-identical twins and would put the
+  // bar at 1.0, which is what made the old similarity metric flag nobody.
+  const anchorFps: number[] = [];
   if (refProfile && difficulty.size >= 15) {
+    const yardVariant = (yardstickId ?? "").split(":")[0];
+    for (const inst of refInstanceIds) {
+      if (inst.split(":")[0] === yardVariant) continue;
+      const c = corrTo(allRefProfiles[inst], refProfile);
+      if (Number.isFinite(c)) anchorFps.push(c);
+    }
     for (const [voter, p] of profiles) {
-      const xs: number[] = [], ys: number[] = [];
-      for (const [f, d] of difficulty) {
-        const pv = p[f], rv = refProfile[f];
-        if (!Number.isFinite(pv) || !Number.isFinite(rv)) continue;
-        xs.push(pv - d);   // provider, de-meaned by feed difficulty
-        ys.push(rv - d);   // reference, de-meaned the same way
-      }
-      const c = pearson(xs, ys);
+      const c = corrTo(p, refProfile);
       if (Number.isFinite(c)) corrByVoter.set(voter, c);
     }
   }
+  // Which reference CONFIG a provider's error profile matches best - a far more meaningful "Variant" than
+  // the old one, which was picked by the broken value-similarity metric.
+  const variantByVoter = new Map<string, string>();
+  if (refProfile && difficulty.size >= 15) {
+    for (const [voter, p] of profiles) {
+      let best: { v: string; c: number } | null = null;
+      for (const inst of refInstanceIds) {
+        const c = corrTo(allRefProfiles[inst], p);
+        if (!Number.isFinite(c)) continue;
+        const v = inst.split(":")[0];
+        if (!best || c > best.c) best = { v, c };
+      }
+      if (best) variantByVoter.set(voter, best.v);
+    }
+  }
+  // Calibrate fingerprint -> probability with the same monotonic logistic used before, but between the
+  // FIELD's fingerprint level and the cross-config ANCHOR level. Monotonic in the fingerprint by
+  // construction, so a higher fingerprint always means a higher probability.
+  const fieldFps = [...corrByVoter.values()];
+  const anchorMean = anchorFps.length ? anchorFps.reduce((a, b) => a + b, 0) / anchorFps.length : NaN;
+  const fieldMean = fieldFps.length ? med(fieldFps) : NaN;
+  const fpGap = anchorMean - fieldMean;
+  const fpProbability = (fp: number | null): number => {
+    if (fp == null || !Number.isFinite(fp)) return 0;
+    if (!Number.isFinite(fpGap) || !(fpGap > 1e-6) || anchorFps.length < 2) return 0;
+    const mid = (anchorMean + fieldMean) / 2;
+    const k = 6 / fpGap;
+    return 1 / (1 + Math.exp(-k * (fp - mid)));
+  };
 
   // Resolve the similarity row's address -> our provider name for display. IMPORTANT: the address we
   // stored is the reveal tx sender = the entity's SUBMIT address, not its identity/voter. So match it
@@ -147,16 +195,19 @@ export async function GET() {
       variance: r.refSimilarityVar,
       accuracy: r.fieldDeviationMean, // deviation from field consensus (lower = more accurate)
       probability: r.probability,
-      combinedProbability: r.combinedProbability, // value-similarity + co-excursion (rescaled below)
-      combinedProbabilityRaw: r.combinedProbability as number, // pre-baseline-rescale copy
+      // P is now the FINGERPRINT-based probability, confidence-gated by observed rounds.
+      combinedProbability: r.confidence * fpProbability(corrByVoter.get(r.voter.toLowerCase()) ?? null),
+      combinedProbabilityRaw: (r.confidence * fpProbability(corrByVoter.get(r.voter.toLowerCase()) ?? null)) as number,
       coExcursionRate: r.coExcursionRate, // same-direction spike rate with our reference (0..1)
       coExcursionN: r.coExcursionN, // joint excursion opportunities observed
-      // Implementation fingerprint: de-meaned error-profile correlation with our reference.
+      // Implementation fingerprint: de-meaned error-profile correlation with our reference. This is now
+      // the signal P is built on; the old value-similarity metric is retained in the DB but not surfaced,
+      // because our reference sits 6.3x outside the provider cloud so it discriminated nothing.
       errorProfileCorr: corrByVoter.get(r.voter.toLowerCase()) ?? null,
       errorProfileN: r.errorProfileN,
       confidence: r.confidence,
       rounds: r.roundsObserved,
-      variant: r.bestVariant, // which exchange-subset variant (full|top5|top10) fits best
+      variant: variantByVoter.get(r.voter.toLowerCase()) ?? null, // config whose ERROR PROFILE fits best
       knownCustom, // verified NOT the example provider (trusted negative)
     };
   });

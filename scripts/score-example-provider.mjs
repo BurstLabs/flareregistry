@@ -682,18 +682,31 @@ async function scoreRound(round, refs, reveals, canonical) {
     await updateCalibration(vk, cals.get(vk), anchorByVariant.get(vk), fieldByVariant.get(vk));
   }
 
-  // Accumulate OUR REFERENCE's error profile the same way, so the API can de-mean both by feed difficulty
-  // and correlate them. perFeed[f].refMed is the reference median for that feed this round.
+  // Accumulate an error profile for EVERY reference instance, keyed by instance id:
+  //   refFeedErrorsJson = { "full:1": {feed: lnDev}, "top3:1": {...}, ... }
+  // The "full:*" profile is the yardstick (the unmodified example provider). The OTHER-config instances
+  // are genuine "example provider with a different exchange config" samples, i.e. the realistic POSITIVE
+  // CLASS the API uses to calibrate a fingerprint into a probability - the same cross-config logic that
+  // fixed the anchor, applied to the fingerprint. Same-config instances are excluded there because they
+  // are byte-identical twins and would restore the impossible bar.
   const curRow = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
-  // Reference profile observation count = max provider errorProfileN (they advance together each round).
   const refProfileN = await prisma.providerSimilarity
     .aggregate({ _max: { errorProfileN: true } })
     .then((a) => a._max.errorProfileN ?? 0);
-  const refErrors = mergeLogDevs(
-    curRow?.refFeedErrorsJson,
-    feedLogDevs((f) => perFeed[f]?.refMedFull ?? NaN),
-    refProfileN
-  );
+  const prevAll = (curRow?.refFeedErrorsJson ?? {});
+  const refErrors = { ...prevAll };
+  for (const r of refs) {
+    const inst = String(r.instance);
+    refErrors[inst] = mergeLogDevs(
+      prevAll[inst],
+      feedLogDevs((f) => {
+        const nm = perFeed[f]?.name;
+        const v = nm ? r.values[nm] : NaN;
+        return Number.isFinite(v) && v > 0 ? v : NaN;
+      }),
+      refProfileN
+    );
+  }
   await prisma.detectionCursor.upsert({
     where: { id: "flare" },
     create: { id: "flare", lastRound: 0, refFeedErrorsJson: refErrors },
