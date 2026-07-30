@@ -699,10 +699,41 @@ model ProviderSimilarity {
   feedErrorsJson      Json?
   errorProfileN       Int     @default(0)
 
+  // TICK-GRID (value lattice) evidence. The example provider's weightedMedian() returns an OBSERVED TRADE
+  // PRINT verbatim, so its value sits on some venue's tick grid. When a venue's tick is coarser than the
+  // on-chain encoding grid (T = tick * 10^decimals >= 2), "enc is divisible by T" is a real constraint
+  // with an EXACT null of 1/T. These are CUMULATIVE (not EW) sums, because the null is exact and
+  // stationary, so power grows without bound as rounds accumulate:
+  //   lift = latticeHits / latticeExpected     (1.0 = pure chance, our reference measures 3.3x-5.9x)
+  //   z    = (latticeHits - latticeExpected) / sqrt(latticeVar)
+  // Needs NO reference instance and is unaffected by how ACCURATE our reference is.
+  latticeHits     Float @default(0)
+  latticeExpected Float @default(0)
+  latticeVar      Float @default(0)
+  latticeTrials   Int   @default(0)
+
   updatedAt DateTime @updatedAt
 
   @@unique([network, voter])
   @@index([voter])
+}
+
+// Price TICK for each (feed, exchange, symbol) the example provider's default feeds.json reads, pulled
+// from ccxt market metadata. Denormalized by feed so the scorer can build each feed's candidate lattices
+// without needing feeds.json (which lives in the reference checkout, not the registry repo). The raw tick
+// is stored rather than the derived T, because T = tick * 10^decimals and `decimals` changes per reward
+// epoch - the scorer applies its own canonical decimals.
+model FeedSourceTick {
+  id       String @id @default(cuid())
+  feedName String // canonical feed name, e.g. "BTC/USD"
+  exchange String
+  symbol   String
+  tick     Float
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([feedName, exchange, symbol])
+  @@index([feedName])
 }
 
 // Singleton running calibration state for the example-provider probability (Flare). Holds the two
@@ -743,16 +774,16 @@ model DetectionLabel {
 // Cursor: the last voting round the scorer has processed, so each run picks up every NEW settled round
 // since then (not just a fixed last-3 window that fell behind wall-clock). Single row id="flare".
 model DetectionCursor {
-  id        String @id
-  lastRound Int    @default(0)
+  id                String   @id
+  lastRound         Int      @default(0)
   // DB-cached canonical feed order [{name,decimals}] + the round range it covers, so the scorer does not
   // hit GitHub's rate-limited contents API every 5-min run. Refreshed only when the round leaves the
   // cached range (i.e. per reward epoch, ~3.5 days).
-  canonicalJson Json?
-  canonicalFrom Int?
-  canonicalTo   Int?
+  canonicalJson     Json?
+  canonicalFrom     Int?
+  canonicalTo       Int?
   // Our REFERENCE's error profile: EW mean of ln(|deviation from field median|) per feed, same shape as
   // ProviderSimilarity.feedErrorsJson, so the two can be de-meaned and correlated.
   refFeedErrorsJson Json?
-  updatedAt     DateTime @updatedAt
+  updatedAt         DateTime @updatedAt
 }

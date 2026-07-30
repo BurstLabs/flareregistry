@@ -32,6 +32,56 @@ export function pearson(x: number[], y: number[]): number {
 
 export type RefProfiles = Record<string, Record<string, number>>;
 
+/**
+ * TICK-GRID (value lattice) evidence.
+ *
+ * The example provider's weightedMedian() returns an observed trade print verbatim, so its value sits on
+ * some venue's tick grid. Where a venue's tick is coarser than the on-chain encoding grid, divisibility
+ * is a real constraint with an EXACT null of 1/T, which is why this needs no reference instance and no
+ * calibration - unlike every other signal here, the baseline is arithmetic rather than measured.
+ *
+ * lift = hits / expected. 1.0 is pure chance. Our own reference instances measure 3.3x (full config) to
+ * 5.9x (top3), and a verified-custom control measures 1.01x.
+ *
+ * IMPORTANT: this is a ONE-SIDED screen. A low lift is strong evidence AGAINST running the example
+ * provider (the arithmetic that produced the value smoothed the print away). A high lift is NOT proof
+ * FOR it, because any median-of-prints implementation also echoes a print - a verified-custom provider
+ * measures 2.65x. Treat it as an exclusion filter, never as an accusation.
+ */
+export interface LatticeStats {
+  /** hits / expected; 1.0 = chance. */
+  lift: number | null;
+  /** (hits - expected) / sqrt(var); how many sigma above the exact null. */
+  z: number | null;
+  hits: number;
+  trials: number;
+  /** z <= 3 with enough trials: provably not echoing coarse-venue prints. */
+  ruledOut: boolean;
+}
+
+/** Minimum trials before the screen is allowed to rule anyone out. */
+export const LATTICE_MIN_TRIALS = 500;
+/** z at or below this is consistent with pure chance. */
+export const LATTICE_Z_CHANCE = 3;
+
+export function latticeStats(row: {
+  latticeHits: number;
+  latticeExpected: number;
+  latticeVar: number;
+  latticeTrials: number;
+}): LatticeStats {
+  const { latticeHits: h, latticeExpected: e, latticeVar: v, latticeTrials: n } = row;
+  if (!n || !(e > 0)) return { lift: null, z: null, hits: h ?? 0, trials: n ?? 0, ruledOut: false };
+  const z = v > 0 ? (h - e) / Math.sqrt(v) : null;
+  return {
+    lift: h / e,
+    z,
+    hits: h,
+    trials: n,
+    ruledOut: n >= LATTICE_MIN_TRIALS && z != null && z <= LATTICE_Z_CHANCE,
+  };
+}
+
 export interface FingerprintResult {
   /** voter (submit address, lowercased) -> de-meaned error-profile correlation with the yardstick. */
   corrByVoter: Map<string, number>;

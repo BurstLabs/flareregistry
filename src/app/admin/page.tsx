@@ -1165,6 +1165,9 @@ function ExampleProviderTab() {
     } else if (sortKey === "variant") {
       av = a.variant ?? "";
       bv = b.variant ?? "";
+    } else if (sortKey === "latticeLift") {
+      av = a.lattice?.lift ?? null;
+      bv = b.lattice?.lift ?? null;
     }
     if (av == null) av = -Infinity;
     if (bv == null) bv = -Infinity;
@@ -1286,6 +1289,11 @@ function ExampleProviderTab() {
                   tip="ERROR-PROFILE correlation: how closely this provider's pattern of per-feed accuracy matches our reference example provider, after subtracting each feed's difficulty baseline (illiquid feeds are hard for everyone, so that shared component is removed). Which feeds an implementation is good and bad on is set by its exchange list and aggregation, so this fingerprints the implementation rather than the price. High = weak and strong on the SAME feeds as the example provider. Our two verified-custom controls rank mid-pack here, which is the intended behaviour."
                 />
                 <SortTh
+                  label="Tick grid"
+                  col="latticeLift"
+                  tip="TICK-GRID lift: how much more often this provider's value lands exactly on a coarse exchange tick grid than pure chance would give. The example provider returns an observed trade PRINT verbatim, so its values inherit the venue's tick grid; anything that averages, VWAPs or mid-prices smooths that away. The null is exact arithmetic (1/T), not a measured baseline, so this needs no reference instance and is unaffected by our reference's accuracy. Our own instances measure 3.3x (full config) to 5.9x (top3); a verified-custom control measures 1.01x. ONE-SIDED: near 1.0x is strong evidence AGAINST, but a high value is NOT proof FOR, since any median-of-prints implementation also echoes a print."
+                />
+                <SortTh
                   label="Variant"
                   col="variant"
                   align="center"
@@ -1348,6 +1356,34 @@ function ExampleProviderTab() {
                         }
                       >
                         {r.errorProfileCorr.toFixed(3)}
+                      </span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums">
+                    {r.lattice?.lift != null ? (
+                      <span
+                        className={
+                          r.lattice.ruledOut
+                            ? "text-emerald-500"
+                            : r.lattice.lift >= 2.5
+                              ? "font-semibold text-flare"
+                              : r.lattice.lift >= 1.5
+                                ? "text-amber-500"
+                                : "text-muted"
+                        }
+                        title={
+                          `${r.lattice.hits ?? ""} hits vs ${r.lattice.trials} trials, z=${r.lattice.z?.toFixed(1) ?? "?"}` +
+                          (r.lattice.ruledOut
+                            ? " - RULED OUT: indistinguishable from chance, so this provider does not echo raw exchange prints."
+                            : r.lattice.trials < 500
+                              ? " - still accumulating; needs 500+ trials before it can rule anyone out."
+                              : "")
+                        }
+                      >
+                        {r.lattice.lift.toFixed(2)}x
+                        {r.lattice.ruledOut && <span className="ml-1 text-[10px]">ruled out</span>}
                       </span>
                     ) : (
                       <span className="text-faint">—</span>
