@@ -493,8 +493,17 @@ async function scoreRound(round, refs, reveals, canonical) {
     );
   }
 
-  // Per-variant reference value sets + this round's anchor samples (each instance scored vs its OWN
-  // variant's other instances). Field samples accumulate per variant from the provider sims below.
+  // Per-variant reference value sets + this round's ANCHOR (positive-class) samples.
+  //
+  // The anchor defines what an example-provider user is SUPPOSED to look like. It used to be built by
+  // scoring each instance against its own same-config twins - but those twins were measured to be
+  // BYTE-IDENTICAL (same box, network and restart tick), so the anchor encoded "a perfect clone of
+  // myself". No real provider on their own infrastructure can ever reach that, so every provider was
+  // forced into the field/custom class: a direct cause of 100% false negatives.
+  //
+  // The anchor is now CROSS-CONFIG: for variant v, the positive class is every OTHER-config reference
+  // instance scored against v. That is exactly the realistic bar - "a genuine example-provider user whose
+  // exchange config differs from ours" - which is attainable, so a real user can actually clear it.
   const anchorByVariant = new Map(); // vk -> number[]
   const fieldByVariant = new Map(); // vk -> number[]
   const refSetByVariant = new Map(); // vk -> (f)=>values[]
@@ -503,18 +512,16 @@ async function scoreRound(round, refs, reveals, canonical) {
     refSetByVariant.set(vk, (f) =>
       vinsts.map((r) => r.values[perFeed[f]?.name]).filter((x) => Number.isFinite(x) && x > 0)
     );
+    fieldByVariant.set(vk, []);
+  }
+  for (const vk of variantKeys) {
     const anchor = [];
-    for (let i = 0; i < vinsts.length; i++) {
-      const self = vinsts[i].values;
-      const others = vinsts.filter((_, j) => j !== i);
-      const s = similarityOf(
-        (f) => self[perFeed[f]?.name],
-        (f) => others.map((o) => o.values[perFeed[f]?.name]).filter((x) => Number.isFinite(x) && x > 0)
-      );
+    for (const other of refs) {
+      if (variantOf(other.instance) === vk) continue; // same config = near-identical twin, not a fair bar
+      const s = similarityOf((f) => other.values[perFeed[f]?.name], refSetByVariant.get(vk));
       if (s.sim != null) anchor.push(s.sim);
     }
     anchorByVariant.set(vk, anchor);
-    fieldByVariant.set(vk, []);
   }
 
   // --- REFERENCE EXCURSION SIGNATURE for this round ---
