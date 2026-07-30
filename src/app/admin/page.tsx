@@ -3,7 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAccount } from "wagmi";
 import { useWalletSign } from "@/lib/useWalletSign";
-import { LATTICE_MIN_TRIALS, LATTICE_LIFT_EXCLUDE } from "@/lib/detection";
+import {
+  LATTICE_MIN_TRIALS,
+  LATTICE_LIFT_EXCLUDE,
+  PATTERN_MIN_ROUNDS,
+  PATTERN_STRONG,
+  PATTERN_KNOWN_CUSTOM,
+} from "@/lib/detection";
 
 // Operator-only admin dashboard. English-only (internal tool, not a user-facing page). Access is
 // gated by ADMIN_ADDRESSES: sign in with an allowlisted wallet (reusing the SIWE flow) to unlock it.
@@ -1422,13 +1428,15 @@ function ExampleProviderTab() {
                               : "text-muted"
                         }
                         title={
-                          `Matches config ${r.pattern.bestConfig ?? "?"} at r=${r.pattern.bestR?.toFixed(3) ?? "?"}. ` +
-                          (r.lattice?.ruledOut
+                          `Matches config ${r.pattern.bestConfig ?? "?"} at r=${r.pattern.bestR?.toFixed(3) ?? "?"}, over ${r.pattern.rounds} rounds. ` +
+                          (!r.pattern.mature
+                            ? `NOT YET MATURE: a correlation between noisy profiles is attenuated toward zero, so this value is biased LOW and no band or class is applied until ${PATTERN_MIN_ROUNDS} rounds.`
+                            : r.lattice?.ruledOut
                             ? "Excluded by the tick-grid screen, so no suspicion band is applied regardless of this value."
                             : r.pattern.band === "strong"
-                              ? "ABOVE 0.50: over-hits the same cells as our reference, approaching its own self-similarity of 0.624."
+                              ? `At or above ${PATTERN_STRONG}: over-hits the same cells as our reference, whose own instances sit at 0.80-0.87.`
                               : r.pattern.band === "elevated"
-                                ? "Above 0.396, the level a provider we KNOW is custom (1FTSO) reaches. Elevated, not conclusive."
+                                ? `At or above ${PATTERN_KNOWN_CUSTOM}, i.e. beyond what a provider we KNOW is custom (1FTSO) reaches. Elevated, not conclusive.`
                                 : "At or below the verified-custom control. No elevation.")
                         }
                       >
