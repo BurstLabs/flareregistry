@@ -418,11 +418,19 @@ async function scoreRound(round, refs, reveals, canonical) {
     // relative to it tells us. No keep/drop - every feed participates, weighted by this.
     const rv = refs.map((r) => r.values[name]).filter((x) => Number.isFinite(x) && x > 0);
     const refMed = rv.length ? median(rv) : null;
+    // The ERROR-PROFILE fingerprint uses the UNMODIFIED default config alone ("full"), not a blend of all
+    // variants: blending five different exchange subsets smears the very per-feed structure the
+    // fingerprint is built on. Other uses (feed weight, freshness gate, excursions) keep the blended median.
+    const rvFull = refs
+      .filter((r) => String(r.instance).startsWith("full"))
+      .map((r) => r.values[name])
+      .filter((x) => Number.isFinite(x) && x > 0);
+    const refMedFull = rvFull.length ? median(rvFull) : null;
     const refFieldGapCv = refMed != null && med > 0 ? Math.abs(refMed - med) / med : 0;
     // SIGNED fractional offset of the reference from the field (for the staleness gate below).
     const refSignedCv = refMed != null && med > 0 ? (refMed - med) / med : null;
     const weight = Math.max(0, refFieldGapCv - WEIGHT_FLOOR_CV);
-    perFeed.push({ name, median: med, mad, refMed, refFieldGapCv, refSignedCv, weight });
+    perFeed.push({ name, median: med, mad, refMed, refMedFull, refFieldGapCv, refSignedCv, weight });
   }
 
   // FRESHNESS GATE - never score against a STALE reference. A healthy reference's per-feed offsets from
@@ -683,7 +691,7 @@ async function scoreRound(round, refs, reveals, canonical) {
     .then((a) => a._max.errorProfileN ?? 0);
   const refErrors = mergeLogDevs(
     curRow?.refFeedErrorsJson,
-    feedLogDevs((f) => perFeed[f]?.refMed ?? NaN),
+    feedLogDevs((f) => perFeed[f]?.refMedFull ?? NaN),
     refProfileN
   );
   await prisma.detectionCursor.upsert({
