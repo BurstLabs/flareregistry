@@ -1392,11 +1392,9 @@ function ExampleProviderTab() {
                   col="weight"
                   tip="On-chain vote power (wNat weight) of this provider's entity, in whole tokens. Context for how much influence a suspected example-provider user actually has."
                 />
-                <SortTh
-                  label="Accuracy dev"
-                  col="accuracy"
-                  tip="Mean deviation of this provider's submissions from the field consensus median, in spread units. LOWER = more accurate / closer to consensus. Independent of the example-provider question."
-                />
+                {/* "Accuracy dev" removed from the tab: it measures distance from consensus, which is a
+                    provider-quality signal, not an example-provider signal. It is still computed and
+                    still exported as accuracy_dev in the CSV. */}
                 <SortTh
                   label="Conf."
                   col="confidence"
@@ -1509,9 +1507,6 @@ function ExampleProviderTab() {
                   </td>
                   <td className="py-1.5 text-right tabular-nums text-muted">
                     {r.weight != null ? compact(r.weight) : <span className="text-faint">—</span>}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted">
-                    {r.accuracy.toFixed(3)}
                   </td>
                   <td className="py-1.5 text-right tabular-nums text-faint">{pct(r.confidence)}</td>
                   <td className="py-1.5 text-right tabular-nums text-faint">{r.rounds}</td>
