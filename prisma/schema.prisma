@@ -712,6 +712,16 @@ model ProviderSimilarity {
   latticeVar      Float @default(0)
   latticeTrials   Int   @default(0)
 
+  // PER-CELL hit profile: {"BTC/USD|10": summedExcess, ...}, keyed by feed name + lattice T (NOT feed
+  // index, which shifts whenever a feed is listed). Aggregate lift cannot rank the non-excluded
+  // providers, because it is confounded by config size (our own configs span 1.44x-2.33x) and because
+  // any median-of-prints implementation reads high. WHICH cells a provider over-hits is set by its VENUE
+  // LIST, so correlating this profile against our reference instances' profiles asks the sharper
+  // question: does it over-hit the same cells a real example provider does?
+  // Validated: ref-vs-ref r = 0.624, verified-custom 1FTSO r = 0.396, verified-custom Burst r = -0.432.
+  latticeCellsJson Json?
+  latticeCellsN    Int   @default(0)
+
   updatedAt DateTime @updatedAt
 
   @@unique([network, voter])
@@ -774,16 +784,23 @@ model DetectionLabel {
 // Cursor: the last voting round the scorer has processed, so each run picks up every NEW settled round
 // since then (not just a fixed last-3 window that fell behind wall-clock). Single row id="flare".
 model DetectionCursor {
-  id                String   @id
-  lastRound         Int      @default(0)
+  id                  String   @id
+  lastRound           Int      @default(0)
   // DB-cached canonical feed order [{name,decimals}] + the round range it covers, so the scorer does not
   // hit GitHub's rate-limited contents API every 5-min run. Refreshed only when the round leaves the
   // cached range (i.e. per reward epoch, ~3.5 days).
-  canonicalJson     Json?
-  canonicalFrom     Int?
-  canonicalTo       Int?
+  canonicalJson       Json?
+  canonicalFrom       Int?
+  canonicalTo         Int?
   // Our REFERENCE's error profile: EW mean of ln(|deviation from field median|) per feed, same shape as
   // ProviderSimilarity.feedErrorsJson, so the two can be de-meaned and correlated.
-  refFeedErrorsJson Json?
-  updatedAt         DateTime @updatedAt
+  refFeedErrorsJson   Json?
+  // Per-cell tick-grid hit profiles for OUR reference instances, keyed by instance id then cell:
+  //   { "full:1": { "BTC/USD|10": summedExcess, ... }, "top3:1": {...} }
+  // This is the positive class the per-cell pattern match is scored against. Unlike the error-profile
+  // fingerprint it compares DISCRETE venue-grid hit patterns rather than value distances, and it has
+  // validated controls at both ends (1FTSO 0.396, Burst FTSO -0.432).
+  refLatticeCellsJson Json?
+  refLatticeCellsN    Int      @default(0)
+  updatedAt           DateTime @updatedAt
 }

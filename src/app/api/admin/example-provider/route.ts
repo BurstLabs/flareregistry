@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
-import { computeFingerprints, latticeStats, type RefProfiles } from "@/lib/detection";
+import { computeFingerprints, latticeStats, patternMatch, type RefProfiles } from "@/lib/detection";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,8 @@ export async function GET() {
   const cursorRow = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
   // refFeedErrorsJson is keyed by instance id: { "full:1": {feed: lnDev}, "top3:1": {...}, ... }
   const allRefProfiles = (cursorRow?.refFeedErrorsJson ?? {}) as RefProfiles;
+  // Reference per-cell tick-grid profiles: the positive class for the hit-pattern match.
+  const refLatticeCells = (cursorRow?.refLatticeCellsJson ?? {}) as Record<string, Record<string, number>>;
   const { corrByVoter, variantByVoter, fpProbability, calibrated, anchorFps, anchorMean, fieldMean } =
     computeFingerprints(rows, allRefProfiles);
 
@@ -111,8 +113,14 @@ export async function GET() {
       // because our reference sits 6.3x outside the provider cloud so it discriminated nothing.
       errorProfileCorr: corrByVoter.get(r.voter.toLowerCase()) ?? null,
       errorProfileN: r.errorProfileN,
-      // Tick-grid screen: reference-free, exact null. One-sided (rules OUT, never confirms).
+      // Tick-grid screen: reference-free empirical null. One-sided (rules OUT, never confirms).
       lattice: latticeStats(r),
+      // Per-cell hit-pattern match: ranks the providers the screen does NOT exclude.
+      pattern: patternMatch(
+        r.latticeCellsJson as Record<string, number> | null,
+        refLatticeCells,
+        latticeStats(r).ruledOut
+      ),
       confidence: r.confidence,
       rounds: r.roundsObserved,
       variant: variantByVoter.get(r.voter.toLowerCase()) ?? null, // config whose ERROR PROFILE fits best

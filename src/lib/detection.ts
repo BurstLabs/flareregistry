@@ -86,6 +86,101 @@ const LATTICE_Z_UPPER = 2.33;
  */
 export const LATTICE_LIFT_EXCLUDE = 1.3;
 
+/**
+ * PER-CELL HIT-PATTERN MATCH - the discriminator among providers the screen does NOT exclude.
+ *
+ * Aggregate lift cannot rank those providers: it is confounded by config size (our own reference configs
+ * span 1.44x to 2.33x) and by the fact that any median-of-prints implementation reads high. But WHICH
+ * (feed, tick) cells a provider over-hits is determined by its VENUE LIST, so correlating its per-cell
+ * excess profile against our reference instances answers the sharper question: does it over-hit the same
+ * cells a real example provider does?
+ *
+ * Measured over 25 live rounds, with the control expectations stated BEFORE looking:
+ *   ref vs ref (same code, different configs)      r = 0.624 mean
+ *   1FTSO   (verified custom, median-of-prints)    r = 0.396   <- the elevation threshold
+ *   Burst FTSO (verified custom)                   r = -0.432
+ * The field splits with a sharp cliff between +0.230 and -0.118, and everything the tick-grid screen
+ * excludes lands on the negative side.
+ *
+ * Still not proof. It compares against OUR replica, so it inherits some dependence on that replica being
+ * representative. It is far more defensible than the removed error-profile fingerprint because it
+ * compares DISCRETE venue-grid hit patterns rather than value distances, and because it has validated
+ * controls at both ends rather than none.
+ */
+export const PATTERN_KNOWN_CUSTOM = 0.396; // verified-custom median-of-prints control
+export const PATTERN_STRONG = 0.5; // clearly above that control, approaching the ref-vs-ref level
+
+export type PatternBand = "strong" | "elevated" | "baseline" | "none";
+
+export interface PatternMatch {
+  /** Correlation with the mean reference profile. */
+  r: number | null;
+  /** Reference CONFIG whose hit pattern it matches best, and that correlation. */
+  bestConfig: string | null;
+  bestR: number | null;
+  band: PatternBand;
+}
+
+function corrOver(keys: string[], a: Record<string, number>, b: Record<string, number>): number {
+  const xs: number[] = [], ys: number[] = [];
+  for (const k of keys) {
+    const x = a[k], y = b[k];
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    xs.push(x); ys.push(y);
+  }
+  return pearson(xs, ys);
+}
+
+/**
+ * @param cells      this provider's accumulated per-cell excess profile
+ * @param refCells   { instanceId: profile } for our reference instances
+ * @param ruledOut   providers the one-sided screen already excluded get no band at all
+ */
+export function patternMatch(
+  cells: Record<string, number> | null,
+  refCells: Record<string, Record<string, number>>,
+  ruledOut: boolean
+): PatternMatch {
+  const empty: PatternMatch = { r: null, bestConfig: null, bestR: null, band: "none" };
+  if (!cells || typeof cells !== "object") return empty;
+  const instances = Object.keys(refCells ?? {});
+  if (!instances.length) return empty;
+
+  // Union of cell keys seen by the reference, so a provider is scored on the same axes.
+  const keys = new Set<string>();
+  for (const inst of instances) for (const k of Object.keys(refCells[inst] ?? {})) keys.add(k);
+  const keyList = [...keys].filter((k) => Number.isFinite(cells[k]));
+  if (keyList.length < 20) return empty;
+
+  const mean: Record<string, number> = {};
+  for (const k of keyList) {
+    let s = 0, n = 0;
+    for (const inst of instances) {
+      const v = refCells[inst]?.[k];
+      if (Number.isFinite(v)) { s += v; n++; }
+    }
+    if (n) mean[k] = s / n;
+  }
+  const r = corrOver(keyList, cells, mean);
+
+  let bestConfig: string | null = null, bestR: number | null = null;
+  for (const inst of instances) {
+    const c = corrOver(keyList, cells, refCells[inst] ?? {});
+    if (!Number.isFinite(c)) continue;
+    if (bestR == null || c > bestR) { bestR = c; bestConfig = inst.split(":")[0]; }
+  }
+
+  // A provider the one-sided screen already excluded is not given a suspicion band, regardless of r.
+  const band: PatternBand = ruledOut || !Number.isFinite(r)
+    ? "none"
+    : r >= PATTERN_STRONG
+      ? "strong"
+      : r >= PATTERN_KNOWN_CUSTOM
+        ? "elevated"
+        : "baseline";
+  return { r: Number.isFinite(r) ? r : null, bestConfig, bestR, band };
+}
+
 export function latticeStats(row: {
   latticeHits: number;
   latticeExpected: number;

@@ -408,10 +408,13 @@ async function buildLattices(canonical) {
       if (!byT.has(T)) byT.set(T, []);
       byT.get(T).push(s.exchange);
     }
-    if (byT.size) out.set(i, [...byT].map(([T, venues]) => ({ T, venues })));
+    if (byT.size) out.set(i, [...byT].map(([T, venues]) => ({ T, venues, name, decimals })));
   }
   return out;
 }
+
+// Stable cell key: feed NAME + lattice T. Never the feed index, which shifts whenever a feed is listed.
+const cellKey = (name, T) => `${name}|${T}`;
 
 // Minimum providers with a usable value in a (feed,T) cell before its empirical rate is trusted.
 const LATTICE_MIN_PEERS = 20;
@@ -433,12 +436,16 @@ const LATTICE_MIN_PEERS = 20;
 // separate correctly (Burst FTSO 0.54x, 1FTSO 1.47x).
 //
 // Returns Map<providerAddr, {hits, trials, expected, variance}>.
-function latticeRound(providers, lattices) {
+function latticeRound(providers, lattices, refs) {
   const out = new Map();
-  for (const [addr] of providers) out.set(addr, { hits: 0, trials: 0, expected: 0, variance: 0 });
+  for (const [addr] of providers) out.set(addr, { hits: 0, trials: 0, expected: 0, variance: 0, cells: {} });
+  // Per-cell profiles for our reference instances too: they are the positive class the pattern match is
+  // scored against, and they must be measured against the SAME per-round field rates.
+  const refOut = new Map();
+  for (const r of refs ?? []) refOut.set(String(r.instance), {});
   const hit = new Array(providers.length);
   for (const [f, lats] of lattices) {
-    for (const { T } of lats) {
+    for (const { T, name, decimals } of lats) {
       let k = 0, m = 0;
       for (let i = 0; i < providers.length; i++) {
         const raw = providers[i][1][f];
@@ -457,6 +464,7 @@ function latticeRound(providers, lattices) {
       // expected). Skipping it keeps `trials` meaningful as a maturity gate instead of letting an
       // unhittable lattice inflate the count toward LATTICE_MIN_TRIALS with zero evidence.
       if (k === 0) continue;
+      const key = cellKey(name, T);
       for (let i = 0; i < providers.length; i++) {
         if (hit[i] == null) continue;
         const q = (k - hit[i]) / (m - 1);
@@ -465,10 +473,22 @@ function latticeRound(providers, lattices) {
         a.expected += q;
         a.variance += q * (1 - q);
         a.trials++;
+        a.cells[key] = (a.cells[key] ?? 0) + (hit[i] - q); // signed excess for this cell
+      }
+      // Our reference instances are NOT in the field, so their null is the plain field rate k/m.
+      const q0 = k / m;
+      for (const r of refs ?? []) {
+        const val = (r.values ?? {})[name];
+        if (!(val > 0)) continue;
+        const enc = Math.round(val * 10 ** decimals);
+        if (!(enc > 0)) continue;
+        const rh = ((enc % T) + T) % T === 0 ? 1 : 0;
+        const c = refOut.get(String(r.instance));
+        c[key] = (c[key] ?? 0) + (rh - q0);
       }
     }
   }
-  return out;
+  return { byProvider: out, byRef: refOut };
 }
 
 async function scoreRound(round, refs, reveals, canonical) {
@@ -476,7 +496,7 @@ async function scoreRound(round, refs, reveals, canonical) {
   // Candidate tick lattices for this round's canonical decimals (empty until the tick collector runs),
   // and this round's leave-one-out lattice evidence for every provider.
   const lattices = await buildLattices(canonical);
-  const latByAddr = latticeRound(providers, lattices);
+  const { byProvider: latByAddr, byRef: latByRef } = latticeRound(providers, lattices, refs);
   // Use the full canonical feed count. A provider whose reveal array is SHORT is handled per-provider
   // (decodeValue returns NaN past its length, which is filtered), so one short reveal no longer collapses
   // the feed set for EVERYONE (the old min-across-providers did exactly that).
@@ -769,7 +789,11 @@ async function scoreRound(round, refs, reveals, canonical) {
     // field rate: a provider at the field level has E[hits - expected] = 0 every round, so the excess
     // does not drift with wall-clock time. (With the old fixed 1/T null it did, which made the exclusion
     // flag expire on the clock rather than on evidence.)
-    const lat = latByAddr.get(addr) ?? { hits: 0, trials: 0, expected: 0, variance: 0 };
+    const lat = latByAddr.get(addr) ?? { hits: 0, trials: 0, expected: 0, variance: 0, cells: {} };
+    // Merge this round's per-cell excess into the running profile (plain sums, same as the aggregate).
+    const prevCells = (existing?.latticeCellsJson ?? {});
+    const cells = { ...prevCells };
+    for (const [k, v] of Object.entries(lat.cells)) cells[k] = (cells[k] ?? 0) + v;
     const data = {
       refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
       roundsObserved: rounds, confidence, probability,
@@ -779,6 +803,8 @@ async function scoreRound(round, refs, reveals, canonical) {
       latticeExpected: (existing?.latticeExpected ?? 0) + lat.expected,
       latticeVar: (existing?.latticeVar ?? 0) + lat.variance,
       latticeTrials: (existing?.latticeTrials ?? 0) + lat.trials,
+      latticeCellsJson: cells,
+      latticeCellsN: (existing?.latticeCellsN ?? 0) + (lat.trials > 0 ? 1 : 0),
       bestVariant: best.vk, updatedAt: now,
     };
     if (!existing) await prisma.providerSimilarity.create({ data: { network: "flare", voter: addr, ...data } });
@@ -815,10 +841,29 @@ async function scoreRound(round, refs, reveals, canonical) {
       refProfileN
     );
   }
+  // Reference per-cell tick-grid profiles: the positive class for the pattern match. Plain sums, and
+  // measured against the SAME per-round field rates the providers were scored against.
+  const prevRefCells = (curRow?.refLatticeCellsJson ?? {});
+  const refCells = { ...prevRefCells };
+  let refCellsAdvanced = false;
+  for (const [inst, cells] of latByRef) {
+    if (!Object.keys(cells).length) continue;
+    const merged = { ...(prevRefCells[inst] ?? {}) };
+    for (const [k, v] of Object.entries(cells)) merged[k] = (merged[k] ?? 0) + v;
+    refCells[inst] = merged;
+    refCellsAdvanced = true;
+  }
   await prisma.detectionCursor.upsert({
     where: { id: "flare" },
-    create: { id: "flare", lastRound: 0, refFeedErrorsJson: refErrors },
-    update: { refFeedErrorsJson: refErrors },
+    create: {
+      id: "flare", lastRound: 0, refFeedErrorsJson: refErrors,
+      refLatticeCellsJson: refCells, refLatticeCellsN: refCellsAdvanced ? 1 : 0,
+    },
+    update: {
+      refFeedErrorsJson: refErrors,
+      refLatticeCellsJson: refCells,
+      refLatticeCellsN: (curRow?.refLatticeCellsN ?? 0) + (refCellsAdvanced ? 1 : 0),
+    },
   });
 }
 
