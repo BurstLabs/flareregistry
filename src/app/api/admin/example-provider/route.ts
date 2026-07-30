@@ -195,9 +195,10 @@ export async function GET() {
       variance: r.refSimilarityVar,
       accuracy: r.fieldDeviationMean, // deviation from field consensus (lower = more accurate)
       probability: r.probability,
-      // P is now the FINGERPRINT-based probability, confidence-gated by observed rounds.
-      combinedProbability: r.confidence * fpProbability(corrByVoter.get(r.voter.toLowerCase()) ?? null),
-      combinedProbabilityRaw: (r.confidence * fpProbability(corrByVoter.get(r.voter.toLowerCase()) ?? null)) as number,
+      // P is the FINGERPRINT-based probability. It is NOT multiplied by confidence here: Conf. is its own
+      // column, so gating P by it as well double-counted and displayed 84% as 8%. Read them together.
+      combinedProbability: fpProbability(corrByVoter.get(r.voter.toLowerCase()) ?? null),
+      combinedProbabilityRaw: fpProbability(corrByVoter.get(r.voter.toLowerCase()) ?? null) as number,
       coExcursionRate: r.coExcursionRate, // same-direction spike rate with our reference (0..1)
       coExcursionN: r.coExcursionN, // joint excursion opportunities observed
       // Implementation fingerprint: de-meaned error-profile correlation with our reference. This is now
