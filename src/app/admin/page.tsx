@@ -1112,6 +1112,8 @@ function ReportsTab() {
 function ExampleProviderTab() {
   const [rows, setRows] = useState<any[]>([]);
   const [maxRounds, setMaxRounds] = useState(0);
+  // Verified-custom controls, still shown as the scale anchor even though the false-positive rate they
+  // used to police belonged to the removed probability column.
   const [fp, setFp] = useState<{ rate: number | null; count: number; names: string[] }>({
     rate: null,
     count: 0,
@@ -1120,10 +1122,12 @@ function ExampleProviderTab() {
   const [loading, setLoading] = useState(true);
   const [calibrated, setCalibrated] = useState(true);
   const [ruledOutCount, setRuledOutCount] = useState(0);
-  // Sort state: which column key, and direction. Default = probability, descending (most suspect first).
-  const [sortKey, setSortKey] = useState<string>("combinedProbability");
+  // Sort state. Default = tick-grid lift, descending. It used to default to the fingerprint-derived
+  // probability, which meant a discredited metric ordered the entire screen.
+  const [sortKey, setSortKey] = useState<string>("latticeLift");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [reportThreshold, setReportThreshold] = useState("50"); // percent, 0-100
+  // Report threshold is now a tick-grid LIFT (e.g. 1.6x), not a probability percent.
+  const [reportThreshold, setReportThreshold] = useState("1.6");
   const load = useCallback(async () => {
     setLoading(true);
     const r = await fetch("/api/admin/example-provider");
@@ -1213,21 +1217,21 @@ function ExampleProviderTab() {
           Example-provider similarity <span className="text-faint">(Flare)</span>
         </span>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1 text-xs text-muted" title="Minimum combined probability (%) for a provider to be included in the downloaded report. Any value 0-100.">
+          <label className="flex items-center gap-1 text-xs text-muted" title="Minimum TICK-GRID LIFT for a provider to be included in the downloaded report. 1.0x = behaves like the field; genuine example-provider instances measure 1.44x-2.33x, so ~1.6x is a reasonable cut.">
             Report threshold
             <input
               type="number"
               min={0}
-              max={100}
-              step={1}
+              max={10}
+              step={0.1}
               value={reportThreshold}
               onChange={(e) => setReportThreshold(e.target.value)}
               className="w-16 rounded-md border border-themed bg-elev px-1.5 py-1 text-xs tabular-nums"
             />
-            <span className="text-faint">%</span>
+            <span className="text-faint">x lift</span>
           </label>
           <a
-            href={`/api/admin/example-provider/report?threshold=${(Math.min(100, Math.max(0, Number(reportThreshold) || 0)) / 100).toFixed(4)}`}
+            href={`/api/admin/example-provider/report?minLift=${Math.min(10, Math.max(0, Number(reportThreshold) || 0)).toFixed(2)}`}
             className="rounded-md border border-beacon px-2.5 py-1 text-xs font-medium text-beacon hover:bg-beacon/10"
             title="Download a CSV report of probable example-provider users, with total network weight they hold and full detection data."
           >
@@ -1251,27 +1255,24 @@ function ExampleProviderTab() {
             Treat current values as provisional.
           </div>
         )}
-        {fp.count > 0 && (
+        {fp.count > 0 && !calibrated && (
           <div className="mt-2 text-[11px] text-faint">
-            Calibration check: {fp.count} verified-custom provider{fp.count === 1 ? "" : "s"} used as
-            trusted negatives.{" "}
-            {fp.rate === 0 ? (
-              <span className="text-emerald-500">None falsely flagged (FP rate 0%).</span>
-            ) : (
-              <span className="text-flare">
-                False-positive rate {Math.round((fp.rate ?? 0) * 100)}% ({fp.names.join(", ")}) — the
-                detector may be over-firing; tune before trusting high scores.
-              </span>
-            )}
+            Fingerprint calibration is currently unavailable (no cross-config reference anchor). This no
+            longer affects the screen, since the Tick grid column does not use the reference at all.
           </div>
         )}
-        {!calibrated && (
-          <div className="mt-2 text-[11px] text-flare">
-            P(example) calibration unavailable: no cross-config reference anchor is currently reporting.
-            The P column shows “—” rather than 0%, because an uncalibrated score is missing information,
-            not a low probability. The Tick grid column is unaffected (it does not use the reference).
-          </div>
-        )}
+        <div className="mt-2 text-[11px] text-faint">
+          Reference scale for the Tick grid column: the field sits at{" "}
+          <span className="text-fg">1.00x</span> by construction, our own example-provider instances
+          measure <span className="text-fg">1.44x-2.33x</span> depending on exchange config, and our
+          verified-custom control measures <span className="text-emerald-500">0.52x</span>. Providers are
+          excluded only when the upper bound of their lift stays below 1.30x.
+        </div>
+        <div className="mt-2 text-[11px] text-faint">
+          The old P(example) and Fingerprint columns were removed: both scored providers by similarity to
+          our own replica, which sits far outside the provider cloud, and 6 of their top 20 were providers
+          this screen formally excludes. The values are still in the CSV for the record.
+        </div>
         {ruledOutCount > 0 && (
           <div className="mt-2 text-[11px] text-faint">
             Tick-grid screen: <span className="text-emerald-500">{ruledOutCount}</span> of {rows.length}{" "}
@@ -1298,16 +1299,17 @@ function ExampleProviderTab() {
                   align="left"
                   tip="The registered provider (identified by its on-chain submit address). '(unlisted)' = submits on-chain but has no listing in our registry."
                 />
-                <SortTh
-                  label="P(example)"
-                  col="combinedProbability"
-                  tip="Calibrated probability this provider runs the example provider, derived from the FINGERPRINT (error-profile match), not from raw value distance - our reference sits 6.3x outside the provider cloud, so distance discriminated nothing. Calibrated between the field level and our own cross-config reference instances, which are genuine example providers with a different exchange setup. Confidence-gated by observed rounds. A suspicion score, not proof."
-                />
-                <SortTh
-                  label="Fingerprint"
-                  col="errorProfileCorr"
-                  tip="ERROR-PROFILE correlation: how closely this provider's pattern of per-feed accuracy matches our reference example provider, after subtracting each feed's difficulty baseline (illiquid feeds are hard for everyone, so that shared component is removed). Which feeds an implementation is good and bad on is set by its exchange list and aggregation, so this fingerprints the implementation rather than the price. High = weak and strong on the SAME feeds as the example provider. Our two verified-custom controls rank mid-pack here, which is the intended behaviour."
-                />
+                {/*
+                  P(example) and Fingerprint were REMOVED. Both were reference-anchored: they scored a
+                  provider by how closely it matched our own replica. A multi-agent audit showed that
+                  family cannot produce positive detections at any calibration, because the replica sits
+                  6.3x outside the provider cloud. Two independent mechanical signals then contradicted
+                  the ranking outright, and 6 of its top 20 were providers the tick-grid screen formally
+                  EXCLUDES - it rendered a red 99% beside a green "ruled out" on the same row. Its anchor
+                  was also drifting (0.890 -> 0.571 within hours), which saturated the logistic and is
+                  why it printed 100%. The underlying values are still computed and still exported in the
+                  CSV for the record; they are simply no longer shown or sorted on.
+                */}
                 <SortTh
                   label="Tick grid"
                   col="latticeLift"
@@ -1358,36 +1360,6 @@ function ExampleProviderTab() {
                       )}
                     </div>
                     <span className="font-mono text-[11px] text-faint">{r.voter.slice(0, 18)}…</span>
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums">
-                    {r.combinedProbability != null ? (
-                      <span className={r.combinedProbability > 0.5 ? "font-semibold text-flare" : "text-muted"}>
-                        {pct(r.combinedProbability)}
-                      </span>
-                    ) : (
-                      // Not calibrated. Showing 0% here would assert "definitely not the example
-                      // provider", which is a claim we cannot make when the anchor is unavailable.
-                      <span className="text-faint" title="Calibration unavailable: no cross-config reference anchor. This is missing information, not a low probability.">
-                        —
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums">
-                    {r.errorProfileCorr != null ? (
-                      <span
-                        className={
-                          r.errorProfileCorr >= 0.9
-                            ? "font-semibold text-flare"
-                            : r.errorProfileCorr >= 0.75
-                              ? "text-amber-500"
-                              : "text-muted"
-                        }
-                      >
-                        {r.errorProfileCorr.toFixed(3)}
-                      </span>
-                    ) : (
-                      <span className="text-faint">—</span>
-                    )}
                   </td>
                   <td className="py-1.5 text-right tabular-nums">
                     {r.lattice?.lift != null ? (
