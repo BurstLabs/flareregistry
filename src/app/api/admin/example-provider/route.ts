@@ -98,7 +98,8 @@ export async function GET() {
     const pat = patternMatch(
       r.latticeCellsJson as Record<string, number> | null,
       refLatticeCells,
-      lat.ruledOut
+      lat.ruledOut,
+      r.latticeCellsN
     );
     return {
       voter: r.voter,

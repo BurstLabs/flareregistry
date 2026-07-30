@@ -111,6 +111,17 @@ export const LATTICE_LIFT_EXCLUDE = 1.3;
 // across two windows, so a cut at 0.396 would have shown a provider we KNOW is custom as elevated.
 export const PATTERN_KNOWN_CUSTOM = 0.45; // safely above the observed control range
 export const PATTERN_STRONG = 0.55; // clearly above it; providers top out near 0.73, our refs 0.80-0.87
+/**
+ * Rounds of per-cell data before the correlation may be banded or classified.
+ *
+ * This is NOT the same maturity question as LATTICE_MIN_TRIALS. A correlation between noisy profiles is
+ * ATTENUATED TOWARD ZERO, so at low round counts every r is biased down and thresholds calibrated on
+ * mature data over-demote. Measured directly: at 10 rounds the verified-custom control read 0.268 and
+ * Scintilla 0.479; at 24 rounds the same providers read 0.423 and 0.726. FTSOCAN and Ankr swapped
+ * classes between the two. The aggregate lift gate was already long satisfied (7527 trials vs a 1000
+ * minimum) and said nothing about this, so without its own gate the tab shows class labels that shuffle.
+ */
+export const PATTERN_MIN_ROUNDS = 20;
 
 export type PatternBand = "strong" | "elevated" | "baseline" | "none";
 
@@ -122,6 +133,10 @@ export interface PatternMatch {
   bestConfig: string | null;
   bestR: number | null;
   band: PatternBand;
+  /** Rounds of per-cell data behind r. */
+  rounds: number;
+  /** False until `rounds` reaches PATTERN_MIN_ROUNDS; r is shown but not banded or classified. */
+  mature: boolean;
 }
 
 function corrOver(keys: string[], a: Record<string, number>, b: Record<string, number>): number {
@@ -142,9 +157,11 @@ function corrOver(keys: string[], a: Record<string, number>, b: Record<string, n
 export function patternMatch(
   cells: Record<string, number> | null,
   refCells: Record<string, Record<string, number>>,
-  ruledOut: boolean
+  ruledOut: boolean,
+  rounds = 0
 ): PatternMatch {
-  const empty: PatternMatch = { r: null, bestConfig: null, bestR: null, band: "none" };
+  const mature = rounds >= PATTERN_MIN_ROUNDS;
+  const empty: PatternMatch = { r: null, bestConfig: null, bestR: null, band: "none", rounds, mature };
   if (!cells || typeof cells !== "object") return empty;
   const instances = Object.keys(refCells ?? {});
   if (!instances.length) return empty;
@@ -173,15 +190,16 @@ export function patternMatch(
     if (bestR == null || c > bestR) { bestR = c; bestConfig = inst.split(":")[0]; }
   }
 
-  // A provider the one-sided screen already excluded is not given a suspicion band, regardless of r.
-  const band: PatternBand = ruledOut || !Number.isFinite(r)
+  // No band until the profile is mature (r is attenuated toward zero while it is not), and never for a
+  // provider the one-sided screen already excluded, regardless of r.
+  const band: PatternBand = ruledOut || !mature || !Number.isFinite(r)
     ? "none"
     : r >= PATTERN_STRONG
       ? "strong"
       : r >= PATTERN_KNOWN_CUSTOM
         ? "elevated"
         : "baseline";
-  return { r: Number.isFinite(r) ? r : null, bestConfig, bestR, band };
+  return { r: Number.isFinite(r) ? r : null, bestConfig, bestR, band, rounds, mature };
 }
 
 export function latticeStats(row: {
@@ -346,6 +364,8 @@ export type DetectionClass = "excluded" | "other-median" | "candidate" | "pendin
 
 export function detectionClass(lat: LatticeStats, pat: PatternMatch): DetectionClass {
   if (lat.ruledOut) return "excluded";
-  if (lat.lift == null || lat.trials < LATTICE_MIN_TRIALS || pat.r == null) return "pending";
+  // `pat.mature` is the gate that matters here: the lift side is satisfied thousands of trials before the
+  // correlation stops being attenuated, so without it every class label churns for the first ~20 rounds.
+  if (lat.lift == null || lat.trials < LATTICE_MIN_TRIALS || pat.r == null || !pat.mature) return "pending";
   return pat.r >= PATTERN_KNOWN_CUSTOM ? "candidate" : "other-median";
 }
