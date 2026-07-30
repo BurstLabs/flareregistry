@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
-import { computeFingerprints, type RefProfiles } from "@/lib/detection";
+import { computeFingerprints, latticeStats, type RefProfiles } from "@/lib/detection";
 
 export const dynamic = "force-dynamic";
 
@@ -108,6 +108,8 @@ export async function GET() {
       // because our reference sits 6.3x outside the provider cloud so it discriminated nothing.
       errorProfileCorr: corrByVoter.get(r.voter.toLowerCase()) ?? null,
       errorProfileN: r.errorProfileN,
+      // Tick-grid screen: reference-free, exact null. One-sided (rules OUT, never confirms).
+      lattice: latticeStats(r),
       confidence: r.confidence,
       rounds: r.roundsObserved,
       variant: variantByVoter.get(r.voter.toLowerCase()) ?? null, // config whose ERROR PROFILE fits best

@@ -378,8 +378,65 @@ const variantOf = (instanceId) => String(instanceId).split(":")[0];
 // secondary nudge that sharpens the field mean toward verified negatives over many rounds.
 const KNOWN_CUSTOM_WEIGHT = 8;
 
+// TICK-GRID LATTICES. The example provider returns an observed trade PRINT verbatim, so its value lies on
+// some venue's tick grid. For a feed with `decimals` d and a venue tick t, the encoded integer
+// enc = round(price * 10^d) is a multiple of T = t * 10^d whenever the print came from that venue.
+// T >= 2 makes that a real constraint with an EXACT null of 1/T, so no calibration is needed. T = 1 means
+// the venue grid equals the encoding grid and carries no information; non-integer T is skipped because
+// the divisibility test does not apply cleanly.
+// Returns Map<feedIndex, Array<{T, venues}>>.
+async function buildLattices(canonical) {
+  const ticks = await prisma.feedSourceTick.findMany();
+  if (!ticks.length) return new Map();
+  const byFeedName = new Map();
+  for (const t of ticks) {
+    if (!(t.tick > 0)) continue;
+    if (!byFeedName.has(t.feedName)) byFeedName.set(t.feedName, []);
+    byFeedName.get(t.feedName).push(t);
+  }
+  const out = new Map();
+  for (let i = 0; i < canonical.length; i++) {
+    const { name, decimals } = canonical[i];
+    const srcs = byFeedName.get(name);
+    if (!srcs) continue;
+    const byT = new Map();
+    for (const s of srcs) {
+      const Tf = s.tick * 10 ** decimals;
+      const T = Math.round(Tf);
+      if (T < 2) continue;
+      if (Math.abs(Tf - T) > 1e-6 * Math.max(1, T)) continue;
+      if (!byT.has(T)) byT.set(T, []);
+      byT.get(T).push(s.exchange);
+    }
+    if (byT.size) out.set(i, [...byT].map(([T, venues]) => ({ T, venues })));
+  }
+  return out;
+}
+
+// Accumulate this round's tick-grid evidence for one provider's raw reveal array.
+// hits = times enc was divisible by a coarse venue tick; expected/var = the exact Binomial(1/T) null.
+function latticeEvidence(rawVals, lattices) {
+  let hits = 0, trials = 0, expected = 0, variance = 0;
+  for (const [f, lats] of lattices) {
+    const raw = rawVals[f];
+    if (raw == null || !Number.isFinite(raw)) continue;
+    const enc = raw - OFFSET; // strip the encoder's zero point: the lattice lives in price space
+    if (!Number.isFinite(enc)) continue;
+    for (const { T } of lats) {
+      const p = 1 / T;
+      if (((enc % T) + T) % T === 0) hits++;
+      trials++;
+      expected += p;
+      variance += p * (1 - p);
+    }
+  }
+  return { hits, trials, expected, variance };
+}
+
 async function scoreRound(round, refs, reveals, canonical) {
   const providers = [...reveals.entries()];
+  // Candidate tick lattices for this round's canonical decimals (empty until the tick collector runs).
+  const lattices = await buildLattices(canonical);
   // Use the full canonical feed count. A provider whose reveal array is SHORT is handled per-provider
   // (decodeValue returns NaN past its length, which is filtered), so one short reveal no longer collapses
   // the feed set for EVERYONE (the old min-across-providers did exactly that).
@@ -668,11 +725,18 @@ async function scoreRound(round, refs, reveals, canonical) {
       feedLogDevs((f) => decodeValue(v[f], canonical[f].decimals)),
       existing?.errorProfileN ?? 0
     );
+    // Tick-grid evidence accumulates CUMULATIVELY (not EW): the null is exact and stationary, so power
+    // grows with every round instead of decaying out of a rolling window.
+    const lat = latticeEvidence(v, lattices);
     const data = {
       refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
       roundsObserved: rounds, confidence, probability,
       coExcursionRate: coRate, coExcursionN: coN, combinedProbability,
       feedErrorsJson: feedErrors, errorProfileN: (existing?.errorProfileN ?? 0) + 1,
+      latticeHits: (existing?.latticeHits ?? 0) + lat.hits,
+      latticeExpected: (existing?.latticeExpected ?? 0) + lat.expected,
+      latticeVar: (existing?.latticeVar ?? 0) + lat.variance,
+      latticeTrials: (existing?.latticeTrials ?? 0) + lat.trials,
       bestVariant: best.vk, updatedAt: now,
     };
     if (!existing) await prisma.providerSimilarity.create({ data: { network: "flare", voter: addr, ...data } });

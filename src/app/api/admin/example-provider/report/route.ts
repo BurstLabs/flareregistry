@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
-import { computeFingerprints, type RefProfiles } from "@/lib/detection";
+import { computeFingerprints, latticeStats, type RefProfiles } from "@/lib/detection";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +89,7 @@ export async function GET(req: NextRequest) {
       knownCustom: knownCustomAddr.has(r.voter.toLowerCase()),
       combinedProbability: fpProbability(corrByVoter.get(r.voter.toLowerCase())),
       fingerprint: corrByVoter.get(r.voter.toLowerCase()) ?? null,
+      lattice: latticeStats(r),
       bestVariant: variantByVoter.get(r.voter.toLowerCase()) ?? r.bestVariant ?? "",
       accuracyDev: r.fieldDeviationMean,
       weightTokens: weiToTokens(info?.weiWeight ?? null),
@@ -134,7 +135,8 @@ export async function GET(req: NextRequest) {
   lines.push(`# NOTE: suspicion score, not proof. For human review only; not for automated action.`);
   lines.push("");
   const cols = [
-    "rank", "provider", "combined_probability", "fingerprint", "best_variant", "accuracy_dev",
+    "rank", "provider", "combined_probability", "fingerprint", "tick_grid_lift", "tick_grid_z",
+    "tick_grid_trials", "tick_grid_ruled_out", "best_variant", "accuracy_dev",
     "weight_tokens", "weight_share_pct", "fee_percent", "management_group", "confidence", "rounds",
     "submit_address", "identity_address", "url",
   ];
@@ -145,6 +147,10 @@ export async function GET(req: NextRequest) {
       esc(x.name),
       x.combinedProbability.toFixed(4),
       x.fingerprint != null ? x.fingerprint.toFixed(4) : "",
+      x.lattice.lift != null ? x.lattice.lift.toFixed(3) : "",
+      x.lattice.z != null ? x.lattice.z.toFixed(1) : "",
+      x.lattice.trials,
+      x.lattice.ruledOut ? "yes" : "no",
       x.bestVariant,
       x.accuracyDev.toFixed(4),
       Math.round(x.weightTokens),
