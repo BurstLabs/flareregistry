@@ -1147,8 +1147,6 @@ function ExampleProviderTab() {
         : n >= 1e3
           ? `${(n / 1e3).toFixed(1)}K`
           : `${Math.round(n)}`;
-  const simColor = (s: number) =>
-    s > 0.25 ? "text-flare font-semibold" : s > 0 ? "text-amber-500" : "text-muted";
 
   // Click a header to sort by it; clicking the active one flips direction.
   function toggleSort(key: string) {
@@ -1280,22 +1278,12 @@ function ExampleProviderTab() {
                 <SortTh
                   label="P(example)"
                   col="combinedProbability"
-                  tip="Calibrated probability this provider runs the unmodified example provider, based on value-similarity: how closely its on-chain values track our reference instances on the discriminating feeds, relative to the field. Confidence-gated, so it stays low until rounds accumulate. Co-spike is shown separately and is NOT folded into this number. A suspicion score, not proof."
-                />
-                <SortTh
-                  label="Similarity"
-                  col="similarity"
-                  tip="How much more closely this provider's on-chain values track our reference example provider than the field does, on divergent (long-tail) feeds. Higher (more positive) = more example-provider-like; negative = diverges from it (custom)."
+                  tip="Calibrated probability this provider runs the example provider, derived from the FINGERPRINT (error-profile match), not from raw value distance - our reference sits 6.3x outside the provider cloud, so distance discriminated nothing. Calibrated between the field level and our own cross-config reference instances, which are genuine example providers with a different exchange setup. Confidence-gated by observed rounds. A suspicion score, not proof."
                 />
                 <SortTh
                   label="Fingerprint"
                   col="errorProfileCorr"
                   tip="ERROR-PROFILE correlation: how closely this provider's pattern of per-feed accuracy matches our reference example provider, after subtracting each feed's difficulty baseline (illiquid feeds are hard for everyone, so that shared component is removed). Which feeds an implementation is good and bad on is set by its exchange list and aggregation, so this fingerprints the implementation rather than the price. High = weak and strong on the SAME feeds as the example provider. Our two verified-custom controls rank mid-pack here, which is the intended behaviour."
-                />
-                <SortTh
-                  label="Co-spike"
-                  col="coExcursionRate"
-                  tip="EXCESS co-movement: when our reference spikes sharply from the network median on a feed, how much MORE often this provider spikes the same direction than the field does (baselined against the field, since a real price move makes everyone co-move). 0 = no more than the field; positive = moves with the example provider's shared sources beyond chance (fingerprint); negative = less than the field. N = joint spike opportunities seen."
                 />
                 <SortTh
                   label="Variant"
@@ -1348,10 +1336,6 @@ function ExampleProviderTab() {
                       {pct(r.combinedProbability)}
                     </span>
                   </td>
-                  <td className={`py-1.5 text-right tabular-nums ${simColor(r.similarity)}`}>
-                    {r.similarity >= 0 ? "+" : ""}
-                    {r.similarity.toFixed(3)}
-                  </td>
                   <td className="py-1.5 text-right tabular-nums">
                     {r.errorProfileCorr != null ? (
                       <span
@@ -1365,19 +1349,6 @@ function ExampleProviderTab() {
                       >
                         {r.errorProfileCorr.toFixed(3)}
                       </span>
-                    ) : (
-                      <span className="text-faint">—</span>
-                    )}
-                  </td>
-                  <td className="py-1.5 text-right tabular-nums text-muted">
-                    {r.coExcursionN > 0 ? (
-                      <>
-                        <span className={r.coExcursionRate > 0.1 ? "text-amber-500" : undefined}>
-                          {r.coExcursionRate >= 0 ? "+" : ""}
-                          {pct(r.coExcursionRate)}
-                        </span>
-                        <span className="ml-1 text-[10px] text-faint">n={r.coExcursionN}</span>
-                      </>
                     ) : (
                       <span className="text-faint">—</span>
                     )}
