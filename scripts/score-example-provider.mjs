@@ -625,8 +625,6 @@ async function scoreRound(round, refs, reveals, canonical) {
       if (!best || s.sim > best.sim) best = { vk, sim: s.sim, dev: s.dev };
     }
     if (!best) continue;
-    // Probability from the SELECTED variant's calibration.
-    best.prob = posteriorExample(best.sim, cals.get(best.vk));
 
     // Co-excursion: on feeds where our reference excursioned this round, did this provider excursion the
     // same way? (Only contributes when the reference excursioned somewhere.)
@@ -655,7 +653,11 @@ async function scoreRound(round, refs, reveals, canonical) {
       }
     }
     const confidence = Math.min(1, rounds / 500);
-    const probability = confidence * best.prob;
+    // Probability from the SELECTED variant's calibration, evaluated on the ACCUMULATED EW-mean
+    // similarity - NOT on this single round's raw value. Per-round similarity has SD ~0.25, so scoring
+    // the instantaneous value threw away every one of the thousands of rounds we accumulate right above
+    // and made the stored probability jump between runs (live max read 0.632 where the mean was 0.068).
+    const probability = confidence * posteriorExample(mean, cals.get(best.vk));
     // Probability is the VALUE-SIMILARITY signal only. Co-excursion (co-spike) is still measured and
     // stored for display context, but no longer folded into P: its null-rate assumptions made it noisy,
     // so P now reflects value similarity alone.

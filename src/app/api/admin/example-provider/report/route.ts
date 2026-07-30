@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
+import { computeFingerprints, type RefProfiles } from "@/lib/detection";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +15,18 @@ export async function GET(req: NextRequest) {
   const tRaw = Number(new URL(req.url).searchParams.get("threshold") ?? "0.5");
   const threshold = Number.isFinite(tRaw) ? Math.min(1, Math.max(0, tRaw)) : 0.5;
 
-  const rows = await prisma.providerSimilarity.findMany({
-    orderBy: { combinedProbability: "desc" },
-  });
+  const rows = await prisma.providerSimilarity.findMany();
+
+  // Compute P exactly the way the Detection tab does. This used to export the STORED
+  // `combinedProbability`, which is the legacy value-similarity number the scorer writes; after P was
+  // rebased onto the error-profile fingerprint the CSV silently disagreed with the screen it was
+  // downloaded from. Same function, same inputs, same answer.
+  const cursorRow = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
+  const allRefProfiles = (cursorRow?.refFeedErrorsJson ?? {}) as RefProfiles;
+  const { corrByVoter, variantByVoter, fpProbability, anchorMean, fieldMean } = computeFingerprints(
+    rows,
+    allRefProfiles
+  );
 
   // Resolve voter (submit addr) -> provider name + on-chain weight, via the 5-role-address join.
   const keys = rows.map((r) => r.voter.toLowerCase());
@@ -62,13 +72,9 @@ export async function GET(req: NextRequest) {
   const labelByAddr = new Map(labels.map((l) => [l.address.toLowerCase(), l.label]));
   const knownCustomAddr = new Set(labels.filter((l) => l.knownCustom).map((l) => l.address.toLowerCase()));
 
-  // Match the tab's baseline calibration: rescale the combined probability so a verified-custom provider
-  // reads ~0, i.e. p' = max(0, (p - baseline)/(1 - baseline)) with baseline = max known-custom raw prob.
-  // Without this the report would filter on the un-rescaled value and disagree with what the tab shows.
-  const knownRaw = rows.filter((r) => knownCustomAddr.has(r.voter.toLowerCase()));
-  const baseline = knownRaw.length ? Math.max(...knownRaw.map((r) => r.combinedProbability)) : 0;
-  const rescale = (p: number) =>
-    baseline > 0 && baseline < 1 ? Math.max(0, (p - baseline) / (1 - baseline)) : p;
+  // NO baseline rescaling here either - it was a MAX over a small noisy set used as a DIVISOR, so a
+  // single lucky round for one verified-custom provider could empty this report entirely. The
+  // known-custom level is reported in the CSV header as context instead.
 
   // Assemble.
   const all = rows.map((r) => {
@@ -81,11 +87,9 @@ export async function GET(req: NextRequest) {
       submitAddress: r.voter,
       identity: ev ?? "",
       knownCustom: knownCustomAddr.has(r.voter.toLowerCase()),
-      combinedProbability: rescale(r.combinedProbability),
-      valueSimilarity: r.refSimilarityMean,
-      coExcursionRate: r.coExcursionRate,
-      coExcursionN: r.coExcursionN,
-      bestVariant: r.bestVariant ?? "",
+      combinedProbability: fpProbability(corrByVoter.get(r.voter.toLowerCase())),
+      fingerprint: corrByVoter.get(r.voter.toLowerCase()) ?? null,
+      bestVariant: variantByVoter.get(r.voter.toLowerCase()) ?? r.bestVariant ?? "",
       accuracyDev: r.fieldDeviationMean,
       weightTokens: weiToTokens(info?.weiWeight ?? null),
       feePercent: info?.feeBips != null ? info.feeBips / 100 : null,
@@ -95,7 +99,14 @@ export async function GET(req: NextRequest) {
     };
   });
   // Probable users: above threshold AND not verified-custom (never accuse a provider we KNOW is custom).
-  const probable = all.filter((x) => !x.knownCustom && x.combinedProbability >= threshold);
+  // Sorted here because the DB fetch is no longer ordered by the (legacy) stored probability.
+  const probable = all
+    .filter((x) => !x.knownCustom && x.combinedProbability >= threshold)
+    .sort((a, b) => b.combinedProbability - a.combinedProbability);
+  const knownCustomLevel = all.filter((x) => x.knownCustom).reduce<number | null>(
+    (m, x) => (m == null || x.combinedProbability > m ? x.combinedProbability : m),
+    null
+  );
 
   const totalWeightAll = all.reduce((s, x) => s + x.weightTokens, 0);
   const totalWeightProbable = probable.reduce((s, x) => s + x.weightTokens, 0);
@@ -118,12 +129,14 @@ export async function GET(req: NextRequest) {
   lines.push(`# Probable users (>= threshold): ${probable.length}`);
   lines.push(`# Total network weight (scored): ${Math.round(totalWeightAll).toLocaleString("en-US")}`);
   lines.push(`# Weight held by probable users: ${Math.round(totalWeightProbable).toLocaleString("en-US")} (${sharePct.toFixed(2)}% of scored)`);
+  lines.push(`# Fingerprint calibration: field=${Number.isFinite(fieldMean) ? fieldMean.toFixed(4) : "n/a"} anchor=${Number.isFinite(anchorMean) ? anchorMean.toFixed(4) : "n/a"}`);
+  lines.push(`# Highest P among VERIFIED-CUSTOM providers (context line, not a threshold): ${knownCustomLevel != null ? knownCustomLevel.toFixed(4) : "n/a"}`);
   lines.push(`# NOTE: suspicion score, not proof. For human review only; not for automated action.`);
   lines.push("");
   const cols = [
-    "rank", "provider", "combined_probability", "value_similarity", "co_excursion_excess",
-    "co_excursion_n", "best_variant", "accuracy_dev", "weight_tokens", "weight_share_pct",
-    "fee_percent", "management_group", "confidence", "rounds", "submit_address", "identity_address", "url",
+    "rank", "provider", "combined_probability", "fingerprint", "best_variant", "accuracy_dev",
+    "weight_tokens", "weight_share_pct", "fee_percent", "management_group", "confidence", "rounds",
+    "submit_address", "identity_address", "url",
   ];
   lines.push(cols.join(","));
   probable.forEach((x, i) => {
@@ -131,9 +144,7 @@ export async function GET(req: NextRequest) {
       i + 1,
       esc(x.name),
       x.combinedProbability.toFixed(4),
-      x.valueSimilarity.toFixed(4),
-      x.coExcursionRate.toFixed(4),
-      x.coExcursionN,
+      x.fingerprint != null ? x.fingerprint.toFixed(4) : "",
       x.bestVariant,
       x.accuracyDev.toFixed(4),
       Math.round(x.weightTokens),
