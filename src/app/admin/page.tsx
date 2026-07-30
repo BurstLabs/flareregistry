@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAccount } from "wagmi";
 import { useWalletSign } from "@/lib/useWalletSign";
+import { LATTICE_MIN_TRIALS, LATTICE_LIFT_EXCLUDE } from "@/lib/detection";
 
 // Operator-only admin dashboard. English-only (internal tool, not a user-facing page). Access is
 // gated by ADMIN_ADDRESSES: sign in with an allowlisted wallet (reusing the SIWE flow) to unlock it.
@@ -1117,6 +1118,8 @@ function ExampleProviderTab() {
     names: [],
   });
   const [loading, setLoading] = useState(true);
+  const [calibrated, setCalibrated] = useState(true);
+  const [ruledOutCount, setRuledOutCount] = useState(0);
   // Sort state: which column key, and direction. Default = probability, descending (most suspect first).
   const [sortKey, setSortKey] = useState<string>("combinedProbability");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -1128,6 +1131,8 @@ function ExampleProviderTab() {
     setRows(b.report ?? []);
     setMaxRounds(b.maxRounds ?? 0);
     setFp({ rate: b.falsePositiveRate ?? null, count: b.knownCustomCount ?? 0, names: b.falsePositiveNames ?? [] });
+    setCalibrated(b.calibrated !== false);
+    setRuledOutCount(b.ruledOutCount ?? 0);
     setLoading(false);
   }, []);
   useEffect(() => {
@@ -1260,6 +1265,21 @@ function ExampleProviderTab() {
             )}
           </div>
         )}
+        {!calibrated && (
+          <div className="mt-2 text-[11px] text-flare">
+            P(example) calibration unavailable: no cross-config reference anchor is currently reporting.
+            The P column shows “—” rather than 0%, because an uncalibrated score is missing information,
+            not a low probability. The Tick grid column is unaffected (it does not use the reference).
+          </div>
+        )}
+        {ruledOutCount > 0 && (
+          <div className="mt-2 text-[11px] text-faint">
+            Tick-grid screen: <span className="text-emerald-500">{ruledOutCount}</span> of {rows.length}{" "}
+            providers excluded (their values do not echo raw exchange prints). The remaining{" "}
+            {rows.length - ruledOutCount} are <em>not</em> thereby implicated: any median-of-prints
+            implementation reads above the field, including our verified-custom control.
+          </div>
+        )}
       </div>
 
       <Card>
@@ -1291,7 +1311,7 @@ function ExampleProviderTab() {
                 <SortTh
                   label="Tick grid"
                   col="latticeLift"
-                  tip="TICK-GRID lift: how much more often this provider's value lands exactly on a coarse exchange tick grid than pure chance would give. The example provider returns an observed trade PRINT verbatim, so its values inherit the venue's tick grid; anything that averages, VWAPs or mid-prices smooths that away. The null is exact arithmetic (1/T), not a measured baseline, so this needs no reference instance and is unaffected by our reference's accuracy. Our own instances measure 3.3x (full config) to 5.9x (top3); a verified-custom control measures 1.01x. ONE-SIDED: near 1.0x is strong evidence AGAINST, but a high value is NOT proof FOR, since any median-of-prints implementation also echoes a print."
+                  tip="TICK-GRID lift: how much more often this provider's value lands on a coarse exchange tick grid than THE FIELD did on the same feeds in the same rounds. The example provider returns an observed trade PRINT verbatim, so its values inherit the venue's tick grid; averaging or mid-pricing smooths that away. The baseline is the per-round leave-one-out field rate, so 1.0x means 'behaves like the field'. It is NOT an arithmetic 1/T null: most lattices are powers of ten, so raw divisibility mostly measures 'rounded to fewer decimals', which any implementation can do and which varies by round. Measured: field 1.0x, example-provider level ~1.8-2.1x, verified-custom Burst FTSO 0.54x, verified-custom 1FTSO 1.47x. ONE-SIDED: low is strong evidence AGAINST, high is NOT proof FOR - 1FTSO is verified custom and still reads above the field, because any median-of-prints implementation echoes a print."
                 />
                 <SortTh
                   label="Variant"
@@ -1340,9 +1360,17 @@ function ExampleProviderTab() {
                     <span className="font-mono text-[11px] text-faint">{r.voter.slice(0, 18)}…</span>
                   </td>
                   <td className="py-1.5 text-right tabular-nums">
-                    <span className={r.combinedProbability > 0.5 ? "font-semibold text-flare" : "text-muted"}>
-                      {pct(r.combinedProbability)}
-                    </span>
+                    {r.combinedProbability != null ? (
+                      <span className={r.combinedProbability > 0.5 ? "font-semibold text-flare" : "text-muted"}>
+                        {pct(r.combinedProbability)}
+                      </span>
+                    ) : (
+                      // Not calibrated. Showing 0% here would assert "definitely not the example
+                      // provider", which is a claim we cannot make when the anchor is unavailable.
+                      <span className="text-faint" title="Calibration unavailable: no cross-config reference anchor. This is missing information, not a low probability.">
+                        —
+                      </span>
+                    )}
                   </td>
                   <td className="py-1.5 text-right tabular-nums">
                     {r.errorProfileCorr != null ? (
@@ -1363,27 +1391,24 @@ function ExampleProviderTab() {
                   </td>
                   <td className="py-1.5 text-right tabular-nums">
                     {r.lattice?.lift != null ? (
+                      // ONE-SIDED screen, so ONLY the exclusion end is coloured. A red/amber ramp on the
+                      // high end would encode exactly the inference this screen cannot support, and it
+                      // painted verified-custom 1FTSO in the table's accusation colour.
                       <span
-                        className={
-                          r.lattice.ruledOut
-                            ? "text-emerald-500"
-                            : r.lattice.lift >= 2.5
-                              ? "font-semibold text-flare"
-                              : r.lattice.lift >= 1.5
-                                ? "text-amber-500"
-                                : "text-muted"
-                        }
+                        className={r.lattice.ruledOut ? "text-emerald-500" : "text-muted"}
                         title={
-                          `${r.lattice.hits ?? ""} hits vs ${r.lattice.trials} trials, z=${r.lattice.z?.toFixed(1) ?? "?"}` +
+                          `${r.lattice.hits} hits over ${r.lattice.trials} trials; ` +
+                          `upper bound ${r.lattice.liftUpper?.toFixed(2) ?? "?"}x. 1.0x = behaves like the field. ` +
                           (r.lattice.ruledOut
-                            ? " - RULED OUT: indistinguishable from chance, so this provider does not echo raw exchange prints."
-                            : r.lattice.trials < 500
-                              ? " - still accumulating; needs 500+ trials before it can rule anyone out."
-                              : "")
+                            ? `RULED OUT: even the upper bound stays under ${LATTICE_LIFT_EXCLUDE}x, below the ~1.8-2.1x the example provider produces.`
+                            : r.lattice.trials < LATTICE_MIN_TRIALS
+                              ? `Still accumulating; needs ${LATTICE_MIN_TRIALS}+ trials before it may rule anyone out.`
+                              : "Not excluded. This is NOT evidence of guilt: any median-of-prints implementation reads high, including verified-custom 1FTSO.")
                         }
                       >
                         {r.lattice.lift.toFixed(2)}x
                         {r.lattice.ruledOut && <span className="ml-1 text-[10px]">ruled out</span>}
+                        <span className="ml-1 text-[10px] text-faint">n={r.lattice.trials}</span>
                       </span>
                     ) : (
                       <span className="text-faint">—</span>

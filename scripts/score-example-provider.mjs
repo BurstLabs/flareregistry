@@ -413,30 +413,70 @@ async function buildLattices(canonical) {
   return out;
 }
 
-// Accumulate this round's tick-grid evidence for one provider's raw reveal array.
-// hits = times enc was divisible by a coarse venue tick; expected/var = the exact Binomial(1/T) null.
-function latticeEvidence(rawVals, lattices) {
-  let hits = 0, trials = 0, expected = 0, variance = 0;
+// Minimum providers with a usable value in a (feed,T) cell before its empirical rate is trusted.
+const LATTICE_MIN_PEERS = 20;
+
+// Accumulate this round's tick-grid evidence for EVERY provider at once.
+//
+// The null is EMPIRICAL and per-round, not the arithmetic 1/T. The arithmetic null is wrong: T=10 and
+// T=100 carry 99.8% of the lattice mass, so "enc divisible by T" is really "this value has at most
+// d-1 decimal places", which ANY implementation that rounds its output satisfies - and how often that
+// happens is driven by where the consensus price sits that round, not by the provider. Measured, the
+// field came in at 1.95x the arithmetic null, and a single (feed,T) cell's field hit rate swung between
+// 0.00 and 0.45 round to round. A fixed 1/T therefore mis-centres lift and inflates z.
+//
+// Instead, for each (feed,T) cell we take the LEAVE-ONE-OUT field rate: q_i = (k - hit_i) / (m - 1) over
+// the m providers with a usable value. Conditioning on the round removes the common factor that caused
+// both the mis-centring and most of the dependence, and it self-corrects low-information cells (a cell
+// nobody can hit gets q ~ 0 and contributes nothing either way). Measured effect: field lift becomes
+// exactly 1.0000, the top cluster still reads 1.8x-2.1x, and our two verified-custom controls finally
+// separate correctly (Burst FTSO 0.54x, 1FTSO 1.47x).
+//
+// Returns Map<providerAddr, {hits, trials, expected, variance}>.
+function latticeRound(providers, lattices) {
+  const out = new Map();
+  for (const [addr] of providers) out.set(addr, { hits: 0, trials: 0, expected: 0, variance: 0 });
+  const hit = new Array(providers.length);
   for (const [f, lats] of lattices) {
-    const raw = rawVals[f];
-    if (raw == null || !Number.isFinite(raw)) continue;
-    const enc = raw - OFFSET; // strip the encoder's zero point: the lattice lives in price space
-    if (!Number.isFinite(enc)) continue;
     for (const { T } of lats) {
-      const p = 1 / T;
-      if (((enc % T) + T) % T === 0) hits++;
-      trials++;
-      expected += p;
-      variance += p * (1 - p);
+      let k = 0, m = 0;
+      for (let i = 0; i < providers.length; i++) {
+        const raw = providers[i][1][f];
+        // enc <= 0 is the unpriced-feed sentinel (raw = 2^31 decodes to price 0). It is NOT an
+        // observation: enc = 0 is divisible by every T, so counting it scored a guaranteed hit against a
+        // 1/T null and manufactured evidence for providers that simply cannot price a feed.
+        if (raw == null || !Number.isFinite(raw)) { hit[i] = null; continue; }
+        const enc = raw - OFFSET; // strip the encoder's zero point: the lattice lives in price space
+        if (!(enc > 0)) { hit[i] = null; continue; }
+        hit[i] = ((enc % T) + T) % T === 0 ? 1 : 0;
+        k += hit[i];
+        m++;
+      }
+      if (m <= LATTICE_MIN_PEERS) continue; // too few peers to estimate this cell's rate
+      // A cell nobody hit carries no information (q = 0 for everyone, so it moves neither hits nor
+      // expected). Skipping it keeps `trials` meaningful as a maturity gate instead of letting an
+      // unhittable lattice inflate the count toward LATTICE_MIN_TRIALS with zero evidence.
+      if (k === 0) continue;
+      for (let i = 0; i < providers.length; i++) {
+        if (hit[i] == null) continue;
+        const q = (k - hit[i]) / (m - 1);
+        const a = out.get(providers[i][0]);
+        a.hits += hit[i];
+        a.expected += q;
+        a.variance += q * (1 - q);
+        a.trials++;
+      }
     }
   }
-  return { hits, trials, expected, variance };
+  return out;
 }
 
 async function scoreRound(round, refs, reveals, canonical) {
   const providers = [...reveals.entries()];
-  // Candidate tick lattices for this round's canonical decimals (empty until the tick collector runs).
+  // Candidate tick lattices for this round's canonical decimals (empty until the tick collector runs),
+  // and this round's leave-one-out lattice evidence for every provider.
   const lattices = await buildLattices(canonical);
+  const latByAddr = latticeRound(providers, lattices);
   // Use the full canonical feed count. A provider whose reveal array is SHORT is handled per-provider
   // (decodeValue returns NaN past its length, which is filtered), so one short reveal no longer collapses
   // the feed set for EVERYONE (the old min-across-providers did exactly that).
@@ -725,9 +765,11 @@ async function scoreRound(round, refs, reveals, canonical) {
       feedLogDevs((f) => decodeValue(v[f], canonical[f].decimals)),
       existing?.errorProfileN ?? 0
     );
-    // Tick-grid evidence accumulates CUMULATIVELY (not EW): the null is exact and stationary, so power
-    // grows with every round instead of decaying out of a rolling window.
-    const lat = latticeEvidence(v, lattices);
+    // Tick-grid evidence accumulates cumulatively. Safe now that the null is the per-round leave-one-out
+    // field rate: a provider at the field level has E[hits - expected] = 0 every round, so the excess
+    // does not drift with wall-clock time. (With the old fixed 1/T null it did, which made the exclusion
+    // flag expire on the clock rather than on evidence.)
+    const lat = latByAddr.get(addr) ?? { hits: 0, trials: 0, expected: 0, variance: 0 };
     const data = {
       refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
       roundsObserved: rounds, confidence, probability,

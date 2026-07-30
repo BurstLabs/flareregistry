@@ -36,33 +36,55 @@ export type RefProfiles = Record<string, Record<string, number>>;
  * TICK-GRID (value lattice) evidence.
  *
  * The example provider's weightedMedian() returns an observed trade print verbatim, so its value sits on
- * some venue's tick grid. Where a venue's tick is coarser than the on-chain encoding grid, divisibility
- * is a real constraint with an EXACT null of 1/T, which is why this needs no reference instance and no
- * calibration - unlike every other signal here, the baseline is arithmetic rather than measured.
+ * some venue's tick grid, whereas anything that averages or rounds lands elsewhere. The scorer measures
+ * how often a provider's encoded value is divisible by a coarse venue tick, against the PER-ROUND
+ * LEAVE-ONE-OUT field rate for that same (feed, tick) cell.
  *
- * lift = hits / expected. 1.0 is pure chance. Our own reference instances measure 3.3x (full config) to
- * 5.9x (top3), and a verified-custom control measures 1.01x.
+ * The null is empirical, NOT the arithmetic 1/T. An earlier version used 1/T and was wrong by ~2x,
+ * because T=10 and T=100 carry 99.8% of the mass, so the test is really "has at most d-1 decimal places"
+ * - satisfied by any implementation that rounds, at a rate set by where the price sits that round rather
+ * than by the provider. Conditioning on the round fixes the centring and removes most of the dependence.
+ *
+ * lift = hits / expected, where 1.0 is now "behaves like the field this round", by construction.
+ * Measured: field 1.00, top cluster 1.8x-2.1x, verified-custom Burst FTSO 0.54x, verified-custom
+ * 1FTSO 1.47x.
  *
  * IMPORTANT: this is a ONE-SIDED screen. A low lift is strong evidence AGAINST running the example
- * provider (the arithmetic that produced the value smoothed the print away). A high lift is NOT proof
- * FOR it, because any median-of-prints implementation also echoes a print - a verified-custom provider
- * measures 2.65x. Treat it as an exclusion filter, never as an accusation.
+ * provider. A high lift is NOT proof FOR it, because any median-of-prints implementation also echoes a
+ * print, which is exactly why verified-custom 1FTSO sits above the field. Use it to exclude, never to
+ * accuse.
  */
 export interface LatticeStats {
-  /** hits / expected; 1.0 = chance. */
+  /** hits / expected; 1.0 = the field's own rate for the same cells. */
   lift: number | null;
-  /** (hits - expected) / sqrt(var); how many sigma above the exact null. */
+  /** (hits - expected) / sqrt(inflated var). Evidence strength, not a calibrated p-value. */
   z: number | null;
+  /** Upper confidence bound on lift. The exclusion decision is made on THIS, not on z. */
+  liftUpper: number | null;
   hits: number;
   trials: number;
-  /** z <= 3 with enough trials: provably not echoing coarse-venue prints. */
+  /** Enough evidence to say this provider is below the example-provider level. */
   ruledOut: boolean;
 }
 
-/** Minimum trials before the screen is allowed to rule anyone out. */
-export const LATTICE_MIN_TRIALS = 500;
-/** z at or below this is consistent with pure chance. */
-export const LATTICE_Z_CHANCE = 3;
+/** Minimum trials before the screen may rule anyone out (~12 rounds; 84 cells per round). */
+export const LATTICE_MIN_TRIALS = 1000;
+/**
+ * Variance inflation for residual dependence. The leave-one-out null removes the round-level common
+ * factor, but trials within a feed remain nested (a hit at T=100 forces a hit at T=10; measured ~1.08x
+ * on variance) and there is some serial correlation across rounds. 1.5 is a deliberate safety margin:
+ * it widens the confidence bound, so it can only make the screen SLOWER to exclude someone, never faster.
+ */
+export const LATTICE_VAR_INFLATION = 1.5;
+/** z for the one-sided upper bound (~99%). */
+const LATTICE_Z_UPPER = 2.33;
+/**
+ * A provider is excluded when even the upper bound of its lift stays below this. The example-provider
+ * level measures 1.8x-2.1x and the field is 1.0x by construction, so 1.3 sits well clear of both.
+ * Unlike a fixed z cut this is bounded: as trials grow the bound converges on the true lift, so a
+ * genuinely low-lift provider stays excluded forever instead of ageing out of the flag.
+ */
+export const LATTICE_LIFT_EXCLUDE = 1.3;
 
 export function latticeStats(row: {
   latticeHits: number;
@@ -71,14 +93,19 @@ export function latticeStats(row: {
   latticeTrials: number;
 }): LatticeStats {
   const { latticeHits: h, latticeExpected: e, latticeVar: v, latticeTrials: n } = row;
-  if (!n || !(e > 0)) return { lift: null, z: null, hits: h ?? 0, trials: n ?? 0, ruledOut: false };
-  const z = v > 0 ? (h - e) / Math.sqrt(v) : null;
+  if (!n || !(e > 0)) {
+    return { lift: null, z: null, liftUpper: null, hits: h ?? 0, trials: n ?? 0, ruledOut: false };
+  }
+  const sd = v > 0 ? Math.sqrt(v * LATTICE_VAR_INFLATION) : 0;
+  const z = sd > 0 ? (h - e) / sd : null;
+  const liftUpper = (h + LATTICE_Z_UPPER * sd) / e;
   return {
     lift: h / e,
     z,
+    liftUpper,
     hits: h,
     trials: n,
-    ruledOut: n >= LATTICE_MIN_TRIALS && z != null && z <= LATTICE_Z_CHANCE,
+    ruledOut: n >= LATTICE_MIN_TRIALS && liftUpper < LATTICE_LIFT_EXCLUDE,
   };
 }
 
@@ -87,8 +114,15 @@ export interface FingerprintResult {
   corrByVoter: Map<string, number>;
   /** voter -> reference CONFIG whose error profile it matches best. */
   variantByVoter: Map<string, string>;
-  /** fingerprint -> calibrated probability, monotonic by construction. */
-  fpProbability: (fp: number | null | undefined) => number;
+  /**
+   * fingerprint -> calibrated probability, monotonic by construction. Returns NULL (not 0) when the
+   * calibration is unavailable: a probability of 0 is a positive claim that a provider is definitely not
+   * an example provider, which is not what "we could not calibrate" means, and returning 0 here would
+   * silently zero the whole tab and empty the CSV - the same failure removed from the baseline rescale.
+   */
+  fpProbability: (fp: number | null | undefined) => number | null;
+  /** False when the anchor/field calibration could not be built; surface this rather than showing 0%. */
+  calibrated: boolean;
   /** Cross-config anchor fingerprints (the attainable "is an example provider" bar). */
   anchorFps: number[];
   anchorMean: number;
@@ -177,13 +211,17 @@ export function computeFingerprints(
   const anchorMean = anchorFps.length ? anchorFps.reduce((a, b) => a + b, 0) / anchorFps.length : NaN;
   const fieldMean = fieldFps.length ? med(fieldFps) : NaN;
   const fpGap = anchorMean - fieldMean;
-  const fpProbability = (fp: number | null | undefined): number => {
-    if (fp == null || !Number.isFinite(fp)) return 0;
-    if (!Number.isFinite(fpGap) || !(fpGap > 1e-6) || anchorFps.length < 2) return 0;
+  const calibrated = Number.isFinite(fpGap) && fpGap > 1e-6 && anchorFps.length >= 2;
+  const fpProbability = (fp: number | null | undefined): number | null => {
+    if (!calibrated) return null;
+    if (fp == null || !Number.isFinite(fp)) return null;
     const mid = (anchorMean + fieldMean) / 2;
     const k = 6 / fpGap;
     return 1 / (1 + Math.exp(-k * (fp - mid)));
   };
 
-  return { corrByVoter, variantByVoter, fpProbability, anchorFps, anchorMean, fieldMean, fpGap };
+  return {
+    corrByVoter, variantByVoter, fpProbability, calibrated,
+    anchorFps, anchorMean, fieldMean, fpGap,
+  };
 }

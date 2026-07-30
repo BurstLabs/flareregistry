@@ -14,7 +14,10 @@ export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
 
+  // Scoped to Flare: the tab is labelled Flare-only, and the fingerprint's feed-difficulty medians and
+  // field calibration would silently mix chains the day a Songbird scorer starts writing rows.
   const rows = await prisma.providerSimilarity.findMany({
+    where: { network: "flare" },
     orderBy: { refSimilarityMean: "desc" },
   });
 
@@ -23,7 +26,7 @@ export async function GET() {
   const cursorRow = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
   // refFeedErrorsJson is keyed by instance id: { "full:1": {feed: lnDev}, "top3:1": {...}, ... }
   const allRefProfiles = (cursorRow?.refFeedErrorsJson ?? {}) as RefProfiles;
-  const { corrByVoter, variantByVoter, fpProbability, anchorFps, anchorMean, fieldMean } =
+  const { corrByVoter, variantByVoter, fpProbability, calibrated, anchorFps, anchorMean, fieldMean } =
     computeFingerprints(rows, allRefProfiles);
 
   // Resolve the similarity row's address -> our provider name for display. IMPORTANT: the address we
@@ -126,18 +129,21 @@ export async function GET() {
   // must never be a divisor. The known-custom level is reported as a LINE instead, so it can be drawn on
   // the display without touching anyone's score.
   const knownRows = report.filter((x) => x.knownCustom);
-  const knownCustomLevel = knownRows.length
-    ? Math.max(...knownRows.map((x) => x.combinedProbability))
-    : null;
+  const knownProbs = knownRows.map((x) => x.combinedProbability).filter((p): p is number => p != null);
+  const knownCustomLevel = knownProbs.length ? Math.max(...knownProbs) : null;
 
   // Live false-positive check: of the verified-custom providers, how many the detector would still flag
   // above 0.5. A non-zero rate means the detector is over-firing - a calibration warning, not an
   // accusation of those providers.
-  const falsePositives = knownRows.filter((x) => x.combinedProbability >= 0.5);
+  const falsePositives = knownRows.filter((x) => (x.combinedProbability ?? 0) >= 0.5);
   const fpRate = knownRows.length ? falsePositives.length / knownRows.length : null;
+  // Tick-grid exclusion summary, so the tab can state how many the screen actually clears.
+  const ruledOutCount = report.filter((x) => x.lattice.ruledOut).length;
   return NextResponse.json({
     report,
     maxRounds,
+    calibrated,
+    ruledOutCount,
     knownCustomCount: knownRows.length,
     knownCustomLevel,
     falsePositiveRate: fpRate,

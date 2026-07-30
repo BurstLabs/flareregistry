@@ -18,9 +18,15 @@ const REF_DIR = process.env.FTSO_REF_DIR ?? "/home/deploy/ftso-ref";
 const FEEDS_CONFIG = process.env.FEEDS_CONFIG ?? `${REF_DIR}/src/config/feeds.json`;
 const CCXT_ENTRY = process.env.CCXT_ENTRY ?? `${REF_DIR}/node_modules/ccxt/js/ccxt.js`;
 
-// ccxt precisionMode constants. DECIMAL_PLACES means precision.price is a DIGIT COUNT; TICK_SIZE means
-// it already IS the tick. Getting this backwards silently produces nonsense ticks, so both are handled.
+// ccxt precisionMode constants. There are THREE, not two:
+//   DECIMAL_PLACES (2)      precision.price is a DIGIT COUNT       -> tick = 10^-p
+//   SIGNIFICANT_DIGITS (3)  precision.price is SIGNIFICANT DIGITS  -> tick depends on the price level
+//   TICK_SIZE (4)           precision.price IS the tick
+// Treating SIGNIFICANT_DIGITS as a tick is how bitfinex ended up asserting that USDT/USD trades on a $5
+// grid, which then became a T = 500,000 lattice that no value could ever hit.
 const DECIMAL_PLACES = 2;
+const SIGNIFICANT_DIGITS = 3;
+const TICK_SIZE = 4;
 
 async function main() {
   const { default: ccxt } = await import(CCXT_ENTRY);
@@ -53,7 +59,19 @@ async function main() {
       const m = ex.markets?.[w.symbol];
       const p = m?.precision?.price;
       if (p == null) continue;
-      const tick = mode === DECIMAL_PLACES ? Math.pow(10, -Number(p)) : Number(p);
+      let tick = null;
+      if (mode === DECIMAL_PLACES) {
+        tick = Math.pow(10, -Number(p));
+      } else if (mode === TICK_SIZE) {
+        tick = Number(p);
+      } else if (mode === SIGNIFICANT_DIGITS) {
+        // The tick is price-LEVEL dependent and we have no live price here, so any single number would
+        // be a guess. Skipping costs us bitfinex (2 of ~389 pairs); guessing cost us a fabricated $5
+        // USDT grid that became an unhittable T = 500,000 lattice.
+        continue;
+      } else {
+        continue; // unknown/undefined precisionMode: refuse rather than assume
+      }
       if (Number.isFinite(tick) && tick > 0) out.push({ ...w, exchange: name, tick });
     }
     try { await ex.close?.(); } catch { /* some ccxt exchanges have no close() */ }
@@ -63,6 +81,7 @@ async function main() {
   const resolved = (await Promise.all([...byExchange].map(([n, w]) => resolve(n, w)))).flat();
   console.log(`resolved ${resolved.length} (feed,exchange,symbol) ticks across ${byExchange.size} exchanges`);
 
+  const startedAt = new Date();
   let written = 0;
   for (const r of resolved) {
     await prisma.feedSourceTick.upsert({
@@ -73,6 +92,12 @@ async function main() {
     written++;
   }
   console.log(`wrote ${written} FeedSourceTick rows`);
+
+  // PRUNE anything this run did not refresh. Without it a delisted symbol, or one dropped from
+  // feeds.json, keeps its row forever and goes on contributing a lattice nothing can ever hit. Upsert
+  // alone never deletes, so the row would silently outlive the market it describes.
+  const stale = await prisma.feedSourceTick.deleteMany({ where: { updatedAt: { lt: startedAt } } });
+  if (stale.count) console.log(`pruned ${stale.count} stale FeedSourceTick rows`);
 
   // Report per-feed testable lattice coverage at the CURRENT canonical decimals, purely as an operator
   // sanity line: a feed only carries information when some venue's tick is COARSER than the encoding

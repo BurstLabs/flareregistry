@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const tRaw = Number(new URL(req.url).searchParams.get("threshold") ?? "0.5");
   const threshold = Number.isFinite(tRaw) ? Math.min(1, Math.max(0, tRaw)) : 0.5;
 
-  const rows = await prisma.providerSimilarity.findMany();
+  const rows = await prisma.providerSimilarity.findMany({ where: { network: "flare" } });
 
   // Compute P exactly the way the Detection tab does. This used to export the STORED
   // `combinedProbability`, which is the legacy value-similarity number the scorer writes; after P was
@@ -102,10 +102,12 @@ export async function GET(req: NextRequest) {
   // Probable users: above threshold AND not verified-custom (never accuse a provider we KNOW is custom).
   // Sorted here because the DB fetch is no longer ordered by the (legacy) stored probability.
   const probable = all
-    .filter((x) => !x.knownCustom && x.combinedProbability >= threshold)
-    .sort((a, b) => b.combinedProbability - a.combinedProbability);
+    // A null probability means "not calibrated", which is not the same as "below threshold" - it must
+    // never silently qualify a provider for a report that names them.
+    .filter((x) => !x.knownCustom && x.combinedProbability != null && x.combinedProbability >= threshold)
+    .sort((a, b) => (b.combinedProbability ?? 0) - (a.combinedProbability ?? 0));
   const knownCustomLevel = all.filter((x) => x.knownCustom).reduce<number | null>(
-    (m, x) => (m == null || x.combinedProbability > m ? x.combinedProbability : m),
+    (m, x) => (x.combinedProbability != null && (m == null || x.combinedProbability > m) ? x.combinedProbability : m),
     null
   );
 
@@ -135,8 +137,8 @@ export async function GET(req: NextRequest) {
   lines.push(`# NOTE: suspicion score, not proof. For human review only; not for automated action.`);
   lines.push("");
   const cols = [
-    "rank", "provider", "combined_probability", "fingerprint", "tick_grid_lift", "tick_grid_z",
-    "tick_grid_trials", "tick_grid_ruled_out", "best_variant", "accuracy_dev",
+    "rank", "provider", "combined_probability", "fingerprint", "tick_grid_lift", "tick_grid_lift_upper",
+    "tick_grid_z", "tick_grid_trials", "tick_grid_ruled_out", "best_variant", "accuracy_dev",
     "weight_tokens", "weight_share_pct", "fee_percent", "management_group", "confidence", "rounds",
     "submit_address", "identity_address", "url",
   ];
@@ -145,9 +147,10 @@ export async function GET(req: NextRequest) {
     lines.push([
       i + 1,
       esc(x.name),
-      x.combinedProbability.toFixed(4),
+      x.combinedProbability != null ? x.combinedProbability.toFixed(4) : "",
       x.fingerprint != null ? x.fingerprint.toFixed(4) : "",
       x.lattice.lift != null ? x.lattice.lift.toFixed(3) : "",
+      x.lattice.liftUpper != null ? x.lattice.liftUpper.toFixed(3) : "",
       x.lattice.z != null ? x.lattice.z.toFixed(1) : "",
       x.lattice.trials,
       x.lattice.ruledOut ? "yes" : "no",

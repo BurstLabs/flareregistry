@@ -81,10 +81,10 @@ body = "\n".join(parts)
 
 callout = """<div class="callout"><div class="callout-title">The problem, in numbers</div>
 <div class="stats">
-<div class="stat"><div class="num">114</div><div class="lbl">days the oldest provider request has waited</div></div>
-<div class="stat"><div class="num">117</div><div class="lbl">days issue #434 (a &ldquo;listed&rdquo; request) has sat open</div></div>
-<div class="stat"><div class="num">22</div><div class="lbl">avg. days to merge (slowest: 135)</div></div>
-<div class="stat"><div class="num">9</div><div class="lbl">requests open over 30 days</div></div>
+<div class="stat"><div class="num">123</div><div class="lbl">days the oldest provider request has waited</div></div>
+<div class="stat"><div class="num">126</div><div class="lbl">days issue #434 (a &ldquo;listed&rdquo; request) has sat open</div></div>
+<div class="stat"><div class="num">23</div><div class="lbl">avg. days to merge (slowest: 136)</div></div>
+<div class="stat"><div class="num">10</div><div class="lbl">requests open over 30 days</div></div>
 </div></div>"""
 body = body.replace("<h2>1. The problem, with evidence</h2>", callout + "\n<h2>1. The problem, with evidence</h2>", 1)
 
