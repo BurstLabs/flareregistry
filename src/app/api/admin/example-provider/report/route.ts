@@ -5,15 +5,24 @@ import { computeFingerprints, latticeStats, type RefProfiles } from "@/lib/detec
 
 export const dynamic = "force-dynamic";
 
-// GET /api/admin/example-provider/report?threshold=0.5
-// Downloadable CSV report of PROBABLE example-provider users (combined probability >= threshold),
-// ranked, with on-chain weight and all pertinent detection data, plus a summary header. Admin-only.
+// GET /api/admin/example-provider/report?minLift=1.6
+// Downloadable CSV report of candidate example-provider users, selected on TICK-GRID LIFT, ranked, with
+// on-chain weight and the rest of the detection data, plus a summary header. Admin-only.
+//
+// Selection used to be `combinedProbability >= threshold`, i.e. the fingerprint-derived probability.
+// That was removed: it is reference-anchored, its anchor drifts, and 6 of its top 20 were providers the
+// tick-grid screen formally excludes, so the download named providers the rest of the tool cleared. The
+// probability and fingerprint are still EXPORTED as columns for the record; they just no longer decide
+// who appears.
 export async function GET(req: NextRequest) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const tRaw = Number(new URL(req.url).searchParams.get("threshold") ?? "0.5");
-  const threshold = Number.isFinite(tRaw) ? Math.min(1, Math.max(0, tRaw)) : 0.5;
+  // Accept the legacy ?threshold= too, reinterpreted as a lift, so an old bookmark cannot silently
+  // select on a scale that no longer exists.
+  const sp = new URL(req.url).searchParams;
+  const raw = Number(sp.get("minLift") ?? sp.get("threshold") ?? "1.6");
+  const minLift = Number.isFinite(raw) ? Math.min(10, Math.max(0, raw)) : 1.6;
 
   const rows = await prisma.providerSimilarity.findMany({ where: { network: "flare" } });
 
@@ -99,13 +108,18 @@ export async function GET(req: NextRequest) {
       rounds: r.roundsObserved,
     };
   });
-  // Probable users: above threshold AND not verified-custom (never accuse a provider we KNOW is custom).
-  // Sorted here because the DB fetch is no longer ordered by the (legacy) stored probability.
+  // Candidates: tick-grid lift at or above the cut, NOT formally excluded by the screen, and not
+  // verified-custom (never name a provider we KNOW is custom). A null lift means "no measurement yet",
+  // which must never silently qualify someone for a report that names them.
   const probable = all
-    // A null probability means "not calibrated", which is not the same as "below threshold" - it must
-    // never silently qualify a provider for a report that names them.
-    .filter((x) => !x.knownCustom && x.combinedProbability != null && x.combinedProbability >= threshold)
-    .sort((a, b) => (b.combinedProbability ?? 0) - (a.combinedProbability ?? 0));
+    .filter(
+      (x) =>
+        !x.knownCustom &&
+        !x.lattice.ruledOut &&
+        x.lattice.lift != null &&
+        x.lattice.lift >= minLift
+    )
+    .sort((a, b) => (b.lattice.lift ?? 0) - (a.lattice.lift ?? 0));
   const knownCustomLevel = all.filter((x) => x.knownCustom).reduce<number | null>(
     (m, x) => (x.combinedProbability != null && (m == null || x.combinedProbability > m) ? x.combinedProbability : m),
     null
@@ -125,16 +139,20 @@ export async function GET(req: NextRequest) {
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines: string[] = [];
-  lines.push(`# Flare Registry - Probable example-provider users report`);
-  lines.push(`# Network: Flare`);
-  lines.push(`# Probability threshold: ${threshold}`);
+  lines.push(`# Flare Registry - example-provider CANDIDATES report (Flare)`);
+  lines.push(`# Selected on TICK-GRID LIFT >= ${minLift.toFixed(2)}x, excluding providers the screen ruled out`);
+  lines.push(`# Scale: field = 1.00x by construction | our own example-provider instances = 1.44x-2.33x`);
+  lines.push(`#        verified-custom control = 0.52x | exclusion applies when the upper bound < 1.30x`);
   lines.push(`# Providers scored: ${all.length}`);
-  lines.push(`# Probable users (>= threshold): ${probable.length}`);
+  lines.push(`# Candidates (>= ${minLift.toFixed(2)}x): ${probable.length}`);
   lines.push(`# Total network weight (scored): ${Math.round(totalWeightAll).toLocaleString("en-US")}`);
-  lines.push(`# Weight held by probable users: ${Math.round(totalWeightProbable).toLocaleString("en-US")} (${sharePct.toFixed(2)}% of scored)`);
-  lines.push(`# Fingerprint calibration: field=${Number.isFinite(fieldMean) ? fieldMean.toFixed(4) : "n/a"} anchor=${Number.isFinite(anchorMean) ? anchorMean.toFixed(4) : "n/a"}`);
-  lines.push(`# Highest P among VERIFIED-CUSTOM providers (context line, not a threshold): ${knownCustomLevel != null ? knownCustomLevel.toFixed(4) : "n/a"}`);
-  lines.push(`# NOTE: suspicion score, not proof. For human review only; not for automated action.`);
+  lines.push(`# Weight held by candidates: ${Math.round(totalWeightProbable).toLocaleString("en-US")} (${sharePct.toFixed(2)}% of scored)`);
+  lines.push(`# combined_probability / fingerprint are RETAINED FOR THE RECORD ONLY and are NOT used to`);
+  lines.push(`#   select this list: both are reference-anchored, their anchor drifts, and 6 of their top`);
+  lines.push(`#   20 were providers the tick-grid screen formally excludes.`);
+  lines.push(`#   (fingerprint calibration at export: field=${Number.isFinite(fieldMean) ? fieldMean.toFixed(4) : "n/a"} anchor=${Number.isFinite(anchorMean) ? anchorMean.toFixed(4) : "n/a"}; highest P among verified-custom=${knownCustomLevel != null ? knownCustomLevel.toFixed(4) : "n/a"})`);
+  lines.push(`# NOTE: a high lift is NOT proof - any median-of-prints implementation reads above the`);
+  lines.push(`#   field, including our own verified-custom control. Human review only; never automated.`);
   lines.push("");
   const cols = [
     "rank", "provider", "combined_probability", "fingerprint", "tick_grid_lift", "tick_grid_lift_upper",
