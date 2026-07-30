@@ -570,11 +570,16 @@ async function scoreRound(round, refs, reveals, canonical) {
     }
     return out;
   }
-  // EW-merge a fresh per-feed vector into an accumulated one.
-  function mergeLogDevs(prev, fresh) {
+  // Merge a fresh per-feed vector into an accumulated one, with an ADAPTIVE rate: alpha = max(EW_ALPHA,
+  // 1/(n+1)). Early on that is a plain running mean, so the profile converges in a few rounds instead of
+  // staying stuck on its first (noisy single-round) sample - at a flat 0.02 it would take ~150 rounds to
+  // forget the seed. Once n is large it floors at EW_ALPHA and tracks slowly, which is right for a
+  // property (the provider's implementation) that changes rarely.
+  function mergeLogDevs(prev, fresh, n) {
+    const alpha = Math.max(EW_ALPHA, 1 / (Math.max(0, n) + 1));
     const out = { ...(prev || {}) };
     for (const [k, v] of Object.entries(fresh)) {
-      out[k] = Object.prototype.hasOwnProperty.call(out, k) ? out[k] + EW_ALPHA * (v - out[k]) : v;
+      out[k] = Object.prototype.hasOwnProperty.call(out, k) ? out[k] + alpha * (v - out[k]) : v;
     }
     return out;
   }
@@ -650,7 +655,8 @@ async function scoreRound(round, refs, reveals, canonical) {
     // Error-profile accumulation (the implementation fingerprint; correlated against the reference in the API).
     const feedErrors = mergeLogDevs(
       existing?.feedErrorsJson,
-      feedLogDevs((f) => decodeValue(v[f], canonical[f].decimals))
+      feedLogDevs((f) => decodeValue(v[f], canonical[f].decimals)),
+      existing?.errorProfileN ?? 0
     );
     const data = {
       refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
@@ -671,9 +677,14 @@ async function scoreRound(round, refs, reveals, canonical) {
   // Accumulate OUR REFERENCE's error profile the same way, so the API can de-mean both by feed difficulty
   // and correlate them. perFeed[f].refMed is the reference median for that feed this round.
   const curRow = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
+  // Reference profile observation count = max provider errorProfileN (they advance together each round).
+  const refProfileN = await prisma.providerSimilarity
+    .aggregate({ _max: { errorProfileN: true } })
+    .then((a) => a._max.errorProfileN ?? 0);
   const refErrors = mergeLogDevs(
     curRow?.refFeedErrorsJson,
-    feedLogDevs((f) => perFeed[f]?.refMed ?? NaN)
+    feedLogDevs((f) => perFeed[f]?.refMed ?? NaN),
+    refProfileN
   );
   await prisma.detectionCursor.upsert({
     where: { id: "flare" },
