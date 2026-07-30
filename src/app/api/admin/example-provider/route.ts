@@ -8,6 +8,27 @@ export const dynamic = "force-dynamic";
 // The example-provider similarity report (Flare only): each registered provider's rolling similarity to
 // our reference example-provider instances, its calibrated probability, and its accuracy (deviation from
 // the field consensus). Admin-only; this is a suspicion score, NOT proof - see the pipeline docs.
+// Median of a numeric array.
+function med(a: number[]): number {
+  if (!a.length) return NaN;
+  const s = [...a].sort((x, y) => x - y);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+// Pearson correlation.
+function pearson(x: number[], y: number[]): number {
+  const n = x.length;
+  if (n < 8) return NaN;
+  const mx = x.reduce((a, b) => a + b, 0) / n;
+  const my = y.reduce((a, b) => a + b, 0) / n;
+  let sx = 0, sy = 0, sxy = 0;
+  for (let i = 0; i < n; i++) {
+    const a = x[i] - mx, b = y[i] - my;
+    sx += a * a; sy += b * b; sxy += a * b;
+  }
+  return sx > 0 && sy > 0 ? sxy / Math.sqrt(sx * sy) : NaN;
+}
+
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -15,6 +36,45 @@ export async function GET() {
   const rows = await prisma.providerSimilarity.findMany({
     orderBy: { refSimilarityMean: "desc" },
   });
+
+  // ERROR-PROFILE CORRELATION - the implementation fingerprint. Each provider (and our reference) carries
+  // an EW per-feed vector of ln|deviation from consensus|. Correlating those raw vectors is dominated by
+  // FEED DIFFICULTY (illiquid feeds are hard for everyone), which put a verified-custom provider at rank 7.
+  // So we subtract each feed's difficulty baseline (the median across providers) first; what remains is
+  // implementation-specific structure. Measured effect: verified-custom controls fall to rank 37 and 55 of
+  // 95, and a tight top cluster separates at 0.93-0.95 with a clear gap below.
+  const cursorRow = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
+  const refProfile = (cursorRow?.refFeedErrorsJson ?? null) as Record<string, number> | null;
+  const profiles = new Map<string, Record<string, number>>();
+  for (const r of rows) {
+    const p = r.feedErrorsJson as Record<string, number> | null;
+    if (p && typeof p === "object") profiles.set(r.voter.toLowerCase(), p);
+  }
+  // Feed difficulty baseline: median across providers of each feed's accumulated log-deviation.
+  const difficulty = new Map<string, number>();
+  if (refProfile) {
+    const feedNames = new Set<string>(Object.keys(refProfile));
+    for (const p of profiles.values()) for (const k of Object.keys(p)) feedNames.add(k);
+    for (const f of feedNames) {
+      const vals: number[] = [];
+      for (const p of profiles.values()) if (Number.isFinite(p[f])) vals.push(p[f]);
+      if (vals.length >= 20) difficulty.set(f, med(vals));
+    }
+  }
+  const corrByVoter = new Map<string, number>();
+  if (refProfile && difficulty.size >= 15) {
+    for (const [voter, p] of profiles) {
+      const xs: number[] = [], ys: number[] = [];
+      for (const [f, d] of difficulty) {
+        const pv = p[f], rv = refProfile[f];
+        if (!Number.isFinite(pv) || !Number.isFinite(rv)) continue;
+        xs.push(pv - d);   // provider, de-meaned by feed difficulty
+        ys.push(rv - d);   // reference, de-meaned the same way
+      }
+      const c = pearson(xs, ys);
+      if (Number.isFinite(c)) corrByVoter.set(voter, c);
+    }
+  }
 
   // Resolve the similarity row's address -> our provider name for display. IMPORTANT: the address we
   // stored is the reveal tx sender = the entity's SUBMIT address, not its identity/voter. So match it
@@ -91,6 +151,9 @@ export async function GET() {
       combinedProbabilityRaw: r.combinedProbability as number, // pre-baseline-rescale copy
       coExcursionRate: r.coExcursionRate, // same-direction spike rate with our reference (0..1)
       coExcursionN: r.coExcursionN, // joint excursion opportunities observed
+      // Implementation fingerprint: de-meaned error-profile correlation with our reference.
+      errorProfileCorr: corrByVoter.get(r.voter.toLowerCase()) ?? null,
+      errorProfileN: r.errorProfileN,
       confidence: r.confidence,
       rounds: r.roundsObserved,
       variant: r.bestVariant, // which exchange-subset variant (full|top5|top10) fits best
