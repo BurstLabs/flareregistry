@@ -1128,6 +1128,8 @@ function ExampleProviderTab() {
   const [loading, setLoading] = useState(true);
   const [calibrated, setCalibrated] = useState(true);
   const [ruledOutCount, setRuledOutCount] = useState(0);
+  // Show every scored provider, or only the ones the combined screen implicates.
+  const [onlyCandidates, setOnlyCandidates] = useState(false);
   // Sort state. Default = tick-grid lift, descending. It used to default to the fingerprint-derived
   // probability, which meant a discredited metric ordered the entire screen.
   const [sortKey, setSortKey] = useState<string>("latticeLift");
@@ -1171,7 +1173,14 @@ function ExampleProviderTab() {
       setSortDir("desc");
     }
   }
-  const sorted = [...rows].sort((a, b) => {
+  // View filter. "candidates" shows only providers the combined screen actually implicates, i.e. those
+  // that echo raw exchange prints AND match our reference's venue pattern. Anything excluded, classed as
+  // another median implementation, or still accumulating is hidden.
+  const visible = onlyCandidates ? rows.filter((r) => r.klass === "candidate") : rows;
+  const candidateCount = rows.filter((r) => r.klass === "candidate").length;
+  const pendingCount = rows.filter((r) => r.klass === "pending").length;
+
+  const sorted = [...visible].sort((a, b) => {
     let av = a[sortKey];
     let bv = b[sortKey];
     if (sortKey === "name") {
@@ -1226,6 +1235,27 @@ function ExampleProviderTab() {
           Example-provider similarity <span className="text-faint">(Flare)</span>
         </span>
         <div className="flex items-center gap-2">
+          {/* All / Candidates view toggle. */}
+          <div className="flex overflow-hidden rounded-md border border-themed text-xs">
+            <button
+              onClick={() => setOnlyCandidates(false)}
+              className={`px-2.5 py-1 ${
+                !onlyCandidates ? "bg-elev font-medium text-fg" : "text-muted hover:text-beacon"
+              }`}
+              title="Show every scored provider, including those the screen excludes."
+            >
+              All {rows.length > 0 && <span className="text-faint">({rows.length})</span>}
+            </button>
+            <button
+              onClick={() => setOnlyCandidates(true)}
+              className={`border-l border-themed px-2.5 py-1 ${
+                onlyCandidates ? "bg-elev font-medium text-fg" : "text-muted hover:text-beacon"
+              }`}
+              title="Show only providers that echo raw exchange prints AND match our reference's venue pattern. Excluded, other-median and still-accumulating providers are hidden."
+            >
+              Candidates <span className="text-faint">({candidateCount})</span>
+            </button>
+          </div>
           <label className="flex items-center gap-1 text-xs text-muted" title="Minimum TICK-GRID LIFT for a provider to be included in the downloaded report. 1.0x = behaves like the field; genuine example-provider instances measure 1.44x-2.33x, so ~1.6x is a reasonable cut.">
             Report threshold
             <input
@@ -1297,6 +1327,28 @@ function ExampleProviderTab() {
           <p className="text-sm text-muted">Loading…</p>
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted">No similarity data yet. The scorer runs every 5 minutes.</p>
+        ) : sorted.length === 0 ? (
+          // Filtered to nothing. Distinguish "nothing qualifies" from "not classified yet", because
+          // while the per-cell profiles are immature EVERY provider is "pending" and an unexplained
+          // empty table reads as "all clear", which would be the wrong conclusion entirely.
+          <p className="text-sm text-muted">
+            No providers in the candidate class.{" "}
+            {pendingCount > 0 ? (
+              <>
+                {pendingCount} of {rows.length} are still <strong className="text-fg">pending</strong>:
+                their per-cell profiles have not reached {PATTERN_MIN_ROUNDS} rounds, so no class is
+                assigned yet. This is not an all-clear.
+              </>
+            ) : (
+              <>
+                {ruledOutCount} excluded and {rows.length - ruledOutCount - candidateCount} classed as
+                another median implementation.
+              </>
+            )}{" "}
+            <button onClick={() => setOnlyCandidates(false)} className="text-beacon hover:underline">
+              Show all
+            </button>
+          </p>
         ) : (
           <table className="w-full text-sm">
             <thead>
