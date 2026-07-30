@@ -691,6 +691,13 @@ model ProviderSimilarity {
   coExcursionRate     Float   @default(0)
   coExcursionN        Int     @default(0)
   combinedProbability Float   @default(0)
+  // ERROR PROFILE: EW mean of ln(|deviation from field median|) PER FEED, as {feedName: number}. The
+  // shape of this vector - which feeds a provider is unusually good or bad on - is determined by its
+  // exchange set and aggregation, so it fingerprints the implementation. Compared against the reference's
+  // profile AFTER subtracting each feed's difficulty baseline (illiquid feeds are hard for everyone, and
+  // that common component otherwise dominates and even ranks verified-custom providers highly).
+  feedErrorsJson      Json?
+  errorProfileN       Int     @default(0)
 
   updatedAt DateTime @updatedAt
 
@@ -744,5 +751,8 @@ model DetectionCursor {
   canonicalJson Json?
   canonicalFrom Int?
   canonicalTo   Int?
+  // Our REFERENCE's error profile: EW mean of ln(|deviation from field median|) per feed, same shape as
+  // ProviderSimilarity.feedErrorsJson, so the two can be de-meaned and correlated.
+  refFeedErrorsJson Json?
   updatedAt     DateTime @updatedAt
 }

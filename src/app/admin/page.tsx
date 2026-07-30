@@ -1288,6 +1288,11 @@ function ExampleProviderTab() {
                   tip="How much more closely this provider's on-chain values track our reference example provider than the field does, on divergent (long-tail) feeds. Higher (more positive) = more example-provider-like; negative = diverges from it (custom)."
                 />
                 <SortTh
+                  label="Fingerprint"
+                  col="errorProfileCorr"
+                  tip="ERROR-PROFILE correlation: how closely this provider's pattern of per-feed accuracy matches our reference example provider, after subtracting each feed's difficulty baseline (illiquid feeds are hard for everyone, so that shared component is removed). Which feeds an implementation is good and bad on is set by its exchange list and aggregation, so this fingerprints the implementation rather than the price. High = weak and strong on the SAME feeds as the example provider. Our two verified-custom controls rank mid-pack here, which is the intended behaviour."
+                />
+                <SortTh
                   label="Co-spike"
                   col="coExcursionRate"
                   tip="EXCESS co-movement: when our reference spikes sharply from the network median on a feed, how much MORE often this provider spikes the same direction than the field does (baselined against the field, since a real price move makes everyone co-move). 0 = no more than the field; positive = moves with the example provider's shared sources beyond chance (fingerprint); negative = less than the field. N = joint spike opportunities seen."
@@ -1346,6 +1351,23 @@ function ExampleProviderTab() {
                   <td className={`py-1.5 text-right tabular-nums ${simColor(r.similarity)}`}>
                     {r.similarity >= 0 ? "+" : ""}
                     {r.similarity.toFixed(3)}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums">
+                    {r.errorProfileCorr != null ? (
+                      <span
+                        className={
+                          r.errorProfileCorr >= 0.9
+                            ? "font-semibold text-flare"
+                            : r.errorProfileCorr >= 0.75
+                              ? "text-amber-500"
+                              : "text-muted"
+                        }
+                      >
+                        {r.errorProfileCorr.toFixed(3)}
+                      </span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
                   </td>
                   <td className="py-1.5 text-right tabular-nums text-muted">
                     {r.coExcursionN > 0 ? (

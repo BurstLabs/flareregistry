@@ -554,6 +554,31 @@ async function scoreRound(round, refs, reveals, canonical) {
     fieldMatchRate.set(f, n ? m / n : 0.5);
   }
 
+  // ERROR-PROFILE vector: ln(|deviation from field median|) per feed. WHICH feeds a target is unusually
+  // good or bad on is set by its exchange list and aggregation, so this vector fingerprints the
+  // implementation. It is compared later (in the API) only AFTER subtracting each feed's difficulty
+  // baseline - illiquid feeds are hard for everyone, and that shared component otherwise dominates the
+  // correlation (measured: it put verified-custom Burst FTSO at rank 7; de-meaning drops it to rank 37).
+  function feedLogDevs(getVal) {
+    const out = {};
+    for (let f = 0; f < nFeeds; f++) {
+      const pf = perFeed[f];
+      if (!pf || !(pf.median > 0)) continue;
+      const val = getVal(f);
+      if (!Number.isFinite(val) || val <= 0) continue;
+      out[pf.name] = Math.log(Math.abs(val - pf.median) / pf.median + 1e-9);
+    }
+    return out;
+  }
+  // EW-merge a fresh per-feed vector into an accumulated one.
+  function mergeLogDevs(prev, fresh) {
+    const out = { ...(prev || {}) };
+    for (const [k, v] of Object.entries(fresh)) {
+      out[k] = Object.prototype.hasOwnProperty.call(out, k) ? out[k] + EW_ALPHA * (v - out[k]) : v;
+    }
+    return out;
+  }
+
   // Co-excursion of a target: over feeds where the reference excursioned, its EXCESS same-direction rate
   // above the field baseline. Returns {excess, opps}: excess in [-1,1], averaged over opportunities.
   function coExcursionOf(getVal) {
@@ -622,10 +647,16 @@ async function scoreRound(round, refs, reveals, canonical) {
     // stored for display context, but no longer folded into P: its null-rate assumptions made it noisy,
     // so P now reflects value similarity alone.
     const combinedProbability = probability;
+    // Error-profile accumulation (the implementation fingerprint; correlated against the reference in the API).
+    const feedErrors = mergeLogDevs(
+      existing?.feedErrorsJson,
+      feedLogDevs((f) => decodeValue(v[f], canonical[f].decimals))
+    );
     const data = {
       refSimilarityMean: mean, refSimilarityVar: varr, fieldDeviationMean: dev,
       roundsObserved: rounds, confidence, probability,
       coExcursionRate: coRate, coExcursionN: coN, combinedProbability,
+      feedErrorsJson: feedErrors, errorProfileN: (existing?.errorProfileN ?? 0) + 1,
       bestVariant: best.vk, updatedAt: now,
     };
     if (!existing) await prisma.providerSimilarity.create({ data: { network: "flare", voter: addr, ...data } });
@@ -636,6 +667,19 @@ async function scoreRound(round, refs, reveals, canonical) {
   for (const vk of variantKeys) {
     await updateCalibration(vk, cals.get(vk), anchorByVariant.get(vk), fieldByVariant.get(vk));
   }
+
+  // Accumulate OUR REFERENCE's error profile the same way, so the API can de-mean both by feed difficulty
+  // and correlate them. perFeed[f].refMed is the reference median for that feed this round.
+  const curRow = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
+  const refErrors = mergeLogDevs(
+    curRow?.refFeedErrorsJson,
+    feedLogDevs((f) => perFeed[f]?.refMed ?? NaN)
+  );
+  await prisma.detectionCursor.upsert({
+    where: { id: "flare" },
+    create: { id: "flare", lastRound: 0, refFeedErrorsJson: refErrors },
+    update: { refFeedErrorsJson: refErrors },
+  });
 }
 
 // Require at least this many samples in EACH distribution before asserting any probability.
