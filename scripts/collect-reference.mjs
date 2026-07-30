@@ -14,13 +14,19 @@ const VOTING_EPOCH_DURATION = 90;
 // fingerprint. `instance` is stored as "<variant>:<n>"; the scorer groups by variant and takes the
 // best-matching one per provider. Two instances per variant give the non-determinism floor for that
 // variant's anchor.
+// Each variant is a DISTINCT exchange subset. We previously ran 2 instances per variant, but measured
+// them to be byte-identical (same box, same network, same restart tick), so the duplicates carried zero
+// information AND made the calibration "anchor" mean "a perfect clone of myself" - an impossible standard
+// no real provider could meet, which forced every provider into the custom class. Now: one instance per
+// config, spanning the space real providers actually use. full:2 is retained ONLY as an A/B control that
+// is never restarted, to measure how much the restart/warmup cycle affects fidelity.
 const INSTANCES = [
   { id: "full:1", url: "http://localhost:3101" },
-  { id: "full:2", url: "http://localhost:3102" },
-  { id: "top5:1", url: "http://localhost:3111" },
-  { id: "top5:2", url: "http://localhost:3112" },
-  { id: "top10:1", url: "http://localhost:3121" },
-  { id: "top10:2", url: "http://localhost:3122" },
+  { id: "full:2", url: "http://localhost:3102" }, // A/B control: never restarted
+  { id: "top3:1", url: "http://localhost:3111" },
+  { id: "top5:1", url: "http://localhost:3112" },
+  { id: "top8:1", url: "http://localhost:3121" },
+  { id: "top12:1", url: "http://localhost:3122" },
 ];
 // Canonical feed order from the example provider's own config (index-aligned with on-chain reveals).
 const FEEDS_CONFIG = process.env.FEEDS_CONFIG ?? "/home/deploy/ftso-ref/src/config/feeds.json";
