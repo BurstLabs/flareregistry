@@ -107,10 +107,13 @@ export const LATTICE_LIFT_EXCLUDE = 1.3;
  * compares DISCRETE venue-grid hit patterns rather than value distances, and because it has validated
  * controls at both ends rather than none.
  */
-export const PATTERN_KNOWN_CUSTOM = 0.396; // verified-custom median-of-prints control
-export const PATTERN_STRONG = 0.5; // clearly above that control, approaching the ref-vs-ref level
+// Thresholds are set from the verified-custom control WITH MARGIN. 1FTSO has measured 0.396 and 0.423
+// across two windows, so a cut at 0.396 would have shown a provider we KNOW is custom as elevated.
+export const PATTERN_KNOWN_CUSTOM = 0.45; // safely above the observed control range
+export const PATTERN_STRONG = 0.55; // clearly above it; providers top out near 0.73, our refs 0.80-0.87
 
 export type PatternBand = "strong" | "elevated" | "baseline" | "none";
+
 
 export interface PatternMatch {
   /** Correlation with the mean reference profile. */
@@ -319,4 +322,30 @@ export function computeFingerprints(
     corrByVoter, variantByVoter, fpProbability, calibrated,
     anchorFps, anchorMean, fieldMean, fpGap,
   };
+}
+
+/**
+ * COMBINED CLASS from the two axes. This is the point of having both.
+ *
+ * Lift measures LEVEL (does this provider echo raw prints at all). Pattern is a Pearson correlation and
+ * therefore scale-invariant, so it measures SHAPE (does it echo them on the same cells, i.e. from the
+ * same venue list). Measured correlation between the two across the non-excluded providers is 0.419, so
+ * they carry substantially independent information.
+ *
+ * The decisive case: our full-config reference reads lift 1.50-1.51x, and verified-custom 1FTSO reads
+ * lift 1.50x. On level alone they are INDISTINGUISHABLE. On shape they are not remotely close: our
+ * references sit at r = 0.84-0.85, 1FTSO at 0.42. Only the combination separates them.
+ *
+ *   "excluded"      low lift            -> does not echo prints at all
+ *   "other-median"  high lift, low r    -> echoes prints from a DIFFERENT venue set, i.e. a custom
+ *                                          median-of-prints implementation. 1FTSO lives here.
+ *   "candidate"     high lift, high r   -> echoes prints from the SAME venue set as the example provider
+ *   "pending"       not enough data yet
+ */
+export type DetectionClass = "excluded" | "other-median" | "candidate" | "pending";
+
+export function detectionClass(lat: LatticeStats, pat: PatternMatch): DetectionClass {
+  if (lat.ruledOut) return "excluded";
+  if (lat.lift == null || lat.trials < LATTICE_MIN_TRIALS || pat.r == null) return "pending";
+  return pat.r >= PATTERN_KNOWN_CUSTOM ? "candidate" : "other-median";
 }

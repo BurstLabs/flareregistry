@@ -1358,6 +1358,23 @@ function ExampleProviderTab() {
                   <td className="py-1.5">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{r.name ?? "(unlisted)"}</span>
+                      {/* Combined class from level + shape. See detectionClass(). */}
+                      {r.klass === "candidate" && (
+                        <span
+                          className="rounded bg-flare/15 px-1 text-[10px] text-flare"
+                          title="Echoes raw exchange prints AND over-hits the same cells as our reference example provider, i.e. consistent with the same venue list. The strongest class we can assign. Still not proof."
+                        >
+                          candidate
+                        </span>
+                      )}
+                      {r.klass === "other-median" && (
+                        <span
+                          className="rounded bg-amber-500/15 px-1 text-[10px] text-amber-500"
+                          title="Echoes raw exchange prints, but on a DIFFERENT set of cells than our reference, i.e. a median-of-prints implementation over a different venue list. Our verified-custom control 1FTSO sits here: identical to our reference on lift (1.50x) but far away on pattern (0.42 vs 0.84)."
+                        >
+                          other median
+                        </span>
+                      )}
                       {r.knownCustom && (
                         <span
                           className="rounded bg-emerald-500/15 px-1 text-[10px] text-emerald-400"

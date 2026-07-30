@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
-import { computeFingerprints, latticeStats, patternMatch, type RefProfiles } from "@/lib/detection";
+import {
+  computeFingerprints, latticeStats, patternMatch, detectionClass, type RefProfiles,
+} from "@/lib/detection";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +94,12 @@ export async function GET() {
     // On-chain wNat weight in whole tokens (wei-scale string / 1e18). Number is fine for display scale.
     const weiStr = entityVoter ? weightByVoter.get(entityVoter) : null;
     const weight = weiStr ? Number(BigInt(weiStr) / 10n ** 15n) / 1000 : null;
+    const lat = latticeStats(r);
+    const pat = patternMatch(
+      r.latticeCellsJson as Record<string, number> | null,
+      refLatticeCells,
+      lat.ruledOut
+    );
     return {
       voter: r.voter,
       name: override ?? p?.name ?? null,
@@ -114,13 +122,13 @@ export async function GET() {
       errorProfileCorr: corrByVoter.get(r.voter.toLowerCase()) ?? null,
       errorProfileN: r.errorProfileN,
       // Tick-grid screen: reference-free empirical null. One-sided (rules OUT, never confirms).
-      lattice: latticeStats(r),
+      lattice: lat,
       // Per-cell hit-pattern match: ranks the providers the screen does NOT exclude.
-      pattern: patternMatch(
-        r.latticeCellsJson as Record<string, number> | null,
-        refLatticeCells,
-        latticeStats(r).ruledOut
-      ),
+      pattern: pat,
+      // Combined class. Level and shape together separate three groups where either alone separates two:
+      // our full-config reference and verified-custom 1FTSO are INDISTINGUISHABLE on lift (1.50x each)
+      // and far apart on pattern (0.84 vs 0.42).
+      klass: detectionClass(lat, pat),
       confidence: r.confidence,
       rounds: r.roundsObserved,
       variant: variantByVoter.get(r.voter.toLowerCase()) ?? null, // config whose ERROR PROFILE fits best
