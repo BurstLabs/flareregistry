@@ -11,6 +11,7 @@ import {
   patternMatch,
   detectionClass,
   usdcSignature,
+  weiToTokens,
   type RefProfiles,
   type LatticeStats,
   type PatternMatch,
@@ -136,7 +137,7 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
       name: labelByAddr.get(key) ?? listing?.name ?? null,
       url: listing?.url ?? null,
       source: listing?.source ?? null,
-      weight: weiStr ? Number(BigInt(weiStr) / 10n ** 15n) / 1000 : null,
+      weight: weiToTokens(weiStr),
       managementGroup: (entityVoter ? mgByVoter.get(entityVoter) : false) ?? false,
       success: (entityVoter ? successByVoter.get(entityVoter) : null)
         ?? { primary: null, secondary: null, availability: null, epoch: null },
