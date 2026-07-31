@@ -1547,11 +1547,17 @@ function ExampleProviderTab() {
                     {r.pattern?.norm != null || r.pattern?.r != null ? (
                       <span
                         className={
+                          // Same convention as Tick grid: the CLEARED state is green. "baseline" means
+                          // below the reference cross-config level, i.e. not a candidate on this axis.
+                          // A mature value only; an immature one is still attenuated low and must not
+                          // be rendered as if it cleared anything.
                           r.pattern.band === "strong"
                             ? "font-semibold text-flare"
                             : r.pattern.band === "elevated"
                               ? "text-amber-500"
-                              : "text-muted"
+                              : r.pattern.band === "baseline"
+                                ? "font-medium text-emerald-500"
+                                : "text-muted"
                         }
                         title={
                           `raw r=${r.pattern.r?.toFixed(3) ?? "?"} / reference cross-config self-similarity ${r.pattern.refSelf?.toFixed(3) ?? "?"}. Best config ${r.pattern.bestConfig ?? "?"}, ${r.pattern.rounds} rounds. ` +
@@ -1590,7 +1596,11 @@ function ExampleProviderTab() {
                       </span>
                     ) : r.block === "outside" ? (
                       <span
-                        className={r.klass === "candidate" ? "text-[10px] text-amber-500" : "text-[10px] text-faint"}
+                        className={
+                          r.klass === "candidate"
+                            ? "text-[10px] font-semibold text-emerald-500"
+                            : "text-[10px] text-emerald-500/70"
+                        }
                         title={
                           r.klass === "candidate"
                             ? "We class this a candidate, but on Flare's independent metrics it sits outside the block. Not corroborated."
