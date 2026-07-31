@@ -1130,9 +1130,11 @@ function ExampleProviderTab() {
   const [ruledOutCount, setRuledOutCount] = useState(0);
   // Show every scored provider, or only the ones the combined screen implicates.
   const [onlyCandidates, setOnlyCandidates] = useState(false);
-  // Sort state. Default = tick-grid lift, descending. It used to default to the fingerprint-derived
-  // probability, which meant a discredited metric ordered the entire screen.
-  const [sortKey, setSortKey] = useState<string>("latticeLift");
+  // Sort state. Default = the normalised pattern score, descending. Tick-grid lift is the better
+  // EXCLUSION signal but a poor ranking one: it is confounded by config size (our own reference configs
+  // span 1.44x-2.33x) and any median-of-prints implementation reads high on it. Pattern is what actually
+  // orders the providers the screen does not exclude. Rows without a mature pattern sort to the bottom.
+  const [sortKey, setSortKey] = useState<string>("patternR");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   // Report threshold is now a tick-grid LIFT (e.g. 1.6x), not a probability percent.
   const [reportThreshold, setReportThreshold] = useState("1.6");
