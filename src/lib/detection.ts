@@ -220,9 +220,17 @@ export function patternMatch(
   // NORMALISER: the mean correlation between our own reference instances running DIFFERENT configs. It
   // is the attainable bar (same code, different venue list), and it attenuates in lockstep with the
   // provider scores, which is what makes the threshold survive a growing sample.
+  // HISTORICAL variants (id prefixed "hist") are deliberately EXCLUDED from the normaliser. They are
+  // legitimately "same code, different config" and would belong in principle, but an older checkout is
+  // much further from HEAD than any of our subset variants, so folding it in would drop refSelf and lift
+  // every provider's normalised score at once - silently moving the 1.0 boundary underneath a live
+  // classification. They still participate as bestConfig candidates, which is where their value is.
+  const isHist = (id: string) => id.split(":")[0].startsWith("hist");
   const crossPairs: number[] = [];
   for (let i = 0; i < instances.length; i++) {
+    if (isHist(instances[i])) continue;
     for (let j = i + 1; j < instances.length; j++) {
+      if (isHist(instances[j])) continue;
       if (instances[i].split(":")[0] === instances[j].split(":")[0]) continue; // same config = twins
       const c = corrOver(keyList, refCells[instances[i]] ?? {}, refCells[instances[j]] ?? {});
       if (Number.isFinite(c)) crossPairs.push(c);
