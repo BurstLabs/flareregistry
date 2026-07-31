@@ -495,3 +495,72 @@ export function detectionClass(lat: LatticeStats, pat: PatternMatch): DetectionC
   if (lat.lift == null || lat.trials < LATTICE_MIN_TRIALS || pat.norm == null || !pat.mature) return "pending";
   return pat.norm >= PATTERN_CANDIDATE ? "candidate" : "other-median";
 }
+
+/**
+ * OFFICIAL-METRICS BLOCK - independent corroboration, deliberately NOT a classifier input.
+ *
+ * The candidate class turns out to occupy a very tight region of Flare's OWN published success rates:
+ * secondary median 94.54 with MAD 0.34 against a field median of 98.00, and 19 of 34 candidates inside a
+ * single half-point bin. KS D = 0.698 (p < 0.0001). Because Flare's rates play no part in how we
+ * classify anyone, that agreement is non-circular corroboration that the group is a real group.
+ *
+ * It is NOT folded into the class or the pattern score, for two reasons.
+ *
+ * First, it would achieve nothing: the block is near-uniform across the candidate class, so adding it
+ * would lift every candidate together and leave the ranking identical. ALL of its discriminating
+ * information sits in the exceptions.
+ *
+ * Second, independence is the whole asset. The moment this helps decide who is a candidate, it can no
+ * longer be cited as confirmation of who is a candidate.
+ *
+ * The region is a standard Tukey fence (Q1 - 1.5*IQR, Q3 + 1.5*IQR) computed from the CURRENT candidate
+ * class on each axis, so it adapts rather than freezing a hand-picked constant - this project has had
+ * three hand-picked thresholds overtaken already. It is descriptive of where candidates sit, which is
+ * exactly what "does this provider look like the block" should mean.
+ *
+ * Read the output as a prompt to look, never as evidence in itself. And note the pseudo-replication
+ * limit: a tight block across 30 providers that agree byte-exactly on ~88% of cells is closer to one
+ * observation seen 30 times than to 30 confirmations.
+ */
+export type BlockPosition = "inside" | "outside" | "unknown";
+
+export interface OfficialBlock {
+  /** Tukey fences on Flare's primary rate, basis points. Null when there is too little data. */
+  primary: [number, number] | null;
+  secondary: [number, number] | null;
+  position: (s: { primary: number | null; secondary: number | null }) => BlockPosition;
+}
+
+function quartiles(a: number[]): { q1: number; q3: number } {
+  const s = [...a].sort((x, y) => x - y);
+  return { q1: s[Math.floor(s.length * 0.25)], q3: s[Math.floor(s.length * 0.75)] };
+}
+
+export function officialBlock(
+  rows: { klass: DetectionClass; success: { primary: number | null; secondary: number | null } }[]
+): OfficialBlock {
+  const cand = rows.filter((r) => r.klass === "candidate");
+  const p = cand.map((r) => r.success.primary).filter((x): x is number => x != null);
+  const s = cand.map((r) => r.success.secondary).filter((x): x is number => x != null);
+  // Need a real candidate class before a fence means anything.
+  if (p.length < 8 || s.length < 8) {
+    return { primary: null, secondary: null, position: () => "unknown" };
+  }
+  const fence = (v: number[]): [number, number] => {
+    const { q1, q3 } = quartiles(v);
+    const iqr = q3 - q1;
+    return [q1 - 1.5 * iqr, q3 + 1.5 * iqr];
+  };
+  const fp = fence(p);
+  const fs = fence(s);
+  return {
+    primary: fp,
+    secondary: fs,
+    position: (x) => {
+      if (x.primary == null || x.secondary == null) return "unknown";
+      const inP = x.primary >= fp[0] && x.primary <= fp[1];
+      const inS = x.secondary >= fs[0] && x.secondary <= fs[1];
+      return inP && inS ? "inside" : "outside";
+    },
+  };
+}

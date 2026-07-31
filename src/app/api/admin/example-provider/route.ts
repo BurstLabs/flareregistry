@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import {
-  computeFingerprints, latticeStats, patternMatch, detectionClass, usdcSignature,
+  computeFingerprints, latticeStats, patternMatch, detectionClass, usdcSignature, officialBlock,
   type RefProfiles,
 } from "@/lib/detection";
 
@@ -170,6 +170,13 @@ export async function GET() {
   const falsePositives = knownRows.filter((x) => (x.combinedProbability ?? 0) >= 0.5);
   const fpRate = knownRows.length ? falsePositives.length / knownRows.length : null;
   // Tick-grid exclusion summary, so the tab can state how many the screen actually clears.
+  // Independent corroboration from Flare's OWN success rates. Computed AFTER classification and never
+  // fed back into it: its whole value is that it is independent of how we classify.
+  const block = officialBlock(report.map((x) => ({ klass: x.klass, success: x.success })));
+  const reportWithBlock = report.map((x) => ({ ...x, block: block.position(x.success) }));
+  const blockDisagree = reportWithBlock.filter(
+    (x) => (x.klass === "candidate") !== (x.block === "inside") && x.block !== "unknown"
+  ).length;
   const ruledOutCount = report.filter((x) => x.lattice.ruledOut).length;
   // Vote power held by the candidate class. This is the number that says how much of the network the
   // question actually touches: 30 providers matter very differently at 2% than at 40% of total weight.
@@ -179,11 +186,14 @@ export async function GET() {
   const totalWeight = report.reduce((s, x) => s + (x.weight ?? 0), 0);
   const candidateWeight = candidates.reduce((s, x) => s + (x.weight ?? 0), 0);
   return NextResponse.json({
+    blockPrimary: block.primary,
+    blockSecondary: block.secondary,
+    blockDisagree,
     candidateCount: candidates.length,
     totalWeight,
     candidateWeight,
     candidateWeightPct: totalWeight > 0 ? (candidateWeight / totalWeight) * 100 : null,
-    report,
+    report: reportWithBlock,
     maxRounds,
     calibrated,
     ruledOutCount,
