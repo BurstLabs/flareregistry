@@ -40,7 +40,12 @@ export async function GET() {
   // listing. `key` here is the similarity row's stored address (submit address).
   const keys = rows.map((r) => r.voter.toLowerCase());
   const entities = await prisma.providerOnchain.findMany({
+    // NETWORK-SCOPED. Without this the OR-over-five-role-addresses pulls Songbird rows too: operators
+    // reuse the same role addresses across networks, so roleToEntity collided and last-write-wins handed
+    // the Flare tab a SONGBIRD identity and Songbird weight. Measured: Catenalytica read 239,529,194
+    // (its Songbird figure) instead of 889,905,496. Same bug class as the Ugly Kitty feed mismatch.
     where: {
+      network: "flare",
       OR: [
         { voter: { in: keys } },
         { submitAddress: { in: keys } },
