@@ -1441,14 +1441,9 @@ function ExampleProviderTab() {
                           other median
                         </span>
                       )}
-                      {r.knownCustom && (
-                        <span
-                          className="rounded bg-emerald-500/15 px-1 text-[10px] text-emerald-400"
-                          title="Verified NOT running the example provider. Used as a trusted negative in calibration."
-                        >
-                          verified custom
-                        </span>
-                      )}
+                      {/* The "verified custom" badge was removed from the display only. knownCustom is
+                          still stored, still returned by the API, still excluded from the CSV candidate
+                          list, and still used as a trusted negative in calibration. */}
                     </div>
                     <span className="font-mono text-[11px] text-faint">{r.voter.slice(0, 18)}…</span>
                   </td>
