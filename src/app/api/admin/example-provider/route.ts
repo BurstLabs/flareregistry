@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import {
-  computeFingerprints, latticeStats, patternMatch, detectionClass, usdcSignature, officialBlock,
+  computeFingerprints, latticeStats, patternMatch, detectionClass, usdcSignature, officialBlock, weiToTokens,
   type RefProfiles,
 } from "@/lib/detection";
 
@@ -107,7 +107,7 @@ export async function GET() {
     const knownCustom = knownCustomAddr.has(r.voter.toLowerCase());
     // On-chain wNat weight in whole tokens (wei-scale string / 1e18). Number is fine for display scale.
     const weiStr = entityVoter ? weightByVoter.get(entityVoter) : null;
-    const weight = weiStr ? Number(BigInt(weiStr) / 10n ** 15n) / 1000 : null;
+    const weight = weiToTokens(weiStr);
     const lat = latticeStats(r);
     const pat = patternMatch(
       r.latticeCellsJson as Record<string, number> | null,

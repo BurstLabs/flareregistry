@@ -36,6 +36,19 @@ async function fetchAll(base) {
   return { entities: out, epoch };
 }
 
+// The explorer returns weights as JSON NUMBERS beyond Number.MAX_SAFE_INTEGER, so JSON.parse already
+// lost the low digits and String() would give scientific notation ("4.07e+25") that BigInt cannot read.
+// Convert back to an exact integer string. The float's ~15 significant digits are far more than the ~11
+// whole-token display needs, so nothing meaningful is lost - but the STORED form must be parseable.
+function weiString(v) {
+  if (v == null) return null;
+  if (typeof v === "string") return /^\d+$/.test(v) ? v : null;
+  if (typeof v === "number" && Number.isFinite(v) && Number.isInteger(v)) {
+    try { return BigInt(v).toString(); } catch { return null; }
+  }
+  return null;
+}
+
 async function ingest(network) {
   const base = EXPLORER[network];
   if (!base) return;
@@ -73,9 +86,9 @@ async function ingest(network) {
         successEpoch: sp.reward_epoch ?? epoch ?? null,
         successUpdatedAt: now,
         // Current-epoch weights. w_nat_weight is exactly what the explorer shows as DELEGATION WEIGHT.
-        delegationWeight: sp.w_nat_weight != null ? String(sp.w_nat_weight) : null,
-        delegationWeightCapped: sp.w_nat_capped_weight != null ? String(sp.w_nat_capped_weight) : null,
-        stakingWeight: sp.staking_weight != null ? String(sp.staking_weight) : null,
+        delegationWeight: weiString(sp.w_nat_weight),
+        delegationWeightCapped: weiString(sp.w_nat_capped_weight),
+        stakingWeight: weiString(sp.staking_weight),
       },
     });
     updated++;

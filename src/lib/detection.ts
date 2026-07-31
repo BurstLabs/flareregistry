@@ -572,3 +572,25 @@ export function officialBlock(
     },
   };
 }
+
+/**
+ * Wei-scale string -> whole tokens, TOLERANTLY.
+ *
+ * Not every upstream value is a clean integer string. Flare's systems-explorer returns w_nat_weight as a
+ * JSON NUMBER, which exceeds Number.MAX_SAFE_INTEGER, so JSON.parse yields a float and String() of it
+ * gives scientific notation like "4.07e+25". BigInt() throws on that, and because this runs inside a
+ * .map() over every provider, one bad row took down the entire admin tab with a 500.
+ *
+ * So: parse what we can, return null for what we cannot, and never throw. Precision is not a concern at
+ * token scale - a float64 carries ~15 significant digits and whole tokens with 3 decimals needs ~11.
+ */
+export function weiToTokens(s: string | null | undefined): number | null {
+  if (!s) return null;
+  try {
+    if (/^\d+$/.test(s)) return Number(BigInt(s) / 10n ** 15n) / 1000;
+    const n = Number(s);
+    return Number.isFinite(n) ? n / 1e18 : null;
+  } catch {
+    return null;
+  }
+}
