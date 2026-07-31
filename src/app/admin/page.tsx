@@ -1312,11 +1312,6 @@ function ExampleProviderTab() {
           verified-custom control measures <span className="text-emerald-500">0.52x</span>. Providers are
           excluded only when the upper bound of their lift stays below 1.30x.
         </div>
-        <div className="mt-2 text-[11px] text-faint">
-          The old P(example) and Fingerprint columns were removed: both scored providers by similarity to
-          our own replica, which sits far outside the provider cloud, and 6 of their top 20 were providers
-          this screen formally excludes. The values are still in the CSV for the record.
-        </div>
         {ruledOutCount > 0 && (
           <div className="mt-2 text-[11px] text-faint">
             Tick-grid screen: <span className="text-emerald-500">{ruledOutCount}</span> of {rows.length}{" "}
