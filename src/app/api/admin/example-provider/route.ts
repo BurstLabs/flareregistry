@@ -195,9 +195,26 @@ export async function GET() {
   // Denominator is the SCORED set, not the whole network, so the share is not overstated by providers we
   // have no measurement for.
   const candidates = report.filter((x) => x.klass === "candidate");
+  // Official primary success rate for the candidate class, against the whole scored field for context.
+  // Both mean and median: the class is tightly clustered near its median (MAD 0.60pp) but carries a few
+  // low outliers that drag the mean down, so either alone would misrepresent it.
+  const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+  const median = (a: number[]) => {
+    if (!a.length) return null;
+    const s2 = [...a].sort((x, y) => x - y);
+    const m = s2.length >> 1;
+    return s2.length % 2 ? s2[m] : (s2[m - 1] + s2[m]) / 2;
+  };
+  const bps = (x: number | null) => (x == null ? null : x / 100); // basis points -> percent
+  const candPrimary = candidates.map((x) => x.success.primary).filter((x): x is number => x != null);
+  const fieldPrimary = report.map((x) => x.success.primary).filter((x): x is number => x != null);
   const totalWeight = report.reduce((s, x) => s + (x.weight ?? 0), 0);
   const candidateWeight = candidates.reduce((s, x) => s + (x.weight ?? 0), 0);
   return NextResponse.json({
+    candidatePrimaryMean: bps(avg(candPrimary)),
+    candidatePrimaryMedian: bps(median(candPrimary)),
+    fieldPrimaryMedian: bps(median(fieldPrimary)),
+    candidatePrimaryN: candPrimary.length,
     blockPrimary: block.primary,
     blockSecondary: block.secondary,
     blockDisagree,
