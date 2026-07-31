@@ -1433,14 +1433,11 @@ function ExampleProviderTab() {
                           candidate
                         </span>
                       )}
-                      {r.klass === "other-median" && (
-                        <span
-                          className="rounded bg-amber-500/15 px-1 text-[10px] text-amber-500"
-                          title="Echoes raw exchange prints, but on a DIFFERENT set of cells than our reference, i.e. a median-of-prints implementation over a different venue list. Our verified-custom control 1FTSO sits here: identical to our reference on lift (1.50x) but far away on pattern (0.42 vs 0.84)."
-                        >
-                          other median
-                        </span>
-                      )}
+                      {/* The "other median" badge was removed from the display only; klass is unchanged
+                          in the DB, the API and the CSV. It labelled a class that is operationally the
+                          same as excluded (not a candidate), on the least stable boundary in the system,
+                          and it asserted something specific about a real operator's infrastructure from
+                          a correlation. The Pattern column already shows the ordering as a number. */}
                       {/* The "verified custom" badge was removed from the display only. knownCustom is
                           still stored, still returned by the API, still excluded from the CSV candidate
                           list, and still used as a trusted negative in calibration. */}
