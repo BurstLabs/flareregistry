@@ -56,6 +56,9 @@ export async function GET() {
       submitSignaturesAddress: true,
       signingPolicyAddress: true,
       wNatWeight: true,
+      successPrimary: true,
+      successSecondary: true,
+      successAvailability: true,
     },
   });
   // Map: each role address of an entity -> a stable entity key (its voter). Then map the SIMILARITY row's
@@ -63,10 +66,15 @@ export async function GET() {
   const roleToEntity = new Map<string, string>();
   // Entity voter -> its on-chain wNat weight (wei-scale decimal string), for the weight column.
   const weightByVoter = new Map<string, string | null>();
+  // Flare's official success rates, basis points out of 10000.
+  const successByVoter = new Map<string, { primary: number | null; secondary: number | null; availability: number | null }>();
   for (const e of entities) {
     const roles = [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress];
     for (const a of roles) if (a) roleToEntity.set(a.toLowerCase(), e.voter.toLowerCase());
     weightByVoter.set(e.voter.toLowerCase(), e.wNatWeight);
+    successByVoter.set(e.voter.toLowerCase(), {
+      primary: e.successPrimary, secondary: e.successSecondary, availability: e.successAvailability,
+    });
   }
   // roleToVoter here maps a similarity key (submit addr) -> the entity voter, AND every role addr -> voter
   // (so the listing lookup by any registered address works).
@@ -108,6 +116,9 @@ export async function GET() {
       url: p?.url ?? null,
       source: p?.source ?? null,
       weight, // on-chain vote power (wNat weight), whole tokens
+      // Flare's OFFICIAL primary/secondary reward-band success rates, verbatim in basis points.
+      success: (entityVoter ? successByVoter.get(entityVoter) : null)
+        ?? { primary: null, secondary: null, availability: null },
       similarity: r.refSimilarityMean,
       variance: r.refSimilarityVar,
       accuracy: r.fieldDeviationMean, // deviation from field consensus (lower = more accurate)

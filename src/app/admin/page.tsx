@@ -1201,6 +1201,12 @@ function ExampleProviderTab() {
     } else if (sortKey === "latticeLift") {
       av = a.lattice?.lift ?? null;
       bv = b.lattice?.lift ?? null;
+    } else if (sortKey === "successPrimary") {
+      av = a.success?.primary ?? null;
+      bv = b.success?.primary ?? null;
+    } else if (sortKey === "successSecondary") {
+      av = a.success?.secondary ?? null;
+      bv = b.success?.secondary ?? null;
     } else if (sortKey === "usdcGrid") {
       av = a.usdc?.grid ?? null;
       bv = b.usdc?.grid ?? null;
@@ -1404,6 +1410,16 @@ function ExampleProviderTab() {
                 {/* Variant column hidden. It is still computed and still returned by the API; the
                     per-config match is also already in the Pattern tooltip as bestConfig. */}
                 <SortTh
+                  label="Primary"
+                  col="successPrimary"
+                  tip="Flare's OFFICIAL primary reward-band success rate, taken verbatim from Flare's systems-explorer entity API and shown as a percentage (stored in basis points). This is Flare's own measurement of how often the provider lands in the primary reward band, NOT anything this tool derives. Network median is around 50%."
+                />
+                <SortTh
+                  label="Secondary"
+                  col="successSecondary"
+                  tip="Flare's OFFICIAL secondary reward-band success rate, verbatim from Flare's systems-explorer entity API. Network median is around 95%, so this one is compressed near the top and a low value stands out sharply."
+                />
+                <SortTh
                   label="Weight"
                   col="weight"
                   tip="On-chain vote power (wNat weight) of this provider's entity, in whole tokens. Context for how much influence a suspected example-provider user actually has."
@@ -1527,6 +1543,20 @@ function ExampleProviderTab() {
                       >
                         {r.pattern.norm != null ? r.pattern.norm.toFixed(2) : r.pattern.r.toFixed(3)}
                       </span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-muted">
+                    {r.success?.primary != null ? (
+                      `${(r.success.primary / 100).toFixed(1)}%`
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums text-muted">
+                    {r.success?.secondary != null ? (
+                      `${(r.success.secondary / 100).toFixed(1)}%`
                     ) : (
                       <span className="text-faint">—</span>
                     )}
