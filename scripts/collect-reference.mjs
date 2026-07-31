@@ -18,11 +18,17 @@ const VOTING_EPOCH_DURATION = 90;
 // them to be byte-identical (same box, same network, same restart tick), so the duplicates carried zero
 // information AND made the calibration "anchor" mean "a perfect clone of myself" - an impossible standard
 // no real provider could meet, which forced every provider into the custom class. Now: one instance per
-// config, spanning the space real providers actually use. full:2 is retained ONLY as an A/B control that
-// is never restarted, to measure how much the restart/warmup cycle affects fidelity.
+// config, spanning the space real providers actually use. The full:2 A/B control (does the 30-minute
+// restart cycle degrade fidelity?) has been retired now that the question is settled, freeing ~900MB for
+// a historical checkout, which answers a live question instead.
 const INSTANCES = [
   { id: "full:1", url: "http://localhost:3101" },
-  { id: "full:2", url: "http://localhost:3102" }, // A/B control: never restarted
+  // HISTORICAL checkouts of the example provider. Same algorithm (MEDIAN_DECAY has never changed across
+  // all 134 commits), but a different VENUE LIST, which is what actually moves the tick-grid signature.
+  // hist2512 = commit 18278fb9, 2025-12-31: carries `probit` and has no `coinex`, the reverse of HEAD.
+  // These are matched as bestConfig candidates so a provider can be pinned to a code ERA, but they are
+  // excluded from the pattern normaliser so they cannot move the live 1.0 boundary.
+  { id: "hist2512:1", url: "http://localhost:3131" },
   { id: "top3:1", url: "http://localhost:3111" },
   { id: "top5:1", url: "http://localhost:3112" },
   { id: "top8:1", url: "http://localhost:3121" },
