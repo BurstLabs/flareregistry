@@ -63,6 +63,12 @@ export interface LatticeStats {
   liftUpper: number | null;
   hits: number;
   trials: number;
+  /**
+   * Rounds behind those trials. Trials is a raw internal counter (~97 cells per round) and is NOT
+   * comparable between providers: cells are skipped for anyone submitting the unpriced sentinel, so the
+   * live spread is 11,298 to 21,593 over the same period. Rounds is the honest unit to show.
+   */
+  rounds: number;
   /** Enough evidence to say this provider is below the example-provider level. */
   ruledOut: boolean;
 }
@@ -324,10 +330,12 @@ export function latticeStats(row: {
   latticeExpected: number;
   latticeVar: number;
   latticeTrials: number;
+  latticeCellsN?: number;
 }): LatticeStats {
+  const rounds = row.latticeCellsN ?? 0;
   const { latticeHits: h, latticeExpected: e, latticeVar: v, latticeTrials: n } = row;
   if (!n || !(e > 0)) {
-    return { lift: null, z: null, liftUpper: null, hits: h ?? 0, trials: n ?? 0, ruledOut: false };
+    return { lift: null, z: null, liftUpper: null, hits: h ?? 0, trials: n ?? 0, rounds, ruledOut: false };
   }
   const sd = v > 0 ? Math.sqrt(v * LATTICE_VAR_INFLATION) : 0;
   const z = sd > 0 ? (h - e) / sd : null;
@@ -338,6 +346,7 @@ export function latticeStats(row: {
     liftUpper,
     hits: h,
     trials: n,
+    rounds,
     ruledOut: n >= LATTICE_MIN_TRIALS && liftUpper < LATTICE_LIFT_EXCLUDE,
   };
 }
