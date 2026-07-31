@@ -242,15 +242,25 @@ export function patternMatch(
       : null;
   const norm = refSelf != null && refSelf > 1e-6 && Number.isFinite(r) ? r / refSelf : null;
 
-  // No band until the profile is mature, never for a provider the one-sided screen already excluded, and
-  // never without a normaliser: an un-normalised correlation is not comparable to any fixed threshold.
-  const band: PatternBand = ruledOut || !mature || norm == null
-    ? "none"
-    : norm >= PATTERN_STRONG
-      ? "strong"
-      : norm >= PATTERN_CANDIDATE
-        ? "elevated"
-        : "baseline";
+  // GREY ("none") means one thing only: no verdict yet, because the profile is immature or there is no
+  // normaliser. An un-normalised correlation is not comparable to any fixed threshold.
+  //
+  // A provider the tick-grid screen EXCLUDED reads as cleared ("baseline"), not grey. Suppressing the
+  // band for excluded rows made sense when the low end was muted and the point was to avoid painting an
+  // already-cleared provider as suspicious. Once green came to mean "cleared" it inverted: the most
+  // cleared providers rendered grey while less cleared ones rendered green, so Linden Services at 0.47
+  // looked less resolved than Mickey B Fresh at 0.50 purely because the former had been excluded.
+  // Exclusion is the strongest statement this tool makes, so it should read as the cleared colour.
+  const band: PatternBand =
+    !mature || norm == null
+      ? "none"
+      : ruledOut
+        ? "baseline"
+        : norm >= PATTERN_STRONG
+          ? "strong"
+          : norm >= PATTERN_CANDIDATE
+            ? "elevated"
+            : "baseline";
   return {
     r: Number.isFinite(r) ? r : null, norm, refSelf, bestConfig, bestR, band, rounds, mature,
   };
