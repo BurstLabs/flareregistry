@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireDetectionAuth } from "@/lib/detection-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { buildDetectionReport } from "@/lib/detection-report";
+import { officialBlock } from "@/lib/detection";
 import {
   LATTICE_LIFT_EXCLUDE, LATTICE_MIN_TRIALS,
   PATTERN_CANDIDATE, PATTERN_MIN_ROUNDS,
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
   const includeLegacy = sp.get("includeLegacy") === "1";
 
   const report = await buildDetectionReport(network);
+  const block = officialBlock(report.rows.map((r) => ({ klass: r.klass, success: r.success })));
   const rows = wantClass ? report.rows.filter((r) => r.klass === wantClass) : report.rows;
 
   return NextResponse.json(
@@ -107,6 +109,9 @@ export async function GET(req: NextRequest) {
         // Flare's OFFICIAL success rates, verbatim from their systems-explorer entity API, in basis
         // points out of 10000. Not our measurement and not derived by us.
         officialSuccessRate: r.success,
+        // Independent corroboration only: is this provider inside the region of Flare's own metrics
+        // that the candidate class occupies? Computed AFTER classification, never fed back into it.
+        officialBlock: block.position(r.success),
         class: r.klass,
         // Operator-verified NOT running the example provider. Consumers must honour this.
         verifiedCustom: r.knownCustom,

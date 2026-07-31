@@ -1201,6 +1201,9 @@ function ExampleProviderTab() {
     } else if (sortKey === "latticeLift") {
       av = a.lattice?.lift ?? null;
       bv = b.lattice?.lift ?? null;
+    } else if (sortKey === "block") {
+      av = a.block ?? "";
+      bv = b.block ?? "";
     } else if (sortKey === "successPrimary") {
       av = a.success?.primary ?? null;
       bv = b.success?.primary ?? null;
@@ -1410,6 +1413,12 @@ function ExampleProviderTab() {
                 {/* Variant column hidden. It is still computed and still returned by the API; the
                     per-config match is also already in the Pattern tooltip as bestConfig. */}
                 <SortTh
+                  label="Block"
+                  col="block"
+                  align="center"
+                  tip="INDEPENDENT CORROBORATION, not part of the classification. The candidate class occupies a very tight region of Flare's OWN published success rates (secondary median 94.5% with MAD 0.34, against a field median of 98.0%; KS D=0.698, p<0.0001). Because Flare's rates play no part in how we classify anyone, agreement here is non-circular. It is deliberately NOT folded into the class or the score: the block is near-uniform across candidates, so adding it would lift everyone together and change no ranking, and using it to decide who is a candidate would destroy the independence that makes it worth citing. ALL of its information is in the DISAGREEMENTS - a non-candidate reading 'inside', or a candidate reading 'outside', is the row worth looking at. Region is a Tukey fence computed from the current candidate class, so it adapts instead of freezing a constant. Caveat: a tight block across providers that agree byte-exactly on ~88% of cells is closer to one observation seen 30 times than to 30 confirmations."
+                />
+                <SortTh
                   label="Primary"
                   col="successPrimary"
                   tip="Flare's OFFICIAL primary reward-band success rate, taken verbatim from Flare's systems-explorer entity API and shown as a percentage (stored in basis points). This is Flare's own measurement of how often the provider lands in the primary reward band, NOT anything this tool derives. Network median is around 50%."
@@ -1472,9 +1481,25 @@ function ExampleProviderTab() {
                       // high end would encode exactly the inference this screen cannot support, and it
                       // painted verified-custom 1FTSO in the table's accusation colour.
                       <span
-                        className={r.lattice.ruledOut ? "text-emerald-500" : "text-muted"}
+                        className={
+                          // Bands are anchored on MEASURED values, not taste: 1.30x is the exclusion
+                          // threshold and 1.44x is the LOWEST our own example-provider instances read.
+                          // Colour encodes "where does this sit against those anchors" - it is not a
+                          // verdict, and the tooltip names the counter-example (verified-custom 1FTSO
+                          // sits at 1.45x, inside the top band).
+                          r.lattice.ruledOut
+                            ? "font-medium text-emerald-500"
+                            : r.lattice.lift >= 1.44
+                              ? "font-semibold text-flare"
+                              : r.lattice.lift >= 1.3
+                                ? "text-amber-500"
+                                : "text-muted"
+                        }
                         title={
                           `${r.lattice.hits} hits over ${r.lattice.trials} cell-trials across ${r.lattice.rounds} rounds; ` +
+                          `Bands: green = excluded; red >= 1.44x (the lowest our own example-provider instances read); ` +
+                          `amber >= 1.30x (above the exclusion threshold, below that range); grey below. ` +
+                          `Red is NOT a verdict - verified-custom 1FTSO sits at 1.45x. ` +
                           `upper bound ${r.lattice.liftUpper?.toFixed(2) ?? "?"}x. 1.0x = behaves like the field. ` +
                           (r.lattice.ruledOut
                             ? `RULED OUT: even the upper bound stays under ${LATTICE_LIFT_EXCLUDE}x, below the ~1.8-2.1x the example provider produces.`
@@ -1542,6 +1567,33 @@ function ExampleProviderTab() {
                         }
                       >
                         {r.pattern.norm != null ? r.pattern.norm.toFixed(2) : r.pattern.r.toFixed(3)}
+                      </span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-center">
+                    {r.block === "inside" ? (
+                      <span
+                        className={r.klass === "candidate" ? "text-[10px] text-muted" : "text-[10px] font-semibold text-amber-500"}
+                        title={
+                          r.klass === "candidate"
+                            ? "Inside the block on Flare's own metrics, agreeing with our classification."
+                            : "DISAGREEMENT: sits inside the candidate block on Flare's independent metrics but we do NOT class it a candidate. Worth a look."
+                        }
+                      >
+                        {r.klass === "candidate" ? "in" : "in !"}
+                      </span>
+                    ) : r.block === "outside" ? (
+                      <span
+                        className={r.klass === "candidate" ? "text-[10px] font-semibold text-amber-500" : "text-[10px] text-faint"}
+                        title={
+                          r.klass === "candidate"
+                            ? "DISAGREEMENT: we class this a candidate, but on Flare's independent metrics it sits outside the block."
+                            : "Outside the block, agreeing with our classification."
+                        }
+                      >
+                        {r.klass === "candidate" ? "out !" : "out"}
                       </span>
                     ) : (
                       <span className="text-faint">—</span>
