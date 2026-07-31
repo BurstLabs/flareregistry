@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-07-31T04:18:57.685Z",
+  "timestamp": "2026-07-31T04:45:02.232Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -4860,7 +4860,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xb53D69B2519aC9F6D65cff8e7824Bf09F7064D61.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -4898,9 +4898,9 @@
           }
         ],
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.187Z",
@@ -7484,49 +7484,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.029Z",
-          "lastSubmittedEpoch": 418,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 19,
-      "name": "uGaenn",
-      "description": "Your gain is our first priority.",
-      "url": "https://ugaenn.io",
-      "address": "0xb53D69B2519aC9F6D65cff8e7824Bf09F7064D61",
-      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xb53D69B2519aC9F6D65cff8e7824Bf09F7064D61.png",
-      "listed": true,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": true,
-        "qualified": true,
-        "network": "songbird",
-        "feePercent": 20,
-        "votePower": "79908189210391276963491358",
-        "votePowerCapped": "79908189210391276963491358",
-        "feedCount": 63,
-        "lastEpoch": 418,
-        "delegatorRewardLastEpoch": "72753542860388146088305",
-        "feeRewardLastEpoch": "18188385715097036512246",
-        "entity": {
-          "identity": "0xD249c7e0BDb6F407604260350eD56e7Dd5254e51",
-          "submit": "0x9247b83e99CB6D1a4546c2efeA7595137a0532e7",
-          "submitSignatures": "0xBB654271F2A2deBfDb3e702067FE9aaa484A3981",
-          "signingPolicy": "0x31E412E114629702281533CC657bE76aD928283B",
-          "delegation": "0xb53D69B2519aC9F6D65cff8e7824Bf09F7064D61"
-        },
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.187Z",
           "lastSubmittedEpoch": 418,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
