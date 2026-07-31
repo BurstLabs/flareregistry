@@ -1458,7 +1458,7 @@ function ExampleProviderTab() {
                       <span
                         className={r.lattice.ruledOut ? "text-emerald-500" : "text-muted"}
                         title={
-                          `${r.lattice.hits} hits over ${r.lattice.trials} trials; ` +
+                          `${r.lattice.hits} hits over ${r.lattice.trials} cell-trials across ${r.lattice.rounds} rounds; ` +
                           `upper bound ${r.lattice.liftUpper?.toFixed(2) ?? "?"}x. 1.0x = behaves like the field. ` +
                           (r.lattice.ruledOut
                             ? `RULED OUT: even the upper bound stays under ${LATTICE_LIFT_EXCLUDE}x, below the ~1.8-2.1x the example provider produces.`
@@ -1469,7 +1469,7 @@ function ExampleProviderTab() {
                       >
                         {r.lattice.lift.toFixed(2)}x
                         {r.lattice.ruledOut && <span className="ml-1 text-[10px]">ruled out</span>}
-                        <span className="ml-1 text-[10px] text-faint">n={r.lattice.trials}</span>
+                        <span className="ml-1 text-[10px] text-faint">{r.lattice.rounds}r</span>
                       </span>
                     ) : (
                       <span className="text-faint">—</span>
