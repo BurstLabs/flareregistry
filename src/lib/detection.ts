@@ -202,6 +202,83 @@ export function patternMatch(
   return { r: Number.isFinite(r) ? r : null, bestConfig, bestR, band, rounds, mature };
 }
 
+/**
+ * USDC CONFIG SIGNATURE - the only discriminator that survived adversarial verification, and the only
+ * one here that needs no reference instance, no field baseline and no calibration.
+ *
+ * The example provider's shipped feeds.json prices USDC/USD from five USDC/USDT order books and then
+ * multiplies by the provider's OWN USDT/USD median. USDC/USDT ticks at 1e-4, so for anyone running that
+ * config, USDC_USD / USDT_USD must be an integer multiple of 1e-4. Quoting USDC from native USD books
+ * imposes no such constraint.
+ *
+ * Measured across three windows, one of them 12 days before the others:
+ *   our reference instances  0.504 - 1.000
+ *   candidate cluster        0.536 - 1.000   (51 of 51 classifications, no exceptions)
+ *   1FTSO   (VERIFIED CUSTOM)  0.095 / 0.127 / 0.152   -> custom in 3 of 3
+ *   Burst   (VERIFIED CUSTOM)  identical to 1FTSO      -> custom in 3 of 3
+ *   field bulk               0.055 - 0.245
+ * Robustness: the tolerance is not fitted (hit rates are identical at 0.02 and 0.05); a placebo grid
+ * constant of 1.3e4 collapses the candidates to ~0.1; and recomputing a candidate against the FIELD
+ * median USDT instead of its own drops it 0.579 -> 0.268, exactly as the mechanism predicts.
+ *
+ * READ IT AS A CONFIG SIGNATURE, NOT AN IMPLEMENTATION DETECTOR. Within identical example-provider code
+ * our own fleet spans 0.504 to 1.000 purely by which USDC books are configured, so a provider running
+ * stock code whose USDC venues are geo-blocked or down scores low and looks custom. That is not
+ * hypothetical: Digital Dynamix reads 0.14-0.26 on the grid while agreeing byte-exactly with the
+ * candidate cluster on 78% of cells. The correlation gate exists to catch exactly that case.
+ */
+export const USDC_GRID_EXAMPLE = 0.35; // at or above: consistent with the shipped USDC config
+export const USDC_CORR_GATE = 0.2; // a derived USDC inherits USDT's variation
+/** Rounds required before the signature is reported at all. */
+export const USDC_MIN_ROUNDS = 300;
+
+export type ConfigSignature = "example-config" | "non-example-config" | "unclear" | "pending";
+
+export interface UsdcSignature {
+  /** Fraction of rounds where USDC/USDT landed on the 1e-4 grid. */
+  grid: number | null;
+  /** Correlation between the provider's own USDC and USDT series. */
+  corr: number | null;
+  rounds: number;
+  verdict: ConfigSignature;
+}
+
+export function usdcSignature(row: {
+  usdcGridHits: number;
+  usdcGridN: number;
+  usdcSumX: number;
+  usdcSumY: number;
+  usdcSumXY: number;
+  usdcSumXX: number;
+  usdcSumYY: number;
+}): UsdcSignature {
+  const n = row.usdcGridN;
+  // NOTE: deliberately NO "minimum distinct USDC values" guard. An earlier form of this rule required 5+
+  // distinct values and, in a window where USDC/USD was pinned, refused to classify 25 of 100 providers
+  // including both controls. The statistic is a per-round Bernoulli, not a variance estimate, so it does
+  // not need spread. Removing the guard raised cross-window agreement from 63.5% to 86.5%.
+  if (!n || n < USDC_MIN_ROUNDS) {
+    return { grid: n ? row.usdcGridHits / n : null, corr: null, rounds: n, verdict: "pending" };
+  }
+  const grid = row.usdcGridHits / n;
+  const cov = row.usdcSumXY - (row.usdcSumX * row.usdcSumY) / n;
+  const vx = row.usdcSumXX - (row.usdcSumX * row.usdcSumX) / n;
+  const vy = row.usdcSumYY - (row.usdcSumY * row.usdcSumY) / n;
+  const corr = vx > 0 && vy > 0 ? cov / Math.sqrt(vx * vy) : null;
+
+  // Above the grid threshold, the USDC series is arithmetically tied to the provider's own USDT, which
+  // is the shipped config's behaviour. Below it, the correlation gate separates "quotes USDC natively"
+  // (genuinely a different config) from "runs example code with a different USDC book" - the latter
+  // still shows USDT-derived variation and must NOT be called custom.
+  const verdict: ConfigSignature =
+    grid >= USDC_GRID_EXAMPLE
+      ? "example-config"
+      : corr != null && corr >= USDC_CORR_GATE
+        ? "unclear"
+        : "non-example-config";
+  return { grid, corr, rounds: n, verdict };
+}
+
 export function latticeStats(row: {
   latticeHits: number;
   latticeExpected: number;

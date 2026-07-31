@@ -722,6 +722,29 @@ model ProviderSimilarity {
   latticeCellsJson Json?
   latticeCellsN    Int   @default(0)
 
+  // USDC CONFIG SIGNATURE. The example provider's shipped feeds.json sources USDC/USD from five
+  // USDC/USDT order books, then multiplies by the provider's OWN USDT/USD median
+  // (ccxt-provider-service.ts, price * usdtToUsd). USDC/USDT books tick at 1e-4, so for anyone using
+  // that config the ratio USDC_USD / USDT_USD must land on a 1e-4 grid. A provider quoting USDC from
+  // native USD books has no such constraint.
+  //
+  // This needs NOTHING but the provider's own two submitted values: no reference instance, no field
+  // baseline, no calibration. Measured across three windows including one 12 days earlier:
+  //   our reference instances 0.504-1.000 | candidate cluster 0.536-1.000
+  //   1FTSO 0.095-0.152 | Burst FTSO identical | field bulk 0.055-0.245
+  // Both verified-custom controls read custom in 3 of 3 windows; all candidates read example-like in
+  // 51 of 51 classifications.
+  usdcGridHits Int   @default(0)
+  usdcGridN    Int   @default(0)
+  // Pearson sums over (USDC_USD, USDT_USD) so the API can gate on their correlation. A USDC derived
+  // from USDT inherits USDT's variation; without this gate a provider running example code with a
+  // different USDC book (Digital Dynamix, measured) reads as a false custom.
+  usdcSumX     Float @default(0)
+  usdcSumY     Float @default(0)
+  usdcSumXY    Float @default(0)
+  usdcSumXX    Float @default(0)
+  usdcSumYY    Float @default(0)
+
   updatedAt DateTime @updatedAt
 
   @@unique([network, voter])

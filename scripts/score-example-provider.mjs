@@ -416,6 +416,28 @@ async function buildLattices(canonical) {
 // Stable cell key: feed NAME + lattice T. Never the feed index, which shifts whenever a feed is listed.
 const cellKey = (name, T) => `${name}|${T}`;
 
+// USDC CONFIG SIGNATURE.
+// The example provider's shipped feeds.json prices USDC/USD from five USDC/USDT books and multiplies by
+// the provider's OWN USDT/USD median. USDC/USDT ticks at 1e-4, so for anyone running that config
+//   USDC_USD / USDT_USD  must be an integer multiple of 1e-4.
+// A provider quoting USDC from native USD books has no such constraint. This uses only the provider's own
+// two submitted values: no reference instance, no field baseline, no calibration, nothing to fit.
+const USDC_GRID = 1e4;
+// Distance (in units of the 1e-4 grid) within which the ratio counts as on-grid. NOT tuned: the hit rate
+// is identical at 0.02 and 0.05 for every provider in every window measured, because real hits land on
+// near-exact integers. Anything in that range gives the same answer.
+const USDC_TOL = 0.05;
+
+// Returns {hit, usdc, usdt} for one provider's reveal, or null when either leg is unusable.
+function usdcSignature(rawVals, idxUsdc, idxUsdt, decUsdc, decUsdt) {
+  if (idxUsdc == null || idxUsdt == null) return null;
+  const usdc = decodeValue(rawVals[idxUsdc], decUsdc);
+  const usdt = decodeValue(rawVals[idxUsdt], decUsdt);
+  if (!Number.isFinite(usdc) || !Number.isFinite(usdt) || usdc <= 0 || usdt <= 0) return null;
+  const scaled = (usdc / usdt) * USDC_GRID;
+  return { hit: Math.abs(scaled - Math.round(scaled)) <= USDC_TOL ? 1 : 0, usdc, usdt };
+}
+
 // Minimum providers with a usable value in a (feed,T) cell before its empirical rate is trusted.
 const LATTICE_MIN_PEERS = 20;
 
@@ -497,6 +519,11 @@ async function scoreRound(round, refs, reveals, canonical) {
   // and this round's leave-one-out lattice evidence for every provider.
   const lattices = await buildLattices(canonical);
   const { byProvider: latByAddr, byRef: latByRef } = latticeRound(providers, lattices, refs);
+  // USDC config-signature indices for this round's canonical order (looked up by NAME, never hardcoded:
+  // canonical order shifts whenever a feed is listed).
+  const idxUsdc = canonical.findIndex((c) => c.name === "USDC/USD");
+  const idxUsdt = canonical.findIndex((c) => c.name === "USDT/USD");
+  const hasUsdc = idxUsdc >= 0 && idxUsdt >= 0;
   // Use the full canonical feed count. A provider whose reveal array is SHORT is handled per-provider
   // (decodeValue returns NaN past its length, which is filtered), so one short reveal no longer collapses
   // the feed set for EVERYONE (the old min-across-providers did exactly that).
@@ -790,6 +817,9 @@ async function scoreRound(round, refs, reveals, canonical) {
     // does not drift with wall-clock time. (With the old fixed 1/T null it did, which made the exclusion
     // flag expire on the clock rather than on evidence.)
     const lat = latByAddr.get(addr) ?? { hits: 0, trials: 0, expected: 0, variance: 0, cells: {} };
+    const usdc = hasUsdc
+      ? usdcSignature(v, idxUsdc, idxUsdt, canonical[idxUsdc].decimals, canonical[idxUsdt].decimals)
+      : null;
     // Merge this round's per-cell excess into the running profile (plain sums, same as the aggregate).
     const prevCells = (existing?.latticeCellsJson ?? {});
     const cells = { ...prevCells };
@@ -805,6 +835,17 @@ async function scoreRound(round, refs, reveals, canonical) {
       latticeTrials: (existing?.latticeTrials ?? 0) + lat.trials,
       latticeCellsJson: cells,
       latticeCellsN: (existing?.latticeCellsN ?? 0) + (lat.trials > 0 ? 1 : 0),
+      ...(usdc
+        ? {
+            usdcGridHits: (existing?.usdcGridHits ?? 0) + usdc.hit,
+            usdcGridN: (existing?.usdcGridN ?? 0) + 1,
+            usdcSumX: (existing?.usdcSumX ?? 0) + usdc.usdc,
+            usdcSumY: (existing?.usdcSumY ?? 0) + usdc.usdt,
+            usdcSumXY: (existing?.usdcSumXY ?? 0) + usdc.usdc * usdc.usdt,
+            usdcSumXX: (existing?.usdcSumXX ?? 0) + usdc.usdc * usdc.usdc,
+            usdcSumYY: (existing?.usdcSumYY ?? 0) + usdc.usdt * usdc.usdt,
+          }
+        : {}),
       bestVariant: best.vk, updatedAt: now,
     };
     if (!existing) await prisma.providerSimilarity.create({ data: { network: "flare", voter: addr, ...data } });

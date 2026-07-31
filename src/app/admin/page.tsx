@@ -1192,6 +1192,9 @@ function ExampleProviderTab() {
     } else if (sortKey === "latticeLift") {
       av = a.lattice?.lift ?? null;
       bv = b.lattice?.lift ?? null;
+    } else if (sortKey === "usdcGrid") {
+      av = a.usdc?.grid ?? null;
+      bv = b.usdc?.grid ?? null;
     } else if (sortKey === "patternR") {
       av = a.pattern?.r ?? null;
       bv = b.pattern?.r ?? null;
@@ -1377,6 +1380,11 @@ function ExampleProviderTab() {
                   tip="TICK-GRID lift: how much more often this provider's value lands on a coarse exchange tick grid than THE FIELD did on the same feeds in the same rounds. The example provider returns an observed trade PRINT verbatim, so its values inherit the venue's tick grid; averaging or mid-pricing smooths that away. The baseline is the per-round leave-one-out field rate, so 1.0x means 'behaves like the field'. It is NOT an arithmetic 1/T null: most lattices are powers of ten, so raw divisibility mostly measures 'rounded to fewer decimals', which any implementation can do and which varies by round. Measured: field 1.0x, example-provider level ~1.8-2.1x, verified-custom Burst FTSO 0.54x, verified-custom 1FTSO 1.47x. ONE-SIDED: low is strong evidence AGAINST, high is NOT proof FOR - 1FTSO is verified custom and still reads above the field, because any median-of-prints implementation echoes a print."
                 />
                 <SortTh
+                  label="USDC cfg"
+                  col="usdcGrid"
+                  tip="USDC CONFIG SIGNATURE. The example provider's shipped feeds.json prices USDC/USD from five USDC/USDT order books and multiplies by the provider's OWN USDT/USD median. USDC/USDT ticks at 1e-4, so anyone running that config must have USDC_USD / USDT_USD land on a 1e-4 grid. Quoting USDC from native USD books imposes no such constraint. This uses ONLY the provider's own two submitted values: no reference instance, no field baseline, nothing calibrated. Measured over three windows including one 12 days earlier: our reference instances 0.50-1.00, candidate cluster 0.54-1.00, and BOTH verified-custom controls 0.09-0.15, custom in 3 of 3. Read it as a CONFIG signature, not an implementation detector: our own fleet spans 0.50-1.00 on identical code purely by which USDC books are configured, so stock code with geo-blocked USDC venues reads low. The correlation gate catches that case (a derived USDC inherits USDT's variation) and reports 'unclear' rather than custom."
+                />
+                <SortTh
                   label="Pattern"
                   col="patternR"
                   tip="PER-CELL HIT-PATTERN match: does this provider over-hit the SAME (feed, tick) cells our reference example provider does? Aggregate lift cannot rank the non-excluded providers, because it is confounded by config size (our own configs span 1.44x-2.33x) and because any median-of-prints implementation reads high. But which cells get over-hit is set by the VENUE LIST, so this is far more specific than the level. Measured: our instances match each other at 0.624; verified-custom 1FTSO (a median-of-prints custom) reaches 0.396; verified-custom Burst FTSO reads -0.432. RED = above 0.50, close to the reference's own self-similarity. AMBER = above 0.396, i.e. more example-provider-like than a provider we KNOW is custom. Still not proof."
@@ -1462,6 +1470,33 @@ function ExampleProviderTab() {
                         {r.lattice.lift.toFixed(2)}x
                         {r.lattice.ruledOut && <span className="ml-1 text-[10px]">ruled out</span>}
                         <span className="ml-1 text-[10px] text-faint">n={r.lattice.trials}</span>
+                      </span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-right tabular-nums">
+                    {r.usdc?.grid != null ? (
+                      <span
+                        className={
+                          r.usdc.verdict === "non-example-config"
+                            ? "font-semibold text-emerald-500"
+                            : r.usdc.verdict === "example-config"
+                              ? "text-flare"
+                              : "text-muted"
+                        }
+                        title={
+                          `grid=${r.usdc.grid.toFixed(3)} corr=${r.usdc.corr?.toFixed(2) ?? "?"} over ${r.usdc.rounds} rounds. ` +
+                          (r.usdc.verdict === "non-example-config"
+                            ? "USDC is NOT derived from this provider's own USDT, so it is not using the shipped USDC config. Both verified-custom controls read here."
+                            : r.usdc.verdict === "example-config"
+                              ? "USDC tracks this provider's own USDT on the 1e-4 grid, i.e. the shipped config's behaviour. A CONFIG match, not proof of the implementation."
+                              : r.usdc.verdict === "unclear"
+                                ? "Off-grid, but USDC still co-varies with this provider's own USDT: consistent with example code running a different USDC book. Deliberately NOT called custom."
+                                : `Accumulating; needs ${300} rounds.`)
+                        }
+                      >
+                        {r.usdc.verdict === "pending" ? "—" : r.usdc.grid.toFixed(2)}
                       </span>
                     ) : (
                       <span className="text-faint">—</span>

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import {
-  computeFingerprints, latticeStats, patternMatch, detectionClass, type RefProfiles,
+  computeFingerprints, latticeStats, patternMatch, detectionClass, usdcSignature,
+  type RefProfiles,
 } from "@/lib/detection";
 
 export const dynamic = "force-dynamic";
@@ -130,6 +131,9 @@ export async function GET() {
       // our full-config reference and verified-custom 1FTSO are INDISTINGUISHABLE on lift (1.50x each)
       // and far apart on pattern (0.84 vs 0.42).
       klass: detectionClass(lat, pat),
+      // USDC config signature: reference-free, needs only this provider's own two submitted values.
+      // The only discriminator that marked BOTH verified-custom controls correctly in every window.
+      usdc: usdcSignature(r),
       confidence: r.confidence,
       rounds: r.roundsObserved,
       variant: variantByVoter.get(r.voter.toLowerCase()) ?? null, // config whose ERROR PROFILE fits best
