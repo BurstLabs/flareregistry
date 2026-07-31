@@ -106,6 +106,7 @@ export async function GET(req: NextRequest) {
         url: r.url,
         listed: r.source != null,
         weightTokens: r.weight,
+        managementGroup: r.managementGroup,
         // Flare's OFFICIAL success rates, verbatim from their systems-explorer entity API, in basis
         // points out of 10000. Not our measurement and not derived by us.
         officialSuccessRate: r.success,

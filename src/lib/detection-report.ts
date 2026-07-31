@@ -28,6 +28,8 @@ export interface DetectionRow {
   source: string | null;
   /** On-chain wNat weight in whole tokens. */
   weight: number | null;
+  /** Flare Management Group member. */
+  managementGroup: boolean;
   /** Flare's OFFICIAL success rates, basis points out of 10000 (divide by 100 for a percentage). */
   success: { primary: number | null; secondary: number | null; availability: number | null; epoch: number | null };
   lattice: LatticeStats;
@@ -77,11 +79,13 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
       voter: true, delegationAddress: true, submitAddress: true,
       submitSignaturesAddress: true, signingPolicyAddress: true, wNatWeight: true,
       successPrimary: true, successSecondary: true, successAvailability: true, successEpoch: true,
+      managementGroup: true,
     },
   });
   const roleToEntity = new Map<string, string>();
   const weightByVoter = new Map<string, string | null>();
   const successByVoter = new Map<string, { primary: number | null; secondary: number | null; availability: number | null; epoch: number | null }>();
+  const mgByVoter = new Map<string, boolean>();
   for (const e of entities) {
     for (const a of [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]) {
       if (a) roleToEntity.set(a.toLowerCase(), e.voter.toLowerCase());
@@ -91,6 +95,7 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
       primary: e.successPrimary, secondary: e.successSecondary,
       availability: e.successAvailability, epoch: e.successEpoch,
     });
+    mgByVoter.set(e.voter.toLowerCase(), e.managementGroup);
   }
   const listings = await prisma.providerAddress.findMany({
     where: { address: { in: [...roleToEntity.keys()] } },
@@ -131,6 +136,7 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
       url: listing?.url ?? null,
       source: listing?.source ?? null,
       weight: weiStr ? Number(BigInt(weiStr) / 10n ** 15n) / 1000 : null,
+      managementGroup: (entityVoter ? mgByVoter.get(entityVoter) : false) ?? false,
       success: (entityVoter ? successByVoter.get(entityVoter) : null)
         ?? { primary: null, secondary: null, availability: null, epoch: null },
       lattice: lat,

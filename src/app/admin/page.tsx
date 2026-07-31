@@ -1201,6 +1201,9 @@ function ExampleProviderTab() {
     } else if (sortKey === "latticeLift") {
       av = a.lattice?.lift ?? null;
       bv = b.lattice?.lift ?? null;
+    } else if (sortKey === "mg") {
+      av = a.managementGroup ? 1 : 0;
+      bv = b.managementGroup ? 1 : 0;
     } else if (sortKey === "block") {
       av = a.block ?? "";
       bv = b.block ?? "";
@@ -1429,6 +1432,12 @@ function ExampleProviderTab() {
                   tip="Flare's OFFICIAL secondary reward-band success rate, verbatim from Flare's systems-explorer entity API. Network median is around 95%, so this one is compressed near the top and a low value stands out sharply."
                 />
                 <SortTh
+                  label="MG"
+                  col="mg"
+                  align="center"
+                  tip="Flare MANAGEMENT GROUP member. Context only, and deliberately not part of any signal: MG membership is a governance status, not evidence about which code a provider runs. It matters here because the Management Group is the body that would act on a finding, so an MG member appearing high in this table is a different situation from an unlisted entity doing so."
+                />
+                <SortTh
                   label="Weight"
                   col="weight"
                   tip="On-chain vote power (wNat weight) of this provider's entity, in whole tokens. Context for how much influence a suspected example-provider user actually has."
@@ -1623,6 +1632,18 @@ function ExampleProviderTab() {
                   <td className="py-1.5 text-right tabular-nums text-muted">
                     {r.success?.secondary != null ? (
                       `${(r.success.secondary / 100).toFixed(1)}%`
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-center">
+                    {r.managementGroup ? (
+                      <span
+                        className="rounded bg-beacon/15 px-1 text-[10px] text-beacon"
+                        title="Flare Management Group member."
+                      >
+                        MG
+                      </span>
                     ) : (
                       <span className="text-faint">—</span>
                     )}
