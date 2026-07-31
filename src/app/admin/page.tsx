@@ -1574,22 +1574,26 @@ function ExampleProviderTab() {
                   </td>
                   <td className="py-1.5 text-center">
                     {r.block === "inside" ? (
+                      // "in" = sits inside the region of Flare's OWN metrics that the candidate class
+                      // occupies. Red because that is the corroborating state, whether or not we class
+                      // it a candidate. The "!" marks a DISAGREEMENT with our classification, which is
+                      // where this column's real information lives.
                       <span
-                        className={r.klass === "candidate" ? "text-[10px] text-muted" : "text-[10px] font-semibold text-amber-500"}
+                        className="text-[10px] font-semibold text-flare"
                         title={
                           r.klass === "candidate"
-                            ? "Inside the block on Flare's own metrics, agreeing with our classification."
-                            : "DISAGREEMENT: sits inside the candidate block on Flare's independent metrics but we do NOT class it a candidate. Worth a look."
+                            ? "Inside the block on Flare's independent success rates, corroborating our classification."
+                            : "Inside the candidate block on Flare's independent metrics, yet we do NOT class it a candidate. Worth a look. Note our verified-custom control 1FTSO also reads inside, so this indicator has a known false-positive rate of its own."
                         }
                       >
                         {r.klass === "candidate" ? "in" : "in !"}
                       </span>
                     ) : r.block === "outside" ? (
                       <span
-                        className={r.klass === "candidate" ? "text-[10px] font-semibold text-amber-500" : "text-[10px] text-faint"}
+                        className={r.klass === "candidate" ? "text-[10px] text-amber-500" : "text-[10px] text-faint"}
                         title={
                           r.klass === "candidate"
-                            ? "DISAGREEMENT: we class this a candidate, but on Flare's independent metrics it sits outside the block."
+                            ? "We class this a candidate, but on Flare's independent metrics it sits outside the block. Not corroborated."
                             : "Outside the block, agreeing with our classification."
                         }
                       >
