@@ -1391,12 +1391,8 @@ function ExampleProviderTab() {
                   col="patternR"
                   tip="PER-CELL HIT-PATTERN match: does this provider over-hit the SAME (feed, tick) cells our reference example provider does? Aggregate lift cannot rank the non-excluded providers, because it is confounded by config size (our own configs span 1.44x-2.33x) and because any median-of-prints implementation reads high. But which cells get over-hit is set by the VENUE LIST, so this is far more specific than the level. Measured: our instances match each other at 0.624; verified-custom 1FTSO (a median-of-prints custom) reaches 0.396; verified-custom Burst FTSO reads -0.432. RED = above 0.50, close to the reference's own self-similarity. AMBER = above 0.396, i.e. more example-provider-like than a provider we KNOW is custom. Still not proof."
                 />
-                <SortTh
-                  label="Variant"
-                  col="variant"
-                  align="center"
-                  tip="Which exchange-subset variant of the example provider it best matches: full = all ~18 exchanges (default), top5 / top10 = only the most popular exchanges. Hints at how they edited feeds.json."
-                />
+                {/* Variant column hidden. It is still computed and still returned by the API; the
+                    per-config match is also already in the Pattern tooltip as bestConfig. */}
                 <SortTh
                   label="Weight"
                   col="weight"
@@ -1520,15 +1516,6 @@ function ExampleProviderTab() {
                         }
                       >
                         {r.pattern.norm != null ? r.pattern.norm.toFixed(2) : r.pattern.r.toFixed(3)}
-                      </span>
-                    ) : (
-                      <span className="text-faint">—</span>
-                    )}
-                  </td>
-                  <td className="py-1.5 text-center">
-                    {r.variant ? (
-                      <span className="rounded bg-elev px-1.5 py-0.5 text-[10px] text-muted">
-                        {r.variant}
                       </span>
                     ) : (
                       <span className="text-faint">—</span>
