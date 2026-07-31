@@ -1524,7 +1524,7 @@ function ExampleProviderTab() {
                           (!r.pattern.mature
                             ? `NOT YET MATURE: a correlation between noisy profiles is attenuated toward zero, so this value is biased LOW and no band or class is applied until ${PATTERN_MIN_ROUNDS} rounds.`
                             : r.lattice?.ruledOut
-                            ? "Excluded by the tick-grid screen, so no suspicion band is applied regardless of this value."
+                            ? "Excluded by the tick-grid screen. Shown green because exclusion is the strongest clearing statement this tool makes, whatever the pattern value."
                             : r.pattern.band === "strong"
                               ? `At or above ${PATTERN_STRONG}x the reference cross-config level: over-hits the same cells our reference does.`
                               : r.pattern.band === "elevated"
