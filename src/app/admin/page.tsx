@@ -1128,6 +1128,10 @@ function ExampleProviderTab() {
   const [loading, setLoading] = useState(true);
   const [calibrated, setCalibrated] = useState(true);
   const [ruledOutCount, setRuledOutCount] = useState(0);
+  // Vote power held by the candidate class, for the banner.
+  const [weightPct, setWeightPct] = useState<number | null>(null);
+  const [candidateWeight, setCandidateWeight] = useState(0);
+  const [totalWeight, setTotalWeight] = useState(0);
   // Show every scored provider, or only the ones the combined screen implicates.
   const [onlyCandidates, setOnlyCandidates] = useState(false);
   // Sort state. Default = the normalised pattern score, descending. Tick-grid lift is the better
@@ -1147,6 +1151,9 @@ function ExampleProviderTab() {
     setFp({ rate: b.falsePositiveRate ?? null, count: b.knownCustomCount ?? 0, names: b.falsePositiveNames ?? [] });
     setCalibrated(b.calibrated !== false);
     setRuledOutCount(b.ruledOutCount ?? 0);
+    setWeightPct(b.candidateWeightPct ?? null);
+    setCandidateWeight(b.candidateWeight ?? 0);
+    setTotalWeight(b.totalWeight ?? 0);
     setLoading(false);
   }, []);
   useEffect(() => {
@@ -1318,6 +1325,14 @@ function ExampleProviderTab() {
             providers excluded (their values do not echo raw exchange prints). The remaining{" "}
             {rows.length - ruledOutCount} are <em>not</em> thereby implicated: any median-of-prints
             implementation reads above the field, including our verified-custom control.
+          </div>
+        )}
+        {weightPct != null && (
+          <div className="mt-2 text-[11px] text-faint">
+            The <span className="text-fg">{candidateCount}</span> providers currently in the candidate
+            class hold <span className="text-flare">{weightPct.toFixed(1)}%</span> of scored network
+            weight ({compact(candidateWeight)} of {compact(totalWeight)} tokens). Share of the{" "}
+            <em>scored</em> set, so it is not inflated by providers we have no measurement for.
           </div>
         )}
       </div>

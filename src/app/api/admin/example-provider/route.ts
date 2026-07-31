@@ -160,7 +160,18 @@ export async function GET() {
   const fpRate = knownRows.length ? falsePositives.length / knownRows.length : null;
   // Tick-grid exclusion summary, so the tab can state how many the screen actually clears.
   const ruledOutCount = report.filter((x) => x.lattice.ruledOut).length;
+  // Vote power held by the candidate class. This is the number that says how much of the network the
+  // question actually touches: 30 providers matter very differently at 2% than at 40% of total weight.
+  // Denominator is the SCORED set, not the whole network, so the share is not overstated by providers we
+  // have no measurement for.
+  const candidates = report.filter((x) => x.klass === "candidate");
+  const totalWeight = report.reduce((s, x) => s + (x.weight ?? 0), 0);
+  const candidateWeight = candidates.reduce((s, x) => s + (x.weight ?? 0), 0);
   return NextResponse.json({
+    candidateCount: candidates.length,
+    totalWeight,
+    candidateWeight,
+    candidateWeightPct: totalWeight > 0 ? (candidateWeight / totalWeight) * 100 : null,
     report,
     maxRounds,
     calibrated,
