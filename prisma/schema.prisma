@@ -205,10 +205,20 @@ model ProviderOnchain {
   // Reward epoch the rates describe, and when we last refreshed them.
   successEpoch        Int?
   successUpdatedAt    DateTime?
-  goodStanding        Boolean   @default(true)
+
+  // CURRENT-epoch weights from the same systems-explorer entity record, wei-scale strings.
+  // delegationWeight is what Flare's own explorer labels "DELEGATION WEIGHT", so the registry shows the
+  // same figure an operator sees on Flare's site. It is NOT the same as wNatWeight above: that comes
+  // from the fsp-rewards ingest, which lags by reward epochs (measured: 1FTSO 20.8M there vs 40.7M
+  // current, Burst FTSO 146.0M vs 123.2M). Different source, different freshness, kept separate on
+  // purpose rather than one silently overwriting the other.
+  delegationWeight       String?
+  delegationWeightCapped String?
+  stakingWeight          String?
+  goodStanding           Boolean @default(true)
   // Member of Flare's on-chain FTSO Management Group (PollingManagementGroup contract): the
   // curated set of eligible, well-performing providers. Refreshed from a live RPC query.
-  managementGroup     Boolean   @default(false)
+  managementGroup        Boolean @default(false)
 
   lastEpochSeen Int
   createdAt     DateTime @default(now())

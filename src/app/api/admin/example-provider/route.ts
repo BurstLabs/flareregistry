@@ -56,6 +56,7 @@ export async function GET() {
       submitSignaturesAddress: true,
       signingPolicyAddress: true,
       wNatWeight: true,
+      delegationWeight: true,
       successPrimary: true,
       successSecondary: true,
       successAvailability: true,
@@ -74,7 +75,7 @@ export async function GET() {
   for (const e of entities) {
     const roles = [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress];
     for (const a of roles) if (a) roleToEntity.set(a.toLowerCase(), e.voter.toLowerCase());
-    weightByVoter.set(e.voter.toLowerCase(), e.wNatWeight);
+    weightByVoter.set(e.voter.toLowerCase(), e.delegationWeight ?? e.wNatWeight);
     successByVoter.set(e.voter.toLowerCase(), {
       primary: e.successPrimary, secondary: e.successSecondary, availability: e.successAvailability,
     });
