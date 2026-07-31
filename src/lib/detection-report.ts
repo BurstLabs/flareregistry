@@ -28,6 +28,8 @@ export interface DetectionRow {
   source: string | null;
   /** On-chain wNat weight in whole tokens. */
   weight: number | null;
+  /** Flare's OFFICIAL success rates, basis points out of 10000 (divide by 100 for a percentage). */
+  success: { primary: number | null; secondary: number | null; availability: number | null; epoch: number | null };
   lattice: LatticeStats;
   pattern: PatternMatch;
   usdc: UsdcSignature;
@@ -74,15 +76,21 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
     select: {
       voter: true, delegationAddress: true, submitAddress: true,
       submitSignaturesAddress: true, signingPolicyAddress: true, wNatWeight: true,
+      successPrimary: true, successSecondary: true, successAvailability: true, successEpoch: true,
     },
   });
   const roleToEntity = new Map<string, string>();
   const weightByVoter = new Map<string, string | null>();
+  const successByVoter = new Map<string, { primary: number | null; secondary: number | null; availability: number | null; epoch: number | null }>();
   for (const e of entities) {
     for (const a of [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]) {
       if (a) roleToEntity.set(a.toLowerCase(), e.voter.toLowerCase());
     }
     weightByVoter.set(e.voter.toLowerCase(), e.wNatWeight);
+    successByVoter.set(e.voter.toLowerCase(), {
+      primary: e.successPrimary, secondary: e.successSecondary,
+      availability: e.successAvailability, epoch: e.successEpoch,
+    });
   }
   const listings = await prisma.providerAddress.findMany({
     where: { address: { in: [...roleToEntity.keys()] } },
@@ -123,6 +131,8 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
       url: listing?.url ?? null,
       source: listing?.source ?? null,
       weight: weiStr ? Number(BigInt(weiStr) / 10n ** 15n) / 1000 : null,
+      success: (entityVoter ? successByVoter.get(entityVoter) : null)
+        ?? { primary: null, secondary: null, availability: null, epoch: null },
       lattice: lat,
       pattern: pat,
       usdc: usdcSignature(r),

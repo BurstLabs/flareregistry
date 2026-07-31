@@ -191,10 +191,24 @@ model ProviderOnchain {
   signingWeight    String?
   feedCount        Int?
   registered       Boolean @default(true)
-  goodStanding     Boolean @default(true)
+
+  // OFFICIAL success rates, from Flare's own systems-explorer entity API (providersuccessrate).
+  // Stored verbatim in BASIS POINTS out of 10000, exactly as Flare publishes them, so the stored value
+  // is never a lossy re-derivation of someone else's metric. Divide by 100 for a percentage.
+  //   successPrimary      primary reward band participation
+  //   successSecondary    secondary reward band participation
+  //   successAvailability uptime/availability
+  // Observed on Flare: primary median ~4993 with a 0-8017 spread, secondary median ~9515.
+  successPrimary      Int?
+  successSecondary    Int?
+  successAvailability Int?
+  // Reward epoch the rates describe, and when we last refreshed them.
+  successEpoch        Int?
+  successUpdatedAt    DateTime?
+  goodStanding        Boolean   @default(true)
   // Member of Flare's on-chain FTSO Management Group (PollingManagementGroup contract): the
   // curated set of eligible, well-performing providers. Refreshed from a live RPC query.
-  managementGroup  Boolean @default(false)
+  managementGroup     Boolean   @default(false)
 
   lastEpochSeen Int
   createdAt     DateTime @default(now())
