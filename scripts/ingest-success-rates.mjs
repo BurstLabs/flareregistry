@@ -53,6 +53,7 @@ async function ingest(network) {
     const voter = String(e.identity_address ?? "").toLowerCase();
     if (!voter) continue;
     const sr = e.providersuccessrate;
+    const sp = e.denormalizedsigningpolicy ?? {};
     if (!sr) { noRate++; continue; }
 
     // Only update rows we already know about. This job reports Flare's view of an entity; it must not
@@ -69,8 +70,12 @@ async function ingest(network) {
         successPrimary: Number.isFinite(sr.primary) ? sr.primary : null,
         successSecondary: Number.isFinite(sr.secondary) ? sr.secondary : null,
         successAvailability: Number.isFinite(sr.availability) ? sr.availability : null,
-        successEpoch: epoch ?? null,
+        successEpoch: sp.reward_epoch ?? epoch ?? null,
         successUpdatedAt: now,
+        // Current-epoch weights. w_nat_weight is exactly what the explorer shows as DELEGATION WEIGHT.
+        delegationWeight: sp.w_nat_weight != null ? String(sp.w_nat_weight) : null,
+        delegationWeightCapped: sp.w_nat_capped_weight != null ? String(sp.w_nat_capped_weight) : null,
+        stakingWeight: sp.staking_weight != null ? String(sp.staking_weight) : null,
       },
     });
     updated++;

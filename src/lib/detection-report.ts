@@ -78,6 +78,7 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
     select: {
       voter: true, delegationAddress: true, submitAddress: true,
       submitSignaturesAddress: true, signingPolicyAddress: true, wNatWeight: true,
+      delegationWeight: true,
       successPrimary: true, successSecondary: true, successAvailability: true, successEpoch: true,
       managementGroup: true,
     },
@@ -90,7 +91,7 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
     for (const a of [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]) {
       if (a) roleToEntity.set(a.toLowerCase(), e.voter.toLowerCase());
     }
-    weightByVoter.set(e.voter.toLowerCase(), e.wNatWeight);
+    weightByVoter.set(e.voter.toLowerCase(), e.delegationWeight ?? e.wNatWeight);
     successByVoter.set(e.voter.toLowerCase(), {
       primary: e.successPrimary, secondary: e.successSecondary,
       availability: e.successAvailability, epoch: e.successEpoch,
