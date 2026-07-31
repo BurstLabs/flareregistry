@@ -8,7 +8,7 @@ import {
   LATTICE_LIFT_EXCLUDE,
   PATTERN_MIN_ROUNDS,
   PATTERN_STRONG,
-  PATTERN_KNOWN_CUSTOM,
+  PATTERN_CANDIDATE,
 } from "@/lib/detection";
 
 // Operator-only admin dashboard. English-only (internal tool, not a user-facing page). Access is
@@ -1196,8 +1196,8 @@ function ExampleProviderTab() {
       av = a.usdc?.grid ?? null;
       bv = b.usdc?.grid ?? null;
     } else if (sortKey === "patternR") {
-      av = a.pattern?.r ?? null;
-      bv = b.pattern?.r ?? null;
+      av = a.pattern?.norm ?? null;
+      bv = b.pattern?.norm ?? null;
     }
     if (av == null) av = -Infinity;
     if (bv == null) bv = -Infinity;
@@ -1503,7 +1503,7 @@ function ExampleProviderTab() {
                     )}
                   </td>
                   <td className="py-1.5 text-right tabular-nums">
-                    {r.pattern?.r != null ? (
+                    {r.pattern?.norm != null || r.pattern?.r != null ? (
                       <span
                         className={
                           r.pattern.band === "strong"
@@ -1513,19 +1513,19 @@ function ExampleProviderTab() {
                               : "text-muted"
                         }
                         title={
-                          `Matches config ${r.pattern.bestConfig ?? "?"} at r=${r.pattern.bestR?.toFixed(3) ?? "?"}, over ${r.pattern.rounds} rounds. ` +
+                          `raw r=${r.pattern.r?.toFixed(3) ?? "?"} / reference cross-config self-similarity ${r.pattern.refSelf?.toFixed(3) ?? "?"}. Best config ${r.pattern.bestConfig ?? "?"}, ${r.pattern.rounds} rounds. ` +
                           (!r.pattern.mature
                             ? `NOT YET MATURE: a correlation between noisy profiles is attenuated toward zero, so this value is biased LOW and no band or class is applied until ${PATTERN_MIN_ROUNDS} rounds.`
                             : r.lattice?.ruledOut
                             ? "Excluded by the tick-grid screen, so no suspicion band is applied regardless of this value."
                             : r.pattern.band === "strong"
-                              ? `At or above ${PATTERN_STRONG}: over-hits the same cells as our reference, whose own instances sit at 0.80-0.87.`
+                              ? `At or above ${PATTERN_STRONG}x the reference cross-config level: over-hits the same cells our reference does.`
                               : r.pattern.band === "elevated"
-                                ? `At or above ${PATTERN_KNOWN_CUSTOM}, i.e. beyond what a provider we KNOW is custom (1FTSO) reaches. Elevated, not conclusive.`
-                                : "At or below the verified-custom control. No elevation.")
+                                ? `At or above ${PATTERN_CANDIDATE}x, i.e. matches our reference as well as our own differently-configured instances match each other. Elevated, not conclusive.`
+                                : "Below the reference cross-config level. Verified-custom 1FTSO reads 0.76 here. No elevation.")
                         }
                       >
-                        {r.pattern.r.toFixed(3)}
+                        {r.pattern.norm != null ? r.pattern.norm.toFixed(2) : r.pattern.r.toFixed(3)}
                       </span>
                     ) : (
                       <span className="text-faint">—</span>

@@ -107,10 +107,25 @@ export const LATTICE_LIFT_EXCLUDE = 1.3;
  * compares DISCRETE venue-grid hit patterns rather than value distances, and because it has validated
  * controls at both ends rather than none.
  */
-// Thresholds are set from the verified-custom control WITH MARGIN. 1FTSO has measured 0.396 and 0.423
-// across two windows, so a cut at 0.396 would have shown a provider we KNOW is custom as elevated.
-export const PATTERN_KNOWN_CUSTOM = 0.45; // safely above the observed control range
-export const PATTERN_STRONG = 0.55; // clearly above it; providers top out near 0.73, our refs 0.80-0.87
+// The score is NORMALISED by the reference's own cross-config self-similarity, and the thresholds are
+// expressed on that normalised scale.
+//
+// A raw correlation cannot carry a fixed threshold here. It is attenuated toward zero while profiles are
+// noisy, so it climbs with round count: 1FTSO measured 0.268 / 0.423 / 0.454 / 0.462 / 0.513 at 10 / 24 /
+// 30 / 83 / 177 rounds. Three successive absolute cuts were overtaken by it.
+//
+// Dividing by the mean CROSS-CONFIG correlation between our own reference instances fixes that, because
+// numerator and denominator attenuate together. Measured, that denominator is stable where the raw
+// correlation is not: 0.678 at 83 rounds, 0.672 at 177.
+//
+// The scale is then interpretable rather than arbitrary. 1.0 means "matches our reference as well as our
+// own differently-configured instances match each other". Our same-config pairs sit near 0.97 raw, so a
+// genuine same-config user should land between the cross-config and same-config levels, i.e. above 1.0.
+// Measured at 177 rounds: candidates 1.20-1.24, 1FTSO 0.763, Burst FTSO -1.264.
+export const PATTERN_CANDIDATE = 1.0;
+export const PATTERN_STRONG = 1.1;
+/** Cross-config reference pairs needed before the normaliser is trustworthy. */
+const PATTERN_MIN_REF_PAIRS = 4;
 /**
  * Rounds of per-cell data before the correlation may be banded or classified.
  *
@@ -121,14 +136,18 @@ export const PATTERN_STRONG = 0.55; // clearly above it; providers top out near 
  * classes between the two. The aggregate lift gate was already long satisfied (7527 trials vs a 1000
  * minimum) and said nothing about this, so without its own gate the tab shows class labels that shuffle.
  */
-export const PATTERN_MIN_ROUNDS = 20;
+export const PATTERN_MIN_ROUNDS = 60;
 
 export type PatternBand = "strong" | "elevated" | "baseline" | "none";
 
 
 export interface PatternMatch {
-  /** Correlation with the mean reference profile. */
+  /** Correlation with the mean reference profile. Raw, and NOT comparable across round counts. */
   r: number | null;
+  /** r divided by the reference's own cross-config self-similarity. THIS is what the bands use. */
+  norm: number | null;
+  /** The normaliser actually applied, for display and for spotting drift. */
+  refSelf: number | null;
   /** Reference CONFIG whose hit pattern it matches best, and that correlation. */
   bestConfig: string | null;
   bestR: number | null;
@@ -161,7 +180,9 @@ export function patternMatch(
   rounds = 0
 ): PatternMatch {
   const mature = rounds >= PATTERN_MIN_ROUNDS;
-  const empty: PatternMatch = { r: null, bestConfig: null, bestR: null, band: "none", rounds, mature };
+  const empty: PatternMatch = {
+    r: null, norm: null, refSelf: null, bestConfig: null, bestR: null, band: "none", rounds, mature,
+  };
   if (!cells || typeof cells !== "object") return empty;
   const instances = Object.keys(refCells ?? {});
   if (!instances.length) return empty;
@@ -190,16 +211,35 @@ export function patternMatch(
     if (bestR == null || c > bestR) { bestR = c; bestConfig = inst.split(":")[0]; }
   }
 
-  // No band until the profile is mature (r is attenuated toward zero while it is not), and never for a
-  // provider the one-sided screen already excluded, regardless of r.
-  const band: PatternBand = ruledOut || !mature || !Number.isFinite(r)
+  // NORMALISER: the mean correlation between our own reference instances running DIFFERENT configs. It
+  // is the attainable bar (same code, different venue list), and it attenuates in lockstep with the
+  // provider scores, which is what makes the threshold survive a growing sample.
+  const crossPairs: number[] = [];
+  for (let i = 0; i < instances.length; i++) {
+    for (let j = i + 1; j < instances.length; j++) {
+      if (instances[i].split(":")[0] === instances[j].split(":")[0]) continue; // same config = twins
+      const c = corrOver(keyList, refCells[instances[i]] ?? {}, refCells[instances[j]] ?? {});
+      if (Number.isFinite(c)) crossPairs.push(c);
+    }
+  }
+  const refSelf =
+    crossPairs.length >= PATTERN_MIN_REF_PAIRS
+      ? crossPairs.reduce((a, b) => a + b, 0) / crossPairs.length
+      : null;
+  const norm = refSelf != null && refSelf > 1e-6 && Number.isFinite(r) ? r / refSelf : null;
+
+  // No band until the profile is mature, never for a provider the one-sided screen already excluded, and
+  // never without a normaliser: an un-normalised correlation is not comparable to any fixed threshold.
+  const band: PatternBand = ruledOut || !mature || norm == null
     ? "none"
-    : r >= PATTERN_STRONG
+    : norm >= PATTERN_STRONG
       ? "strong"
-      : r >= PATTERN_KNOWN_CUSTOM
+      : norm >= PATTERN_CANDIDATE
         ? "elevated"
         : "baseline";
-  return { r: Number.isFinite(r) ? r : null, bestConfig, bestR, band, rounds, mature };
+  return {
+    r: Number.isFinite(r) ? r : null, norm, refSelf, bestConfig, bestR, band, rounds, mature,
+  };
 }
 
 /**
@@ -443,6 +483,6 @@ export function detectionClass(lat: LatticeStats, pat: PatternMatch): DetectionC
   if (lat.ruledOut) return "excluded";
   // `pat.mature` is the gate that matters here: the lift side is satisfied thousands of trials before the
   // correlation stops being attenuated, so without it every class label churns for the first ~20 rounds.
-  if (lat.lift == null || lat.trials < LATTICE_MIN_TRIALS || pat.r == null || !pat.mature) return "pending";
-  return pat.r >= PATTERN_KNOWN_CUSTOM ? "candidate" : "other-median";
+  if (lat.lift == null || lat.trials < LATTICE_MIN_TRIALS || pat.norm == null || !pat.mature) return "pending";
+  return pat.norm >= PATTERN_CANDIDATE ? "candidate" : "other-median";
 }
