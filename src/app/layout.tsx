@@ -9,7 +9,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 
 const SITE_URL = "https://flareregistry.com";
-const TITLE = "Flare Registry — FTSO Signal Provider Directory";
+const TITLE = "Flare Registry: FTSO Signal Provider Directory";
 const DESCRIPTION =
   "Self-service registry for Flare and Songbird FTSO signal providers. Prove your address by signature and manage your own listing.";
 

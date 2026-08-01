@@ -43,7 +43,9 @@ export interface FeedProviderExtras {
     feePercent: number | null;
     uptimePercent: number | null;
     connected: boolean;
-    weight: string | null; // decimal string
+    weight: string | null; // TOTAL stake (self-bond + delegated), decimal string
+    selfBond: string | null; // the validator's own bond
+    delegatedWeight: string | null; // stake delegated to the node by others
     delegatorCount: number | null;
   }[];
   // Self-declared (provider-attested, not verified on-chain). Null when not declared.
@@ -256,6 +258,8 @@ export async function buildProviderList(): Promise<ProviderList> {
                       uptimePercent: v?.uptimePercent ?? null,
                       connected: v?.connected ?? false,
                       weight: v?.weight ?? null,
+                      selfBond: v?.selfBond ?? null,
+                      delegatedWeight: v?.delegatedWeight ?? null,
                       delegatorCount: v?.delegatorCount ?? null,
                     };
                   })

@@ -252,13 +252,20 @@ model ProviderValidator {
   nodeId  String // "NodeID-..."
 
   // Validator staking fee, percent (e.g. 10.0). Distinct from the FTSO delegationFeeBIPS.
-  feePercent     Float?
-  uptimePercent  Float?
-  connected      Boolean   @default(false)
-  weight         String? // self+delegated stake weight (decimal string)
-  delegatorCount Int?
-  startTime      DateTime?
-  endTime        DateTime?
+  feePercent      Float?
+  uptimePercent   Float?
+  connected       Boolean   @default(false)
+  // TOTAL stake on the node: self-bond PLUS delegated, as a decimal string in the P-chain's own unit
+  // (1e9). This matches what the public API has always documented. It previously stored the P-chain's
+  // `weight` field verbatim, which is SELF-BOND ONLY and understated the real figure by ~9.6x across
+  // the Flare validator set. Both legs are kept separately so nothing is lost and consumers can split
+  // them; `weight` stays the total because that is the published contract.
+  weight          String?
+  selfBond        String?
+  delegatedWeight String?
+  delegatorCount  Int?
+  startTime       DateTime?
+  endTime         DateTime?
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())

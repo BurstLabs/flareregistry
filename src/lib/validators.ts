@@ -47,7 +47,10 @@ interface RawValidator {
   delegationFee?: string; // percent string, e.g. "10.0000"
   uptime?: string; // percent string, e.g. "99.9824"
   connected?: boolean;
+  /** SELF-BOND only. The P-chain reports delegated stake separately, in delegatorWeight. */
   weight?: string;
+  /** Total stake delegated to this node by others. Absent on older node versions. */
+  delegatorWeight?: string;
   startTime?: string; // unix seconds (string)
   endTime?: string;
   delegatorCount?: string | number;
@@ -91,13 +94,27 @@ export async function ingestValidators(): Promise<{ flare: number; songbird: num
       const uptime = v.uptime != null ? Number(v.uptime) : null;
       const delegatorCount =
         v.delegatorCount != null ? Number(v.delegatorCount) : null;
+      // The P-chain's `weight` is SELF-BOND, and `delegatorWeight` is everything delegated to the node.
+      // Total stake is the sum, which is what this row's `weight` has always claimed to be and what the
+      // public API documents. Storing `weight` verbatim understated Flare's validator set by ~9.6x
+      // (1,898.5M FLR against a true 18,242.2M across 175 nodes). Both are decimal strings in the same
+      // 1e9 unit, so BigInt addition is exact; a node that reports neither stays null rather than "0",
+      // because zero stake and unknown stake are different claims.
+      const selfBond = v.weight ?? null;
+      const delegatedWeight = v.delegatorWeight ?? null;
+      const total =
+        selfBond != null || delegatedWeight != null
+          ? (BigInt(selfBond ?? "0") + BigInt(delegatedWeight ?? "0")).toString()
+          : null;
       const data = {
         network,
         nodeId: v.nodeID,
         feePercent: Number.isFinite(fee) ? fee : null,
         uptimePercent: Number.isFinite(uptime) ? uptime : null,
         connected: v.connected === true,
-        weight: v.weight ?? null,
+        weight: total,
+        selfBond,
+        delegatedWeight,
         delegatorCount: Number.isFinite(delegatorCount) ? delegatorCount : null,
         startTime: toDate(v.startTime),
         endTime: toDate(v.endTime),
@@ -118,12 +135,12 @@ export interface ValidatorInfo {
   feePercent: number | null;
   uptimePercent: number | null;
   connected: boolean;
-  // SELF-BOND ONLY (decimal string). This was previously commented as "self+delegated", which is wrong
-  // and understates total stake by roughly 9.6x: measured live across 175 Flare validators, `weight`
-  // sums to 1,898.5M FLR while the P-chain also returns a separate `delegatorWeight` summing to
-  // 16,343.7M FLR. We do not currently read `delegatorWeight` anywhere. Anything that needs TOTAL node
-  // stake must add the two; do not reach for this field alone.
+  /** TOTAL stake: self-bond plus delegated, decimal string. */
   weight: string | null;
+  /** The validator's own bond, the P-chain's `weight` field. */
+  selfBond: string | null;
+  /** Stake delegated to this node by others, the P-chain's `delegatorWeight` field. */
+  delegatedWeight: string | null;
   delegatorCount: number | null;
 }
 
@@ -133,6 +150,8 @@ function toValidatorInfo(r: {
   uptimePercent: number | null;
   connected: boolean;
   weight: string | null;
+  selfBond: string | null;
+  delegatedWeight: string | null;
   delegatorCount: number | null;
 }): ValidatorInfo {
   return {
@@ -140,7 +159,12 @@ function toValidatorInfo(r: {
     feePercent: r.feePercent,
     uptimePercent: r.uptimePercent,
     connected: r.connected,
-    weight: r.weight,
+    // Rows written before the two legs were split have a null total but a backfilled selfBond. Fall
+    // back to it rather than reporting null, so the field never regresses to "unknown" for a node we
+    // already had a figure for.
+    weight: r.weight ?? r.selfBond,
+    selfBond: r.selfBond,
+    delegatedWeight: r.delegatedWeight,
     delegatorCount: r.delegatorCount,
   };
 }
