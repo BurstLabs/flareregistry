@@ -268,26 +268,34 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       {(d.votePower || d.reward) && (
         <dl className="surface mt-6 grid grid-cols-2 gap-4 rounded-xl border p-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {d.votePower && (
-            <div>
-              <dt className="text-faint">{t("card.votePower")}</dt>
+            <div title={t("card.votePowerHint")}>
+              <dt className="cursor-help text-faint underline decoration-dotted underline-offset-2">
+                {t("card.votePower")}
+              </dt>
               <dd className="font-medium">{d.votePower}</dd>
             </div>
           )}
           {d.feedCount != null && (
-            <div>
-              <dt className="text-faint">{t("detail.feeds")}</dt>
+            <div title={t("detail.feedsHint")}>
+              <dt className="cursor-help text-faint underline decoration-dotted underline-offset-2">
+                {t("detail.feeds")}
+              </dt>
               <dd className="font-medium">{d.feedCount}</dd>
             </div>
           )}
           {d.reward && (
-            <div>
-              <dt className="text-faint">{t("card.reward", { epoch: d.rewardEpoch ?? "" })}</dt>
+            <div title={t("card.rewardHint", { epoch: d.rewardEpoch ?? "" })}>
+              <dt className="cursor-help text-faint underline decoration-dotted underline-offset-2">
+                {t("card.reward", { epoch: d.rewardEpoch ?? "" })}
+              </dt>
               <dd className="font-medium">{d.reward}</dd>
             </div>
           )}
           {d.stakerReward && (
-            <div>
-              <dt className="text-faint">{t("detail.stakerReward", { epoch: d.rewardEpoch ?? "" })}</dt>
+            <div title={t("detail.stakerRewardHint", { epoch: d.rewardEpoch ?? "" })}>
+              <dt className="cursor-help text-faint underline decoration-dotted underline-offset-2">
+                {t("detail.stakerReward", { epoch: d.rewardEpoch ?? "" })}
+              </dt>
               <dd className="font-medium">{d.stakerReward}</dd>
             </div>
           )}
