@@ -61,7 +61,7 @@ export default function DetectionMethodPage() {
         <strong className="text-fg">This page publishes no results.</strong> No scores, no rankings and
         no provider names appear here or anywhere public. Our signals identify a{" "}
         <em>configuration and a style of arithmetic</em>, not which source code a provider runs, and we
-        hold zero confirmed positives. Section 6 explains how to check your own setup in a minute
+        hold zero confirmed positives. Section 7 explains how to check your own setup in a minute
         without any tooling from us.
       </Note>
 
@@ -189,7 +189,39 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </Note>
       </Section>
 
-      <Section id="selfcheck" title="6. How to check your own setup">
+      <Section id="block" title="6. Cross-check against Flare&apos;s own metrics">
+        <p>
+          The three signals above are all ours. The fourth input is not: it is a cross-check against
+          statistics <strong className="text-fg">Flare publishes itself</strong>, specifically the primary
+          and secondary reward-band success rates shown on Flare&apos;s systems explorer.
+        </p>
+        <p>
+          We take the region of those two rates occupied by providers our own signals group together, as
+          a standard Tukey fence, and record whether each provider falls inside or outside it. The region
+          is recomputed from current data rather than fixed, so it moves as the network moves.
+        </p>
+        <Note>
+          <strong className="text-fg">It is deliberately not part of the classification.</strong> Two
+          reasons. It would add nothing, because the region is near-uniform across the group it is
+          derived from, so folding it in would shift everyone together and change no ordering. And it
+          would spend the only thing that makes it worth having: the moment a statistic helps decide who
+          is grouped, it can no longer serve as independent confirmation of that grouping.
+        </Note>
+        <p>
+          So it is read only for <strong className="text-fg">disagreements</strong>. A provider our
+          signals group who sits outside the region, or one they do not group who sits inside it, is a
+          prompt to look again rather than a conclusion. Agreement is expected and carries little
+          information; the exceptions are where the useful signal is.
+        </p>
+        <p>
+          One limitation worth stating: these rates measure reward-band performance, which is affected by
+          hosting, connectivity and venue access as much as by which software is running. A provider can
+          sit inside the region for reasons that have nothing to do with this question, and one of our own
+          reference points does exactly that.
+        </p>
+      </Section>
+
+      <Section id="selfcheck" title="7. How to check your own setup">
         <p>You can answer this in a minute, and you hold information we never will.</p>
         <ol className="list-decimal space-y-2 pl-5">
           <li>
@@ -215,7 +247,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="verify" title="7. Reproducing this independently">
+      <Section id="verify" title="8. Reproducing this independently">
         <p>Everything upstream of our code is public. Reveals are decoded from:</p>
         <Scroller>
           <ul className="w-max min-w-full list-disc space-y-1 pl-5 text-xs">
@@ -241,7 +273,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="use" title="8. How this is used">
+      <Section id="use" title="9. How this is used">
         <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong className="text-fg">It never affects a listing.</strong>{" "}
