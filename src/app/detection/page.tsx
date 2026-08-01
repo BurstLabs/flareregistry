@@ -104,14 +104,10 @@ export default function DetectionMethodPage() {
       <Section id="signal1" title="3. Signal one: tick-grid lift">
         <p>
           For each (feed, tick) pair we ask how often a provider&apos;s encoded value is divisible by{" "}
-          <code>T</code>. The baseline is <strong className="text-fg">not</strong> the arithmetic{" "}
-          <code>1/T</code>. We tried that and it was wrong by roughly 2x, because most lattices are powers
-          of ten, which makes the test really &ldquo;does this value have at most d-1 decimal
-          places&rdquo;, something any implementation that rounds will satisfy, at a rate set by where
-          the price happens to sit that round.
+          <code>T</code>.
         </p>
         <p>
-          The baseline is instead the <strong className="text-fg">per-round leave-one-out field rate</strong>:
+          The baseline is the <strong className="text-fg">per-round leave-one-out field rate</strong>:
           the rate at which every <em>other</em> provider hit that same cell in that same round.
         </p>
         <Formula>{`for each (feed, T) cell in a round:
@@ -120,8 +116,8 @@ export default function DetectionMethodPage() {
 
 lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formula>
         <p>
-          Conditioning on the round removes the common factor that made the arithmetic null wrong, and
-          the field lands at 1.00 by construction. Values below <code>2^31</code> (the unpriced-feed
+          Conditioning on the round removes the price-level effects common to every provider that round,
+          and the field lands at 1.00 by construction. Values below <code>2^31</code> (the unpriced-feed
           sentinel) are excluded: zero is divisible by everything and would manufacture evidence.
         </p>
         <p>
