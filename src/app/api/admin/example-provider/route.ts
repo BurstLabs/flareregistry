@@ -101,6 +101,12 @@ export async function GET() {
   }
 
   // Admin display-name overrides + verified-custom flags.
+  // Third-party cross-reference, joined on a normalised provider name. Their measurement, not ours.
+  const externals = await prisma.externalDetection.findMany();
+  const extKey = (x: string | null | undefined) =>
+    String(x ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const extByName = new Map(externals.map((e) => [e.nameKey, e]));
+
   const labels = await prisma.detectionLabel.findMany({ where: { address: { in: keys } } });
   const labelByAddr = new Map(labels.map((l) => [l.address.toLowerCase(), l.label]));
   const knownCustomAddr = new Set(labels.filter((l) => l.knownCustom).map((l) => l.address.toLowerCase()));
@@ -126,6 +132,13 @@ export async function GET() {
       url: p?.url ?? null,
       source: p?.source ?? null,
       weight, // on-chain vote power (wNat weight), whole tokens
+      // Independent third-party verdict, where their published name matches ours.
+      external: (() => {
+        const e = extByName.get(extKey(labelByAddr.get(r.voter.toLowerCase()) ?? p?.name));
+        return e
+          ? { source: e.source, probability: e.probability, verdict: e.verdict, snapshotAt: e.snapshotAt }
+          : null;
+      })(),
       // Flare Management Group member.
       managementGroup: (entityVoter ? mgByVoter.get(entityVoter) : false) ?? false,
       // Flare's OFFICIAL primary/secondary reward-band success rates, verbatim in basis points.

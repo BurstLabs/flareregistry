@@ -61,7 +61,7 @@ export default function DetectionMethodPage() {
         <strong className="text-fg">This page publishes no results.</strong> No scores, no rankings and
         no provider names appear here or anywhere public. Our signals identify a{" "}
         <em>configuration and a style of arithmetic</em>, not which source code a provider runs, and we
-        hold zero confirmed positives. Section 7 explains how to check your own setup in a minute
+        hold zero confirmed positives. Section 8 explains how to check your own setup in a minute
         without any tooling from us.
       </Note>
 
@@ -221,7 +221,45 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="selfcheck" title="7. How to check your own setup">
+      <Section id="external" title="7. Cross-reference against an independent detector">
+        <p>
+          We are not the only party measuring this.{" "}
+          <a
+            href="https://cerberusonchain.xyz/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-beacon hover:underline"
+          >
+            cerberusonchain.xyz
+          </a>{" "}
+          publishes its own example-provider assessment, and we cache it daily to compare against our
+          own. Their verdicts are their work, not ours, and we neither republish them nor treat them as
+          an input to our classification.
+        </p>
+        <p>
+          What makes the comparison worth anything is that the two methods{" "}
+          <strong className="text-fg">share no signals</strong>. They work from cadence and
+          submitted-value fingerprints measured against their own reference deployment. We work from tick
+          grids, per-cell hit patterns and a configuration signature. Two unrelated methods agreeing is
+          evidence in a way that two of our own signals agreeing is not, and given we hold zero confirmed
+          positives, an independent detector is the closest thing to external ground truth available.
+        </p>
+        <Note>
+          As with the Flare metrics cross-check, it is read for{" "}
+          <strong className="text-fg">disagreements</strong>. Agreement is expected and says little. A
+          provider the two methods classify differently is a prompt to examine that provider properly,
+          and in at least one case a disagreement of exactly this kind is what led us to re-examine a
+          boundary of our own.
+        </Note>
+        <p>
+          Two limits. The join is on provider name, so anyone they label anonymously, or under a
+          different name, has no cross-reference at all. And their published figures carry their own
+          snapshot date, which we record separately from our fetch time, because presenting a stale
+          third-party verdict as current would be worse than showing none.
+        </p>
+      </Section>
+
+      <Section id="selfcheck" title="8. How to check your own setup">
         <p>You can answer this in a minute, and you hold information we never will.</p>
         <ol className="list-decimal space-y-2 pl-5">
           <li>
@@ -247,7 +285,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="verify" title="8. Reproducing this independently">
+      <Section id="verify" title="9. Reproducing this independently">
         <p>Everything upstream of our code is public. Reveals are decoded from:</p>
         <Scroller>
           <ul className="w-max min-w-full list-disc space-y-1 pl-5 text-xs">
@@ -273,7 +311,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="use" title="9. How this is used">
+      <Section id="use" title="10. How this is used">
         <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong className="text-fg">It never affects a listing.</strong>{" "}
