@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
+import { openWallet } from "@/lib/appkit";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
 import { useWalletSign } from "@/lib/useWalletSign";
 import { checkContent } from "@/lib/content-filter";
@@ -186,7 +186,6 @@ function explainError(error: unknown, t: T): string | null {
 function SubmitPageInner() {
   const { t } = useApp();
   const router = useRouter();
-  const { open } = useAppKit();
   const { address: connectedAddress, isConnected } = useAccount();
   const connectAndSign = useWalletSign(t);
   // "Manage" mode: arrived from a provider's "Manage this listing" link (/submit?manage=1). Shows
@@ -394,7 +393,7 @@ function SubmitPageInner() {
     // would just show the account view (Fund/Swap/Disconnect); instead the effect below advances
     // straight to the sign step using the connected address.
     if (!isConnected || !connectedAddress) {
-      await open();
+      await openWallet();
     }
   }
 

@@ -6,7 +6,7 @@
 // connect modal (injected extension or WalletConnect).
 
 import { useEffect, useState } from "react";
-import { useAppKit } from "@reown/appkit/react";
+import { openWallet } from "@/lib/appkit";
 import { useAccount } from "wagmi";
 import { useApp } from "./providers";
 
@@ -16,7 +16,6 @@ function truncate(addr: string) {
 
 export function WalletButton() {
   const { t } = useApp();
-  const { open } = useAppKit();
   const { address, isConnected } = useAccount();
 
   // wagmi reconnects to an injected wallet (MetaMask) only on the CLIENT, after mount; the server
@@ -29,7 +28,7 @@ export function WalletButton() {
   if (mounted && isConnected && address) {
     return (
       <button
-        onClick={() => open({ view: "Account" })}
+        onClick={() => openWallet({ view: "Account" })}
         className="rounded-md border border-themed px-2 py-1.5 font-mono text-xs text-muted hover:text-beacon"
         title={address}
       >
@@ -40,7 +39,7 @@ export function WalletButton() {
 
   return (
     <button
-      onClick={() => open()}
+      onClick={() => openWallet()}
       className="rounded-md border border-beacon px-3 py-1.5 text-sm font-medium text-beacon hover:bg-beacon/10"
     >
       {t("wallet.connect")}
