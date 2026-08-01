@@ -423,19 +423,41 @@ const cellKey = (name, T) => `${name}|${T}`;
 // A provider quoting USDC from native USD books has no such constraint. This uses only the provider's own
 // two submitted values: no reference instance, no field baseline, no calibration, nothing to fit.
 const USDC_GRID = 1e4;
-// Distance (in units of the 1e-4 grid) within which the ratio counts as on-grid. NOT tuned: the hit rate
-// is identical at 0.02 and 0.05 for every provider in every window measured, because real hits land on
-// near-exact integers. Anything in that range gives the same answer.
-const USDC_TOL = 0.05;
+// Extra slack beyond the derived quantisation bound, for the provider's own internal rounding.
+const USDC_TOL_SLACK = 1.5;
 
-// Returns {hit, usdc, usdt} for one provider's reveal, or null when either leg is unusable.
+// Returns {hit, usdc, usdt, tol} for one provider's reveal, or null when either leg is unusable.
+//
+// The tolerance is DERIVED, not chosen. Both legs reach us already quantised to 10^-decimals by the
+// on-chain encoder, so their ratio carries an unavoidable error before we do any arithmetic:
+//
+//   d(usdc/usdt) <= (0.5q_c + ratio*0.5q_t) / usdt        where q = 10^-decimals
+//
+// At the live decimals (5 for both) that is 1.0e-5 on the ratio, or 0.100 in units of the 1e-4 grid.
+// A previous fixed tolerance of 0.05 sat BELOW that floor, so a provider genuinely deriving USDC from
+// USDC/USDT could be pushed off-grid by encoder rounding alone and scored as non-example. Measured: one
+// provider scored 0.00 at tolerance 0.05 and 1.00 at 0.15, with every observation in the gap.
+//
+// Deriving it also means the test survives a change to either feed's decimals, which a constant
+// would not.
 function usdcSignature(rawVals, idxUsdc, idxUsdt, decUsdc, decUsdt) {
   if (idxUsdc == null || idxUsdt == null) return null;
   const usdc = decodeValue(rawVals[idxUsdc], decUsdc);
   const usdt = decodeValue(rawVals[idxUsdt], decUsdt);
   if (!Number.isFinite(usdc) || !Number.isFinite(usdt) || usdc <= 0 || usdt <= 0) return null;
-  const scaled = (usdc / usdt) * USDC_GRID;
-  return { hit: Math.abs(scaled - Math.round(scaled)) <= USDC_TOL ? 1 : 0, usdc, usdt };
+  const ratio = usdc / usdt;
+  const quantBound =
+    USDC_GRID * (0.5 * 10 ** -decUsdc + ratio * 0.5 * 10 ** -decUsdt) / usdt;
+  const tol = quantBound * USDC_TOL_SLACK;
+  const scaled = ratio * USDC_GRID;
+  // The null is no longer a fixed 10%: a wider tolerance admits more by chance, so record the
+  // per-observation chance rate and let the API divide by it rather than assuming a constant.
+  return {
+    hit: Math.abs(scaled - Math.round(scaled)) <= tol ? 1 : 0,
+    chance: Math.min(1, 2 * tol),
+    usdc,
+    usdt,
+  };
 }
 
 // Minimum providers with a usable value in a (feed,T) cell before its empirical rate is trusted.
@@ -839,6 +861,7 @@ async function scoreRound(round, refs, reveals, canonical) {
         ? {
             usdcGridHits: (existing?.usdcGridHits ?? 0) + usdc.hit,
             usdcGridN: (existing?.usdcGridN ?? 0) + 1,
+            usdcChanceSum: (existing?.usdcChanceSum ?? 0) + usdc.chance,
             usdcSumX: (existing?.usdcSumX ?? 0) + usdc.usdc,
             usdcSumY: (existing?.usdcSumY ?? 0) + usdc.usdt,
             usdcSumXY: (existing?.usdcSumXY ?? 0) + usdc.usdc * usdc.usdt,

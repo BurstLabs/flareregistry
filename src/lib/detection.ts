@@ -275,15 +275,19 @@ export function patternMatch(
  * config, USDC_USD / USDT_USD must be an integer multiple of 1e-4. Quoting USDC from native USD books
  * imposes no such constraint.
  *
- * Measured across three windows, one of them 12 days before the others:
- *   our reference instances  0.504 - 1.000
- *   candidate cluster        0.536 - 1.000   (51 of 51 classifications, no exceptions)
- *   1FTSO   (VERIFIED CUSTOM)  0.095 / 0.127 / 0.152   -> custom in 3 of 3
- *   Burst   (VERIFIED CUSTOM)  identical to 1FTSO      -> custom in 3 of 3
- *   field bulk               0.055 - 0.245
- * Robustness: the tolerance is not fitted (hit rates are identical at 0.02 and 0.05); a placebo grid
- * constant of 1.3e4 collapses the candidates to ~0.1; and recomputing a candidate against the FIELD
- * median USDT instead of its own drops it 0.579 -> 0.268, exactly as the mechanism predicts.
+ * Reported as a LIFT over chance: 1.0 is exactly the rate a provider with no such constraint would hit
+ * by accident, so the scale is self-calibrating and survives a change to feed decimals.
+ *
+ * Measured across three windows on the earlier fixed-tolerance scale (raw hit fraction against a ~10%
+ * null), which corresponds to roughly 5x-10x chance for the reference instances and the candidate
+ * cluster, and around 1x for both verified-custom controls. Those figures are being re-accumulated on
+ * the derived-tolerance scale; treat the exact numbers as pending rather than settled.
+ * Robustness: a placebo grid constant of 1.3e4 collapses the effect, and recomputing a candidate against
+ * the FIELD median USDT instead of its own also collapses it, exactly as the mechanism predicts.
+ *
+ * The tolerance is DERIVED from the encoder's quantisation bound, not chosen. An earlier fixed 0.05 sat
+ * BELOW that bound, so encoder rounding alone could push a genuine user off-grid: one provider measured
+ * 0.00 at tolerance 0.05 and 1.00 at 0.15, with every observation inside the gap.
  *
  * READ IT AS A CONFIG SIGNATURE, NOT AN IMPLEMENTATION DETECTOR. Within identical example-provider code
  * our own fleet spans 0.504 to 1.000 purely by which USDC books are configured, so a provider running
@@ -291,7 +295,7 @@ export function patternMatch(
  * hypothetical: Digital Dynamix reads 0.14-0.26 on the grid while agreeing byte-exactly with the
  * candidate cluster on 78% of cells. The correlation gate exists to catch exactly that case.
  */
-export const USDC_GRID_EXAMPLE = 0.35; // at or above: consistent with the shipped USDC config
+export const USDC_GRID_EXAMPLE = 3.5; // at or above: consistent with the shipped USDC config
 export const USDC_CORR_GATE = 0.2; // a derived USDC inherits USDT's variation
 /** Rounds required before the signature is reported at all. */
 export const USDC_MIN_ROUNDS = 300;
@@ -310,6 +314,7 @@ export interface UsdcSignature {
 export function usdcSignature(row: {
   usdcGridHits: number;
   usdcGridN: number;
+  usdcChanceSum?: number;
   usdcSumX: number;
   usdcSumY: number;
   usdcSumXY: number;
@@ -324,7 +329,14 @@ export function usdcSignature(row: {
   if (!n || n < USDC_MIN_ROUNDS) {
     return { grid: n ? row.usdcGridHits / n : null, corr: null, rounds: n, verdict: "pending" };
   }
-  const grid = row.usdcGridHits / n;
+  // LIFT over chance, not a raw hit fraction. The tolerance is now derived per observation from the
+  // encoder's quantisation bound, so the expected rate under the null varies with decimals and price
+  // level; a raw fraction would no longer be comparable across providers or across an epoch change.
+  // Dividing by the accumulated chance mass makes 1.0 mean "exactly chance" by construction, the same
+  // self-calibrating shape used by the tick-grid lift.
+  // Rows accumulated before the chance mass existed fall back to the historic fixed-tolerance null.
+  const expected = row.usdcChanceSum && row.usdcChanceSum > 0 ? row.usdcChanceSum : n * 0.1;
+  const grid = expected > 0 ? row.usdcGridHits / expected : 0;
   const cov = row.usdcSumXY - (row.usdcSumX * row.usdcSumY) / n;
   const vx = row.usdcSumXX - (row.usdcSumX * row.usdcSumX) / n;
   const vy = row.usdcSumYY - (row.usdcSumY * row.usdcSumY) / n;
