@@ -245,12 +245,21 @@ weight  = isqrt(S) x isqrt(isqrt(S))                       an integer floor of S
           arithmetic in wei with floors.
         </p>
         <p>
-          We do not implement that formula.{" "}
-          <code>FlareSystemsCalculator.calculateRegistrationWeight</code> already evaluated it at
-          registration and <code>VoterRegistry</code>{" "}stored the answer, so we read the stored value.
-          A reimplementation would be our opinion of the protocol&apos;s arithmetic, and it would drift
-          silently the moment governance changed <code>stakingFactor</code> or <code>wNatCapPPM</code>.
-          Reading the getter cannot drift, and it means you can check your own row yourself:
+          We read that result rather than computing it.{" "}
+          <code>FlareSystemsCalculator.calculateRegistrationWeight</code> evaluates the formula at
+          registration and <code>VoterRegistry</code>{" "}stores the answer, so the figure behind the
+          column is the protocol&apos;s own. Computing it ourselves would put our reading of the
+          arithmetic in place of the protocol&apos;s, and it would drift the moment governance changed{" "}
+          <code>stakingFactor</code> or <code>wNatCapPPM</code>.
+        </p>
+        <p>
+          We did reproduce it once as a check, from raw primitives{" "}
+          (<code>getNodeIdsOfAt</code>, <code>batchVotePowerOfAt</code>,{" "}
+          <code>getDelegationAddressOfAt</code>, <code>votePowerOfAt</code>,{" "}
+          <code>totalVotePowerAt</code>), and it matches the stored weight for{" "}
+          <strong className="text-fg">all 98 registered voters</strong>, with the total matching{" "}
+          <code>getWeightsSums</code> to the wei. That was a one-off verification of the reading, not how
+          the numbers are produced. You can check your own row the same way we read ours:
         </p>
         <Formula>{`cast call 0xA480457953Af3583E54DCd630b219353B8FC9Af7 \\
   "getVoterRegistrationWeight(address,uint256)(uint256)" <identity address> <reward epoch> \\
@@ -264,14 +273,6 @@ cast call 0xA480457953Af3583E54DCd630b219353B8FC9Af7 \\
           not a token amount and does not convert to one; an absolute figure tells you nothing and would
           invite exactly the misreading the unit deserves. Ratios are the only meaningful form, and a
           share of the total is a ratio.
-        </p>
-        <p>
-          We did not take the formula on trust either. Recomputing it from raw primitives{" "}
-          (<code>getNodeIdsOfAt</code>, <code>batchVotePowerOfAt</code>,{" "}
-          <code>getDelegationAddressOfAt</code>, <code>votePowerOfAt</code>,{" "}
-          <code>totalVotePowerAt</code>) reproduces the stored weight for{" "}
-          <strong className="text-fg">98 of 98 voters on Flare and 64 of 64 on Songbird</strong>, and the
-          totals match <code>getWeightsSums</code> exactly, to the wei.
         </p>
         <Note>
           The denominator is every registered voter on the network, not only the providers we scored, so
