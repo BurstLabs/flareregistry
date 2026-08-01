@@ -6,6 +6,7 @@ import { safeExternalUrl } from "@/lib/validation";
 import { FlagAction, ReportLogoAction } from "./governance-actions";
 import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
+import { InfoTip } from "./info-tip";
 import { ManageListingButton } from "./manage-listing-button";
 
 export interface DetailData {
@@ -268,33 +269,39 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       {(d.votePower || d.reward) && (
         <dl className="surface mt-6 grid grid-cols-2 gap-4 rounded-xl border p-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {d.votePower && (
-            <div title={t("card.votePowerHint")}>
-              <dt className="cursor-help text-faint underline decoration-dotted underline-offset-2">
-                {t("card.votePower")}
+            <div>
+              <dt className="text-faint">
+                <InfoTip label={t("card.votePower")} tip={t("card.votePowerHint")} />
               </dt>
               <dd className="font-medium">{d.votePower}</dd>
             </div>
           )}
           {d.feedCount != null && (
-            <div title={t("detail.feedsHint")}>
-              <dt className="cursor-help text-faint underline decoration-dotted underline-offset-2">
-                {t("detail.feeds")}
+            <div>
+              <dt className="text-faint">
+                <InfoTip label={t("detail.feeds")} tip={t("detail.feedsHint")} />
               </dt>
               <dd className="font-medium">{d.feedCount}</dd>
             </div>
           )}
           {d.reward && (
-            <div title={t("card.rewardHint", { epoch: d.rewardEpoch ?? "" })}>
-              <dt className="cursor-help text-faint underline decoration-dotted underline-offset-2">
-                {t("card.reward", { epoch: d.rewardEpoch ?? "" })}
+            <div>
+              <dt className="text-faint">
+                <InfoTip
+                  label={t("card.reward", { epoch: d.rewardEpoch ?? "" })}
+                  tip={t("card.rewardHint", { epoch: d.rewardEpoch ?? "" })}
+                />
               </dt>
               <dd className="font-medium">{d.reward}</dd>
             </div>
           )}
           {d.stakerReward && (
-            <div title={t("detail.stakerRewardHint", { epoch: d.rewardEpoch ?? "" })}>
-              <dt className="cursor-help text-faint underline decoration-dotted underline-offset-2">
-                {t("detail.stakerReward", { epoch: d.rewardEpoch ?? "" })}
+            <div>
+              <dt className="text-faint">
+                <InfoTip
+                  label={t("detail.stakerReward", { epoch: d.rewardEpoch ?? "" })}
+                  tip={t("detail.stakerRewardHint", { epoch: d.rewardEpoch ?? "" })}
+                />
               </dt>
               <dd className="font-medium">{d.stakerReward}</dd>
             </div>
