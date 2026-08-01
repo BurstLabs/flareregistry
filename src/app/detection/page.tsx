@@ -61,8 +61,8 @@ export default function DetectionMethodPage() {
         <strong className="text-fg">This page publishes no results.</strong> No scores, no rankings and
         no provider names appear here or anywhere public. Our signals identify a{" "}
         <em>configuration and a style of arithmetic</em>, not which source code a provider runs, and we
-        hold zero confirmed positives. A public list would be an accusation the evidence does not
-        support. Section 6 explains how to check your own setup in a minute without any tooling from us.
+        hold zero confirmed positives. Section 6 explains how to check your own setup in a minute
+        without any tooling from us.
       </Note>
 
       <Section id="claims" title="1. What this does not establish">
@@ -77,20 +77,7 @@ export default function DetectionMethodPage() {
               The signals detect arithmetic and configuration, not source code.
             </strong>{" "}
             A provider who writes their own median-of-prints implementation over a similar venue list is,
-            on our measurements, indistinguishable from one running the reference code. We have a
-            concrete case: an operator confirmed to us as fully custom scores inside the range our own
-            reference instances produce on the primary signal.
-          </li>
-          <li>
-            <strong className="text-fg">A post-processed deployment is invisible to us.</strong> Anyone
-            running the reference code who rounds, smooths or blends its output before submitting erases
-            the signature entirely. That false-negative rate is unmeasured and unmeasurable with the
-            ground truth we have.
-          </li>
-          <li>
-            <strong className="text-fg">Our reference is an imperfect model.</strong> Our own instances
-            run roughly 5x less accurately than the typical live provider, so they are not a faithful
-            stand-in for a well-hosted deployment.
+            on our measurements, indistinguishable from one running the reference code.
           </li>
         </ul>
       </Section>
