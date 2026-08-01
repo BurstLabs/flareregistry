@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-01T19:47:02.740Z",
+  "timestamp": "2026-08-01T20:47:01.743Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -23,7 +23,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "20805744422122739421230808",
-        "votePowerCapped": "20805744422122739421230808",
+        "votePowerCapped": "40722605493108950689644544",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "8232290650916324143010",
@@ -39,9 +39,11 @@
           {
             "nodeId": "NodeID-NHdoCbjV2qnAqdFFw6ZesXcGG9CWjxt77",
             "feePercent": 20,
-            "uptimePercent": 99.9779,
+            "uptimePercent": 99.9785,
             "connected": true,
             "weight": "3500000000000000",
+            "selfBond": "3500000000000000",
+            "delegatedWeight": "0",
             "delegatorCount": 0
           }
         ],
@@ -75,7 +77,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "681440620183858822344922151",
-        "votePowerCapped": "681440620183858822344922151",
+        "votePowerCapped": "486419614084414049596997632",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "70729373723341074640378",
@@ -93,15 +95,19 @@
             "feePercent": 10,
             "uptimePercent": 99.9941,
             "connected": true,
-            "weight": "7959600000000000",
-            "delegatorCount": 35
+            "weight": "113633723966208639",
+            "selfBond": "7959600000000000",
+            "delegatedWeight": "105674123966208639",
+            "delegatorCount": 36
           },
           {
             "nodeId": "NodeID-FDR3CXdwP3H3Zz9QKfL61fk56zkPEgdFV",
             "feePercent": 10,
             "uptimePercent": 99.9999,
             "connected": true,
-            "weight": "13333333000000000",
+            "weight": "199999994999999993",
+            "selfBond": "13333333000000000",
+            "delegatedWeight": "186666661999999993",
             "delegatorCount": 29
           },
           {
@@ -109,7 +115,9 @@
             "feePercent": 10,
             "uptimePercent": 99.9997,
             "connected": true,
-            "weight": "13333334000000000",
+            "weight": "197410107586384820",
+            "selfBond": "13333334000000000",
+            "delegatedWeight": "184076773586384820",
             "delegatorCount": 92
           },
           {
@@ -117,7 +125,9 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "20000000000000000",
+            "weight": "265299435000000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "245299435000000000",
             "delegatorCount": 45
           }
         ],
@@ -151,7 +161,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "192117504452938745569679122",
-        "votePowerCapped": "192117504452938745569679122",
+        "votePowerCapped": "163913221450169042901925888",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "29957613253466461298239",
@@ -169,7 +179,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9999,
             "connected": true,
-            "weight": "10000000000000000",
+            "weight": "149999958249610006",
+            "selfBond": "10000000000000000",
+            "delegatedWeight": "139999958249610006",
             "delegatorCount": 42
           }
         ],
@@ -203,7 +215,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "657841204434604833543768614",
-        "votePowerCapped": "657841204434604833543768614",
+        "votePowerCapped": "653743888603912837017894912",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "88181310418480400309636",
@@ -221,7 +233,9 @@
             "feePercent": 10,
             "uptimePercent": 99.9946,
             "connected": true,
-            "weight": "13333333000000000",
+            "weight": "199002277951852337",
+            "selfBond": "13333333000000000",
+            "delegatedWeight": "185668944951852337",
             "delegatorCount": 185
           }
         ],
@@ -255,7 +269,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "86562370250961714035409683",
-        "votePowerCapped": "86562370250961714035409683",
+        "votePowerCapped": "85719450806869877994815488",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "13535542375307813497083",
@@ -271,9 +285,11 @@
           {
             "nodeId": "NodeID-DcUJTi6u5Xoutgr1A25iMu4Rp5JEbsEqr",
             "feePercent": 20,
-            "uptimePercent": 99.8237,
+            "uptimePercent": 99.8243,
             "connected": true,
-            "weight": "9500000000000000",
+            "weight": "75771260135872250",
+            "selfBond": "9500000000000000",
+            "delegatedWeight": "66271260135872250",
             "delegatorCount": 24
           }
         ],
@@ -307,7 +323,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "995598727399372989193487401",
-        "votePowerCapped": "995598727399372989193487401",
+        "votePowerCapped": "971281274685319497906126848",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "132748869706039237480160",
@@ -323,9 +339,11 @@
           {
             "nodeId": "NodeID-KRkND3cB1bYaWt71CSQdCUjRSR95d3cNz",
             "feePercent": 20,
-            "uptimePercent": 99.9844,
+            "uptimePercent": 99.9845,
             "connected": true,
-            "weight": "10202000000000000",
+            "weight": "32559894406322811",
+            "selfBond": "10202000000000000",
+            "delegatedWeight": "22357894406322811",
             "delegatorCount": 19
           },
           {
@@ -333,15 +351,19 @@
             "feePercent": 20,
             "uptimePercent": 99.9988,
             "connected": true,
-            "weight": "14089000000000000",
+            "weight": "188475979235390949",
+            "selfBond": "14089000000000000",
+            "delegatedWeight": "174386979235390949",
             "delegatorCount": 22
           },
           {
             "nodeId": "NodeID-J78JH6xKf59nTSxTDuWK1aD7YGcgkMTu3",
             "feePercent": 20,
-            "uptimePercent": 99.9914,
+            "uptimePercent": 99.9916,
             "connected": true,
-            "weight": "20000000000000000",
+            "weight": "29625531616530785",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "9625531616530785",
             "delegatorCount": 17
           }
         ],
@@ -375,7 +397,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "68676951386117283984938929",
-        "votePowerCapped": "68676951386117283984938929",
+        "votePowerCapped": "57994167019115604695056384",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -393,8 +415,10 @@
             "feePercent": 10,
             "uptimePercent": 99.9793,
             "connected": true,
-            "weight": "29990100000000000",
-            "delegatorCount": 466
+            "weight": "297757972381561931",
+            "selfBond": "29990100000000000",
+            "delegatedWeight": "267767872381561931",
+            "delegatorCount": 464
           }
         ],
         "selfDeclared": {
@@ -427,7 +451,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "278914767354330331100435327",
-        "votePowerCapped": "278914767354330331100435327",
+        "votePowerCapped": "269534822838043141140905984",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "52176062073383393063719",
@@ -445,16 +469,20 @@
             "feePercent": 20,
             "uptimePercent": 99.9912,
             "connected": true,
-            "weight": "15000000000000000",
-            "delegatorCount": 22
+            "weight": "19405152390331400",
+            "selfBond": "15000000000000000",
+            "delegatedWeight": "4405152390331400",
+            "delegatorCount": 23
           },
           {
             "nodeId": "NodeID-P4T4uKqveVxjZZXVdADHENdnCKnsCFvDE",
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "15000000000000000",
-            "delegatorCount": 19
+            "weight": "39890605127954382",
+            "selfBond": "15000000000000000",
+            "delegatedWeight": "24890605127954382",
+            "delegatorCount": 21
           }
         ],
         "selfDeclared": {
@@ -487,7 +515,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "1085913381680807446235810563",
-        "votePowerCapped": "1085913381680807446235810563",
+        "votePowerCapped": "1085565722996026942859247616",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "126743095877711638878979",
@@ -503,17 +531,21 @@
           {
             "nodeId": "NodeID-MsF6Xc1PsMWtcxVudCepWb5kUeF1EF8RX",
             "feePercent": 12.5,
-            "uptimePercent": 99.9655,
+            "uptimePercent": 99.9656,
             "connected": true,
-            "weight": "13340000000000000",
-            "delegatorCount": 83
+            "weight": "199396535982480140",
+            "selfBond": "13340000000000000",
+            "delegatedWeight": "186056535982480140",
+            "delegatorCount": 82
           },
           {
             "nodeId": "NodeID-DWh5dWPjkxHRsXJiNK5KQcEm5rDwEzikE",
             "feePercent": 20,
-            "uptimePercent": 99.9852,
+            "uptimePercent": 99.9853,
             "connected": true,
-            "weight": "20000000000000000",
+            "weight": "54640063985618250",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "34640063985618250",
             "delegatorCount": 19
           },
           {
@@ -521,7 +553,9 @@
             "feePercent": 10,
             "uptimePercent": 99.9937,
             "connected": true,
-            "weight": "13340000000000000",
+            "weight": "162656970633371702",
+            "selfBond": "13340000000000000",
+            "delegatedWeight": "149316970633371702",
             "delegatorCount": 70
           }
         ],
@@ -555,7 +589,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "856361880291539828700919150",
-        "votePowerCapped": "856361880291539828700919150",
+        "votePowerCapped": "829093946560697033482567680",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "95640323764726966178592",
@@ -571,34 +605,42 @@
           {
             "nodeId": "NodeID-HZwFckGTbucqTtE7qcv6z85mnScUfAeW6",
             "feePercent": 10,
-            "uptimePercent": 99.9992,
+            "uptimePercent": 99.9989,
             "connected": true,
-            "weight": "13340000000000000",
-            "delegatorCount": 237
+            "weight": "199936261990083006",
+            "selfBond": "13340000000000000",
+            "delegatedWeight": "186596261990083006",
+            "delegatorCount": 238
           },
           {
             "nodeId": "NodeID-Bo98cjoi5LvF6jXAMHZZLQYutyeGutBQ1",
             "feePercent": 10,
             "uptimePercent": 99.9988,
             "connected": true,
-            "weight": "13400000000000000",
-            "delegatorCount": 323
+            "weight": "190814089293602220",
+            "selfBond": "13400000000000000",
+            "delegatedWeight": "177414089293602220",
+            "delegatorCount": 327
           },
           {
             "nodeId": "NodeID-J8sGdhcnVY1yVQNEb7w3LUjxkWCnByhw8",
             "feePercent": 10,
             "uptimePercent": 99.9913,
             "connected": true,
-            "weight": "13340000000000000",
+            "weight": "146882587997830877",
+            "selfBond": "13340000000000000",
+            "delegatedWeight": "133542587997830877",
             "delegatorCount": 206
           },
           {
             "nodeId": "NodeID-4VGUXmAD3YHdapbLnJBmuWEQceaRQ1Zyd",
             "feePercent": 20,
-            "uptimePercent": 99.923,
+            "uptimePercent": 99.9233,
             "connected": true,
-            "weight": "10962600000000000",
-            "delegatorCount": 112
+            "weight": "150282033808463540",
+            "selfBond": "10962600000000000",
+            "delegatedWeight": "139319433808463540",
+            "delegatorCount": 113
           }
         ],
         "selfDeclared": {
@@ -631,7 +673,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "696187280051306109512569885",
-        "votePowerCapped": "696187280051306109512569885",
+        "votePowerCapped": "667304336717469104713236480",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "90810423262139532595021",
@@ -649,15 +691,19 @@
             "feePercent": 20,
             "uptimePercent": 99.9998,
             "connected": true,
-            "weight": "10000000000000000",
-            "delegatorCount": 25
+            "weight": "71336387108635625",
+            "selfBond": "10000000000000000",
+            "delegatedWeight": "61336387108635625",
+            "delegatorCount": 24
           },
           {
             "nodeId": "NodeID-DtwBuXMHKZn2zJd74cSjvwkVjuJTAEs2n",
             "feePercent": 10,
             "uptimePercent": 99.9976,
             "connected": true,
-            "weight": "13500000000000000",
+            "weight": "200404621905989139",
+            "selfBond": "13500000000000000",
+            "delegatedWeight": "186904621905989139",
             "delegatorCount": 116
           },
           {
@@ -665,7 +711,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9999,
             "connected": true,
-            "weight": "20000000000000000",
+            "weight": "41084878067484912",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "21084878067484912",
             "delegatorCount": 22
           }
         ],
@@ -699,7 +747,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "1546060795680290703744934229",
-        "votePowerCapped": "1243560212222762645326786782",
+        "votePowerCapped": "1205339637910832322243985408",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "138985675110895114840714",
@@ -717,32 +765,40 @@
             "feePercent": 20,
             "uptimePercent": 99.9921,
             "connected": true,
-            "weight": "20000000000000000",
+            "weight": "208312227099202116",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "188312227099202116",
             "delegatorCount": 103
           },
           {
             "nodeId": "NodeID-MKeSBNK4dMPNnvPPxb2xEjbeyyJMc9tfc",
             "feePercent": 20,
-            "uptimePercent": 99.7931,
+            "uptimePercent": 99.7942,
             "connected": true,
-            "weight": "20000000000000000",
-            "delegatorCount": 172
+            "weight": "122867904990712568",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "102867904990712568",
+            "delegatorCount": 173
           },
           {
             "nodeId": "NodeID-5oLazJm5PtV8JFb2GpzuCVMZdi1GxkwYP",
             "feePercent": 20,
-            "uptimePercent": 99.7974,
+            "uptimePercent": 99.7985,
             "connected": true,
-            "weight": "20000000000000000",
-            "delegatorCount": 68
+            "weight": "92372685303769897",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "72372685303769897",
+            "delegatorCount": 69
           },
           {
             "nodeId": "NodeID-BeE5PDQkbtgbeDsxJMc2diKWyE95HtuHR",
             "feePercent": 20,
-            "uptimePercent": 99.8823,
+            "uptimePercent": 99.8829,
             "connected": true,
-            "weight": "20000000000000000",
-            "delegatorCount": 198
+            "weight": "184339887979738537",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "164339887979738537",
+            "delegatorCount": 199
           }
         ],
         "selfDeclared": {
@@ -775,7 +831,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "146012477803226860562982192",
-        "votePowerCapped": "146012477803226860562982192",
+        "votePowerCapped": "123178920837520054191915008",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "25272338014702389373215",
@@ -791,9 +847,11 @@
           {
             "nodeId": "NodeID-9jaZDNBCn4AwMzRqFBhxfem2ZZtiArRm2",
             "feePercent": 20,
-            "uptimePercent": 99.9967,
+            "uptimePercent": 99.9968,
             "connected": true,
-            "weight": "4000000000000000",
+            "weight": "59989723891886472",
+            "selfBond": "4000000000000000",
+            "delegatedWeight": "55989723891886472",
             "delegatorCount": 62
           }
         ],
@@ -827,7 +885,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "185328517058099369032150278",
-        "votePowerCapped": "185328517058099369032150278",
+        "votePowerCapped": "177886955914362432736198656",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "29917349268298167751551",
@@ -845,16 +903,20 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "15479100000000000",
-            "delegatorCount": 22
+            "weight": "85860925025509192",
+            "selfBond": "15479100000000000",
+            "delegatedWeight": "70381825025509192",
+            "delegatorCount": 23
           },
           {
             "nodeId": "NodeID-AW81N9vGQttoQMMdpqbihU5hEwH793YXj",
             "feePercent": 10,
             "uptimePercent": 99.9998,
             "connected": true,
-            "weight": "10585185000000000",
-            "delegatorCount": 97
+            "weight": "155374741959051586",
+            "selfBond": "10585185000000000",
+            "delegatedWeight": "144789556959051586",
+            "delegatorCount": 99
           }
         ],
         "selfDeclared": {
@@ -887,7 +949,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "934840783906641147294444949",
-        "votePowerCapped": "934840783906641147294444949",
+        "votePowerCapped": "889905496264992436565049344",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "147340921205818415141246",
@@ -903,9 +965,11 @@
           {
             "nodeId": "NodeID-Lj9wReAAhUQokvp2up5RokYYxkTTPqZRC",
             "feePercent": 20,
-            "uptimePercent": 99.9869,
+            "uptimePercent": 99.987,
             "connected": true,
-            "weight": "16000000000000000",
+            "weight": "141316513989637935",
+            "selfBond": "16000000000000000",
+            "delegatedWeight": "125316513989637935",
             "delegatorCount": 96
           }
         ],
@@ -939,7 +1003,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "137126773321864132282035422",
-        "votePowerCapped": "137126773321864132282035422",
+        "votePowerCapped": "114632574177339282879938560",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "17528245748160751796710",
@@ -957,7 +1021,9 @@
             "feePercent": 10,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "13400000000000000",
+            "weight": "200954125982982980",
+            "selfBond": "13400000000000000",
+            "delegatedWeight": "187554125982982980",
             "delegatorCount": 16
           },
           {
@@ -966,6 +1032,8 @@
             "uptimePercent": 99.9985,
             "connected": true,
             "weight": "1000000000000000",
+            "selfBond": "1000000000000000",
+            "delegatedWeight": null,
             "delegatorCount": 1
           },
           {
@@ -973,8 +1041,10 @@
             "feePercent": 10,
             "uptimePercent": 99.9992,
             "connected": true,
-            "weight": "13400000000000000",
-            "delegatorCount": 28
+            "weight": "197671250834657473",
+            "selfBond": "13400000000000000",
+            "delegatedWeight": "184271250834657473",
+            "delegatorCount": 27
           }
         ],
         "selfDeclared": {
@@ -1007,7 +1077,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "116186856432945560571737144",
-        "votePowerCapped": "116186856432945560571737144",
+        "votePowerCapped": "103210414480446100835663872",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "20274621481110772236157",
@@ -1023,9 +1093,11 @@
           {
             "nodeId": "NodeID-FERvNWfCH4mjCSoFnjF4YouDBuYZCpfKm",
             "feePercent": 20,
-            "uptimePercent": 99.9591,
+            "uptimePercent": 99.9594,
             "connected": true,
-            "weight": "4999999000000000",
+            "weight": "74539114768494741",
+            "selfBond": "4999999000000000",
+            "delegatedWeight": "69539115768494741",
             "delegatorCount": 26
           }
         ],
@@ -1059,7 +1131,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "150577003762132965473995837",
-        "votePowerCapped": "150577003762132965473995837",
+        "votePowerCapped": "66213279607873966289453056",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -1078,6 +1150,8 @@
             "uptimePercent": 93.7276,
             "connected": true,
             "weight": "3033333000000000",
+            "selfBond": "3033333000000000",
+            "delegatedWeight": null,
             "delegatorCount": 1
           },
           {
@@ -1085,7 +1159,9 @@
             "feePercent": 14,
             "uptimePercent": 99.9997,
             "connected": true,
-            "weight": "3640000000000000",
+            "weight": "20970448552892855",
+            "selfBond": "3640000000000000",
+            "delegatedWeight": "17330448552892855",
             "delegatorCount": 14
           }
         ],
@@ -1119,7 +1195,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "415695243674093659814049827",
-        "votePowerCapped": "415695243674093659814049827",
+        "votePowerCapped": "161446987574070472102379520",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "51760968940752427163470",
@@ -1137,15 +1213,19 @@
             "feePercent": 20,
             "uptimePercent": 99.9911,
             "connected": true,
-            "weight": "13000000000000000",
-            "delegatorCount": 12
+            "weight": "194396447384534985",
+            "selfBond": "13000000000000000",
+            "delegatedWeight": "181396447384534985",
+            "delegatorCount": 13
           },
           {
             "nodeId": "NodeID-3qpQ3cVcU8UxvmCtkwGV4ZB3RYcKoDBRn",
             "feePercent": 20,
-            "uptimePercent": 99.9771,
+            "uptimePercent": 99.9773,
             "connected": true,
-            "weight": "20000000000000000",
+            "weight": "194388527630000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "174388527630000000",
             "delegatorCount": 7
           }
         ],
@@ -1179,7 +1259,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "388539893670657237989453816",
-        "votePowerCapped": "388539893670657237989453816",
+        "votePowerCapped": "381517888391940711584366592",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "59545530506838268648711",
@@ -1195,9 +1275,11 @@
           {
             "nodeId": "NodeID-9WF8MvjNhmR45AdNjVfAWp27KKq7KCGpm",
             "feePercent": 20,
-            "uptimePercent": 98.1597,
+            "uptimePercent": 98.1679,
             "connected": true,
-            "weight": "5130000000000000",
+            "weight": "76949999300000000",
+            "selfBond": "5130000000000000",
+            "delegatedWeight": "71819999300000000",
             "delegatorCount": 10
           }
         ],
@@ -1231,7 +1313,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "346443911668788218509740171",
-        "votePowerCapped": "346443911668788218509740171",
+        "votePowerCapped": "347343375558847191433871360",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "46344517737543480301389",
@@ -1249,15 +1331,19 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "12484800000000000",
-            "delegatorCount": 127
+            "weight": "107688049123071897",
+            "selfBond": "12484800000000000",
+            "delegatedWeight": "95203249123071897",
+            "delegatorCount": 128
           },
           {
             "nodeId": "NodeID-NEBeLpZHjxiSB9fbqDeqsxU529e41hQYE",
             "feePercent": 20,
             "uptimePercent": 99.9916,
             "connected": true,
-            "weight": "13349995000000000",
+            "weight": "168787837865332701",
+            "selfBond": "13349995000000000",
+            "delegatedWeight": "155437842865332701",
             "delegatorCount": 87
           }
         ],
@@ -1291,7 +1377,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "112260739416739297616075156",
-        "votePowerCapped": "112260739416739297616075156",
+        "votePowerCapped": "112226061431530740814708736",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "16879171618273492827037",
@@ -1309,7 +1395,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9974,
             "connected": true,
-            "weight": "30000000000000000",
+            "weight": "299999999738683014",
+            "selfBond": "30000000000000000",
+            "delegatedWeight": "269999999738683014",
             "delegatorCount": 92
           }
         ],
@@ -1343,7 +1431,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "173538178322724400782754803",
-        "votePowerCapped": "173538178322724400782754803",
+        "votePowerCapped": "169037923311358994156617728",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "26640553198037975484920",
@@ -1362,14 +1450,18 @@
             "uptimePercent": 99.996,
             "connected": true,
             "weight": "5000000000000000",
+            "selfBond": "5000000000000000",
+            "delegatedWeight": null,
             "delegatorCount": 3
           },
           {
             "nodeId": "NodeID-4mKZ7GYeKtdHMxhmHajDh1WVrVx1xWJxJ",
             "feePercent": 20,
-            "uptimePercent": 99.8254,
+            "uptimePercent": 99.845,
             "connected": true,
-            "weight": "18000000000000000",
+            "weight": "33251711777351064",
+            "selfBond": "18000000000000000",
+            "delegatedWeight": "15251711777351064",
             "delegatorCount": 12
           }
         ],
@@ -1403,7 +1495,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "737763579226633201757626397",
-        "votePowerCapped": "737763579226633201757626397",
+        "votePowerCapped": "729469721127814469626363904",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "119385774153350983940842",
@@ -1421,8 +1513,10 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "13050000000000000",
-            "delegatorCount": 6
+            "weight": "27867889981347500",
+            "selfBond": "13050000000000000",
+            "delegatedWeight": "14817889981347500",
+            "delegatorCount": 7
           }
         ],
         "selfDeclared": {
@@ -1455,7 +1549,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "107552804161282389662538521",
-        "votePowerCapped": "107552804161282389662538521",
+        "votePowerCapped": "100074057032116487627735040",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "14895886531328737370812",
@@ -1473,7 +1567,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9993,
             "connected": true,
-            "weight": "9603000000000000",
+            "weight": "144042101985038759",
+            "selfBond": "9603000000000000",
+            "delegatedWeight": "134439101985038759",
             "delegatorCount": 21
           },
           {
@@ -1481,8 +1577,10 @@
             "feePercent": 20,
             "uptimePercent": 99.9999,
             "connected": true,
-            "weight": "9000000000000000",
-            "delegatorCount": 29
+            "weight": "132223208813904157",
+            "selfBond": "9000000000000000",
+            "delegatedWeight": "123223208813904157",
+            "delegatorCount": 28
           }
         ],
         "selfDeclared": {
@@ -1515,7 +1613,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "319215170510054767643286196",
-        "votePowerCapped": "319215170510054767643286196",
+        "votePowerCapped": "308592627509327099900985344",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "50525429697066249415488",
@@ -1531,9 +1629,11 @@
           {
             "nodeId": "NodeID-Ms5oKoFmzxNYgpAnppbY62GYmQcTQbXhV",
             "feePercent": 10,
-            "uptimePercent": 99.5673,
+            "uptimePercent": 99.5677,
             "connected": true,
-            "weight": "6000000000000000",
+            "weight": "89963999887981986",
+            "selfBond": "6000000000000000",
+            "delegatedWeight": "83963999887981986",
             "delegatorCount": 109
           },
           {
@@ -1541,8 +1641,10 @@
             "feePercent": 20,
             "uptimePercent": 99.9995,
             "connected": true,
-            "weight": "7150000000000000",
-            "delegatorCount": 5
+            "weight": "63814265016434652",
+            "selfBond": "7150000000000000",
+            "delegatedWeight": "56664265016434652",
+            "delegatorCount": 7
           }
         ],
         "selfDeclared": {
@@ -1575,7 +1677,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "409150994545255108271625926",
-        "votePowerCapped": "409150994545255108271625926",
+        "votePowerCapped": "397804705128685733519818752",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "62928864605773192133542",
@@ -1591,9 +1693,11 @@
           {
             "nodeId": "NodeID-CrsvTSFLB8G3ziPaVjgH1pj8NQxSZkECD",
             "feePercent": 20,
-            "uptimePercent": 98.5823,
+            "uptimePercent": 99.1929,
             "connected": true,
             "weight": "18250000000000000",
+            "selfBond": "18250000000000000",
+            "delegatedWeight": "0",
             "delegatorCount": 0
           },
           {
@@ -1601,7 +1705,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9995,
             "connected": true,
-            "weight": "9568469000000000",
+            "weight": "22771619996937459",
+            "selfBond": "9568469000000000",
+            "delegatedWeight": "13203150996937459",
             "delegatorCount": 16
           }
         ],
@@ -1635,7 +1741,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "207557145647537943234800423",
-        "votePowerCapped": "207557145647537943234800423",
+        "votePowerCapped": "197567128459460205288095744",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "25130737547967373428184",
@@ -1651,17 +1757,21 @@
           {
             "nodeId": "NodeID-PkR4UxQ6MVLQAZ7RmKd93eDmS8BtmYdLG",
             "feePercent": 9,
-            "uptimePercent": 99.8725,
+            "uptimePercent": 99.8728,
             "connected": true,
-            "weight": "13333333980000000",
-            "delegatorCount": 130
+            "weight": "197495536872803114",
+            "selfBond": "13333333980000000",
+            "delegatedWeight": "184162202892803114",
+            "delegatorCount": 129
           },
           {
             "nodeId": "NodeID-A3LxQME97LZCyiY6kAWnZ3SXkwJ82YDM9",
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "11669526950000000",
+            "weight": "43370311175409005",
+            "selfBond": "11669526950000000",
+            "delegatedWeight": "31700784225409005",
             "delegatorCount": 5
           },
           {
@@ -1669,7 +1779,9 @@
             "feePercent": 9,
             "uptimePercent": 99.994,
             "connected": true,
-            "weight": "13333333990000000",
+            "weight": "171483184992801571",
+            "selfBond": "13333333990000000",
+            "delegatedWeight": "158149851002801571",
             "delegatorCount": 133
           },
           {
@@ -1678,6 +1790,8 @@
             "uptimePercent": 100,
             "connected": true,
             "weight": "14859104180000000",
+            "selfBond": "14859104180000000",
+            "delegatedWeight": "0",
             "delegatorCount": 0
           }
         ],
@@ -1711,7 +1825,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "520339968740809023352864191",
-        "votePowerCapped": "520339968740809023352864191",
+        "votePowerCapped": "516688324122215464766013440",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "67943452061221125886304",
@@ -1729,7 +1843,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9994,
             "connected": true,
-            "weight": "13333334000000000",
+            "weight": "167077046315619343",
+            "selfBond": "13333334000000000",
+            "delegatedWeight": "153743712315619343",
             "delegatorCount": 20
           }
         ],
@@ -1763,7 +1879,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "764152261286102103935885018",
-        "votePowerCapped": "764152261286102103935885018",
+        "votePowerCapped": "760052968130051368623800320",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "112205560636131474567750",
@@ -1781,7 +1897,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9959,
             "connected": true,
-            "weight": "13500000000000000",
+            "weight": "119150927468326067",
+            "selfBond": "13500000000000000",
+            "delegatedWeight": "105650927468326067",
             "delegatorCount": 36
           }
         ],
@@ -1815,7 +1933,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "66338249493743673943824037",
-        "votePowerCapped": "66338249493743673943824037",
+        "votePowerCapped": "65313771479982935407329280",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "18590162822851092285222",
@@ -1833,7 +1951,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9855,
             "connected": true,
-            "weight": "1000000000000000",
+            "weight": "2605990000000000",
+            "selfBond": "1000000000000000",
+            "delegatedWeight": "1605990000000000",
             "delegatorCount": 6
           }
         ],
@@ -1867,7 +1987,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "780024414716154879924718317",
-        "votePowerCapped": "780024414716154879924718317",
+        "votePowerCapped": "770432669306550291248709632",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "68350878493244725100086",
@@ -1885,7 +2005,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9983,
             "connected": true,
-            "weight": "12000000000000000",
+            "weight": "18376350958587539",
+            "selfBond": "12000000000000000",
+            "delegatedWeight": "6376350958587539",
             "delegatorCount": 27
           },
           {
@@ -1893,8 +2015,10 @@
             "feePercent": 20,
             "uptimePercent": 99.9982,
             "connected": true,
-            "weight": "12000000000000000",
-            "delegatorCount": 13
+            "weight": "53236345516892451",
+            "selfBond": "12000000000000000",
+            "delegatedWeight": "41236345516892451",
+            "delegatorCount": 11
           }
         ],
         "selfDeclared": {
@@ -1927,7 +2051,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "192404237358855355286906163",
-        "votePowerCapped": "192404237358855355286906163",
+        "votePowerCapped": "178901375768610490911031296",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "24486698332874901954598",
@@ -1945,7 +2069,9 @@
             "feePercent": 7.5,
             "uptimePercent": 99.9519,
             "connected": true,
-            "weight": "5420000000000000",
+            "weight": "81299945404126473",
+            "selfBond": "5420000000000000",
+            "delegatedWeight": "75879945404126473",
             "delegatorCount": 240
           },
           {
@@ -1953,15 +2079,19 @@
             "feePercent": 10,
             "uptimePercent": 99.9566,
             "connected": true,
-            "weight": "7500000000000000",
-            "delegatorCount": 155
+            "weight": "111514497792032884",
+            "selfBond": "7500000000000000",
+            "delegatedWeight": "104014497792032884",
+            "delegatorCount": 154
           },
           {
             "nodeId": "NodeID-6UzFTU6qVKYnTSaC5WbXq1kEYKxxZAjSY",
             "feePercent": 10,
             "uptimePercent": 99.9968,
             "connected": true,
-            "weight": "13333333000000000",
+            "weight": "126250330549495975",
+            "selfBond": "13333333000000000",
+            "delegatedWeight": "112916997549495975",
             "delegatorCount": 113
           }
         ],
@@ -1995,7 +2125,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "2911140935025325887329632395",
-        "votePowerCapped": "1243560212222762645326786782",
+        "votePowerCapped": "1205339637910832322243985408",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "132052045649369606470286",
@@ -2011,9 +2141,11 @@
           {
             "nodeId": "NodeID-ECqqsWu9jpUvZgPyf9yPZZcyWmJjWyN1T",
             "feePercent": 20,
-            "uptimePercent": 99.9236,
+            "uptimePercent": 99.9242,
             "connected": true,
-            "weight": "13500890000000000",
+            "weight": "202256241365486285",
+            "selfBond": "13500890000000000",
+            "delegatedWeight": "188755351365486285",
             "delegatorCount": 10
           },
           {
@@ -2021,7 +2153,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9968,
             "connected": true,
-            "weight": "14000100000000000",
+            "weight": "209820384681755267",
+            "selfBond": "14000100000000000",
+            "delegatedWeight": "195820284681755267",
             "delegatorCount": 18
           },
           {
@@ -2029,7 +2163,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9881,
             "connected": true,
-            "weight": "14000000000000000",
+            "weight": "208854640479999995",
+            "selfBond": "14000000000000000",
+            "delegatedWeight": "194854640479999995",
             "delegatorCount": 17
           },
           {
@@ -2037,7 +2173,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9982,
             "connected": true,
-            "weight": "20500000000000000",
+            "weight": "229462754360000000",
+            "selfBond": "20500000000000000",
+            "delegatedWeight": "208962754360000000",
             "delegatorCount": 9
           }
         ],
@@ -2071,7 +2209,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "38002672057593826098516963",
-        "votePowerCapped": "38002672057593826098516963",
+        "votePowerCapped": "38811278584143710305386496",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "8592873412347403146080",
@@ -2089,7 +2227,9 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "18000000000000000",
+            "weight": "18178000000000000",
+            "selfBond": "18000000000000000",
+            "delegatedWeight": "178000000000000",
             "delegatorCount": 1
           }
         ],
@@ -2123,7 +2263,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "108117257367391187854352344",
-        "votePowerCapped": "108117257367391187854352344",
+        "votePowerCapped": "103141733058256121727287296",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "16172419598407138961050",
@@ -2141,8 +2281,10 @@
             "feePercent": 20,
             "uptimePercent": 99.9938,
             "connected": true,
-            "weight": "13390000000000000",
-            "delegatorCount": 44
+            "weight": "125762723644417604",
+            "selfBond": "13390000000000000",
+            "delegatedWeight": "112372723644417604",
+            "delegatorCount": 45
           }
         ],
         "selfDeclared": {
@@ -2175,7 +2317,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "42791186749946083014250171",
-        "votePowerCapped": "42791186749946083014250171",
+        "votePowerCapped": "232926807497618132761051136",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -2191,9 +2333,11 @@
           {
             "nodeId": "NodeID-D3QKd6XxLnrKowkziZJSG4RNLtffz8ESk",
             "feePercent": 20,
-            "uptimePercent": 99.8604,
+            "uptimePercent": 99.8794,
             "connected": true,
             "weight": "3000000000000000",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "0",
             "delegatorCount": 0
           }
         ],
@@ -2227,7 +2371,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "224360971373667250324720637",
-        "votePowerCapped": "224360971373667250324720637",
+        "votePowerCapped": "218909591877305198161428480",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "41704059020603659062498",
@@ -2243,9 +2387,11 @@
           {
             "nodeId": "NodeID-4h6PNpK5oo9pjmE8zKSbm31S2LStg4tyF",
             "feePercent": 20,
-            "uptimePercent": 99.8749,
+            "uptimePercent": 99.8751,
             "connected": true,
-            "weight": "3000000000000000",
+            "weight": "25113237656238265",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "22113237656238265",
             "delegatorCount": 14
           }
         ],
@@ -2279,7 +2425,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "90687795326539356357311741",
-        "votePowerCapped": "90687795326539356357311741",
+        "votePowerCapped": "94357165559493142708748288",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "16441458579945800783451",
@@ -2297,15 +2443,19 @@
             "feePercent": 15,
             "uptimePercent": 99.9978,
             "connected": true,
-            "weight": "5200000000000000",
-            "delegatorCount": 83
+            "weight": "77463266838043030",
+            "selfBond": "5200000000000000",
+            "delegatedWeight": "72263266838043030",
+            "delegatorCount": 84
           },
           {
             "nodeId": "NodeID-FFDXvxz7zusH2wec4DM5eKPT4gxfJKSDe",
             "feePercent": 15,
             "uptimePercent": 99.9989,
             "connected": true,
-            "weight": "1000001000000000",
+            "weight": "15000014792030839",
+            "selfBond": "1000001000000000",
+            "delegatedWeight": "14000013792030839",
             "delegatorCount": 41
           }
         ],
@@ -2339,7 +2489,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "84170889555916345684507197",
-        "votePowerCapped": "84170889555916345684507197",
+        "votePowerCapped": "88675537443420225570603008",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "15339550727626368491671",
@@ -2357,7 +2507,9 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "3000000000000000",
+            "weight": "44999614641045219",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "41999614641045219",
             "delegatorCount": 15
           },
           {
@@ -2365,7 +2517,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9995,
             "connected": true,
-            "weight": "2000000000000000",
+            "weight": "29999996913141367",
+            "selfBond": "2000000000000000",
+            "delegatedWeight": "27999996913141367",
             "delegatorCount": 16
           }
         ],
@@ -2399,7 +2553,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "221892326732490526981944552",
-        "votePowerCapped": "221892326732490526981944552",
+        "votePowerCapped": "215348243402965562400178176",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "33375548963852392621919",
@@ -2417,15 +2571,19 @@
             "feePercent": 20,
             "uptimePercent": 99.9844,
             "connected": true,
-            "weight": "8750000000000000",
+            "weight": "97323443339146984",
+            "selfBond": "8750000000000000",
+            "delegatedWeight": "88573443339146984",
             "delegatorCount": 24
           },
           {
             "nodeId": "NodeID-G7tmLU1k7vzv24kUhNi3KMJuiK8GLYcDq",
             "feePercent": 20,
-            "uptimePercent": 99.951,
+            "uptimePercent": 99.9518,
             "connected": true,
-            "weight": "7750000000000000",
+            "weight": "49927135241657855",
+            "selfBond": "7750000000000000",
+            "delegatedWeight": "42177135241657855",
             "delegatorCount": 16
           }
         ],
@@ -2459,7 +2617,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "276735671266779662999985196",
-        "votePowerCapped": "276735671266779662999985196",
+        "votePowerCapped": "287731645698180026942357504",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "44895390193159929009490",
@@ -2475,9 +2633,11 @@
           {
             "nodeId": "NodeID-P6nNyHc4QwyKoVSS7c9XatGp4Sityq7rM",
             "feePercent": 10,
-            "uptimePercent": 95.113,
+            "uptimePercent": 95.119,
             "connected": true,
-            "weight": "5000000000000000",
+            "weight": "74861481900000000",
+            "selfBond": "5000000000000000",
+            "delegatedWeight": "69861481900000000",
             "delegatorCount": 105
           }
         ],
@@ -2527,9 +2687,11 @@
           {
             "nodeId": "NodeID-J4nyqo44xFUxhAi9gDJXAkYyxP5z2a7UG",
             "feePercent": 15,
-            "uptimePercent": 99.9928,
+            "uptimePercent": 99.9929,
             "connected": true,
-            "weight": "6450660000000000",
+            "weight": "96759899013564708",
+            "selfBond": "6450660000000000",
+            "delegatedWeight": "90309239013564708",
             "delegatorCount": 46
           }
         ],
@@ -2563,7 +2725,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "317327128920692209748937235",
-        "votePowerCapped": "317327128920692209748937235",
+        "votePowerCapped": "295502504509559212253118464",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "45758185111178130879987",
@@ -2579,9 +2741,11 @@
           {
             "nodeId": "NodeID-MN7sJduRdGUs3aWyYUmym2CFVsptzgKcJ",
             "feePercent": 20,
-            "uptimePercent": 99.6083,
+            "uptimePercent": 99.6096,
             "connected": true,
-            "weight": "14000000000000000",
+            "weight": "200723421804214462",
+            "selfBond": "14000000000000000",
+            "delegatedWeight": "186723421804214462",
             "delegatorCount": 18
           }
         ],
@@ -2615,7 +2779,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "179786165543562263280029630",
-        "votePowerCapped": "179786165543562263280029630",
+        "votePowerCapped": "179863158784162199439933440",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "37873567142179142980715",
@@ -2631,9 +2795,11 @@
           {
             "nodeId": "NodeID-MZKzjLDRo9bwDjaDR5c4PALEibYyDe4A7",
             "feePercent": 20,
-            "uptimePercent": 99.7919,
+            "uptimePercent": 99.7925,
             "connected": true,
-            "weight": "1009119000000000",
+            "weight": "15070437617236149",
+            "selfBond": "1009119000000000",
+            "delegatedWeight": "14061318617236149",
             "delegatorCount": 2
           }
         ],
@@ -2667,7 +2833,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "37703638677668593513938940",
-        "votePowerCapped": "37703638677668593513938940",
+        "votePowerCapped": "48658075165374415292596224",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "7383800216090178836795",
@@ -2685,16 +2851,20 @@
             "feePercent": 20,
             "uptimePercent": 99.997,
             "connected": true,
-            "weight": "3000000000000000",
+            "weight": "29461761344935696",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "26461761344935696",
             "delegatorCount": 18
           },
           {
             "nodeId": "NodeID-BfDUbmZ4SJ8cDp9hcnAu1wjzeDRGsR9QZ",
             "feePercent": 20,
-            "uptimePercent": 99.9886,
+            "uptimePercent": 99.9887,
             "connected": true,
-            "weight": "3000000000000000",
-            "delegatorCount": 11
+            "weight": "44999999996693270",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "41999999996693270",
+            "delegatorCount": 12
           }
         ],
         "selfDeclared": {
@@ -2727,7 +2897,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "144729259086547971982611626",
-        "votePowerCapped": "144729259086547971982611626",
+        "votePowerCapped": "131448731735407879966949376",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "24250235247909082079406",
@@ -2745,7 +2915,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9956,
             "connected": true,
-            "weight": "5000000000000000",
+            "weight": "74799999897870041",
+            "selfBond": "5000000000000000",
+            "delegatedWeight": "69799999897870041",
             "delegatorCount": 28
           },
           {
@@ -2753,7 +2925,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9999,
             "connected": true,
-            "weight": "4200000000000000",
+            "weight": "50757136530000000",
+            "selfBond": "4200000000000000",
+            "delegatedWeight": "46557136530000000",
             "delegatorCount": 11
           }
         ],
@@ -2787,7 +2961,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "1861718970859873734286664",
-        "votePowerCapped": "1861718970859873734286664",
+        "votePowerCapped": "5220412762309904132210688",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "426353647100809103480",
@@ -2803,9 +2977,11 @@
           {
             "nodeId": "NodeID-4PEfmmKcyfndKx1EGkxeQS1eooxD8vEBS",
             "feePercent": 20,
-            "uptimePercent": 99.9922,
+            "uptimePercent": 99.9923,
             "connected": true,
-            "weight": "7500000000000000",
+            "weight": "112499999997011340",
+            "selfBond": "7500000000000000",
+            "delegatedWeight": "104999999997011340",
             "delegatorCount": 47
           }
         ],
@@ -2839,7 +3015,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "118303406298015524828250150",
-        "votePowerCapped": "118303406298015524828250150",
+        "votePowerCapped": "110054266227886875620671488",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "19957948979445673547547",
@@ -2857,7 +3033,9 @@
             "feePercent": 15,
             "uptimePercent": 99.9925,
             "connected": true,
-            "weight": "8500000000000000",
+            "weight": "120188526523481478",
+            "selfBond": "8500000000000000",
+            "delegatedWeight": "111688526523481478",
             "delegatorCount": 91
           }
         ],
@@ -2891,7 +3069,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "117299399192171145006307160",
-        "votePowerCapped": "117299399192171145006307160",
+        "votePowerCapped": "95998533450583953234722816",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "14545536167156823909817",
@@ -2909,15 +3087,19 @@
             "feePercent": 10,
             "uptimePercent": 99.9616,
             "connected": true,
-            "weight": "14999990000000000",
-            "delegatorCount": 40
+            "weight": "198523184082633467",
+            "selfBond": "14999990000000000",
+            "delegatedWeight": "183523194082633467",
+            "delegatorCount": 37
           },
           {
             "nodeId": "NodeID-5JkXthgpWVDq6utrtV1YVG7aspsHjhezM",
             "feePercent": 10,
             "uptimePercent": 99.9992,
             "connected": true,
-            "weight": "15000000000000000",
+            "weight": "162546885114040667",
+            "selfBond": "15000000000000000",
+            "delegatedWeight": "147546885114040667",
             "delegatorCount": 65
           }
         ],
@@ -2951,7 +3133,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "360863984916735679389669739",
-        "votePowerCapped": "360863984916735679389669739",
+        "votePowerCapped": "90474061350319489858666496",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "52367966296906716121314",
@@ -2969,7 +3151,9 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "30000000000000000",
+            "weight": "56383771805168673",
+            "selfBond": "30000000000000000",
+            "delegatedWeight": "26383771805168673",
             "delegatorCount": 12
           }
         ],
@@ -3003,7 +3187,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "235360095834440742985463031",
-        "votePowerCapped": "235360095834440742985463031",
+        "votePowerCapped": "218286259706301478411960320",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -3021,7 +3205,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9983,
             "connected": true,
-            "weight": "11700000000000000",
+            "weight": "128966605716170863",
+            "selfBond": "11700000000000000",
+            "delegatedWeight": "117266605716170863",
             "delegatorCount": 35
           }
         ],
@@ -3055,7 +3241,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "120460555854870171587598557",
-        "votePowerCapped": "120460555854870171587598557",
+        "votePowerCapped": "107760107359396944112779264",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "21221514943500933839321",
@@ -3071,10 +3257,12 @@
           {
             "nodeId": "NodeID-5tHXeYMb1oY5GcWjXEcTt9CHbq5GBgCjn",
             "feePercent": 10,
-            "uptimePercent": 99.7463,
+            "uptimePercent": 99.7465,
             "connected": true,
-            "weight": "6024000000000000",
-            "delegatorCount": 111
+            "weight": "90346770786766368",
+            "selfBond": "6024000000000000",
+            "delegatedWeight": "84322770786766368",
+            "delegatorCount": 114
           }
         ],
         "selfDeclared": {
@@ -3107,7 +3295,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "171921038437707110562816581",
-        "votePowerCapped": "171921038437707110562816581",
+        "votePowerCapped": "168257503749139998135287808",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "18432642397710458046135",
@@ -3125,7 +3313,9 @@
             "feePercent": 15,
             "uptimePercent": 99.9881,
             "connected": true,
-            "weight": "13400000000000000",
+            "weight": "200598700903942400",
+            "selfBond": "13400000000000000",
+            "delegatedWeight": "187198700903942400",
             "delegatorCount": 10
           },
           {
@@ -3133,7 +3323,9 @@
             "feePercent": 15,
             "uptimePercent": 99.9344,
             "connected": true,
-            "weight": "13400000000000000",
+            "weight": "179528581137684003",
+            "selfBond": "13400000000000000",
+            "delegatedWeight": "166128581137684003",
             "delegatorCount": 27
           },
           {
@@ -3141,15 +3333,19 @@
             "feePercent": 15,
             "uptimePercent": 99.9821,
             "connected": true,
-            "weight": "13360000000000000",
-            "delegatorCount": 50
+            "weight": "200253675635246020",
+            "selfBond": "13360000000000000",
+            "delegatedWeight": "186893675635246020",
+            "delegatorCount": 52
           },
           {
             "nodeId": "NodeID-t3mLmFZJLYdPc4pBxunh585ahrHTAezm",
             "feePercent": 15,
-            "uptimePercent": 99.9507,
+            "uptimePercent": 99.9509,
             "connected": true,
-            "weight": "8239942000000000",
+            "weight": "123599129997925250",
+            "selfBond": "8239942000000000",
+            "delegatedWeight": "115359187997925250",
             "delegatorCount": 4
           }
         ],
@@ -3183,7 +3379,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "148834656095851137736102167",
-        "votePowerCapped": "148834656095851137736102167",
+        "votePowerCapped": "133416491973683188699496448",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "24849082402183434535913",
@@ -3201,7 +3397,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9951,
             "connected": true,
-            "weight": "7500000000000000",
+            "weight": "112499991280000000",
+            "selfBond": "7500000000000000",
+            "delegatedWeight": "104999991280000000",
             "delegatorCount": 14
           }
         ],
@@ -3235,7 +3433,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "152534465257951875744953183",
-        "votePowerCapped": "152534465257951875744953183",
+        "votePowerCapped": "146763472707629341399318528",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "17880679682766642561722",
@@ -3254,30 +3452,38 @@
             "uptimePercent": 98.7765,
             "connected": true,
             "weight": "3000000000000000",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": null,
             "delegatorCount": 5
           },
           {
             "nodeId": "NodeID-K9g6YJEhWiN2TF1RsFTA8SEXFAJWvikhu",
             "feePercent": 15,
-            "uptimePercent": 98.9699,
+            "uptimePercent": 98.9706,
             "connected": true,
-            "weight": "10000000000000000",
+            "weight": "149999899940028694",
+            "selfBond": "10000000000000000",
+            "delegatedWeight": "139999899940028694",
             "delegatorCount": 6
           },
           {
             "nodeId": "NodeID-KH2o8xGFLYtCwseWgRbpDAf1n4zAcMNfN",
             "feePercent": 20,
-            "uptimePercent": 99.3182,
+            "uptimePercent": 99.3288,
             "connected": true,
-            "weight": "20000000000000000",
+            "weight": "299999400000000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "279999400000000000",
             "delegatorCount": 4
           },
           {
             "nodeId": "NodeID-Q3WJQcoixGGKnFs41B18rnJB9PS54M5oF",
             "feePercent": 15,
-            "uptimePercent": 98.8359,
+            "uptimePercent": 98.8369,
             "connected": true,
-            "weight": "10000000000000000",
+            "weight": "150000000000000000",
+            "selfBond": "10000000000000000",
+            "delegatedWeight": "140000000000000000",
             "delegatorCount": 1
           }
         ],
@@ -3311,7 +3517,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "235677140096259689214768404",
-        "votePowerCapped": "235677140096259689214768404",
+        "votePowerCapped": "226875581744198247809810432",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "41934846658892496025248",
@@ -3327,9 +3533,11 @@
           {
             "nodeId": "NodeID-4e5tHaeoLvpXjtY5uMXtuYJgEWZ2JiC4D",
             "feePercent": 20,
-            "uptimePercent": 99.9927,
+            "uptimePercent": 99.9928,
             "connected": true,
-            "weight": "5000000000000000",
+            "weight": "74907992074111105",
+            "selfBond": "5000000000000000",
+            "delegatedWeight": "69907992074111105",
             "delegatorCount": 14
           }
         ],
@@ -3363,7 +3571,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "126583709166259827802258699",
-        "votePowerCapped": "126583709166259827802258699",
+        "votePowerCapped": "115406883922266158224375808",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "21946535022690400115203",
@@ -3381,15 +3589,19 @@
             "feePercent": 20,
             "uptimePercent": 99.9993,
             "connected": true,
-            "weight": "6000000000000000",
-            "delegatorCount": 8
+            "weight": "23364582413365924",
+            "selfBond": "6000000000000000",
+            "delegatedWeight": "17364582413365924",
+            "delegatorCount": 7
           },
           {
             "nodeId": "NodeID-KDzgUwGve1qisM4BM7VSmrJXK5UT9yB31",
             "feePercent": 20,
             "uptimePercent": 99.9982,
             "connected": true,
-            "weight": "6205000000000000",
+            "weight": "46717060531332182",
+            "selfBond": "6205000000000000",
+            "delegatedWeight": "40512060531332182",
             "delegatorCount": 8
           }
         ],
@@ -3423,7 +3635,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "156105935123011602377706734",
-        "votePowerCapped": "156105935123011602377706734",
+        "votePowerCapped": "162527073758884643865624576",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "20212506207343672294401",
@@ -3441,8 +3653,10 @@
             "feePercent": 10,
             "uptimePercent": 99.9981,
             "connected": true,
-            "weight": "25000000000000000",
-            "delegatorCount": 207
+            "weight": "299614357262066040",
+            "selfBond": "25000000000000000",
+            "delegatedWeight": "274614357262066040",
+            "delegatorCount": 206
           }
         ],
         "selfDeclared": {
@@ -3475,7 +3689,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "124880522056891100941737236",
-        "votePowerCapped": "124880522056891100941737236",
+        "votePowerCapped": "126005100837712239943221248",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "23153818837296702771840",
@@ -3491,10 +3705,12 @@
           {
             "nodeId": "NodeID-NCBqn9P8oAEkYn6McyQjhF67WarSTttz5",
             "feePercent": 15,
-            "uptimePercent": 99.9801,
+            "uptimePercent": 99.9802,
             "connected": true,
-            "weight": "2750000000000000",
-            "delegatorCount": 22
+            "weight": "15048504494985192",
+            "selfBond": "2750000000000000",
+            "delegatedWeight": "12298504494985192",
+            "delegatorCount": 21
           }
         ],
         "selfDeclared": {
@@ -3527,7 +3743,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "221258157053889715137137",
-        "votePowerCapped": "221258157053889715137137",
+        "votePowerCapped": "5469407487391192773033984",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "39759530952102850214",
@@ -3545,7 +3761,9 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "6000000000000000",
+            "weight": "89993344400000000",
+            "selfBond": "6000000000000000",
+            "delegatedWeight": "83993344400000000",
             "delegatorCount": 13
           }
         ],
@@ -3579,7 +3797,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "346999339471569107363427753",
-        "votePowerCapped": "346999339471569107363427753",
+        "votePowerCapped": "281927017644744491789189120",
         "feedCount": 63,
         "lastEpoch": 416,
         "delegatorRewardLastEpoch": "124319545071425506934973",
@@ -3597,8 +3815,10 @@
             "feePercent": 10,
             "uptimePercent": 99.9999,
             "connected": true,
-            "weight": "15000000000000000",
-            "delegatorCount": 20
+            "weight": "30452142962454556",
+            "selfBond": "15000000000000000",
+            "delegatedWeight": "15452142962454556",
+            "delegatorCount": 19
           }
         ],
         "selfDeclared": {
@@ -3631,7 +3851,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "130156196616200412017635854",
-        "votePowerCapped": "130156196616200412017635854",
+        "votePowerCapped": "118767242909820418063859712",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "16065512174740199247213",
@@ -3650,6 +3870,8 @@
             "uptimePercent": null,
             "connected": false,
             "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
             "delegatorCount": null
           },
           {
@@ -3657,23 +3879,29 @@
             "feePercent": 100,
             "uptimePercent": 99.9755,
             "connected": true,
-            "weight": "13500000000000000",
+            "weight": "200000000000000000",
+            "selfBond": "13500000000000000",
+            "delegatedWeight": "186500000000000000",
             "delegatorCount": 2
           },
           {
             "nodeId": "NodeID-JLAi1KM18TocQu9zvmSw6wND4hEvgkER6",
             "feePercent": 100,
-            "uptimePercent": 99.9569,
+            "uptimePercent": 99.957,
             "connected": true,
-            "weight": "13500000000000000",
+            "weight": "200000000000000000",
+            "selfBond": "13500000000000000",
+            "delegatedWeight": "186500000000000000",
             "delegatorCount": 2
           },
           {
             "nodeId": "NodeID-KywEC9cXm8P4KezUkovM5oA1rLTTFDe6e",
             "feePercent": 100,
-            "uptimePercent": 99.9537,
+            "uptimePercent": 99.9538,
             "connected": true,
-            "weight": "13500000000000000",
+            "weight": "200000000000000000",
+            "selfBond": "13500000000000000",
+            "delegatedWeight": "186500000000000000",
             "delegatorCount": 3
           }
         ],
@@ -3707,7 +3935,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "891700685846316739993539713",
-        "votePowerCapped": "891700685846316739993539713",
+        "votePowerCapped": "863438915992563111277101056",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "104479824810109797535168",
@@ -3725,7 +3953,9 @@
             "feePercent": 10,
             "uptimePercent": 99.9956,
             "connected": true,
-            "weight": "13340000000000000",
+            "weight": "200090963468962112",
+            "selfBond": "13340000000000000",
+            "delegatedWeight": "186750963468962112",
             "delegatorCount": 35
           },
           {
@@ -3733,16 +3963,20 @@
             "feePercent": 20,
             "uptimePercent": 99.9949,
             "connected": true,
-            "weight": "20000000000000000",
-            "delegatorCount": 96
+            "weight": "261584525288434712",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "241584525288434712",
+            "delegatorCount": 97
           },
           {
             "nodeId": "NodeID-K4iQCzQ6VSYUchEFNBSvQwhWaunb7sZe5",
             "feePercent": 20,
-            "uptimePercent": 99.9342,
+            "uptimePercent": 99.9347,
             "connected": true,
-            "weight": "20000000000000000",
-            "delegatorCount": 57
+            "weight": "131460822899244366",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "111460822899244366",
+            "delegatorCount": 56
           }
         ],
         "selfDeclared": {
@@ -3775,7 +4009,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "636690529519922685222100827",
-        "votePowerCapped": "636690529519922685222100827",
+        "votePowerCapped": "635458817401626137674645504",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "89815903558295524687267",
@@ -3793,7 +4027,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9995,
             "connected": true,
-            "weight": "8500000000000000",
+            "weight": "26019406000000000",
+            "selfBond": "8500000000000000",
+            "delegatedWeight": "17519406000000000",
             "delegatorCount": 10
           },
           {
@@ -3801,7 +4037,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9984,
             "connected": true,
-            "weight": "12000000000000000",
+            "weight": "139345814787325515",
+            "selfBond": "12000000000000000",
+            "delegatedWeight": "127345814787325515",
             "delegatorCount": 23
           },
           {
@@ -3810,6 +4048,8 @@
             "uptimePercent": null,
             "connected": false,
             "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
             "delegatorCount": null
           },
           {
@@ -3818,6 +4058,8 @@
             "uptimePercent": null,
             "connected": false,
             "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
             "delegatorCount": null
           }
         ],
@@ -3851,7 +4093,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "71322659590021797112322141",
-        "votePowerCapped": "71322659590021797112322141",
+        "votePowerCapped": "63656581452510573138804736",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "20372090495937229558195",
@@ -3867,9 +4109,11 @@
           {
             "nodeId": "NodeID-Dbh8RabyVE7hWiBFjKwsU8qhLGu92CpEj",
             "feePercent": 10,
-            "uptimePercent": 97.5098,
+            "uptimePercent": 97.5168,
             "connected": true,
-            "weight": "3363400000000000",
+            "weight": "4715548360000000",
+            "selfBond": "3363400000000000",
+            "delegatedWeight": "1352148360000000",
             "delegatorCount": 2
           }
         ],
@@ -3903,7 +4147,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "780131651880180059317867313",
-        "votePowerCapped": "780131651880180059317867313",
+        "votePowerCapped": "759672280262003932251815936",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "104117670291921618772804",
@@ -3921,15 +4165,19 @@
             "feePercent": 10,
             "uptimePercent": 99.9899,
             "connected": true,
-            "weight": "8500000000000000",
-            "delegatorCount": 273
+            "weight": "127499056082593887",
+            "selfBond": "8500000000000000",
+            "delegatedWeight": "118999056082593887",
+            "delegatorCount": 274
           },
           {
             "nodeId": "NodeID-7egxBVmPJsHRetTjbxWUwbnLjCxmeHXrj",
             "feePercent": 12.5,
             "uptimePercent": 99.9897,
             "connected": true,
-            "weight": "3230000000000000",
+            "weight": "48430820999999993",
+            "selfBond": "3230000000000000",
+            "delegatedWeight": "45200820999999993",
             "delegatorCount": 104
           },
           {
@@ -3937,16 +4185,20 @@
             "feePercent": 20,
             "uptimePercent": 99.9781,
             "connected": true,
-            "weight": "5999999990000000",
-            "delegatorCount": 27
+            "weight": "83497468082600000",
+            "selfBond": "5999999990000000",
+            "delegatedWeight": "77497468092600000",
+            "delegatorCount": 28
           },
           {
             "nodeId": "NodeID-Mvr4Mv2qL4xgHsuaASvRyDQD4JsgrohgZ",
             "feePercent": 20,
-            "uptimePercent": 99.9853,
+            "uptimePercent": 99.9855,
             "connected": true,
-            "weight": "20700000000000000",
-            "delegatorCount": 66
+            "weight": "107270562946198796",
+            "selfBond": "20700000000000000",
+            "delegatedWeight": "86570562946198796",
+            "delegatorCount": 69
           }
         ],
         "selfDeclared": {
@@ -3979,7 +4231,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "52418513026445198369904570",
-        "votePowerCapped": "52418513026445198369904570",
+        "votePowerCapped": "17964943849188750606204928",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "16742682515709285840719",
@@ -3998,6 +4250,8 @@
             "uptimePercent": 99.9941,
             "connected": true,
             "weight": "1000001000000000",
+            "selfBond": "1000001000000000",
+            "delegatedWeight": "0",
             "delegatorCount": 0
           },
           {
@@ -4006,6 +4260,8 @@
             "uptimePercent": null,
             "connected": false,
             "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
             "delegatorCount": null
           }
         ],
@@ -4039,7 +4295,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "110911463644932174946102181",
-        "votePowerCapped": "110911463644932174946102181",
+        "votePowerCapped": "50900166109598809443008512",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "16809480240231216187234",
@@ -4057,7 +4313,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9998,
             "connected": true,
-            "weight": "29999970000000000",
+            "weight": "214087938502484604",
+            "selfBond": "29999970000000000",
+            "delegatedWeight": "184087968502484604",
             "delegatorCount": 51
           }
         ],
@@ -4091,7 +4349,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "320753158333805338051227571",
-        "votePowerCapped": "320753158333805338051227571",
+        "votePowerCapped": "307922050534193624527142912",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "52661348244074035386165",
@@ -4107,9 +4365,11 @@
           {
             "nodeId": "NodeID-PSA7QAZ3s8cWwbuZ3qiCfodcRAa1DwHxA",
             "feePercent": 20,
-            "uptimePercent": 99.8531,
+            "uptimePercent": 99.8536,
             "connected": true,
-            "weight": "13400000000000000",
+            "weight": "28956499719925301",
+            "selfBond": "13400000000000000",
+            "delegatedWeight": "15556499719925301",
             "delegatorCount": 4
           },
           {
@@ -4117,7 +4377,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9985,
             "connected": true,
-            "weight": "6100000000000000",
+            "weight": "48370285000000000",
+            "selfBond": "6100000000000000",
+            "delegatedWeight": "42270285000000000",
             "delegatorCount": 2
           }
         ],
@@ -4151,7 +4413,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "297526807089357763152273072",
-        "votePowerCapped": "297526807089357763152273072",
+        "votePowerCapped": "272156733129654561423753216",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "51177446613193151948381",
@@ -4169,7 +4431,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9994,
             "connected": true,
-            "weight": "10000000000000000",
+            "weight": "34867869184900931",
+            "selfBond": "10000000000000000",
+            "delegatedWeight": "24867869184900931",
             "delegatorCount": 9
           }
         ],
@@ -4203,7 +4467,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "104026648136444288287896616",
-        "votePowerCapped": "104026648136444288287896616",
+        "votePowerCapped": "103169885276769765222776832",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "17489564847582403212261",
@@ -4219,10 +4483,12 @@
           {
             "nodeId": "NodeID-FFdDVS1oHz6VaFweiBSSf4uaHrWEH5sbn",
             "feePercent": 2,
-            "uptimePercent": 99.2557,
+            "uptimePercent": 99.2567,
             "connected": true,
-            "weight": "7999999000000000",
-            "delegatorCount": 148
+            "weight": "119999984997437149",
+            "selfBond": "7999999000000000",
+            "delegatedWeight": "111999985997437149",
+            "delegatorCount": 150
           }
         ],
         "selfDeclared": {
@@ -4255,7 +4521,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "717261975857416451911400774",
-        "votePowerCapped": "717261975857416451911400774",
+        "votePowerCapped": "716022189348185362191613952",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "106149262950636974932234",
@@ -4273,8 +4539,10 @@
             "feePercent": 13,
             "uptimePercent": 99.9524,
             "connected": true,
-            "weight": "7750000000000000",
-            "delegatorCount": 63
+            "weight": "115957133826337240",
+            "selfBond": "7750000000000000",
+            "delegatedWeight": "108207133826337240",
+            "delegatorCount": 62
           }
         ],
         "selfDeclared": {
@@ -4307,7 +4575,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "196349396833211861341447292",
-        "votePowerCapped": "196349396833211861341447292",
+        "votePowerCapped": "133108588655826683996143616",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "18621561900733558631846",
@@ -4325,7 +4593,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9992,
             "connected": true,
-            "weight": "3000000000000000",
+            "weight": "44899903620000000",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "41899903620000000",
             "delegatorCount": 14
           }
         ],
@@ -4359,7 +4629,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "189719201042870587051735313",
-        "votePowerCapped": "189719201042870587051735313",
+        "votePowerCapped": "194001149859877731530964992",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "41572756007004430852083",
@@ -4377,16 +4647,20 @@
             "feePercent": 50,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "1010000000000000",
-            "delegatorCount": 8
+            "weight": "13040025336160603",
+            "selfBond": "1010000000000000",
+            "delegatedWeight": "12030025336160603",
+            "delegatorCount": 9
           },
           {
             "nodeId": "NodeID-9phg2KMyH6nrwkf6G46d4SUWuNqf6jUqr",
             "feePercent": 20,
-            "uptimePercent": 99.9577,
+            "uptimePercent": 99.9579,
             "connected": true,
-            "weight": "3999999000000000",
-            "delegatorCount": 37
+            "weight": "59990696994314033",
+            "selfBond": "3999999000000000",
+            "delegatedWeight": "55990697994314033",
+            "delegatorCount": 40
           }
         ],
         "selfDeclared": {
@@ -4419,7 +4693,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "67269152000659391864200239",
-        "votePowerCapped": "67269152000659391864200239",
+        "votePowerCapped": "61702740178887802911457280",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "10018837228119315954086",
@@ -4437,7 +4711,9 @@
             "feePercent": 15,
             "uptimePercent": 99.9822,
             "connected": true,
-            "weight": "30000000000000000",
+            "weight": "123392827258720255",
+            "selfBond": "30000000000000000",
+            "delegatedWeight": "93392827258720255",
             "delegatorCount": 21
           }
         ],
@@ -4471,7 +4747,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "89624592794798801664853467",
-        "votePowerCapped": "89624592794798801664853467",
+        "votePowerCapped": "85392107742896772391895040",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "15694264105440716472037",
@@ -4487,9 +4763,11 @@
           {
             "nodeId": "NodeID-F297gLgRxBndijAYvvvBGtQTwYCrScMQT",
             "feePercent": 20,
-            "uptimePercent": 96.3093,
+            "uptimePercent": 96.313,
             "connected": true,
-            "weight": "7761500000000000",
+            "weight": "66655713111253279",
+            "selfBond": "7761500000000000",
+            "delegatedWeight": "58894213111253279",
             "delegatorCount": 42
           },
           {
@@ -4497,15 +4775,19 @@
             "feePercent": 20,
             "uptimePercent": 99.9916,
             "connected": true,
-            "weight": "3083000000000000",
+            "weight": "12004394102428767",
+            "selfBond": "3083000000000000",
+            "delegatedWeight": "8921394102428767",
             "delegatorCount": 9
           },
           {
             "nodeId": "NodeID-NV7ZpcJvqzmvvT4PaeHWbTELWKFT2Jqxw",
             "feePercent": 20,
-            "uptimePercent": 99.9921,
+            "uptimePercent": 99.9922,
             "connected": true,
-            "weight": "3156500000000000",
+            "weight": "6906495000000000",
+            "selfBond": "3156500000000000",
+            "delegatedWeight": "3749995000000000",
             "delegatorCount": 6
           }
         ],
@@ -4539,7 +4821,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "98274781560928476456336032",
-        "votePowerCapped": "98274781560928476456336032",
+        "votePowerCapped": "98868094247684244481507328",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "14303617993795549013956",
@@ -4555,10 +4837,12 @@
           {
             "nodeId": "NodeID-Cg8PLmdZ9JmEtUBCZhq2jt2JDS5gDaSsQ",
             "feePercent": 5,
-            "uptimePercent": 99.1541,
+            "uptimePercent": 99.1549,
             "connected": true,
-            "weight": "13333334000000000",
-            "delegatorCount": 311
+            "weight": "199355588610316376",
+            "selfBond": "13333334000000000",
+            "delegatedWeight": "186022254610316376",
+            "delegatorCount": 314
           }
         ],
         "selfDeclared": {
@@ -4607,9 +4891,11 @@
           {
             "nodeId": "NodeID-JZuVSDnBui1u82RmkbkWKJ1JxfdxuVYR9",
             "feePercent": 20,
-            "uptimePercent": 93.5134,
+            "uptimePercent": 93.5249,
             "connected": true,
-            "weight": "30199999000000000",
+            "weight": "30347370140682130",
+            "selfBond": "30199999000000000",
+            "delegatedWeight": "147371140682130",
             "delegatorCount": 2
           }
         ],
@@ -4643,7 +4929,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "95851856659889025046454074",
-        "votePowerCapped": "95851856659889025046454074",
+        "votePowerCapped": "90986035835391866837139456",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "17629087315437022288673",
@@ -4661,8 +4947,10 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "3000000000000000",
-            "delegatorCount": 24
+            "weight": "32834827264110845",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "29834827264110845",
+            "delegatorCount": 23
           }
         ],
         "selfDeclared": {
@@ -4695,7 +4983,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "6552865080783888811889049",
-        "votePowerCapped": "6552865080783888811889049",
+        "votePowerCapped": "6709400446293262695661568",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "2004019932818495229809",
@@ -4711,9 +4999,11 @@
           {
             "nodeId": "NodeID-KiaPr2n8VH16oA7mGzveYgk2hceo2WYst",
             "feePercent": 20,
-            "uptimePercent": 99.9935,
+            "uptimePercent": 99.9936,
             "connected": true,
-            "weight": "6000000000000000",
+            "weight": "7000000000000000",
+            "selfBond": "6000000000000000",
+            "delegatedWeight": "1000000000000000",
             "delegatorCount": 1
           },
           {
@@ -4721,7 +5011,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9936,
             "connected": true,
-            "weight": "5775000000000000",
+            "weight": "30880260000000000",
+            "selfBond": "5775000000000000",
+            "delegatedWeight": "25105260000000000",
             "delegatorCount": 1
           }
         ],
@@ -4755,7 +5047,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "93169126309335740784089860",
-        "votePowerCapped": "93169126309335740784089860",
+        "votePowerCapped": "115270070736802069576941568",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -4771,17 +5063,21 @@
           {
             "nodeId": "NodeID-98RaC6gbJMhin1NXsBFUoicEqiF7VKWbL",
             "feePercent": 15,
-            "uptimePercent": 98.599,
+            "uptimePercent": 98.6005,
             "connected": true,
-            "weight": "13350000000000000",
+            "weight": "40080977336850500",
+            "selfBond": "13350000000000000",
+            "delegatedWeight": "26730977336850500",
             "delegatorCount": 118
           },
           {
             "nodeId": "NodeID-HocHt7RWAxksQj94zEJJ6He7gH2mRnzs1",
             "feePercent": 20,
-            "uptimePercent": 97.3649,
+            "uptimePercent": 97.3723,
             "connected": true,
-            "weight": "13076425000000000",
+            "weight": "17808586080000000",
+            "selfBond": "13076425000000000",
+            "delegatedWeight": "4732161080000000",
             "delegatorCount": 89
           }
         ],
@@ -4815,7 +5111,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "59752380047478314382615123",
-        "votePowerCapped": "59752380047478314382615123",
+        "votePowerCapped": "47358785070125485075202048",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -4831,9 +5127,11 @@
           {
             "nodeId": "NodeID-Ckyh9cpfkkXSo5PYNNFactcrKkY2XhkXR",
             "feePercent": 20,
-            "uptimePercent": 98.0077,
+            "uptimePercent": 98.041,
             "connected": true,
             "weight": "3000000000000000",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "0",
             "delegatorCount": 0
           }
         ],
@@ -4867,7 +5165,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "142447836037651537061188638",
-        "votePowerCapped": "142447836037651537061188638",
+        "votePowerCapped": "141046718659312324330913792",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "24878718932636863047734",
@@ -4883,17 +5181,21 @@
           {
             "nodeId": "NodeID-KtTdea6FeDDy5pERrZKHkkhtJFCbJNv1a",
             "feePercent": 10,
-            "uptimePercent": 99.8056,
+            "uptimePercent": 99.8058,
             "connected": true,
-            "weight": "6000000000000000",
-            "delegatorCount": 62
+            "weight": "88917370628690645",
+            "selfBond": "6000000000000000",
+            "delegatedWeight": "82917370628690645",
+            "delegatorCount": 63
           },
           {
             "nodeId": "NodeID-B7FoyLiwCjtCd1fN8TtD5BUxVVQmxczhr",
             "feePercent": 20,
-            "uptimePercent": 99.9829,
+            "uptimePercent": 99.983,
             "connected": true,
-            "weight": "1000000000000000",
+            "weight": "1052275540000000",
+            "selfBond": "1000000000000000",
+            "delegatedWeight": "52275540000000",
             "delegatorCount": 1
           }
         ],
@@ -4927,7 +5229,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "181412262540159545658974263",
-        "votePowerCapped": "181412262540159545658974263",
+        "votePowerCapped": "171579179600853627786231808",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "25388758317993775990833",
@@ -4945,15 +5247,19 @@
             "feePercent": 10,
             "uptimePercent": 99.9993,
             "connected": true,
-            "weight": "13500000000000000",
-            "delegatorCount": 230
+            "weight": "161690706117048921",
+            "selfBond": "13500000000000000",
+            "delegatedWeight": "148190706117048921",
+            "delegatorCount": 225
           },
           {
             "nodeId": "NodeID-8qMWVar3hLdLSSgbTV57brpqUNjJuU2H8",
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "13340000000000000",
+            "weight": "78428133020347511",
+            "selfBond": "13340000000000000",
+            "delegatedWeight": "65088133020347511",
             "delegatorCount": 21
           }
         ],
@@ -4987,7 +5293,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "249137308425105975928919803",
-        "votePowerCapped": "249137308425105975928919803",
+        "votePowerCapped": "245986563571068473842860032",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "43667229773283536003244",
@@ -5005,8 +5311,10 @@
             "feePercent": 20,
             "uptimePercent": 100,
             "connected": true,
-            "weight": "11000000000000000",
-            "delegatorCount": 14
+            "weight": "71341891166276899",
+            "selfBond": "11000000000000000",
+            "delegatedWeight": "60341891166276899",
+            "delegatorCount": 17
           }
         ],
         "selfDeclared": {
@@ -5039,7 +5347,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "103529684052773380906892979",
-        "votePowerCapped": "103529684052773380906892979",
+        "votePowerCapped": "104985750081163116291293184",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "17551820723587593227441",
@@ -5055,9 +5363,11 @@
           {
             "nodeId": "NodeID-NbTToANYcdsreLC5PBcE9gsMBpBY7N7s1",
             "feePercent": 20,
-            "uptimePercent": 99.9864,
+            "uptimePercent": 99.9865,
             "connected": true,
-            "weight": "6500000000000000",
+            "weight": "97499999683354415",
+            "selfBond": "6500000000000000",
+            "delegatedWeight": "90999999683354415",
             "delegatorCount": 27
           }
         ],
@@ -5091,7 +5401,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "76061461481366441849889972",
-        "votePowerCapped": "76061461481366441849889972",
+        "votePowerCapped": "75293046261819239066238976",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "13621210082945996267828",
@@ -5109,7 +5419,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9963,
             "connected": true,
-            "weight": "3000000000000000",
+            "weight": "44999672158524701",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "41999672158524701",
             "delegatorCount": 30
           }
         ],
@@ -5143,7 +5455,7 @@
         "network": "flare",
         "feePercent": 20,
         "votePower": "150435362954529599639108200",
-        "votePowerCapped": "150435362954529599639108200",
+        "votePowerCapped": "146368412493742399874400256",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "29383135882596614813890",
@@ -5159,17 +5471,21 @@
           {
             "nodeId": "NodeID-B6sAUBEYn2fvHMeUnsUkh1yNrvTzKu8gZ",
             "feePercent": 20,
-            "uptimePercent": 98.7133,
+            "uptimePercent": 98.7153,
             "connected": true,
-            "weight": "8500000000000000",
-            "delegatorCount": 29
+            "weight": "102466536099221098",
+            "selfBond": "8500000000000000",
+            "delegatedWeight": "93966536099221098",
+            "delegatorCount": 34
           },
           {
             "nodeId": "NodeID-HGNPxSh8dZqCNCmHfMMNWYC8CNQiUwDWK",
             "feePercent": 20,
-            "uptimePercent": 99.7588,
+            "uptimePercent": 99.7595,
             "connected": true,
-            "weight": "12724000000000000",
+            "weight": "25197877788433428",
+            "selfBond": "12724000000000000",
+            "delegatedWeight": "12473877788433428",
             "delegatorCount": 8
           }
         ],
@@ -5203,7 +5519,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "68253569453771960788656130",
-        "votePowerCapped": "68253569453771960788656130",
+        "votePowerCapped": "67690824594289616947773440",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -5246,7 +5562,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "81760908710179098553706772",
-        "votePowerCapped": "81760908710179098553706772",
+        "votePowerCapped": "82462499718918166240296960",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "73553759926486275837701",
@@ -5289,7 +5605,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "73259884273979702006642256",
-        "votePowerCapped": "73259884273979702006642256",
+        "votePowerCapped": "70578938066226179506962432",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "74273886158485489266112",
@@ -5332,7 +5648,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "352886979718659924892616624",
-        "votePowerCapped": "226741326747738604511705407",
+        "votePowerCapped": "226803810607255388302606336",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "174370872328110992075782",
@@ -5375,7 +5691,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "59431915213350831193654872",
-        "votePowerCapped": "59431915213350831193654872",
+        "votePowerCapped": "70760205000932111048245248",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "55603008053611455512462",
@@ -5418,7 +5734,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "281399956974733793236726719",
-        "votePowerCapped": "226741326747738604511705407",
+        "votePowerCapped": "226803810607255388302606336",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "185915076096893917167728",
@@ -5461,7 +5777,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "91398011561209723731874071",
-        "votePowerCapped": "91398011561209723731874071",
+        "votePowerCapped": "87997307586837172216397824",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "90687657255222840807983",
@@ -5504,7 +5820,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "162315944993834137402031638",
-        "votePowerCapped": "162315944993834137402031638",
+        "votePowerCapped": "160677568114455734090989568",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "139260950559366572572881",
@@ -5547,7 +5863,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "258818887159568601138032355",
-        "votePowerCapped": "226741326747738604511705407",
+        "votePowerCapped": "226803810607255388302606336",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "181108933944274644868677",
@@ -5590,7 +5906,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "162002440915833790478677382",
-        "votePowerCapped": "162002440915833790478677382",
+        "votePowerCapped": "162068570717192907497930752",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "140691478014436323454316",
@@ -5633,7 +5949,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "491650250045321044805868519",
-        "votePowerCapped": "226741326747738604511705407",
+        "votePowerCapped": "226803810607255388302606336",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "158210868108817072775021",
@@ -5676,7 +5992,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "72405850848802011491285040",
-        "votePowerCapped": "72405850848802011491285040",
+        "votePowerCapped": "66577853849138600756641792",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -5719,7 +6035,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "142226163820530160186585147",
-        "votePowerCapped": "142226163820530160186585147",
+        "votePowerCapped": "137422437235861939191545856",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "133124515334476220154334",
@@ -5762,7 +6078,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "242106854934613860720255171",
-        "votePowerCapped": "226741326747738604511705407",
+        "votePowerCapped": "226803810607255388302606336",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "190278321068441490761616",
@@ -5805,7 +6121,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "22865615304871992474092123",
-        "votePowerCapped": "22865615304871992474092123",
+        "votePowerCapped": "22865917760919304075739136",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -5848,7 +6164,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "121675079555369868891430318",
-        "votePowerCapped": "121675079555369868891430318",
+        "votePowerCapped": "148302320569651979542855680",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "99302673806201034502615",
@@ -5891,7 +6207,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "102291622742369065949443171",
-        "votePowerCapped": "102291622742369065949443171",
+        "votePowerCapped": "102680388999313067863965696",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "88712167626681280190817",
@@ -5934,7 +6250,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "131583494873806381215756927",
-        "votePowerCapped": "131583494873806381215756927",
+        "votePowerCapped": "131668595930653990592708608",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "118232074973844597513272",
@@ -5977,7 +6293,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "252530657295368472624514676",
-        "votePowerCapped": "226741326747738604511705407",
+        "votePowerCapped": "226803810607255388302606336",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "183948357300716470484259",
@@ -6020,7 +6336,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "123506412285493655912771738",
-        "votePowerCapped": "123506412285493655912771738",
+        "votePowerCapped": "123613511894781885946003456",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "115565370983446716880000",
@@ -6063,7 +6379,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "133252637814253259006284398",
-        "votePowerCapped": "133252637814253259006284398",
+        "votePowerCapped": "133137256854171945344696320",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "115429780787472365764674",
@@ -6106,7 +6422,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "70889581329027194962969711",
-        "votePowerCapped": "70889581329027194962969711",
+        "votePowerCapped": "71012568593870129568153600",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "70871713850765738609289",
@@ -6149,7 +6465,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "142150331636138882684085523",
-        "votePowerCapped": "142150331636138882684085523",
+        "votePowerCapped": "142122335664947749680316416",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "107860226267418617219268",
@@ -6192,7 +6508,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "143766108094934205042239885",
-        "votePowerCapped": "143766108094934205042239885",
+        "votePowerCapped": "143883089647308518434275328",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "126308972258333927126680",
@@ -6235,7 +6551,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "185618644281667155896339247",
-        "votePowerCapped": "185618644281667155896339247",
+        "votePowerCapped": "184934213474101407105679360",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -6278,7 +6594,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "59956784691177398062429495",
-        "votePowerCapped": "59956784691177398062429495",
+        "votePowerCapped": "86357910784431364226678784",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "62342247624341180397859",
@@ -6321,7 +6637,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "212866882551208350058639969",
-        "votePowerCapped": "212866882551208350058639969",
+        "votePowerCapped": "212395053657908650293854208",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "166905183195481785508868",
@@ -6364,7 +6680,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "21070653716327050172624331",
-        "votePowerCapped": "21070653716327050172624331",
+        "votePowerCapped": "19034496341709930941644800",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "25490086660999553714329",
@@ -6407,7 +6723,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "32509258120297488520430652",
-        "votePowerCapped": "32509258120297488520430652",
+        "votePowerCapped": "32522055690365041488429056",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "31038112778336969886030",
@@ -6450,7 +6766,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "149531322874793346531203677",
-        "votePowerCapped": "149531322874793346531203677",
+        "votePowerCapped": "125071946557424989450010624",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "126915174258332372629421",
@@ -6493,7 +6809,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "81697035880485394541211413",
-        "votePowerCapped": "81697035880485394541211413",
+        "votePowerCapped": "81661638468723409223155712",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "76068368611726827122926",
@@ -6536,7 +6852,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "64852658320193455511211075",
-        "votePowerCapped": "64852658320193455511211075",
+        "votePowerCapped": "59874177756327733928919040",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "62199423017495405730891",
@@ -6579,7 +6895,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "106902366806276957841917905",
-        "votePowerCapped": "106902366806276957841917905",
+        "votePowerCapped": "107697123174216093350756352",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "96353822668705140718002",
@@ -6622,7 +6938,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "153069927175884388029457173",
-        "votePowerCapped": "153069927175884388029457173",
+        "votePowerCapped": "152720078007618504350498816",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "137375339038677066118910",
@@ -6665,7 +6981,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "63249036157014426297179387",
-        "votePowerCapped": "63249036157014426297179387",
+        "votePowerCapped": "63701035540456766810619904",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "65303409770709320049389",
@@ -6708,7 +7024,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "129176085030757666234735882",
-        "votePowerCapped": "129176085030757666234735882",
+        "votePowerCapped": "129180212512728792241799168",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "114040810467811195218032",
@@ -6831,7 +7147,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "92345877683970976528485423",
-        "votePowerCapped": "92345877683970976528485423",
+        "votePowerCapped": "92683852594904321499332608",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "88843968400453631216765",
@@ -6874,7 +7190,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "97023442779263358985176327",
-        "votePowerCapped": "97023442779263358985176327",
+        "votePowerCapped": "91839398338053856122896384",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "92206740729032539391444",
@@ -6917,7 +7233,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "48174048005766233433415921",
-        "votePowerCapped": "48174048005766233433415921",
+        "votePowerCapped": "48834915901587136284983296",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "49281582878201375696414",
@@ -6960,7 +7276,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "40616946675342504814248742",
-        "votePowerCapped": "40616946675342504814248742",
+        "votePowerCapped": "40688550325776580438130688",
         "feedCount": 63,
         "lastEpoch": 416,
         "delegatorRewardLastEpoch": "37169572791951700820707",
@@ -7003,7 +7319,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "381932293117846121546364644",
-        "votePowerCapped": "226741326747738604511705407",
+        "votePowerCapped": "226803810607255388302606336",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "180424027192907927038002",
@@ -7046,7 +7362,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "70587169530602113887820165",
-        "votePowerCapped": "70587169530602113887820165",
+        "votePowerCapped": "70662487362676997849350144",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "61560340453970682341099",
@@ -7126,7 +7442,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "194089459475464704462404450",
-        "votePowerCapped": "194089459475464704462404450",
+        "votePowerCapped": "208335095873233800128364544",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "163429276242391117953207",
@@ -7169,7 +7485,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "70674263000043520301307477",
-        "votePowerCapped": "70674263000043520301307477",
+        "votePowerCapped": "107796582333683512234737664",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "67046048478406516095895",
@@ -7249,7 +7565,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "138319668860141929245646557",
-        "votePowerCapped": "138319668860141929245646557",
+        "votePowerCapped": "138421534605595357715890176",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "126485872757221846338231",
@@ -7292,7 +7608,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "48481834070271004448622914",
-        "votePowerCapped": "48481834070271004448622914",
+        "votePowerCapped": "42437786979101603805528064",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "53488316801044263426080",
@@ -7335,7 +7651,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "106571290321748706109278283",
-        "votePowerCapped": "106571290321748706109278283",
+        "votePowerCapped": "106897822879905306204176384",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "83819269515021052322573",
@@ -7378,7 +7694,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "47274161118404584442582252",
-        "votePowerCapped": "47274161118404584442582252",
+        "votePowerCapped": "47129700119635165343383552",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "48017156821236403097474",
@@ -7421,7 +7737,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "65448837095619100304525954",
-        "votePowerCapped": "65448837095619100304525954",
+        "votePowerCapped": "60442227237528229073911808",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "58643835960670339109146",
@@ -7464,7 +7780,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "57550742145909575414644804",
-        "votePowerCapped": "57550742145909575414644804",
+        "votePowerCapped": "57551562905157895905607680",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -7507,7 +7823,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "22859104345136120412821821",
-        "votePowerCapped": "22859104345136120412821821",
+        "votePowerCapped": "22803199171223654697533440",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "0",
@@ -7550,7 +7866,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "83655338203815816642390305",
-        "votePowerCapped": "83655338203815816642390305",
+        "votePowerCapped": "83137113172314361824280576",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "79587051798351693851292",
@@ -7593,7 +7909,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "173074115603094810983477236",
-        "votePowerCapped": "173074115603094810983477236",
+        "votePowerCapped": "173409452229910071680696320",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "145003777339689099661604",
@@ -7636,7 +7952,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "69815274278998462530569095",
-        "votePowerCapped": "69815274278998462530569095",
+        "votePowerCapped": "69777362286089584934649856",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "62370843772464912488989",
@@ -7679,7 +7995,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "57135551615444049084194701",
-        "votePowerCapped": "57135551615444049084194701",
+        "votePowerCapped": "57274289152873961722216448",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "50140733828358328061519",
@@ -7722,7 +8038,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "99083843368182491763271320",
-        "votePowerCapped": "99083843368182491763271320",
+        "votePowerCapped": "98378731466756561607589888",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "92147923450054624799741",
@@ -7765,7 +8081,7 @@
         "network": "songbird",
         "feePercent": 20,
         "votePower": "63327135394501589314458774",
-        "votePowerCapped": "63327135394501589314458774",
+        "votePowerCapped": "63542736387415974875234304",
         "feedCount": 63,
         "lastEpoch": 419,
         "delegatorRewardLastEpoch": "58920603714282829097213",
