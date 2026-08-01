@@ -140,7 +140,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
           median-of-prints implementation reads high.
         </p>
         <p>
-          <em>Which</em> cells a provider over-hits is a sharper question, because that is set by the
+          <em>Which</em>{" "}cells a provider over-hits is a sharper question, because that is set by the
           venue list rather than the aggregation method. We correlate each provider&apos;s per-cell excess
           profile against our reference instances, then normalise by those instances&apos; own
           cross-configuration agreement:
@@ -163,10 +163,16 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         <p>
           The shipped <code>feeds.json</code> prices <code>USDC/USD</code> from five{" "}
           <code>USDC/USDT</code> order books, then multiplies by the provider&apos;s{" "}
-          <strong className="text-fg">own</strong> <code>USDT/USD</code> median.{" "}
-          <code>USDC/USDT</code> ticks at 1e-4, so for anyone using that configuration:
+          <strong className="text-fg">own</strong> <code>USDT/USD</code> median. Four of those five books
+          tick at 1e-4, so whenever the median print comes from one of them:
         </p>
-        <Formula>{`(USDC/USD ÷ USDT/USD) × 10^4   must land on an integer`}</Formula>
+        <Formula>{`(USDC/USD ÷ USDT/USD) × 10^4   lands on an integer`}</Formula>
+        <p>
+          The fifth book ticks finer, at 1e-5, and prints taken from it do not land on that grid. So even
+          an unmodified deployment does not score 1.0 here; it scores well above the field but short of
+          it, by roughly the share of rounds the finer book wins the median. That is why the measure is
+          read as a rate rather than as a yes or no.
+        </p>
         <p>
           It uses only a provider&apos;s own two submitted values. Nothing is calibrated and there is no
           threshold to tune: the hit rate is identical at two different tolerances, and substituting a
