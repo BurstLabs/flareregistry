@@ -133,7 +133,9 @@ git -C flareregistry checkout <commit-sha>`}</code>
       "feePercent": 20.0,           // validator staking fee (or null)
       "uptimePercent": 99.98,       // (or null)
       "connected": true,
-      "weight": "...",              // self+delegated stake, decimal string (or null)
+      "weight": "...",              // TOTAL stake: self-bond + delegated, decimal string (or null)
+      "selfBond": "...",            // the validator's own bond (or null)
+      "delegatedWeight": "...",     // stake delegated to this node by others (or null)
       "delegatorCount": 12          // (or null)
     }
   ],

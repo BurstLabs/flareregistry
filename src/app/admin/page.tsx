@@ -263,7 +263,7 @@ function StatsTab() {
 
       <div>
         <h2 className="mb-2 text-sm font-semibold text-muted">
-          Traffic (last 30 days) — {data.traffic.totalHits} views, {data.traffic.totalUniques} unique
+          Traffic (last 30 days): {data.traffic.totalHits} views, {data.traffic.totalUniques} unique
         </h2>
         <Card>
           {data.traffic.trafficByDay.length === 0 ? (
@@ -417,7 +417,7 @@ function ProvidersTab() {
                 <button
                   onClick={() => patch(p.id, { archived: !p.archivedAt })}
                   className={`rounded px-2 py-1 ${p.archivedAt ? "bg-amber-500/20 text-amber-400" : "bg-elev text-muted"}`}
-                  title={p.archivedAt ? `Archived ${new Date(p.archivedAt).toISOString().slice(0, 10)} — click to restore` : "Archive (remove from live feed, keep record)"}
+                  title={p.archivedAt ? `Archived ${new Date(p.archivedAt).toISOString().slice(0, 10)}, click to restore` : "Archive (remove from live feed, keep record)"}
                 >
                   {p.archivedAt ? "archived" : "archive"}
                 </button>
