@@ -106,6 +106,11 @@ export async function GET() {
   const extKey = (x: string | null | undefined) =>
     String(x ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const extByName = new Map(externals.map((e) => [e.nameKey, e]));
+  // Address join takes precedence: it is exact, and it is the ONLY key that works for providers with no
+  // public name. Their anonymised labels are Flare entity ids, so those resolve too.
+  const extByAddr = new Map(
+    externals.filter((e) => e.identityAddress).map((e) => [e.identityAddress as string, e])
+  );
 
   const labels = await prisma.detectionLabel.findMany({ where: { address: { in: keys } } });
   const labelByAddr = new Map(labels.map((l) => [l.address.toLowerCase(), l.label]));
@@ -134,7 +139,9 @@ export async function GET() {
       weight, // on-chain vote power (wNat weight), whole tokens
       // Independent third-party verdict, where their published name matches ours.
       external: (() => {
-        const e = extByName.get(extKey(labelByAddr.get(r.voter.toLowerCase()) ?? p?.name));
+        const e =
+          (entityVoter ? extByAddr.get(entityVoter) : undefined) ??
+          extByName.get(extKey(labelByAddr.get(r.voter.toLowerCase()) ?? p?.name));
         return e
           ? { source: e.source, probability: e.probability, verdict: e.verdict, snapshotAt: e.snapshotAt }
           : null;
