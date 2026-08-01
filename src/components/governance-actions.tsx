@@ -171,7 +171,7 @@ export function ReportLogoAction({ providerId }: { providerId: string }) {
         onClick={() => setOpen((o) => !o)}
         title={t("logo.report.toggle")}
         aria-label={t("logo.report.toggle")}
-        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev text-[11px] leading-none text-faint shadow-sm hover:text-flare"
+        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev after:absolute after:-inset-2 after:content-[''] text-[11px] leading-none text-faint shadow-sm hover:text-flare"
       >
         ⚑
       </button>
@@ -1017,7 +1017,7 @@ function EditImageControls({
                 disabled={disabled}
                 title={t("gov.act.imageRemove")}
                 aria-label={t("gov.act.imageRemove")}
-                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev text-xs text-muted hover:text-flare disabled:opacity-50"
+                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev after:absolute after:-inset-2 after:content-[''] text-xs text-muted hover:text-flare disabled:opacity-50"
               >
                 ×
               </button>
@@ -1151,7 +1151,7 @@ export function PointImages({
                   disabled={busy}
                   title={t("gov.act.imageRemove")}
                 aria-label={t("gov.act.imageRemove")}
-                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev text-xs text-muted hover:text-flare disabled:opacity-50"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev after:absolute after:-inset-2 after:content-[''] text-xs text-muted hover:text-flare disabled:opacity-50"
                 >
                   ×
                 </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
 import { InfoTip } from "./info-tip";
@@ -52,6 +52,13 @@ export function DirectoryClient({
   const [query, setQuery] = useState("");
   const [perPage, setPerPage] = useState(24);
   const [page, setPage] = useState(1);
+  // Paging and searching re-render the list in place, leaving the viewport wherever it was: on a phone
+  // that is the END of the new page, ~12 screen-heights below its start. Scroll the list back into view
+  // whenever the result set changes rather than only on the Next/Prev buttons, so search and per-page
+  // behave the same way.
+  const listRef = useRef<HTMLUListElement>(null);
+  const scrollToList = () =>
+    requestAnimationFrame(() => listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -151,7 +158,7 @@ export function DirectoryClient({
         ) : filtered.length === 0 ? (
           <p className="text-muted">{t("home.noMatch")}</p>
         ) : (
-          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <ul ref={listRef} className="grid scroll-mt-20 grid-cols-1 gap-5 sm:grid-cols-2">
             {paged.map((p) => (
               <li
                 key={p.id}
@@ -167,7 +174,7 @@ export function DirectoryClient({
                     />
                     <Link
                       href={`/provider/${p.detailAddress}`}
-                      className="truncate font-semibold hover:text-beacon"
+                      className="min-h-[40px] flex-1 truncate py-2 font-semibold hover:text-beacon"
                     >
                       {p.name}
                     </Link>
@@ -176,7 +183,7 @@ export function DirectoryClient({
                     {p.governance?.suspended && p.governance.caseId && (
                       <Link
                         href={`/governance/${p.governance.caseId}`}
-                        className="rounded-md bg-flare/20 px-2 py-0.5 text-xs font-medium text-flare hover:underline"
+                        className="rounded-md bg-flare/20 px-2 py-1.5 text-xs font-medium text-flare hover:underline"
                       >
                         {t("badge.suspended")}
                       </Link>
@@ -184,7 +191,7 @@ export function DirectoryClient({
                     {p.governance?.underReview && p.governance.caseId && (
                       <Link
                         href={`/governance/${p.governance.caseId}`}
-                        className="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-600 hover:underline dark:text-amber-300"
+                        className="rounded-md bg-amber-500/20 px-2 py-1.5 text-xs font-medium text-amber-600 hover:underline dark:text-amber-300"
                       >
                         {t("badge.underReview")}
                       </Link>
@@ -193,7 +200,7 @@ export function DirectoryClient({
                       <Link
                         href={`/governance/${p.governance.caseId}`}
                         title={t("badge.flagPendingHint")}
-                        className="rounded-md bg-neutral-500/15 px-2 py-0.5 text-xs font-medium text-muted hover:underline"
+                        className="rounded-md bg-neutral-500/15 px-2 py-1.5 text-xs font-medium text-muted hover:underline"
                       >
                         {t("badge.flagPending")}
                       </Link>
@@ -202,28 +209,28 @@ export function DirectoryClient({
                       <InfoTip
                   label={t("badge.managementGroup")}
                   tip={t("badge.managementGroupHint")}
-                  triggerClassName="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300"
+                  triggerClassName="rounded-md bg-amber-500/20 px-2 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-300"
                 />
                     )}
                     {p.qualified && (
                       <InfoTip
                   label={t("badge.qualified")}
                   tip={t("badge.qualifiedHint")}
-                  triggerClassName="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-500 dark:text-emerald-300"
+                  triggerClassName="rounded-md bg-emerald-500/20 px-2 py-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-300"
                 />
                     )}
                     {p.registered && (
                       <InfoTip
                   label={t("badge.registered")}
                   tip={t("badge.registeredHint")}
-                  triggerClassName="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400"
+                  triggerClassName="rounded-md bg-emerald-500/10 px-2 py-1.5 text-xs text-emerald-600 dark:text-emerald-400"
                 />
                     )}
                     {p.verified && (
                       <InfoTip
                   label={t("badge.ownerVerified")}
                   tip={t("badge.ownerVerifiedTip")}
-                  triggerClassName="rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon"
+                  triggerClassName="rounded-md bg-beacon/20 px-2 py-1.5 text-xs text-beacon"
                 />
                     )}
                   </div>
@@ -341,7 +348,7 @@ export function DirectoryClient({
                   {p.chains.map((c) => (
                     <span
                       key={c}
-                      className="rounded-md bg-black/5 px-2 py-0.5 text-xs text-muted dark:bg-white/5"
+                      className="rounded-md bg-black/5 px-2 py-1.5 text-xs text-muted dark:bg-white/5"
                     >
                       {c}
                     </span>
@@ -387,7 +394,7 @@ export function DirectoryClient({
         {filtered.length > 0 && pageCount > 1 && (
           <div className="mt-8 flex items-center justify-center gap-2 text-sm">
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => { setPage((p) => Math.max(1, p - 1)); scrollToList(); }}
               disabled={current <= 1}
               className="rounded-md border border-themed px-3 py-1.5 text-muted hover:text-beacon disabled:opacity-40"
             >
@@ -397,7 +404,7 @@ export function DirectoryClient({
               {t("home.pageOf", { page: current, total: pageCount })}
             </span>
             <button
-              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+              onClick={() => { setPage((p) => Math.min(pageCount, p + 1)); scrollToList(); }}
               disabled={current >= pageCount}
               className="rounded-md border border-themed px-3 py-1.5 text-muted hover:text-beacon disabled:opacity-40"
             >

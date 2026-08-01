@@ -117,41 +117,41 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
         </div>
         <div className="min-w-0">
           <h1 className="text-3xl font-bold tracking-tight">{d.name}</h1>
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="mt-2 flex flex-wrap gap-2">
             {/* Show a clear Suspended badge so the badge row matches the suspension banner. */}
             {d.governance?.suspended && (
               <InfoTip
                   label={t("badge.suspended")}
                   tip={t("badge.suspendedHint")}
-                  triggerClassName="rounded-md bg-flare/20 px-2 py-0.5 text-xs font-medium text-flare"
+                  triggerClassName="rounded-md bg-flare/20 px-2 py-1.5 text-xs font-medium text-flare"
                 />
             )}
             {d.managementGroup && (
               <InfoTip
                   label={t("badge.managementGroup")}
                   tip={t("badge.managementGroupHint")}
-                  triggerClassName="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300"
+                  triggerClassName="rounded-md bg-amber-500/20 px-2 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-300"
                 />
             )}
             {d.qualified && (
               <InfoTip
                   label={t("badge.qualified")}
                   tip={t("badge.qualifiedHint")}
-                  triggerClassName="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-500 dark:text-emerald-300"
+                  triggerClassName="rounded-md bg-emerald-500/20 px-2 py-1.5 text-xs font-medium text-emerald-500 dark:text-emerald-300"
                 />
             )}
             {d.registered && (
               <InfoTip
                   label={t("badge.registered")}
                   tip={t("badge.registeredHint")}
-                  triggerClassName="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400"
+                  triggerClassName="rounded-md bg-emerald-500/10 px-2 py-1.5 text-xs text-emerald-600 dark:text-emerald-400"
                 />
             )}
             {d.verified && (
               <InfoTip
                   label={t("badge.ownerVerified")}
                   tip={t("badge.ownerVerifiedTip")}
-                  triggerClassName="rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon"
+                  triggerClassName="rounded-md bg-beacon/20 px-2 py-1.5 text-xs text-beacon"
                 />
             )}
           </div>
@@ -459,11 +459,11 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 )}
               </div>
               {a.verified ? (
-                <span className="shrink-0 rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon">
+                <span className="shrink-0 rounded-md bg-beacon/20 px-2 py-1.5 text-xs text-beacon">
                   {t("badge.verified")}
                 </span>
               ) : (
-                <span className="shrink-0 rounded-md bg-elev px-2 py-0.5 text-xs text-faint">
+                <span className="shrink-0 rounded-md bg-elev px-2 py-1.5 text-xs text-faint">
                   {t("badge.unverified")}
                 </span>
               )}

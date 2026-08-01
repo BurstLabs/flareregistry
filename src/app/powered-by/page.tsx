@@ -101,7 +101,7 @@ function ConsumerCard({ c }: { c: PublicConsumer }) {
       </div>
       <div className="min-w-0">
         <div className="truncate font-medium">{c.name}</div>
-        <div className="mt-0.5 whitespace-pre-line text-sm text-muted">{c.blurb}</div>
+        <div className="mt-0.5 whitespace-pre-line break-words text-sm text-muted">{c.blurb}</div>
       </div>
     </a>
   );
@@ -193,14 +193,14 @@ function SubmitForm({ consumers }: { consumers: PublicConsumer[] }) {
         <button
           type="button"
           onClick={() => switchMode("new")}
-          className={`rounded px-3 py-1.5 ${mode === "new" ? "bg-beacon text-white" : "text-muted"}`}
+          className={`rounded px-3 py-1.5 ${mode === "new" ? "bg-beacon text-neutral-950" : "text-muted"}`}
         >
           {t("poweredBy.form.modeNew")}
         </button>
         <button
           type="button"
           onClick={() => switchMode("edit")}
-          className={`rounded px-3 py-1.5 ${mode === "edit" ? "bg-beacon text-white" : "text-muted"}`}
+          className={`rounded px-3 py-1.5 ${mode === "edit" ? "bg-beacon text-neutral-950" : "text-muted"}`}
         >
           {t("poweredBy.form.modeEdit")}
         </button>
@@ -311,7 +311,7 @@ function SubmitForm({ consumers }: { consumers: PublicConsumer[] }) {
         <button
           type="submit"
           disabled={status === "sending"}
-          className="rounded-md bg-beacon px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-md bg-beacon px-4 py-2 text-sm font-medium text-neutral-950 disabled:opacity-60"
         >
           {status === "sending"
             ? t("poweredBy.form.sending")
