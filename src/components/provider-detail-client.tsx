@@ -120,44 +120,39 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           <div className="mt-2 flex flex-wrap gap-1">
             {/* Show a clear Suspended badge so the badge row matches the suspension banner. */}
             {d.governance?.suspended && (
-              <span
-                title={t("badge.suspendedHint")}
-                className="rounded-md bg-flare/20 px-2 py-0.5 text-xs font-medium text-flare"
-              >
-                {t("badge.suspended")}
-              </span>
+              <InfoTip
+                  label={t("badge.suspended")}
+                  tip={t("badge.suspendedHint")}
+                  triggerClassName="rounded-md bg-flare/20 px-2 py-0.5 text-xs font-medium text-flare"
+                />
             )}
             {d.managementGroup && (
-              <span
-                title={t("badge.managementGroupHint")}
-                className="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300"
-              >
-                {t("badge.managementGroup")}
-              </span>
+              <InfoTip
+                  label={t("badge.managementGroup")}
+                  tip={t("badge.managementGroupHint")}
+                  triggerClassName="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300"
+                />
             )}
             {d.qualified && (
-              <span
-                title={t("badge.qualifiedHint")}
-                className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-500 dark:text-emerald-300"
-              >
-                {t("badge.qualified")}
-              </span>
+              <InfoTip
+                  label={t("badge.qualified")}
+                  tip={t("badge.qualifiedHint")}
+                  triggerClassName="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-500 dark:text-emerald-300"
+                />
             )}
             {d.registered && (
-              <span
-                title={t("badge.registeredHint")}
-                className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400"
-              >
-                {t("badge.registered")}
-              </span>
+              <InfoTip
+                  label={t("badge.registered")}
+                  tip={t("badge.registeredHint")}
+                  triggerClassName="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400"
+                />
             )}
             {d.verified && (
-              <span
-                className="rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon"
-                title={t("badge.ownerVerifiedTip")}
-              >
-                {t("badge.ownerVerified")}
-              </span>
+              <InfoTip
+                  label={t("badge.ownerVerified")}
+                  tip={t("badge.ownerVerifiedTip")}
+                  triggerClassName="rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon"
+                />
             )}
           </div>
         </div>
