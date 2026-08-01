@@ -215,10 +215,23 @@ model ProviderOnchain {
   delegationWeight       String?
   delegationWeightCapped String?
   stakingWeight          String?
-  goodStanding           Boolean @default(true)
+
+  // FIP.16 REGISTRATION WEIGHT, read verbatim from the chain rather than recomputed.
+  //   VoterRegistry.getVoterRegistrationWeight(voter, rewardEpochId)
+  //   0xA480457953Af3583E54DCd630b219353B8FC9Af7 (Flare mainnet)
+  // This is what actually determines a provider's influence in the protocol, unlike delegation weight,
+  // which ignores stake entirely and is linear where FIP.16 is concave. The underlying computation is
+  //   S = 5*sum(mirrored P-chain stake over nodeIds) + min(2.5% of total WNat, WNat of delegationAddress)
+  //   weight = isqrt(S) * isqrt(isqrt(S))       an integer floor of S^0.75
+  // We store the CONTRACT'S answer rather than our own arithmetic, so the figure cannot drift from the
+  // protocol and any provider can check it with a single eth_call. Wei-scale string; the unit is
+  // wei^0.75, so divide by 10^13.5 for FLR^0.75.
+  registrationWeight String?
+  registrationEpoch  Int?
+  goodStanding       Boolean @default(true)
   // Member of Flare's on-chain FTSO Management Group (PollingManagementGroup contract): the
   // curated set of eligible, well-performing providers. Refreshed from a live RPC query.
-  managementGroup        Boolean @default(false)
+  managementGroup    Boolean @default(false)
 
   lastEpochSeen Int
   createdAt     DateTime @default(now())
@@ -787,13 +800,13 @@ model ProviderSimilarity {
 // config signature), which is exactly what makes agreement informative and disagreement worth a look.
 // Admin-only: this is never published or exposed on any public surface.
 model ExternalDetection {
-  id          String    @id @default(cuid())
-  source      String // e.g. "cerberusonchain"
+  id              String    @id @default(cuid())
+  source          String // e.g. "cerberusonchain"
   // Their provider label, and a normalised form for joining to our names.
-  name        String
-  nameKey     String
-  probability Float?
-  verdict     String?
+  name            String
+  nameKey         String
+  probability     Float?
+  verdict         String?
   // Identity address, where we can resolve one. Their anonymised "Provider_NNN" labels turn out to be
   // Flare systems-explorer ENTITY IDS, so those resolve exactly; named records resolve by display_name.
   // Joining on address rather than name is what lets unlisted providers be cross-referenced at all, and
@@ -801,8 +814,8 @@ model ExternalDetection {
   identityAddress String?
   // When THEIR analysis was generated, distinct from when we fetched it. A stale third-party snapshot
   // presented as current would be worse than no cross-reference at all.
-  snapshotAt  DateTime?
-  fetchedAt   DateTime  @updatedAt
+  snapshotAt      DateTime?
+  fetchedAt       DateTime  @updatedAt
 
   @@unique([source, nameKey])
   @@index([source])
