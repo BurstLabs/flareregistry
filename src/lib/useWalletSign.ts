@@ -9,7 +9,7 @@
 // it still receives { message, signature } and recovers the address.
 
 import { useCallback, useEffect, useRef } from "react";
-import { useAppKit } from "@reown/appkit/react";
+import { openWallet } from "@/lib/appkit";
 import { useAccount, useSignMessage } from "wagmi";
 
 export type TFn = (key: string, vars?: Record<string, string | number>) => string;
@@ -58,7 +58,6 @@ function waitForAccount(
 }
 
 export function useWalletSign(t: TFn) {
-  const { open } = useAppKit();
   const { address: connectedAddress, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
 
@@ -76,7 +75,7 @@ export function useWalletSign(t: TFn) {
     async (opts: ConnectAndSignOpts): Promise<SignedChallenge> => {
       let address: string | undefined = connectedAddress;
       if (!isConnected || !address) {
-        await open();
+        await openWallet();
         address = await waitForAccount(getAddress).catch(() => undefined);
       }
       if (!address) throw new Error(t("submit.err.noAccount"));

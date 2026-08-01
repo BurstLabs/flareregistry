@@ -46,21 +46,6 @@ export const wagmiAdapter = new WagmiAdapter({
 
 export const wagmiConfig = wagmiAdapter.wagmiConfig;
 
-const metadata = {
-  name: "Flare Registry",
-  description: "Self-service registry for Flare and Songbird FTSO signal providers.",
-  url: "https://flareregistry.com",
-  icons: ["https://flareregistry.com/icon-192.png"],
-};
-
-// Create the modal at module load. createAppKit must run before any useAppKit() call, INCLUDING
-// during SSR (the hooks are referenced while server-rendering client components), so this is a
-// top-level call, not lazy/client-only. AppKit handles the server environment internally.
-export const appKit = createAppKit({
-  adapters: [wagmiAdapter],
-  projectId: REOWN_PROJECT_ID,
-  networks,
-  metadata,
-  // Show the injected extension AND WalletConnect together; no email/social logins.
-  features: { analytics: false, email: false, socials: false },
-});
+// NOTE: createAppKit no longer runs here. It used to be a module-load side effect, which meant every
+// page that imported this file (i.e. every page, via WalletProvider in the root layout) shipped the
+// entire AppKit bundle. It now lives in lib/appkit and is created on first connect. See that file.
