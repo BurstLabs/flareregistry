@@ -57,6 +57,22 @@ export async function GET(req: NextRequest) {
       providersScored: report.rows.length,
       maxRounds: report.maxRounds,
 
+      // Everything needed to reproduce the weighting without trusting us. Registration weight is read
+      // from VoterRegistry.getVoterRegistrationWeight(identityAddress, registrationEpoch), never
+      // recomputed, so a consumer can verify any single figure with one eth_call.
+      registrationWeight: {
+        epoch: report.registrationEpoch,
+        contract: "0xA480457953Af3583E54DCd630b219353B8FC9Af7",
+        getter: "getVoterRegistrationWeight(address,uint256)",
+        totalGetter: "getWeightsSums(uint256)",
+        unit: "wei^0.75",
+        note:
+          "FIP.16 weight: floor(S^0.75) where S = 5 * total mirrored P-chain stake + min(2.5% of " +
+          "network WNat, WNat of the DELEGATION address). This is the unit the protocol votes in. " +
+          "weightTokens below is DELEGATION weight, which matches Flare's explorer but ignores " +
+          "staking and is linear, so it is not a valid basis for a share-of-network figure.",
+      },
+
       // What each class means, so a consumer does not have to guess from the label.
       classes: {
         excluded:
@@ -106,6 +122,7 @@ export async function GET(req: NextRequest) {
         url: r.url,
         listed: r.source != null,
         weightTokens: r.weight,
+        registrationWeight: r.registrationWeight,
         managementGroup: r.managementGroup,
         // Flare's OFFICIAL success rates, verbatim from their systems-explorer entity API, in basis
         // points out of 10000. Not our measurement and not derived by us.
