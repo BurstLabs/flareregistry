@@ -44,7 +44,14 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = { themeColor: "#0C0F16" };
+export const viewport: Viewport = {
+  // Split by scheme: a single value matched neither theme (dark bg is rgb(10,10,10), light is
+  // rgb(244,244,245)), so the browser chrome band was visibly off on both.
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f4f5" },
+  ],
+};
 
 // Applied before paint to avoid a flash of the wrong theme. Dark is the default.
 const noFlashTheme = `(function(){try{var t=localStorage.getItem('fb_theme')||'dark';var e=document.documentElement;e.classList.remove('light','dark');e.classList.add(t);var l=localStorage.getItem('fb_locale');if(l)e.lang=l;}catch(_){document.documentElement.classList.add('dark')}})();`;

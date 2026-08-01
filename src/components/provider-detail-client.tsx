@@ -511,7 +511,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       className="flex flex-col gap-0.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                     >
                       <span className="shrink-0 text-faint">{t(`detail.role.${r.roleKey}`)}</span>
-                      <span className="truncate font-mono text-xs">{r.address}</span>
+                      <span className="break-all font-mono text-xs">{r.address}</span>
                     </li>
                   ))}
                 </ul>

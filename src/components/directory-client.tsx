@@ -151,7 +151,7 @@ export function DirectoryClient({
         ) : filtered.length === 0 ? (
           <p className="text-muted">{t("home.noMatch")}</p>
         ) : (
-          <ul className="grid gap-5 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             {paged.map((p) => (
               <li
                 key={p.id}
