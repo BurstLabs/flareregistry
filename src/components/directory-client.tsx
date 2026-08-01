@@ -168,6 +168,7 @@ export function DirectoryClient({
                   <div className="flex min-w-0 items-center gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
+                      loading="lazy"
                       src={p.logo}
                       alt=""
                       className="h-11 w-11 shrink-0 rounded-lg bg-black/5 object-contain dark:bg-white/5"
@@ -273,11 +274,20 @@ export function DirectoryClient({
                             )}
                             {v.connected != null && (
                               <span
-                                title={v.connected ? t("detail.valOnline") : t("detail.valOffline")}
+                                aria-label={v.connected ? t("detail.valOnline") : t("detail.valOffline")}
+                                role="img"
                                 className={`inline-block h-2 w-2 rounded-full ${
                                   v.connected ? "bg-emerald-400" : "bg-flare"
                                 }`}
                               />
+                            )}
+                            {v.connected != null && (
+                              // The dot carried its meaning ONLY in a hover title, which never fires on
+                              // touch: 47 live instances of an 8x8px element that says nothing to a
+                              // phone user. The detail page already solves this with a text chip.
+                              <span className="text-[10px] text-faint">
+                                {v.connected ? t("detail.valOnline") : t("detail.valOffline")}
+                              </span>
                             )}
                           </span>
                         </li>

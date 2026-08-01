@@ -212,9 +212,12 @@ function Countdown({
 
 function RelTime({ at, now }: { at: string; now: number }) {
   return (
-    <time dateTime={at} title={fmt(at)} className="cursor-help">
-      {relTime(at, now)}
-    </time>
+    // The absolute timestamp existed ONLY in the hover title, so it was unreachable on touch.
+    <InfoTip
+      label={<time dateTime={at}>{relTime(at, now)}</time>}
+      tip={fmt(at)}
+      triggerClassName="text-inherit"
+    />
   );
 }
 
@@ -1337,7 +1340,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             </span>
             <span className="min-w-0 break-words"><MemberLabel member={i.member} name={i.memberName} link={i.memberLink} /></span>
             <span className="text-faint">&middot;</span>
-            <span title={fmt(i.at)} className="cursor-help">
+            <span>
               <RelTime at={i.at} now={now} />
             </span>
           </div>
@@ -1376,7 +1379,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                     </span>
                     <span className="min-w-0 break-words">{v.providerName}</span>
                     <span className="text-faint">&middot;</span>
-                    <span title={fmt(d.at)} className="cursor-help">
+                    <span>
                       <RelTime at={d.at} now={now} />
                     </span>
                   </div>
