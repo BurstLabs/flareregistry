@@ -1220,6 +1220,9 @@ function ExampleProviderTab() {
     } else if (sortKey === "successSecondary") {
       av = a.success?.secondary ?? null;
       bv = b.success?.secondary ?? null;
+    } else if (sortKey === "externalP") {
+      av = a.external?.probability ?? null;
+      bv = b.external?.probability ?? null;
     } else if (sortKey === "usdcGrid") {
       av = a.usdc?.grid ?? null;
       bv = b.usdc?.grid ?? null;
@@ -1423,6 +1426,12 @@ function ExampleProviderTab() {
                   tip="PER-CELL HIT-PATTERN match: does this provider over-hit the SAME (feed, tick) cells our reference example provider does? Aggregate lift cannot rank the non-excluded providers, because it is confounded by config size (our own configs span 1.44x-2.33x) and because any median-of-prints implementation reads high. But which cells get over-hit is set by the VENUE LIST, so this is far more specific than the level. Measured: our instances match each other at 0.624; verified-custom 1FTSO (a median-of-prints custom) reaches 0.396; verified-custom Burst FTSO reads -0.432. RED = above 0.50, close to the reference's own self-similarity. AMBER = above 0.396, i.e. more example-provider-like than a provider we KNOW is custom. Still not proof."
                 />
                 <SortTh
+                  label="Ext"
+                  col="externalP"
+                  align="center"
+                  tip="INDEPENDENT THIRD-PARTY VERDICT from cerberusonchain.xyz, cached daily. Their measurement, not ours, and it shares no signals with ours: they compare cadence and value fingerprints against their own reference deployment, while we use tick-grid lattices, per-cell hit patterns and a USDC config signature. Two unrelated methods agreeing is meaningful in a way that two of our own signals agreeing is not. AGREE (grey) means their verdict matches our class and carries little information. DISAGREE (amber) is the row worth opening. Joined on provider name, so a provider they label anonymously or name differently shows no value. Never published on any public surface of ours."
+                />
+                <SortTh
                   label="USDC cfg"
                   col="usdcGrid"
                   tip="USDC CONFIG SIGNATURE. The example provider's shipped feeds.json prices USDC/USD from five USDC/USDT order books and multiplies by the provider's OWN USDT/USD median. USDC/USDT ticks at 1e-4, so anyone running that config must have USDC_USD / USDT_USD land on a 1e-4 grid. Quoting USDC from native USD books imposes no such constraint. This uses ONLY the provider's own two submitted values: no reference instance, no field baseline, nothing calibrated. Measured over three windows including one 12 days earlier: our reference instances 0.50-1.00, candidate cluster 0.54-1.00, and BOTH verified-custom controls 0.09-0.15, custom in 3 of 3. Read it as a CONFIG signature, not an implementation detector: our own fleet spans 0.50-1.00 on identical code purely by which USDC books are configured, so stock code with geo-blocked USDC venues reads low. The correlation gate catches that case (a derived USDC inherits USDT's variation) and reports 'unclear' rather than custom."
@@ -1536,6 +1545,29 @@ function ExampleProviderTab() {
                       </span>
                     ) : (
                       <span className="text-faint">—</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-center">
+                    {r.external?.verdict ? (() => {
+                      const theirs = r.external.verdict === "example provider match";
+                      const ours = r.klass === "candidate";
+                      const agree = theirs === ours;
+                      return (
+                        <span
+                          className={agree ? "text-[10px] text-faint" : "text-[10px] font-semibold text-amber-500"}
+                          title={
+                            `${r.external.source}: p=${r.external.probability?.toFixed(3) ?? "?"} "${r.external.verdict}"` +
+                            (r.external.snapshotAt ? `, their snapshot ${String(r.external.snapshotAt).slice(0, 10)}` : "") +
+                            (agree
+                              ? ". Agrees with our classification."
+                              : ". DISAGREES with our classification. Two independent methods parting company here is the row worth investigating.")
+                          }
+                        >
+                          {agree ? (theirs ? "=match" : "=no") : "≠"}
+                        </span>
+                      );
+                    })() : (
+                      <span className="text-faint" title="No third-party verdict under a matching name.">—</span>
                     )}
                   </td>
                   <td className="py-1.5 text-right tabular-nums">

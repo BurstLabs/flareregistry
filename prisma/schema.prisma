@@ -780,6 +780,29 @@ model ProviderSimilarity {
 // without needing feeds.json (which lives in the reference checkout, not the registry repo). The raw tick
 // is stored rather than the derived T, because T = tick * 10^decimals and `decimals` changes per reward
 // epoch - the scorer applies its own canonical decimals.
+// A third party's PUBLISHED detection verdict for a provider, cached for cross-reference.
+//
+// Not our measurement and never presented as such. Their method shares no signals with ours (they
+// compare cadence and value fingerprints against their own reference; we use tick-grid lattices and a
+// config signature), which is exactly what makes agreement informative and disagreement worth a look.
+// Admin-only: this is never published or exposed on any public surface.
+model ExternalDetection {
+  id          String    @id @default(cuid())
+  source      String // e.g. "cerberusonchain"
+  // Their provider label, and a normalised form for joining to our names.
+  name        String
+  nameKey     String
+  probability Float?
+  verdict     String?
+  // When THEIR analysis was generated, distinct from when we fetched it. A stale third-party snapshot
+  // presented as current would be worse than no cross-reference at all.
+  snapshotAt  DateTime?
+  fetchedAt   DateTime  @updatedAt
+
+  @@unique([source, nameKey])
+  @@index([source])
+}
+
 model FeedSourceTick {
   id       String @id @default(cuid())
   feedName String // canonical feed name, e.g. "BTC/USD"
