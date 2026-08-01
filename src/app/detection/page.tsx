@@ -117,9 +117,9 @@ export default function DetectionMethodPage() {
 lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formula>
         <p>
           Conditioning on the round removes the price-level effects common to every provider that round,
-          and the field lands at 1.00 by construction. Values at or below <code>2^31</code> are excluded:
-          <code>2^31</code> is the encoder&apos;s zero point, so it is the unpriced-feed sentinel, and
-          zero is divisible by everything and would manufacture evidence.
+          and the field lands at 1.00 by construction. Values at or below <code>2^31</code> are
+          excluded:{" "}<code>2^31</code>{" "}is the encoder&apos;s zero point, so it is the unpriced-feed
+          sentinel, and zero is divisible by everything and would manufacture evidence.
         </p>
         <p>
           Exclusion is decided on an upper confidence bound on the lift rather than a z-score, so it
@@ -186,7 +186,8 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
         <p>
           It uses only a provider&apos;s own two submitted values, with no reference instance and no field
-          baseline. The tolerance is <strong className="text-fg">derived</strong> from the encoder&apos;s
+          baseline. The tolerance is <strong className="text-fg">derived</strong>{" "}from the
+          encoder&apos;s
           quantisation bound rather than chosen, which matters: an earlier fixed tolerance sat below that
           bound, so encoder rounding alone could push a genuine user off the grid. Substituting a placebo
           constant for 1e-4 collapses the effect, and recomputing a provider against the{" "}
