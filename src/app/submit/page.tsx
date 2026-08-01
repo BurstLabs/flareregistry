@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
@@ -205,6 +205,7 @@ function SubmitPageInner() {
   // When the connected address is a role on BOTH networks, the user must pick which to register.
   const [networkChoices, setNetworkChoices] = useState<{ chainId: number; chainName: string }[]>([]);
   const [chosenChainId, setChosenChainId] = useState<number | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string>("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -657,8 +658,16 @@ function SubmitPageInner() {
         </div>
       )}
 
+      {/* The submit error used to render only here, near the top of a very long form: measured 835px
+          above the Publish button at 390x844 and 887px at 320x568, so on a phone the rejection was
+          literally off-screen and the user just tapped again. It is now announced, scrolled to, and
+          ALSO repeated directly above the button (see the form step). */}
       {error && (
-        <div className="mb-4 rounded border border-flare/50 bg-flare/10 px-3 py-2 text-sm text-flare">
+        <div
+          ref={errorRef}
+          role="alert"
+          className="mb-4 rounded border border-flare/50 bg-flare/10 px-3 py-2 text-sm text-flare"
+        >
           {error}
         </div>
       )}
@@ -831,6 +840,11 @@ function SubmitPageInner() {
           />
 
           <div>
+            {error && (
+              <div className="mb-3 rounded border border-flare/50 bg-flare/10 px-3 py-2 text-sm text-flare">
+                {error}
+              </div>
+            )}
             <button
               disabled={busy || !logoUri}
               onClick={submit}
