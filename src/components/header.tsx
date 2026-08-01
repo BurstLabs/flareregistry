@@ -70,7 +70,7 @@ export function Header() {
           />
         </Link>
 
-        <div className="flex items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link href="/" className="hidden px-2 text-sm text-muted hover:text-beacon sm:inline">
             {t("nav.directory")}
           </Link>
@@ -156,7 +156,7 @@ export function Header() {
           <button
             onClick={toggleTheme}
             aria-label={t("toggle.theme")}
-            className="rounded-md border border-themed p-1.5 text-muted hover:text-beacon"
+            className="rounded-md border border-themed p-2.5 text-muted hover:text-beacon"
           >
             {theme === "dark" ? <SunIcon /> : <MoonIcon />}
           </button>
@@ -166,7 +166,7 @@ export function Header() {
             onClick={() => setMenuOpen((o) => !o)}
             aria-label={t("nav.menu")}
             aria-expanded={menuOpen}
-            className="rounded-md border border-themed p-1.5 text-muted hover:text-beacon sm:hidden"
+            className="rounded-md border border-themed p-2.5 text-muted hover:text-beacon sm:hidden"
           >
             {menuOpen ? <CloseIcon /> : <MenuIcon />}
           </button>

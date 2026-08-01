@@ -44,6 +44,24 @@
 }
 
 @layer base {
+  /* iOS Safari zooms the viewport when a focused control is under 16px, and does not zoom back out.
+     Every public form control here rendered at 14px, so every field tap left the user zoomed and panned.
+     Fixed at the base layer rather than per-control because the /submit inputs carry no size class of
+     their own; they inherit from their label. Deliberately NOT solved with maximum-scale=1, which
+     disables pinch-zoom entirely and is an accessibility failure. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    input,
+    textarea,
+    select {
+      font-size: 0.875rem;
+    }
+  }
+
   body {
     background-color: rgb(var(--bg));
     color: rgb(var(--text));
