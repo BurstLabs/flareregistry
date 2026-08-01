@@ -271,10 +271,7 @@ cast call 0xA480457953Af3583E54DCd630b219353B8FC9Af7 \\
           <code>getDelegationAddressOfAt</code>, <code>votePowerOfAt</code>,{" "}
           <code>totalVotePowerAt</code>) reproduces the stored weight for{" "}
           <strong className="text-fg">98 of 98 voters on Flare and 64 of 64 on Songbird</strong>, and the
-          totals match <code>getWeightsSums</code> exactly, to the wei. Rival readings do not: using
-          uncapped wNat matches 96, a staking factor of 1 matches 3, applying the exponent to each leg
-          separately matches 3, capping the sum rather than the wNat term matches 65, and using the
-          identity address in place of the delegation address matches none.
+          totals match <code>getWeightsSums</code> exactly, to the wei.
         </p>
         <Note>
           The denominator is every registered voter on the network, not only the providers we scored, so
