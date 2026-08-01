@@ -1136,6 +1136,10 @@ function ExampleProviderTab() {
   }>({ mean: null, median: null, field: null, n: 0 });
   const [candidateWeight, setCandidateWeight] = useState(0);
   const [totalWeight, setTotalWeight] = useState(0);
+  // Delegation-weighted share, kept only so the FIP.16 figure can be compared against it rather than
+  // silently replacing it.
+  const [weightPctDelegation, setWeightPctDelegation] = useState<number | null>(null);
+  const [registrationEpoch, setRegistrationEpoch] = useState<number | null>(null);
   // Show every scored provider, or only the ones the combined screen implicates.
   const [onlyCandidates, setOnlyCandidates] = useState(false);
   // Sort state. Default = the normalised pattern score, descending. Tick-grid lift is the better
@@ -1156,6 +1160,8 @@ function ExampleProviderTab() {
     setCalibrated(b.calibrated !== false);
     setRuledOutCount(b.ruledOutCount ?? 0);
     setWeightPct(b.candidateWeightPct ?? null);
+    setWeightPctDelegation(b.candidateWeightPctDelegation ?? null);
+    setRegistrationEpoch(b.registrationEpoch ?? null);
     setExtAgree(b.externalAgreement ?? null);
     setPrimaryStats({
       mean: b.candidatePrimaryMean ?? null, median: b.candidatePrimaryMedian ?? null,
@@ -1352,8 +1358,14 @@ function ExampleProviderTab() {
           <div className="mt-2 text-[11px] text-faint">
             The <span className="text-fg">{candidateCount}</span> providers currently in the candidate
             class hold <span className="text-flare">{weightPct.toFixed(1)}%</span> of scored network
-            weight ({compact(candidateWeight)} of {compact(totalWeight)} tokens). Share of the{" "}
-            <em>scored</em> set, so it is not inflated by providers we have no measurement for.
+            weight, measured in <span className="text-fg">FIP.16 registration weight</span> read from{" "}
+            <code>VoterRegistry</code>
+            {registrationEpoch != null ? <> at epoch {registrationEpoch}</> : null}, which is the unit the
+            protocol actually votes in. Share of the <em>scored</em> set, so it is not inflated by
+            providers we have no measurement for. For comparison, weighting by delegation alone (the
+            Weight column, {compact(candidateWeight)} of {compact(totalWeight)} tokens) gives{" "}
+            {weightPctDelegation != null ? `${weightPctDelegation.toFixed(1)}%` : "n/a"}; that figure
+            ignores staking and is linear where FIP.16 is concave, so it is the wrong basis for a share.
           </div>
         )}
         {extAgree && extAgree.total > 0 && (

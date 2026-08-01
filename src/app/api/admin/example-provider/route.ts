@@ -62,10 +62,12 @@ export async function GET() {
       signingPolicyAddress: true,
       wNatWeight: true,
       delegationWeight: true,
+      registrationWeight: true,
       successPrimary: true,
       successSecondary: true,
       successAvailability: true,
       managementGroup: true,
+      registrationEpoch: true,
     },
   });
   // Map: each role address of an entity -> a stable entity key (its voter). Then map the SIMILARITY row's
@@ -73,6 +75,10 @@ export async function GET() {
   const roleToEntity = new Map<string, string>();
   // Entity voter -> its on-chain wNat weight (wei-scale decimal string), for the weight column.
   const weightByVoter = new Map<string, string | null>();
+  // Entity voter -> FIP.16 registration weight, read from VoterRegistry. Used ONLY for the share of the
+  // network the candidate class holds, never displayed: its unit is wei^0.75, which is meaningless as an
+  // absolute figure and would only confuse a provider looking for their own number.
+  const regWeightByVoter = new Map<string, number | null>();
   // Flare's official success rates, basis points out of 10000.
   const successByVoter = new Map<string, { primary: number | null; secondary: number | null; availability: number | null }>();
   // Flare Management Group membership.
@@ -81,6 +87,12 @@ export async function GET() {
     const roles = [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress];
     for (const a of roles) if (a) roleToEntity.set(a.toLowerCase(), e.voter.toLowerCase());
     weightByVoter.set(e.voter.toLowerCase(), e.delegationWeight ?? e.wNatWeight);
+    // Float is fine and exact enough: this is only ever used as a ratio against the same-unit total, and
+    // wei^0.75 lands around 1e20 where a double still carries ~15 significant digits.
+    regWeightByVoter.set(
+      e.voter.toLowerCase(),
+      e.registrationWeight ? Number(e.registrationWeight) : null
+    );
     successByVoter.set(e.voter.toLowerCase(), {
       primary: e.successPrimary, secondary: e.successSecondary, availability: e.successAvailability,
     });
@@ -137,6 +149,8 @@ export async function GET() {
       url: p?.url ?? null,
       source: p?.source ?? null,
       weight, // on-chain vote power (wNat weight), whole tokens
+      // FIP.16 registration weight, for the class share only. Not rendered.
+      regWeight: entityVoter ? regWeightByVoter.get(entityVoter) ?? null : null,
       // Independent third-party verdict, where their published name matches ours.
       external: (() => {
         const e =
@@ -242,6 +256,17 @@ export async function GET() {
   const fieldPrimary = report.map((x) => x.success.primary).filter((x): x is number => x != null);
   const totalWeight = report.reduce((s, x) => s + (x.weight ?? 0), 0);
   const candidateWeight = candidates.reduce((s, x) => s + (x.weight ?? 0), 0);
+  // The share is computed in FIP.16 REGISTRATION weight, not delegation weight, because that is the unit
+  // the protocol actually votes in. Delegation weight ignores stake and is linear where FIP.16 is
+  // concave (S^0.75 with a 2.5% cap on the wNat leg), so a delegation-weighted share systematically
+  // overstates whichever side happens to hold the largest providers. Restricted to rows where BOTH the
+  // numerator and denominator have a registration weight, so a provider we failed to read cannot silently
+  // shrink the denominator and inflate the share.
+  const scoredReg = report.filter((x) => x.regWeight != null);
+  const totalRegWeight = scoredReg.reduce((s, x) => s + (x.regWeight ?? 0), 0);
+  const candidateRegWeight = candidates
+    .filter((x) => x.regWeight != null)
+    .reduce((s, x) => s + (x.regWeight ?? 0), 0);
   return NextResponse.json({
     externalAgreement,
     candidatePrimaryMean: bps(avg(candPrimary)),
@@ -254,7 +279,12 @@ export async function GET() {
     candidateCount: candidates.length,
     totalWeight,
     candidateWeight,
-    candidateWeightPct: totalWeight > 0 ? (candidateWeight / totalWeight) * 100 : null,
+    // Headline share: FIP.16 units. The delegation-weighted figure is kept alongside it so the two can be
+    // compared rather than quietly swapped.
+    candidateWeightPct: totalRegWeight > 0 ? (candidateRegWeight / totalRegWeight) * 100 : null,
+    candidateWeightPctDelegation: totalWeight > 0 ? (candidateWeight / totalWeight) * 100 : null,
+    regWeightScoredN: scoredReg.length,
+    registrationEpoch: entities.find((e) => e.registrationEpoch != null)?.registrationEpoch ?? null,
     report: reportWithBlock,
     maxRounds,
     calibrated,
