@@ -244,16 +244,16 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
       <Section id="use" title="8. How this is used">
         <ul className="list-disc space-y-2 pl-5">
           <li>
-            <strong className="text-fg">It never affects a listing.</strong> The tooling is barred from
-            driving listing decisions, and Flare Registry has not altered any provider&apos;s listing on
+            <strong className="text-fg">It never affects a listing.</strong>{" "}
+            The tooling is barred from driving listing decisions, and Flare Registry has not altered any provider&apos;s listing on
             the basis of this analysis.
           </li>
           <li>
             <strong className="text-fg">Results are not published.</strong> No list is published here.
           </li>
           <li>
-            <strong className="text-fg">The concern is correlation, not quality.</strong> An oracle&apos;s
-            resilience rests on independent observation. Homogeneity means one upstream fault reaches
+            <strong className="text-fg">The concern is correlation, not quality.</strong>{" "}
+            An oracle&apos;s resilience rests on independent observation. Homogeneity means one upstream fault reaches
             many participants at once and arrives looking like consensus. That is the risk worth
             discussing, and it is not a claim that anyone is producing bad prices.
           </li>
