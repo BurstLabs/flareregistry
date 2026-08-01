@@ -75,9 +75,9 @@ export async function GET() {
   const roleToEntity = new Map<string, string>();
   // Entity voter -> its on-chain wNat weight (wei-scale decimal string), for the weight column.
   const weightByVoter = new Map<string, string | null>();
-  // Entity voter -> FIP.16 registration weight, read from VoterRegistry. Used ONLY for the share of the
-  // network the candidate class holds, never displayed: its unit is wei^0.75, which is meaningless as an
-  // absolute figure and would only confuse a provider looking for their own number.
+  // Entity voter -> FIP.16 registration weight, read from VoterRegistry. Never surfaced as a raw number:
+  // its unit is wei^0.75, which is meaningless on its own. Only its SHARE of the network total leaves
+  // this file, which is the form that actually answers "how much influence does this provider have".
   const regWeightByVoter = new Map<string, number | null>();
   // Flare's official success rates, basis points out of 10000.
   const successByVoter = new Map<string, { primary: number | null; secondary: number | null; availability: number | null }>();
@@ -128,6 +128,16 @@ export async function GET() {
   const labelByAddr = new Map(labels.map((l) => [l.address.toLowerCase(), l.label]));
   const knownCustomAddr = new Set(labels.filter((l) => l.knownCustom).map((l) => l.address.toLowerCase()));
 
+  // Denominator for the share column: EVERY registered voter on this network, not just the ones we
+  // scored. A provider's share of voting power is a fact about the network, so it must not change
+  // because our measurement coverage did. We read 99.97% of the protocol's own weightsSum, so this is
+  // within rounding of the true total.
+  const allRegistered = await prisma.providerOnchain.findMany({
+    where: { network: "flare", NOT: { registrationWeight: null } },
+    select: { registrationWeight: true },
+  });
+  const networkRegTotal = allRegistered.reduce((s2, e) => s2 + Number(e.registrationWeight), 0);
+
   const report = rows.map((r) => {
     const entityVoter = roleToEntity.get(r.voter.toLowerCase());
     const p = entityVoter ? nameByVoter.get(entityVoter) : undefined;
@@ -149,8 +159,13 @@ export async function GET() {
       url: p?.url ?? null,
       source: p?.source ?? null,
       weight, // on-chain vote power (wNat weight), whole tokens
-      // FIP.16 registration weight, for the class share only. Not rendered.
+      // FIP.16 registration weight. The raw value (wei^0.75) is not rendered; its SHARE of the
+      // network total is, because that is the only form of it anyone can act on.
       regWeight: entityVoter ? regWeightByVoter.get(entityVoter) ?? null : null,
+      registrationSharePct: (() => {
+        const w = entityVoter ? regWeightByVoter.get(entityVoter) ?? null : null;
+        return w != null && networkRegTotal > 0 ? (w / networkRegTotal) * 100 : null;
+      })(),
       // Independent third-party verdict, where their published name matches ours.
       external: (() => {
         const e =

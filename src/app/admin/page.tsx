@@ -1216,6 +1216,11 @@ function ExampleProviderTab() {
     } else if (sortKey === "usdcGrid") {
       av = a.usdc?.grid ?? null;
       bv = b.usdc?.grid ?? null;
+    } else if (sortKey === "weight") {
+      // Sort by the share of voting power, which is what the column now leads with. Falling back to
+      // delegation tokens would order the table differently from what it displays.
+      av = a.registrationSharePct ?? null;
+      bv = b.registrationSharePct ?? null;
     } else if (sortKey === "patternR") {
       av = a.pattern?.norm ?? null;
       bv = b.pattern?.norm ?? null;
@@ -1361,7 +1366,7 @@ function ExampleProviderTab() {
             >
               cerberusonchain.xyz
             </a>{" "}
-            on <span className="text-fg">{extAgree.pct.toFixed(1)}%</span> of providers ({extAgree.agree}{" "}
+            on <span className="text-flare">{extAgree.pct.toFixed(1)}%</span> of providers ({extAgree.agree}{" "}
             of {extAgree.total} where both have a verdict). The two methods share no signals, so
             agreement is corroboration rather than restatement; their intermediate &ldquo;possible&rdquo;
             verdicts are excluded rather than forced to a side.
@@ -1461,7 +1466,7 @@ function ExampleProviderTab() {
                 <SortTh
                   label="Weight"
                   col="weight"
-                  tip="On-chain vote power (wNat weight) of this provider's entity, in whole tokens. Context for how much influence a suspected example-provider user actually has."
+                  tip="This provider's share of total network VOTING POWER, in FIP.16 registration weight read from VoterRegistry. That is the unit the protocol actually votes in: it caps the delegation leg at 2.5% of network wNat, adds 5x mirrored P-chain stake, and raises the sum to the power 0.75. Delegation weight in tokens is shown underneath, because that is the figure Flare's explorer displays and the one a provider recognises, but it ignores staking and is linear, so it is not a measure of influence."
                 />
                 {/* "Accuracy dev" removed from the tab: it measures distance from consensus, which is a
                     provider-quality signal, not an example-provider signal. It is still computed and
@@ -1669,8 +1674,18 @@ function ExampleProviderTab() {
                       <span className="text-faint">—</span>
                     )}
                   </td>
-                  <td className="px-1.5 py-1.5 text-right tabular-nums text-muted">
-                    {r.weight != null ? compact(r.weight) : <span className="text-faint">—</span>}
+                  {/* Share of protocol voting power on top, delegation tokens underneath. The FIP.16
+                      value itself is never shown: its unit is wei^0.75, so the raw number is not
+                      actionable, but its share of the total is exactly what "how much influence" means. */}
+                  <td className="px-1.5 py-1.5 text-right tabular-nums">
+                    {r.registrationSharePct != null ? (
+                      <span className="text-muted">{r.registrationSharePct.toFixed(2)}%</span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                    {r.weight != null && (
+                      <div className="text-[10px] text-faint">{compact(r.weight)}</div>
+                    )}
                   </td>
                   <td className="px-1.5 py-1.5 text-right tabular-nums text-faint">{pct(r.confidence)}</td>
                   <td className="px-1.5 py-1.5 text-right tabular-nums text-faint">{r.rounds}</td>
