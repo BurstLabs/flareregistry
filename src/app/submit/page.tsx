@@ -1038,7 +1038,7 @@ function LogoUploader({
       )}
       <input
         type="file"
-        accept="image/png"
+        accept="image/*"
         disabled={busy || disabled}
         onChange={(e) => {
           const f = e.target.files?.[0];

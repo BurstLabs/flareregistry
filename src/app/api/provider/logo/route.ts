@@ -5,6 +5,7 @@ import { commitPendingLogo, uploadsEnabled } from "@/lib/github";
 import { pendingLogoRawURL } from "@/lib/logos";
 import { listingAddressesForSigner } from "@/lib/metrics";
 import { validateLogoStrict } from "@/lib/png";
+import { normaliseLogo } from "@/lib/logo-normalise";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-error";
@@ -41,7 +42,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing logo file" }, { status: 400 });
   }
 
-  const buf = Buffer.from(await file.arrayBuffer());
+  const raw = Buffer.from(await file.arrayBuffer());
+  // Convert whatever was uploaded into a compliant logo before validating. The requirements are met by
+  // almost nothing a phone can produce, and sharp was already here purely to validate.
+  const norm = await normaliseLogo(raw);
+  if ("error" in norm) {
+    return NextResponse.json({ error: norm.error }, { status: 400 });
+  }
+  const buf = norm.buf;
+  // Still validate the RESULT, so the conversion can never emit something non-compliant.
   const check = await validateLogoStrict(buf);
   if (!check.ok) {
     return NextResponse.json({ error: check.error }, { status: 400 });
