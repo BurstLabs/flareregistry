@@ -249,8 +249,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
             the basis of this analysis.
           </li>
           <li>
-            <strong className="text-fg">Results are not published.</strong> No list is published here or
-            circulated privately.
+            <strong className="text-fg">Results are not published.</strong> No list is published here.
           </li>
           <li>
             <strong className="text-fg">The concern is correlation, not quality.</strong> An oracle&apos;s
@@ -261,10 +260,6 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </ul>
       </Section>
 
-      <p className="mt-10 border-t border-themed pt-5 text-xs leading-relaxed text-faint">
-        Maintained by Burst Labs, operator of Flare Registry. This page is kept in English so the
-        statistical terms stay precise. We will publish corrections to any part of it shown to be wrong.
-      </p>
     </div>
   );
 }
