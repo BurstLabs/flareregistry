@@ -225,12 +225,11 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
           the protocol actually votes in.
           The delegation figure in tokens appears underneath it in smaller type, because that is the
           number Flare&apos;s own systems explorer shows and the one a provider recognises as theirs, but
-          it is not what decides influence: it ignores staking entirely, and it is linear, so it treats a
-          provider with ten times the delegation as having ten times the say.
+          it is not what decides influence.
         </p>
         <p>
-          The protocol does not work that way. It caps the delegation leg, adds staking, and then applies
-          a concave exponent:
+          Registration weight is what does. It caps the delegation leg, adds staking on top, and raises
+          the total to the power 0.75:
         </p>
         <Formula>{`S       = stakingFactor x SUM(mirrored P-chain stake over the entity's nodeIds)
           + min(wNatCap, wNat vote power of the DELEGATION address)
