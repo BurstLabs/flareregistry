@@ -212,13 +212,6 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
           evidence in a way that two of our own signals agreeing is not, and given we hold zero confirmed
           positives, an independent detector is the closest thing to external ground truth available.
         </p>
-        <Note>
-          It is read for{" "}
-          <strong className="text-fg">disagreements</strong>. Agreement is expected and says little. A
-          provider the two methods classify differently is a prompt to examine that provider properly,
-          and in at least one case a disagreement of exactly this kind is what led us to re-examine a
-          boundary of our own.
-        </Note>
         <p>
           Two limits. The join is on provider name, so anyone they label anonymously, or under a
           different name, has no cross-reference at all. And their published figures carry their own
