@@ -221,7 +221,8 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         <p>
           The <strong className="text-fg">Weight</strong> column shows a provider&apos;s{" "}
           <strong className="text-fg">share of total network voting power</strong>, as a percentage. It
-          is computed from FIP.16 registration weight, which is the unit the protocol actually votes in.
+          is computed from <strong className="text-fg">registration weight</strong>, which is the unit
+          the protocol actually votes in.
           The delegation figure in tokens appears underneath it in smaller type, because that is the
           number Flare&apos;s own systems explorer shows and the one a provider recognises as theirs, but
           it is not what decides influence: it ignores staking entirely, and it is linear, so it treats a
@@ -245,6 +246,20 @@ weight  = isqrt(S) x isqrt(isqrt(S))                       an integer floor of S
           arithmetic in wei with floors.
         </p>
         <p>
+          A note on naming, because we got this wrong ourselves at first. This is often called the FIP.16
+          weight, but FIP.16 introduced only the <strong className="text-fg">5x staking factor</strong>.
+          The 2.5 percent cap and the 0.75 exponent are older than FIP.16 and appear in the FTSOv2
+          whitepaper rather than the proposal. The authority for all three is the deployed contract, so
+          that is what we cite and what we read.
+        </p>
+        <p>
+          Songbird is not the same calculation. There,{" "}
+          <code>FlareSystemsCalculator.pChainStakeMirror</code> is the zero address, so the staking leg
+          never runs and registration weight is simply capped wNat raised to the power 0.75, even though{" "}
+          <code>stakingFactor</code> still reads 5. Any Songbird figure that includes a stake term is
+          wrong.
+        </p>
+        <p>
           We do not implement that formula.{" "}
           <code>FlareSystemsCalculator.calculateRegistrationWeight</code> already evaluated it at
           registration and <code>VoterRegistry</code>{" "}stored the answer, so we read the stored value.
@@ -264,6 +279,17 @@ cast call 0xA480457953Af3583E54DCd630b219353B8FC9Af7 \\
           not a token amount and does not convert to one; an absolute figure tells you nothing and would
           invite exactly the misreading the unit deserves. Ratios are the only meaningful form, and a
           share of the total is a ratio.
+        </p>
+        <p>
+          We did not take the formula on trust either. Recomputing it from raw primitives{" "}
+          (<code>getNodeIdsOfAt</code>, <code>batchVotePowerOfAt</code>,{" "}
+          <code>getDelegationAddressOfAt</code>, <code>votePowerOfAt</code>,{" "}
+          <code>totalVotePowerAt</code>) reproduces the stored weight for{" "}
+          <strong className="text-fg">98 of 98 voters on Flare and 64 of 64 on Songbird</strong>, and the
+          totals match <code>getWeightsSums</code> exactly, to the wei. Rival readings do not: using
+          uncapped wNat matches 96, a staking factor of 1 matches 3, applying the exponent to each leg
+          separately matches 3, capping the sum rather than the wNat term matches 65, and using the
+          identity address in place of the delegation address matches none.
         </p>
         <Note>
           The denominator is every registered voter on the network, not only the providers we scored, so

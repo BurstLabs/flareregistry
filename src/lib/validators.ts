@@ -118,7 +118,12 @@ export interface ValidatorInfo {
   feePercent: number | null;
   uptimePercent: number | null;
   connected: boolean;
-  weight: string | null; // self+delegated stake weight (decimal string)
+  // SELF-BOND ONLY (decimal string). This was previously commented as "self+delegated", which is wrong
+  // and understates total stake by roughly 9.6x: measured live across 175 Flare validators, `weight`
+  // sums to 1,898.5M FLR while the P-chain also returns a separate `delegatorWeight` summing to
+  // 16,343.7M FLR. We do not currently read `delegatorWeight` anywhere. Anything that needs TOTAL node
+  // stake must add the two; do not reach for this field alone.
+  weight: string | null;
   delegatorCount: number | null;
 }
 

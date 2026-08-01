@@ -218,7 +218,14 @@ export async function buildProviderList(): Promise<ProviderList> {
             network: entity?.network ?? null,
             feePercent: entity?.feeBips != null ? entity.feeBips / 100 : null,
             votePower: entity?.wNatWeight ?? null,
-            votePowerCapped: entity?.wNatCappedWeight ?? null,
+            // delegationWeightCapped, NOT wNatCappedWeight. Verified decisively against the chain:
+            // isqrt(S)*isqrt(isqrt(S)) with S = delegationWeightCapped + 5*stakingWeight reproduces
+            // VoterRegistry.getVoterRegistrationWeight for 97/97 Flare voters; the same computation with
+            // wNatCappedWeight reproduces 2/97. wNatCappedWeight comes from the lagging fsp-rewards
+            // ingest and is a different, staler quantity that merely looks plausible (26,542M FLR against
+            // the correct 24,443M). Publishing it here understated the cap for every consumer of this
+            // feed, and at least one third-party analysis was built on the wrong figure as a result.
+            votePowerCapped: entity?.delegationWeightCapped ?? entity?.wNatCappedWeight ?? null,
             feedCount: entity?.feedCount ?? null,
             lastEpoch: latest?.epochId ?? null,
             delegatorRewardLastEpoch: latest?.delegatorReward ?? null,
