@@ -42,6 +42,8 @@ export function Header() {
     { href: "/governance", label: t("nav.governance") },
     { href: "/powered-by", label: t("nav.poweredBy") },
     { href: "/faq", label: t("nav.faq") },
+    // English-only methodology page; label is a literal rather than an i18n key.
+    { href: "/detection", label: "Detection method" },
   ];
   const navLinks = [...primaryLinks, ...moreLinks];
 

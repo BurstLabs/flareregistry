@@ -52,6 +52,9 @@ export function Footer() {
           <Link href="/powered-by" className="text-muted hover:text-beacon">
             {t("nav.poweredBy")}
           </Link>
+          <Link href="/detection" className="text-muted hover:text-beacon">
+            Detection method
+          </Link>
           <Link href="/faq" className="text-muted hover:text-beacon">
             {t("nav.faq")}
           </Link>
