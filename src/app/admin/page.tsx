@@ -1130,6 +1130,7 @@ function ExampleProviderTab() {
   const [ruledOutCount, setRuledOutCount] = useState(0);
   // Vote power held by the candidate class, for the banner.
   const [weightPct, setWeightPct] = useState<number | null>(null);
+  const [extAgree, setExtAgree] = useState<{ agree: number; total: number; pct: number } | null>(null);
   const [primaryStats, setPrimaryStats] = useState<{
     mean: number | null; median: number | null; field: number | null; n: number;
   }>({ mean: null, median: null, field: null, n: 0 });
@@ -1155,6 +1156,7 @@ function ExampleProviderTab() {
     setCalibrated(b.calibrated !== false);
     setRuledOutCount(b.ruledOutCount ?? 0);
     setWeightPct(b.candidateWeightPct ?? null);
+    setExtAgree(b.externalAgreement ?? null);
     setPrimaryStats({
       mean: b.candidatePrimaryMean ?? null, median: b.candidatePrimaryMedian ?? null,
       field: b.fieldPrimaryMedian ?? null, n: b.candidatePrimaryN ?? 0,
@@ -1354,11 +1356,28 @@ function ExampleProviderTab() {
             <em>scored</em> set, so it is not inflated by providers we have no measurement for.
           </div>
         )}
+        {extAgree && extAgree.total > 0 && (
+          <div className="mt-2 text-[11px] text-faint">
+            Independent cross-check: our classification agrees with{" "}
+            <a
+              href="https://cerberusonchain.xyz/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-beacon hover:underline"
+            >
+              cerberusonchain.xyz
+            </a>{" "}
+            on <span className="text-fg">{extAgree.pct.toFixed(1)}%</span> of providers ({extAgree.agree}{" "}
+            of {extAgree.total} where both have a verdict). The two methods share no signals, so
+            agreement is corroboration rather than restatement; their intermediate &ldquo;possible&rdquo;
+            verdicts are excluded rather than forced to a side.
+          </div>
+        )}
         {primaryStats.median != null && (
           <div className="mt-2 text-[11px] text-faint">
             Those candidates average{" "}
-            <span className="text-fg">{primaryStats.mean?.toFixed(1)}%</span> on Flare&apos;s official
-            primary success rate (median{" "}
+            <span className="text-fg">{primaryStats.mean?.toFixed(1)}%</span>{" "}
+            on Flare&apos;s official primary success rate (median{" "}
             <span className="text-fg">{primaryStats.median.toFixed(1)}%</span>, n={primaryStats.n}),
             against a field median of{" "}
             <span className="text-fg">{primaryStats.field?.toFixed(1)}%</span>. The class sits in an

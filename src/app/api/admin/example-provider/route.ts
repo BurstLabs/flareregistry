@@ -210,6 +210,18 @@ export async function GET() {
     (x) => (x.klass === "candidate") !== (x.block === "inside") && x.block !== "unknown"
   ).length;
   const ruledOutCount = report.filter((x) => x.lattice.ruledOut).length;
+  // Agreement with the independent detector, over providers where BOTH sides have a verdict. Their
+  // intermediate "possible" is excluded rather than forced to a side, since counting it either way
+  // would move this number without either party having concluded anything.
+  const cmp = report.filter(
+    (x) => x.external?.verdict && !x.external.verdict.startsWith("possible")
+  );
+  const agreeN = cmp.filter(
+    (x) => (x.external!.verdict === "example provider match") === (x.klass === "candidate")
+  ).length;
+  const externalAgreement = cmp.length
+    ? { agree: agreeN, total: cmp.length, pct: (agreeN / cmp.length) * 100 }
+    : null;
   // Vote power held by the candidate class. This is the number that says how much of the network the
   // question actually touches: 30 providers matter very differently at 2% than at 40% of total weight.
   // Denominator is the SCORED set, not the whole network, so the share is not overstated by providers we
@@ -231,6 +243,7 @@ export async function GET() {
   const totalWeight = report.reduce((s, x) => s + (x.weight ?? 0), 0);
   const candidateWeight = candidates.reduce((s, x) => s + (x.weight ?? 0), 0);
   return NextResponse.json({
+    externalAgreement,
     candidatePrimaryMean: bps(avg(candPrimary)),
     candidatePrimaryMedian: bps(median(candPrimary)),
     fieldPrimaryMedian: bps(median(fieldPrimary)),
