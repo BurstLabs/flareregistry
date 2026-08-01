@@ -794,6 +794,11 @@ model ExternalDetection {
   nameKey     String
   probability Float?
   verdict     String?
+  // Identity address, where we can resolve one. Their anonymised "Provider_NNN" labels turn out to be
+  // Flare systems-explorer ENTITY IDS, so those resolve exactly; named records resolve by display_name.
+  // Joining on address rather than name is what lets unlisted providers be cross-referenced at all, and
+  // it also closed a gap where the name join silently missed a verified control they publish anonymously.
+  identityAddress String?
   // When THEIR analysis was generated, distinct from when we fetched it. A stale third-party snapshot
   // presented as current would be worse than no cross-reference at all.
   snapshotAt  DateTime?
@@ -801,6 +806,7 @@ model ExternalDetection {
 
   @@unique([source, nameKey])
   @@index([source])
+  @@index([identityAddress])
 }
 
 model FeedSourceTick {
