@@ -1131,14 +1131,6 @@ function ExampleProviderTab() {
   // Vote power held by the candidate class, for the banner.
   const [weightPct, setWeightPct] = useState<number | null>(null);
   const [extAgree, setExtAgree] = useState<{ agree: number; total: number; pct: number } | null>(null);
-  const [primaryStats, setPrimaryStats] = useState<{
-    mean: number | null; median: number | null; field: number | null; n: number;
-  }>({ mean: null, median: null, field: null, n: 0 });
-  const [candidateWeight, setCandidateWeight] = useState(0);
-  const [totalWeight, setTotalWeight] = useState(0);
-  // Delegation-weighted share, kept only so the FIP.16 figure can be compared against it rather than
-  // silently replacing it.
-  const [weightPctDelegation, setWeightPctDelegation] = useState<number | null>(null);
   const [registrationEpoch, setRegistrationEpoch] = useState<number | null>(null);
   // Show every scored provider, or only the ones the combined screen implicates.
   const [onlyCandidates, setOnlyCandidates] = useState(false);
@@ -1160,15 +1152,8 @@ function ExampleProviderTab() {
     setCalibrated(b.calibrated !== false);
     setRuledOutCount(b.ruledOutCount ?? 0);
     setWeightPct(b.candidateWeightPct ?? null);
-    setWeightPctDelegation(b.candidateWeightPctDelegation ?? null);
     setRegistrationEpoch(b.registrationEpoch ?? null);
     setExtAgree(b.externalAgreement ?? null);
-    setPrimaryStats({
-      mean: b.candidatePrimaryMean ?? null, median: b.candidatePrimaryMedian ?? null,
-      field: b.fieldPrimaryMedian ?? null, n: b.candidatePrimaryN ?? 0,
-    });
-    setCandidateWeight(b.candidateWeight ?? 0);
-    setTotalWeight(b.totalWeight ?? 0);
     setLoading(false);
   }, []);
   useEffect(() => {
@@ -1362,10 +1347,7 @@ function ExampleProviderTab() {
             <code>VoterRegistry</code>
             {registrationEpoch != null ? <> at epoch {registrationEpoch}</> : null}, which is the unit the
             protocol actually votes in. Share of the <em>scored</em> set, so it is not inflated by
-            providers we have no measurement for. For comparison, weighting by delegation alone (the
-            Weight column, {compact(candidateWeight)} of {compact(totalWeight)} tokens) gives{" "}
-            {weightPctDelegation != null ? `${weightPctDelegation.toFixed(1)}%` : "n/a"}; that figure
-            ignores staking and is linear where FIP.16 is concave, so it is the wrong basis for a share.
+            providers we have no measurement for.
           </div>
         )}
         {extAgree && extAgree.total > 0 && (
@@ -1383,18 +1365,6 @@ function ExampleProviderTab() {
             of {extAgree.total} where both have a verdict). The two methods share no signals, so
             agreement is corroboration rather than restatement; their intermediate &ldquo;possible&rdquo;
             verdicts are excluded rather than forced to a side.
-          </div>
-        )}
-        {primaryStats.median != null && (
-          <div className="mt-2 text-[11px] text-faint">
-            Those candidates average{" "}
-            <span className="text-fg">{primaryStats.mean?.toFixed(1)}%</span>{" "}
-            on Flare&apos;s official primary success rate (median{" "}
-            <span className="text-fg">{primaryStats.median.toFixed(1)}%</span>, n={primaryStats.n}),
-            against a field median of{" "}
-            <span className="text-fg">{primaryStats.field?.toFixed(1)}%</span>. The class sits in an
-            unusually tight band there, which is corroboration from a metric we do not compute; the mean
-            trails the median because a handful of candidates score far below the cluster.
           </div>
         )}
       </div>
