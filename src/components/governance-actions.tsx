@@ -1016,6 +1016,7 @@ function EditImageControls({
                 onClick={() => markRemove(img.id)}
                 disabled={disabled}
                 title={t("gov.act.imageRemove")}
+                aria-label={t("gov.act.imageRemove")}
                 className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev text-xs text-muted hover:text-flare disabled:opacity-50"
               >
                 ×
@@ -1149,6 +1150,7 @@ export function PointImages({
                   onClick={() => remove(img.id)}
                   disabled={busy}
                   title={t("gov.act.imageRemove")}
+                aria-label={t("gov.act.imageRemove")}
                   className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-themed bg-elev text-xs text-muted hover:text-flare disabled:opacity-50"
                 >
                   ×

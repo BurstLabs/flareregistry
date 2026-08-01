@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
+import { InfoTip } from "./info-tip";
 import { useApp } from "@/components/providers";
 import {
   VoteAction,
@@ -416,12 +417,11 @@ function EntryBlock({
             tooltip carries the original post time so both are available. */}
         <RelTime at={editedAt ?? at} now={now} />
         {editedAt && (
-          <span
-            title={t("gov.case.postedAt", { at: fmt(at) })}
-            className="cursor-help rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint"
-          >
-            {t("gov.case.edited")}
-          </span>
+          <InfoTip
+              label={t("gov.case.edited")}
+              tip={t("gov.case.postedAt", { at: fmt(at) })}
+              triggerClassName="rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint"
+            />
         )}
         {editor && (
           <button
@@ -1112,12 +1112,11 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                     <span className="text-xs text-faint">&middot;</span>
                     <RelTime at={vote.updatedAt} now={now} />
                     {vote.changed && (
-                      <span
-                        title={t("gov.case.votePostedAt", { at: fmt(vote.at) })}
-                        className="cursor-help rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint"
-                      >
-                        {t("gov.case.voteChanged")}
-                      </span>
+                      <InfoTip
+                        label={t("gov.case.voteChanged")}
+                        tip={t("gov.case.votePostedAt", { at: fmt(vote.at) })}
+                        triggerClassName="rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint"
+                      />
                     )}
                   </div>
                   {vote.comment && (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
+import { InfoTip } from "./info-tip";
 
 export interface CardCheck {
   key: string;
@@ -198,36 +199,32 @@ export function DirectoryClient({
                       </Link>
                     )}
                     {p.managementGroup && (
-                      <span
-                        title={t("badge.managementGroupHint")}
-                        className="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300"
-                      >
-                        {t("badge.managementGroup")}
-                      </span>
+                      <InfoTip
+                  label={t("badge.managementGroup")}
+                  tip={t("badge.managementGroupHint")}
+                  triggerClassName="rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300"
+                />
                     )}
                     {p.qualified && (
-                      <span
-                        title={t("badge.qualifiedHint")}
-                        className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-500 dark:text-emerald-300"
-                      >
-                        {t("badge.qualified")}
-                      </span>
+                      <InfoTip
+                  label={t("badge.qualified")}
+                  tip={t("badge.qualifiedHint")}
+                  triggerClassName="rounded-md bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-500 dark:text-emerald-300"
+                />
                     )}
                     {p.registered && (
-                      <span
-                        title={t("badge.registeredHint")}
-                        className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400"
-                      >
-                        {t("badge.registered")}
-                      </span>
+                      <InfoTip
+                  label={t("badge.registered")}
+                  tip={t("badge.registeredHint")}
+                  triggerClassName="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400"
+                />
                     )}
                     {p.verified && (
-                      <span
-                        className="rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon"
-                        title={t("badge.ownerVerifiedTip")}
-                      >
-                        {t("badge.ownerVerified")}
-                      </span>
+                      <InfoTip
+                  label={t("badge.ownerVerified")}
+                  tip={t("badge.ownerVerifiedTip")}
+                  triggerClassName="rounded-md bg-beacon/20 px-2 py-0.5 text-xs text-beacon"
+                />
                     )}
                   </div>
                 </div>

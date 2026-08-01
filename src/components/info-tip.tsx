@@ -29,10 +29,14 @@ export function InfoTip({
   label,
   tip,
   className = "",
+  triggerClassName,
 }: {
   label: React.ReactNode;
   tip: string;
   className?: string;
+  /** Replaces the default underline trigger styling. Badges pass their own pill classes: the pill is
+   *  already the affordance, and a dotted underline inside a coloured chip reads as damage. */
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -100,7 +104,11 @@ export function InfoTip({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-describedby={open ? id : undefined}
-        className="inline-flex items-center gap-1 text-left underline decoration-dotted underline-offset-2 hover:text-beacon"
+        className={
+          triggerClassName
+            ? `inline-flex items-center gap-1 ${triggerClassName}`
+            : "inline-flex items-center gap-1 text-left underline decoration-dotted underline-offset-2 hover:text-beacon"
+        }
       >
         {label}
         <span aria-hidden className="text-[10px] leading-none opacity-60">
