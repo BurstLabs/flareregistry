@@ -1246,7 +1246,7 @@ function ExampleProviderTab() {
     align?: "left" | "right" | "center";
   }) => (
     <th
-      className={`cursor-pointer select-none whitespace-nowrap px-2 pb-2 font-normal hover:text-beacon ${
+      className={`cursor-pointer select-none whitespace-nowrap px-1.5 pb-2 font-normal hover:text-beacon ${
         align === "left" ? "text-left" : align === "center" ? "text-center" : "text-right"
       }`}
       title={tip}
@@ -1397,10 +1397,10 @@ function ExampleProviderTab() {
           </p>
         ) : (
           <div className="-mx-1 overflow-x-auto px-1">
-            <table className="w-full min-w-[64rem] text-sm">
+            <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-faint">
-                <th className="px-2 pb-2 text-right font-normal">#</th>
+                <th className="px-1.5 pb-2 text-right font-normal">#</th>
                 <SortTh
                   label="Provider"
                   col="name"
@@ -1480,8 +1480,8 @@ function ExampleProviderTab() {
             <tbody>
               {sorted.map((r, i) => (
                 <tr key={r.voter} className="border-t border-themed/40">
-                  <td className="px-2 py-1.5 text-right tabular-nums text-faint">{i + 1}</td>
-                  <td className="px-2 py-1.5">
+                  <td className="px-1.5 py-1.5 text-right tabular-nums text-faint">{i + 1}</td>
+                  <td className="px-1.5 py-1.5">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{r.name ?? "(unlisted)"}</span>
                       {/* Combined class from level + shape. See detectionClass(). */}
@@ -1504,7 +1504,7 @@ function ExampleProviderTab() {
                     </div>
                     <span className="font-mono text-[11px] text-faint">{r.voter.slice(0, 18)}…</span>
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
+                  <td className="px-1.5 py-1.5 text-right tabular-nums">
                     {r.pattern?.norm != null || r.pattern?.r != null ? (
                       <span
                         className={
@@ -1539,7 +1539,7 @@ function ExampleProviderTab() {
                       <span className="text-faint">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-center">
+                  <td className="px-1.5 py-1.5 text-center">
                     {r.external?.verdict ? (() => {
                       const v = r.external.verdict as string;
                       // Same convention as our own columns: green = this signal clears them, red =
@@ -1574,7 +1574,7 @@ function ExampleProviderTab() {
                       <span className="text-faint" title="No third-party verdict under a matching name.">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
+                  <td className="px-1.5 py-1.5 text-right tabular-nums">
                     {r.usdc?.grid != null ? (
                       <span
                         className={
@@ -1601,7 +1601,7 @@ function ExampleProviderTab() {
                       <span className="text-faint">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
+                  <td className="px-1.5 py-1.5 text-right tabular-nums">
                     {r.lattice?.lift != null ? (
                       // ONE-SIDED screen, so ONLY the exclusion end is coloured. A red/amber ramp on the
                       // high end would encode exactly the inference this screen cannot support, and it
@@ -1642,21 +1642,21 @@ function ExampleProviderTab() {
                       <span className="text-faint">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-muted">
+                  <td className="px-1.5 py-1.5 text-right tabular-nums text-muted">
                     {r.success?.primary != null ? (
                       `${(r.success.primary / 100).toFixed(1)}%`
                     ) : (
                       <span className="text-faint">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-muted">
+                  <td className="px-1.5 py-1.5 text-right tabular-nums text-muted">
                     {r.success?.secondary != null ? (
                       `${(r.success.secondary / 100).toFixed(1)}%`
                     ) : (
                       <span className="text-faint">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-center">
+                  <td className="px-1.5 py-1.5 text-center">
                     {r.managementGroup ? (
                       <span
                         className="rounded bg-beacon/15 px-1 text-[10px] text-beacon"
@@ -1668,11 +1668,11 @@ function ExampleProviderTab() {
                       <span className="text-faint">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-muted">
+                  <td className="px-1.5 py-1.5 text-right tabular-nums text-muted">
                     {r.weight != null ? compact(r.weight) : <span className="text-faint">—</span>}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-faint">{pct(r.confidence)}</td>
-                  <td className="px-2 py-1.5 text-right tabular-nums text-faint">{r.rounds}</td>
+                  <td className="px-1.5 py-1.5 text-right tabular-nums text-faint">{pct(r.confidence)}</td>
+                  <td className="px-1.5 py-1.5 text-right tabular-nums text-faint">{r.rounds}</td>
                 </tr>
               ))}
             </tbody>
