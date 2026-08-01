@@ -103,8 +103,8 @@ export default function DetectionMethodPage() {
 
       <Section id="signal1" title="3. Signal one: tick-grid lift">
         <p>
-          For each (feed, tick) pair we ask how often a provider&apos;s encoded value is divisible by{" "}
-          <code>T</code>.
+          Shown as the <strong className="text-fg">Tick grid</strong> column. For each (feed, tick) pair
+          we ask how often a provider&apos;s encoded value is divisible by <code>T</code>.
         </p>
         <p>
           The baseline is the <strong className="text-fg">per-round leave-one-out field rate</strong>:
@@ -135,7 +135,8 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
 
       <Section id="signal2" title="4. Signal two: per-cell hit pattern">
         <p>
-          Lift alone cannot rank the providers it does not exclude. It is confounded twice: our own
+          Shown as the <strong className="text-fg">Pattern</strong> column. Lift alone cannot rank the
+          providers it does not exclude. It is confounded twice: our own
           reference configurations span a wide range of lift purely by exchange-list size, and any
           median-of-prints implementation reads high.
         </p>
@@ -158,7 +159,8 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
 
       <Section id="signal3" title="5. Signal three: USDC configuration signature">
         <p>
-          This is the most defensible of the three and the only one needing no reference instance at all.
+          Shown as the <strong className="text-fg">USDC cfg</strong> column. This is the most defensible
+          of the three and the only one needing no reference instance at all.
         </p>
         <p>
           The shipped <code>feeds.json</code> prices <code>USDC/USD</code> from five{" "}
@@ -201,8 +203,9 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
             cerberusonchain.xyz
           </a>{" "}
           publishes its own example-provider assessment, and we cache it daily to compare against our
-          own. Their verdicts are their work, not ours, and we neither republish them nor treat them as
-          an input to our classification.
+          own. It drives the <strong className="text-fg">Ext</strong> column. Their verdicts are their
+          work, not ours, and we neither republish them nor treat them as an input to our
+          classification.
         </p>
         <p>
           What makes the comparison worth anything is that the two methods{" "}
@@ -211,12 +214,6 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
           grids, per-cell hit patterns and a configuration signature. Two unrelated methods agreeing is
           evidence in a way that two of our own signals agreeing is not, and given we hold zero confirmed
           positives, an independent detector is the closest thing to external ground truth available.
-        </p>
-        <p>
-          Two limits. The join is on provider name, so anyone they label anonymously, or under a
-          different name, has no cross-reference at all. And their published figures carry their own
-          snapshot date, which we record separately from our fetch time, because presenting a stale
-          third-party verdict as current would be worse than showing none.
         </p>
       </Section>
 

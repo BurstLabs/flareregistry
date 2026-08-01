@@ -1540,21 +1540,33 @@ function ExampleProviderTab() {
                   </td>
                   <td className="py-1.5 text-center">
                     {r.external?.verdict ? (() => {
-                      const theirs = r.external.verdict === "example provider match";
+                      const v = r.external.verdict as string;
+                      // Same convention as our own columns: green = this signal clears them, red =
+                      // it implicates them, grey = no reading. Their scale has a genuine third
+                      // verdict ("possible"), which is rendered amber rather than forced into
+                      // either bucket.
+                      const cls =
+                        v === "example provider match"
+                          ? "font-semibold text-flare"
+                          : v.startsWith("possible")
+                            ? "text-amber-500"
+                            : "font-medium text-emerald-500";
                       const ours = r.klass === "candidate";
-                      const agree = theirs === ours;
+                      const theirs = v === "example provider match";
+                      const disagree = v.startsWith("possible") ? false : theirs !== ours;
                       return (
                         <span
-                          className={agree ? "text-[10px] text-faint" : "text-[10px] font-semibold text-amber-500"}
+                          className={`text-[11px] tabular-nums ${cls}`}
                           title={
-                            `${r.external.source}: p=${r.external.probability?.toFixed(3) ?? "?"} "${r.external.verdict}"` +
+                            `${r.external.source}: "${v}"` +
                             (r.external.snapshotAt ? `, their snapshot ${String(r.external.snapshotAt).slice(0, 10)}` : "") +
-                            (agree
-                              ? ". Agrees with our classification."
-                              : ". DISAGREES with our classification. Two independent methods parting company here is the row worth investigating.")
+                            (disagree
+                              ? ". DISAGREES with our classification. Two independent methods parting company here is the row worth investigating."
+                              : ". Consistent with our classification.")
                           }
                         >
-                          {agree ? (theirs ? "=match" : "=no") : "≠"}
+                          {r.external.probability != null ? r.external.probability.toFixed(2) : "-"}
+                          {disagree && <span className="ml-0.5">!</span>}
                         </span>
                       );
                     })() : (
