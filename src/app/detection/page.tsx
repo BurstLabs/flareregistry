@@ -107,7 +107,7 @@ export default function DetectionMethodPage() {
           <code>T</code>. The baseline is <strong className="text-fg">not</strong> the arithmetic{" "}
           <code>1/T</code>. We tried that and it was wrong by roughly 2x, because most lattices are powers
           of ten, which makes the test really &ldquo;does this value have at most d-1 decimal
-          places&rdquo; — something any implementation that rounds will satisfy, at a rate set by where
+          places&rdquo;, something any implementation that rounds will satisfy, at a rate set by where
           the price happens to sit that round.
         </p>
         <p>
