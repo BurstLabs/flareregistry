@@ -215,34 +215,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="wrong" title="7. Where we got this wrong">
-        <p>
-          A methodology page that only lists successes is not much use for judging the method. These are
-          real errors we made and corrected during this work.
-        </p>
-        <ul className="list-disc space-y-2 pl-5">
-          <li>
-            Our first approach compared providers to our reference by <em>value distance</em>. An audit
-            showed it could not produce a positive detection at any calibration, because our reference
-            sits far outside the cloud of live providers. We discarded it entirely.
-          </li>
-          <li>
-            We used an arithmetic <code>1/T</code> baseline that measurement showed was wrong by about 2x,
-            for the reason given in section 3.
-          </li>
-          <li>
-            A classification threshold set from data was overtaken three separate times as more data
-            arrived, once misclassifying a provider we had independently confirmed as custom. The current
-            design normalises rather than fixing a constant, specifically so this stops happening.
-          </li>
-          <li>
-            An independent audit of our own code found a defect that could have zeroed the entire output
-            from one unlucky measurement, and another that counted an unpriced-feed sentinel as evidence.
-          </li>
-        </ul>
-      </Section>
-
-      <Section id="verify" title="8. Reproducing this independently">
+      <Section id="verify" title="7. Reproducing this independently">
         <p>Everything upstream of our code is public. Reveals are decoded from:</p>
         <Scroller>
           <ul className="w-max min-w-full list-disc space-y-1 pl-5 text-xs">
@@ -268,7 +241,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="use" title="9. How this is used">
+      <Section id="use" title="8. How this is used">
         <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong className="text-fg">It never affects a listing.</strong> The tooling is barred from
