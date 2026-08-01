@@ -245,20 +245,6 @@ weight  = isqrt(S) x isqrt(isqrt(S))                       an integer floor of S
           arithmetic in wei with floors.
         </p>
         <p>
-          A note on naming, because we got this wrong ourselves at first. This is often called the FIP.16
-          weight, but FIP.16 introduced only the <strong className="text-fg">5x staking factor</strong>.
-          The 2.5 percent cap and the 0.75 exponent are older than FIP.16 and appear in the FTSOv2
-          whitepaper rather than the proposal. The authority for all three is the deployed contract, so
-          that is what we cite and what we read.
-        </p>
-        <p>
-          Songbird is not the same calculation. There,{" "}
-          <code>FlareSystemsCalculator.pChainStakeMirror</code> is the zero address, so the staking leg
-          never runs and registration weight is simply capped wNat raised to the power 0.75, even though{" "}
-          <code>stakingFactor</code> still reads 5. Any Songbird figure that includes a stake term is
-          wrong.
-        </p>
-        <p>
           We do not implement that formula.{" "}
           <code>FlareSystemsCalculator.calculateRegistrationWeight</code> already evaluated it at
           registration and <code>VoterRegistry</code>{" "}stored the answer, so we read the stored value.
