@@ -61,7 +61,7 @@ export default function DetectionMethodPage() {
         <strong className="text-fg">This page publishes no results.</strong> No scores, no rankings and
         no provider names appear here or anywhere public. Our signals identify a{" "}
         <em>configuration and a style of arithmetic</em>, not which source code a provider runs, and we
-        hold zero confirmed positives. Section 7 explains how to check your own setup in a minute
+        hold zero confirmed positives. Section 8 explains how to check your own setup in a minute
         without any tooling from us.
       </Note>
 
@@ -217,7 +217,73 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="selfcheck" title="7. How to check your own setup">
+      <Section id="weight" title="7. How weight is calculated">
+        <p>
+          Two different weights appear in this work, they are not interchangeable, and using the wrong
+          one would misstate the result. Both are read from the chain. Neither is computed by us.
+        </p>
+        <p>
+          The <strong className="text-fg">Weight</strong> column shows{" "}
+          <strong className="text-fg">delegation weight</strong>: the wNat vote power delegated to a
+          provider, in whole tokens. We take it verbatim from Flare&apos;s own systems explorer field{" "}
+          <code>w_nat_weight</code>, so the number in that column is the same number a provider sees on
+          Flare&apos;s site. That is the only reason it is the one displayed. It is a recognisable
+          identifier, not a measure of influence: it ignores staking completely, and it is linear, so it
+          treats a provider with ten times the delegation as having ten times the say.
+        </p>
+        <p>
+          The protocol does not work that way. Voting power is the{" "}
+          <strong className="text-fg">FIP.16 registration weight</strong>, which caps the delegation leg,
+          adds staking, and then applies a concave exponent:
+        </p>
+        <Formula>{`S       = stakingFactor x SUM(mirrored P-chain stake over the entity's nodeIds)
+          + min(wNatCap, wNat vote power of the DELEGATION address)
+wNatCap = WNat.totalVotePowerAt(vpBlock) x wNatCapPPM / 1e6
+weight  = isqrt(S) x isqrt(isqrt(S))                       an integer floor of S^0.75`}</Formula>
+        <p>
+          Read live from the chain at the time of writing, <code>stakingFactor</code> is 5 and{" "}
+          <code>wNatCapPPM</code> is 25000, so the cap is 2.5 percent of total network wNat. Three details
+          are easy to get wrong and all three change the answer: the cap is a share of the whole
+          network&apos;s vote power rather than of any individual, it applies to the{" "}
+          <strong className="text-fg">delegation address</strong> rather than the identity address, and
+          the exponent applies once to the combined sum rather than to each leg. Every step is integer
+          arithmetic in wei with floors.
+        </p>
+        <p>
+          We do not implement that formula.{" "}
+          <code>FlareSystemsCalculator.calculateRegistrationWeight</code> already evaluated it at
+          registration and <code>VoterRegistry</code> stored the answer, so we read the stored value. A
+          reimplementation would be our opinion of the protocol&apos;s arithmetic, and it would drift
+          silently the moment governance changed <code>stakingFactor</code> or <code>wNatCapPPM</code>.
+          Reading the getter cannot drift, and it means you can check any figure of ours yourself:
+        </p>
+        <Formula>{`cast call 0xA480457953Af3583E54DCd630b219353B8FC9Af7 \\
+  "getVoterRegistrationWeight(address,uint256)(uint256)" <identity address> <reward epoch> \\
+  --rpc-url https://flare-api.flare.network/ext/C/rpc
+
+# the protocol's own total for the same epoch, for a share calculation
+cast call 0xA480457953Af3583E54DCd630b219353B8FC9Af7 \\
+  "getWeightsSums(uint256)(uint128,uint16,uint16)" <reward epoch> --rpc-url ...`}</Formula>
+        <p>
+          The unit is wei to the power 0.75. It is not a token amount, it does not convert to one, and an
+          absolute value tells you nothing. Only ratios between providers mean anything, which is the only
+          way we use it. That is also why it is not shown as a column: a number nobody can act on next to
+          a provider&apos;s name invites exactly the misreading the unit deserves.
+        </p>
+        <Note>
+          Where the two weights are used: the <strong className="text-fg">Weight</strong> column is
+          delegation weight, for recognisability. Any statement about how much of the network a group of
+          providers represents is computed in <strong className="text-fg">registration weight</strong>,
+          because that is the unit the protocol votes in. A delegation-weighted share would systematically
+          overstate whichever side happens to hold the largest providers. The share&apos;s denominator is
+          restricted to providers for which we hold both a measurement and a registration weight, so a
+          provider we failed to read cannot shrink the denominator and inflate the result. Summed across
+          every provider we read, our figures cover 99.97 percent of the protocol&apos;s own{" "}
+          <code>weightsSum</code> for the epoch.
+        </Note>
+      </Section>
+
+      <Section id="selfcheck" title="8. How to check your own setup">
         <p>You can answer this in a minute, and you hold information we never will.</p>
         <ol className="list-decimal space-y-2 pl-5">
           <li>
@@ -243,7 +309,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="verify" title="8. Reproducing this independently">
+      <Section id="verify" title="9. Reproducing this independently">
         <p>Everything upstream of our code is public. Reveals are decoded from:</p>
         <Scroller>
           <ul className="w-max min-w-full list-disc space-y-1 pl-5 text-xs">
@@ -269,7 +335,7 @@ lift = Σ hit_i / Σ q_i                  1.0 = behaves like the field`}</Formul
         </p>
       </Section>
 
-      <Section id="use" title="9. How this is used">
+      <Section id="use" title="10. How this is used">
         <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong className="text-fg">It never affects a listing.</strong>{" "}

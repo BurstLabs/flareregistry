@@ -27,8 +27,14 @@ export interface DetectionRow {
   name: string | null;
   url: string | null;
   source: string | null;
-  /** On-chain wNat weight in whole tokens. */
+  /** On-chain wNat weight in whole tokens. This is Flare's "delegation weight". */
   weight: number | null;
+  /**
+   * FIP.16 registration weight, read from VoterRegistry.getVoterRegistrationWeight, not recomputed.
+   * The unit is wei^0.75, so the absolute number means nothing on its own; it is the correct basis for
+   * comparing influence between providers, which `weight` is not.
+   */
+  registrationWeight: number | null;
   /** Flare Management Group member. */
   managementGroup: boolean;
   /** Flare's OFFICIAL success rates, basis points out of 10000 (divide by 100 for a percentage). */
@@ -51,6 +57,8 @@ export interface DetectionReport {
   maxRounds: number;
   calibrated: boolean;
   counts: Record<DetectionClass, number>;
+  /** Reward epoch the FIP.16 registration weights were read at, so a consumer can reproduce the call. */
+  registrationEpoch: number | null;
   fingerprintAnchor: number | null;
   fingerprintField: number | null;
 }
@@ -84,13 +92,16 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
     select: {
       voter: true, delegationAddress: true, submitAddress: true,
       submitSignaturesAddress: true, signingPolicyAddress: true, wNatWeight: true,
-      delegationWeight: true,
+      delegationWeight: true, registrationWeight: true, registrationEpoch: true,
       successPrimary: true, successSecondary: true, successAvailability: true, successEpoch: true,
       managementGroup: true,
     },
   });
   const roleToEntity = new Map<string, string>();
   const weightByVoter = new Map<string, string | null>();
+  // FIP.16 registration weight, read from VoterRegistry rather than recomputed. Consumers use it to
+  // weight the classes by real protocol influence; it is not a token amount and is not displayed.
+  const regWeightByVoter = new Map<string, number | null>();
   const successByVoter = new Map<string, { primary: number | null; secondary: number | null; availability: number | null; epoch: number | null }>();
   const mgByVoter = new Map<string, boolean>();
   for (const e of entities) {
@@ -98,6 +109,10 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
       if (a) roleToEntity.set(a.toLowerCase(), e.voter.toLowerCase());
     }
     weightByVoter.set(e.voter.toLowerCase(), e.delegationWeight ?? e.wNatWeight);
+    regWeightByVoter.set(
+      e.voter.toLowerCase(),
+      e.registrationWeight ? Number(e.registrationWeight) : null
+    );
     successByVoter.set(e.voter.toLowerCase(), {
       primary: e.successPrimary, secondary: e.successSecondary,
       availability: e.successAvailability, epoch: e.successEpoch,
@@ -117,6 +132,9 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
   const labels = await prisma.detectionLabel.findMany({ where: { address: { in: keys } } });
   const labelByAddr = new Map(labels.map((l) => [l.address.toLowerCase(), l.label]));
   const knownCustomAddr = new Set(labels.filter((l) => l.knownCustom).map((l) => l.address.toLowerCase()));
+
+  // One epoch for the whole snapshot, not a per-row property.
+  const registrationEpoch = entities.find((e) => e.registrationEpoch != null)?.registrationEpoch ?? null;
 
   const counts: Record<DetectionClass, number> = {
     excluded: 0, "other-median": 0, candidate: 0, pending: 0,
@@ -143,6 +161,7 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
       url: listing?.url ?? null,
       source: listing?.source ?? null,
       weight: weiToTokens(weiStr),
+      registrationWeight: entityVoter ? regWeightByVoter.get(entityVoter) ?? null : null,
       managementGroup: (entityVoter ? mgByVoter.get(entityVoter) : false) ?? false,
       success: (entityVoter ? successByVoter.get(entityVoter) : null)
         ?? { primary: null, secondary: null, availability: null, epoch: null },
@@ -167,6 +186,8 @@ export async function buildDetectionReport(network = "flare"): Promise<Detection
     maxRounds: out.reduce((m, r) => Math.max(m, r.rounds), 0),
     calibrated,
     counts,
+    /** Reward epoch the registration weights were read at, so a consumer can reproduce the eth_call. */
+    registrationEpoch,
     fingerprintAnchor: Number.isFinite(anchorMean) ? anchorMean : null,
     fingerprintField: Number.isFinite(fieldMean) ? fieldMean : null,
   };
