@@ -303,7 +303,13 @@ export const USDC_MIN_ROUNDS = 300;
 export type ConfigSignature = "example-config" | "non-example-config" | "unclear" | "pending";
 
 export interface UsdcSignature {
-  /** Fraction of rounds where USDC/USDT landed on the 1e-4 grid. */
+  /**
+   * LIFT over chance for landing on the 1e-4 grid: 1.0 is exactly the rate a provider under no such
+   * constraint hits by accident, and USDC_GRID_EXAMPLE (3.5) is the classification threshold. This was
+   * a raw hit fraction before the tolerance became per-observation, and the stale "fraction" wording
+   * survived here long enough to put an inverted scale on the public methodology page.
+   * The `pending` branch below still returns a raw fraction, because there is no chance mass yet.
+   */
   grid: number | null;
   /** Correlation between the provider's own USDC and USDT series. */
   corr: number | null;
