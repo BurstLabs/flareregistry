@@ -1211,10 +1211,7 @@ function ExampleProviderTab() {
     } else if (sortKey === "mg") {
       av = a.managementGroup ? 1 : 0;
       bv = b.managementGroup ? 1 : 0;
-    } else if (sortKey === "block") {
-      av = a.block ?? "";
-      bv = b.block ?? "";
-    } else if (sortKey === "successPrimary") {
+        } else if (sortKey === "successPrimary") {
       av = a.success?.primary ?? null;
       bv = b.success?.primary ?? null;
     } else if (sortKey === "successSecondary") {
@@ -1444,12 +1441,6 @@ function ExampleProviderTab() {
                 {/* Variant column hidden. It is still computed and still returned by the API; the
                     per-config match is also already in the Pattern tooltip as bestConfig. */}
                 <SortTh
-                  label="Block"
-                  col="block"
-                  align="center"
-                  tip="INDEPENDENT CORROBORATION, not part of the classification. The candidate class occupies a very tight region of Flare's OWN published success rates (secondary median 94.5% with MAD 0.34, against a field median of 98.0%; KS D=0.698, p<0.0001). Because Flare's rates play no part in how we classify anyone, agreement here is non-circular. It is deliberately NOT folded into the class or the score: the block is near-uniform across candidates, so adding it would lift everyone together and change no ranking, and using it to decide who is a candidate would destroy the independence that makes it worth citing. ALL of its information is in the DISAGREEMENTS - a non-candidate reading 'inside', or a candidate reading 'outside', is the row worth looking at. Region is a Tukey fence computed from the current candidate class, so it adapts instead of freezing a constant. Caveat: a tight block across providers that agree byte-exactly on ~88% of cells is closer to one observation seen 30 times than to 30 confirmations."
-                />
-                <SortTh
                   label="Primary"
                   col="successPrimary"
                   tip="Flare's OFFICIAL primary reward-band success rate, taken verbatim from Flare's systems-explorer entity API and shown as a percentage (stored in basis points). This is Flare's own measurement of how often the provider lands in the primary reward band, NOT anything this tool derives. Network median is around 50%."
@@ -1633,41 +1624,6 @@ function ExampleProviderTab() {
                         {r.lattice.lift.toFixed(2)}x
                         {r.lattice.ruledOut && <span className="ml-1 text-[10px]">ruled out</span>}
                         <span className="ml-1 text-[10px] text-faint">{r.lattice.rounds}r</span>
-                      </span>
-                    ) : (
-                      <span className="text-faint">—</span>
-                    )}
-                  </td>
-                  <td className="py-1.5 text-center">
-                    {r.block === "inside" ? (
-                      // "in" = sits inside the region of Flare's OWN metrics that the candidate class
-                      // occupies. Red because that is the corroborating state, whether or not we class
-                      // it a candidate. The "!" marks a DISAGREEMENT with our classification, which is
-                      // where this column's real information lives.
-                      <span
-                        className="text-[10px] font-semibold text-flare"
-                        title={
-                          r.klass === "candidate"
-                            ? "Inside the block on Flare's independent success rates, corroborating our classification."
-                            : "Inside the candidate block on Flare's independent metrics, yet we do NOT class it a candidate. Worth a look. Note our verified-custom control 1FTSO also reads inside, so this indicator has a known false-positive rate of its own."
-                        }
-                      >
-                        {r.klass === "candidate" ? "in" : "in !"}
-                      </span>
-                    ) : r.block === "outside" ? (
-                      <span
-                        className={
-                          r.klass === "candidate"
-                            ? "text-[10px] font-semibold text-emerald-500"
-                            : "text-[10px] text-emerald-500/70"
-                        }
-                        title={
-                          r.klass === "candidate"
-                            ? "We class this a candidate, but on Flare's independent metrics it sits outside the block. Not corroborated."
-                            : "Outside the block, agreeing with our classification."
-                        }
-                      >
-                        {r.klass === "candidate" ? "out !" : "out"}
                       </span>
                     ) : (
                       <span className="text-faint">—</span>
