@@ -168,7 +168,7 @@ export default async function IndependencePage() {
           itself. Anyone with an RPC endpoint can reproduce it.
         </p>
         <p>
-          It does <strong className="text-fg">not</strong> establish why any two providers agree, and it
+          It does <strong className="text-fg">not</strong>{" "}establish why any two providers agree, and it
           alleges nothing about anyone&apos;s conduct. Independent operators running the same published
           software produce the same signature as any other cause of correlation. No provider is named
           here, and no per-provider figure is published.
