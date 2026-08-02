@@ -900,3 +900,67 @@ model DetectionCursor {
   refLatticeCellsN    Int      @default(0)
   updatedAt           DateTime @updatedAt
 }
+
+// PAIRWISE BYTE-EXACT SUBMISSION AGREEMENT between two providers, over a rolling window of rounds.
+//
+// This is the measurement FIP.02's collusion clause actually asks about: whether providers show "a
+// strong statistical correlation in their submissions". Unlike everything in ProviderSimilarity it
+// involves NO inference about which software anyone runs. It reads reveals off the chain and counts
+// cells where two providers' encoded values are identical to the last digit. No reference instance, no
+// calibration, no threshold in the measurement itself.
+//
+// That distinction is why this table exists separately: the classification is inference and stays
+// private, this is direct measurement and is publishable. Do not merge them.
+//
+// Stored as counts rather than a rate so windows can be re-derived and so a partial run cannot silently
+// produce a confident-looking ratio from three cells. addrA/addrB are ordered lexically so a pair has
+// exactly one row regardless of which side is seen first.
+model SubmissionAgreement {
+  id      String @id @default(cuid())
+  network String
+
+  addrA String // lexically smaller submit address
+  addrB String
+
+  agreeCells Int // cells where both priced the feed AND the encoded uint32 matched exactly
+  totalCells Int // cells where both priced the feed at all
+
+  fromRound Int
+  toRound   Int
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([network, addrA, addrB])
+  @@index([network, toRound])
+  @@index([network, addrA])
+  @@index([network, addrB])
+}
+
+// Per-provider rollup of the above, one row per provider per measurement run, kept as HISTORY so the
+// product can show whether correlation is falling (which is what the governance proposal's review
+// clause turns on). The per-pair table is overwritten each run; this is not.
+//
+// 98 providers x 4 runs a day is a few hundred rows a day, which is sustainable. Storing per-PAIR
+// history would be ~19k rows a day and is deliberately not done.
+model CorrelationSnapshot {
+  id      String @id @default(cuid())
+  network String
+  voter   String // submit address
+
+  maxRate    Float // highest agreement with any single peer
+  meanRate   Float // mean across all comparable peers
+  // Peers above the operational threshold. The count, not the identities: who a provider correlates
+  // with is derivable from SubmissionAgreement for anyone entitled to see it, and does not belong in a
+  // rollup that feeds public surfaces.
+  peersAbove Int
+  peers      Int // comparable peers in this window
+
+  fromRound Int
+  toRound   Int
+
+  createdAt DateTime @default(now())
+
+  @@index([network, voter, createdAt])
+  @@index([network, createdAt])
+}

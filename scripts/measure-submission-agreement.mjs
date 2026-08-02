@@ -16,11 +16,21 @@
 // classFile is the /api/detection payload, used ONLY to label the output. The measurement itself is
 // classification-blind: every pair is computed the same way.
 import { canonicalFeeds, revealsForRound, currentRound, rpc } from "./score-example-provider.mjs";
+import { PrismaClient } from "@prisma/client";
 import fs from "node:fs";
 
+const prisma = new PrismaClient();
 const N_ROUNDS = Number(process.argv[2] ?? 120);
 const CLASS_FILE = process.argv[3] ?? "/tmp/det.json";
 const OFFSET = 0x80000000;
+const NETWORK = process.env.AGREEMENT_NETWORK ?? "flare";
+// PERSIST=0 keeps the old print-only behaviour for ad-hoc runs.
+const PERSIST = process.env.PERSIST !== "0";
+// The operational threshold proposed to the Management Group. Peers above this are counted per
+// provider. It is a reporting threshold only: nothing in this script classifies anyone.
+const THRESHOLD = Number(process.env.AGREEMENT_THRESHOLD ?? 0.6);
+// Below this many comparable cells a ratio is noise, not a measurement.
+const MIN_CELLS = Number(process.env.AGREEMENT_MIN_CELLS ?? 2000);
 
 function pct(x) {
   return (x * 100).toFixed(2) + "%";
@@ -108,7 +118,6 @@ async function main() {
 
   // Bucket every pair by the classes of its two members. MIN_CELLS drops pairs with too little overlap
   // to mean anything (a provider that joined mid-window, or one that prices few feeds).
-  const MIN_CELLS = 2000;
   const buckets = new Map();
   for (const [key, [agree, total]] of pairs) {
     if (total < MIN_CELLS) continue;
@@ -133,6 +142,8 @@ async function main() {
     );
   }
 
+  if (PERSIST) await persist(pairs, start, end);
+
   // The headline: candidate-to-candidate against the rest of the field.
   const cc = buckets.get("candidate x candidate");
   const ee = buckets.get("excluded x excluded");
@@ -147,4 +158,57 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+// Write the per-pair counts and the per-provider rollup. Pairs are REPLACED (the table holds the
+// current window, not history); snapshots are APPENDED (they are the history, and the governance
+// review clause turns on whether correlation is falling over time).
+//
+// Writes only if the run actually covered ground: a truncated run that wrote a handful of pairs would
+// look like a collapse in correlation rather than like the failure it is.
+async function persist(pairs, fromRound, toRound) {
+  const usable = [...pairs.entries()].filter(([, [, total]]) => total >= MIN_CELLS);
+  if (usable.length < 100) {
+    console.error(`only ${usable.length} usable pairs; refusing to overwrite the stored measurement`);
+    return;
+  }
+
+  const rows = usable.map(([key, [agree, total]]) => {
+    const [a, b] = key.split("|");
+    return { network: NETWORK, addrA: a, addrB: b, agreeCells: agree, totalCells: total, fromRound, toRound };
+  });
+
+  await prisma.$transaction([
+    prisma.submissionAgreement.deleteMany({ where: { network: NETWORK } }),
+    prisma.submissionAgreement.createMany({ data: rows }),
+  ]);
+
+  // Per-provider rollup across every pair the provider appears in, either side.
+  const byVoter = new Map();
+  for (const r of rows) {
+    const rate = r.agreeCells / r.totalCells;
+    for (const v of [r.addrA, r.addrB]) {
+      if (!byVoter.has(v)) byVoter.set(v, []);
+      byVoter.get(v).push(rate);
+    }
+  }
+  const snapshots = [...byVoter.entries()].map(([voter, rates]) => ({
+    network: NETWORK,
+    voter,
+    maxRate: Math.max(...rates),
+    meanRate: rates.reduce((a, b) => a + b, 0) / rates.length,
+    peersAbove: rates.filter((r) => r >= THRESHOLD).length,
+    peers: rates.length,
+    fromRound,
+    toRound,
+  }));
+  await prisma.correlationSnapshot.createMany({ data: snapshots });
+
+  const above = snapshots.filter((s) => s.peersAbove > 0).length;
+  console.error(
+    `persisted ${rows.length} pairs and ${snapshots.length} provider snapshots; ` +
+      `${above} providers have at least one peer at or above ${(THRESHOLD * 100).toFixed(0)}%`
+  );
+}
+
+main()
+  .then(() => prisma.$disconnect())
+  .catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1); });
