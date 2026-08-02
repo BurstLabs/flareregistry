@@ -12,6 +12,7 @@
 // It never stores raw per-round values - only the ProviderSimilarity rolling summaries. The reference
 // instances' mutual disagreement sets the non-determinism floor used to calibrate.
 import { PrismaClient } from "@prisma/client";
+import { pathToFileURL } from "node:url";
 
 const prisma = new PrismaClient();
 // RPC endpoints tried IN ORDER: our OWN Flare node first (via the reverse SSH tunnel from the dev box,
@@ -61,7 +62,7 @@ function feedIdToName(idHex) {
 // DB (canonicalJson + range) so the scorer does not hit GitHub's rate-limited contents API every run -
 // it only refetches when the round leaves the cached range. In-process cache on top for one run.
 let canonicalMem = null;
-async function canonicalFeeds(round) {
+export async function canonicalFeeds(round) {
   if (canonicalMem && round >= canonicalMem.from && round <= canonicalMem.to) return canonicalMem.feeds;
   // DB cache.
   const cur = await prisma.detectionCursor.findUnique({ where: { id: "flare" } });
@@ -137,7 +138,7 @@ async function rpcOnce(url, method, params) {
 // endpoint) rather than a valid answer - used for block fetches where a null means "this endpoint doesn't
 // have that block right now", NOT "the block doesn't exist". Treating a spurious null as real corrupted
 // the block-timestamp binary search (it collapsed to block 1).
-async function rpc(method, params, requireResult = false) {
+export async function rpc(method, params, requireResult = false) {
   let lastErr;
   for (const url of RPC_ENDPOINTS) {
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -226,13 +227,13 @@ function decodeReveal(payload) {
   return out; // array of raw uint32, index = canonical feed order
 }
 
-function currentRound() {
+export function currentRound() {
   return Math.floor((Math.floor(Date.now() / 1000) - FIRST_VOTING_ROUND_TS) / VOTING_EPOCH_DURATION);
 }
 
 // Collect all providers' revealed raw-int arrays for a given round by scanning the blocks whose
 // timestamps fall in that round's reveal window. Returns Map<providerAddr, uint32[]>.
-async function revealsForRound(round, latestBlock, headTs, blockSeconds) {
+export async function revealsForRound(round, latestBlock, headTs, blockSeconds) {
   // Reveal for round R happens during round R+1 (a 90s window). Estimate the window's block range from
   // block-time, pad generously, and BATCH-fetch it in one request (the tunnel's per-request latency makes
   // per-block fetching too slow). Then filter to the exact timestamp window.
@@ -979,4 +980,8 @@ async function updateCalibration(variantKey, cal, anchorSamples, fieldSamples) {
   });
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+// Run only when invoked directly, so the decode helpers above can be imported by measurement scripts
+// without kicking off a full scoring pass. Standard ESM main-guard.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((e) => { console.error(e); process.exit(1); });
+}
