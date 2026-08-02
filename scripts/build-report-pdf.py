@@ -65,6 +65,11 @@ for b in blocks(md):
         parts.append(f"<h1>{inline(first[2:])}</h1>"); continue
     if first.strip() == "---":
         parts.append("<hr>"); continue
+    # Blockquote. Absent before, so a "> ..." line rendered as literal prose with the marker visible
+    # and the wrapping mangled, which is a poor way to present text one is quoting verbatim.
+    if first.lstrip().startswith(">"):
+        quoted = " ".join(re.sub(r"^\s*>\s?", "", ln).strip() for ln in bl)
+        parts.append(f"<blockquote>{inline(quoted)}</blockquote>"); continue
     if re.match(r"^\s*[-*] ", first) or re.match(r"^\s*\d+\. ", first):
         ordered = bool(re.match(r"^\s*\d+\. ", first))
         items, buf = [], None
@@ -94,6 +99,8 @@ h1{font-size:26px;color:#1a1a1a;margin:0 0 4px;font-weight:700;letter-spacing:-.
 h2{font-size:17.5px;margin:26px 0 9px;color:#1a1a1a;font-weight:700;border-left:4px solid #f5a623;padding-left:10px;line-height:1.25;break-after:avoid}
 h3{font-size:14px;margin:18px 0 5px;color:#444;font-weight:700;line-height:1.3;break-after:avoid}
 p{margin:9px 0;line-height:1.45}
+blockquote{margin:12px 0;padding:8px 0 8px 14px;border-left:3px solid #f5a623;color:#444;font-style:italic;background:#fffdf8;break-inside:avoid}
+blockquote code{font-style:normal}
 .note{color:#888;font-size:12px;font-style:italic;border-top:1px solid #eee;padding-top:10px;line-height:1.5}
 table{border-collapse:collapse;width:100%;margin:13px 0;font-size:12px;break-inside:avoid}
 th,td{border:1px solid #e3e3e3;padding:7px 10px;text-align:left;vertical-align:top;line-height:1.35}
@@ -109,8 +116,11 @@ strong{color:#111}
 .brand img{height:34px;width:auto}
 """
 
+# NO_LOGO=1 suppresses the wordmark. Governance proposals put to a vote of a body we are only one
+# member of should not carry our branding at the top: the argument has to stand on its own, and a
+# logo on a document asking others to vote reads as a house position rather than a proposal.
 brand = ""
-if os.path.exists(LOGO):
+if os.path.exists(LOGO) and os.environ.get("NO_LOGO") != "1":
     logo_b64 = base64.b64encode(open(LOGO, "rb").read()).decode()
     brand = f'<div class="brand"><img src="data:image/png;base64,{logo_b64}" alt="Flare Registry"></div>'
 
