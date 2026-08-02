@@ -42,8 +42,8 @@ export function Header() {
     { href: "/governance", label: t("nav.governance") },
     { href: "/powered-by", label: t("nav.poweredBy") },
     { href: "/faq", label: t("nav.faq") },
-    // English-only methodology page; label is a literal rather than an i18n key.
-    { href: "/detection", label: "Detection method" },
+    // The detection methodology moved to oracleindependence.com. The /detection route still 308s there
+    // for the links already in circulation, but this registry no longer advertises it.
   ];
   const navLinks = [...primaryLinks, ...moreLinks];
 
