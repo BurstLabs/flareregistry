@@ -17,6 +17,20 @@ const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // The detection work moved to oracleindependence.com, which runs its own database and pipeline.
+  //
+  // REDIRECTED, not deleted. flareregistry.com/detection is cited as the method URL in a governance
+  // proposal and in correspondence already sent to providers; breaking those links would strand the
+  // one reference readers were given. 308 is permanent and preserves the method, so the API redirects
+  // stay usable rather than silently turning POSTs into GETs.
+  async redirects() {
+    return [
+      { source: "/detection", destination: "https://oracleindependence.com/method", permanent: true },
+      { source: "/independence", destination: "https://oracleindependence.com/", permanent: true },
+      { source: "/api/detection", destination: "https://oracleindependence.com/api/detection", permanent: true },
+      { source: "/api/independence", destination: "https://oracleindependence.com/api/independence", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
