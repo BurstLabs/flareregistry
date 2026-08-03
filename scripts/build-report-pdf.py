@@ -14,6 +14,9 @@ if not SRC:
     sys.exit("usage: build-report-pdf.py <input.md> [output.pdf]")
 OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.splitext(SRC)[0] + ".pdf"
 LOGO = "public/logo-wordmark.v2.png"
+# WATERMARK="Draft" stamps every page. Opt-in, because a watermark left on by accident is worse than
+# none: it is the kind of thing that gets ignored as decoration and then ships on the final copy.
+WATERMARK = os.environ.get("WATERMARK", "").strip()
 
 md = open(SRC).read()
 
@@ -106,7 +109,7 @@ table{border-collapse:collapse;width:100%;margin:13px 0;font-size:12px;break-ins
 th,td{border:1px solid #e3e3e3;padding:7px 10px;text-align:left;vertical-align:top;line-height:1.35}
 th{background:#faf3e6;font-weight:700;color:#7a4d08}
 tr:nth-child(even) td{background:#fafafa}
-code{background:#f3f3f3;padding:1px 5px;border-radius:3px;font-size:11.5px;color:#9a3b3b}
+code{background:#f3f3f3;padding:1px 3px;border-radius:3px;font-size:11.5px;color:#9a3b3b}
 hr{border:none;border-top:1px solid #eee;margin:22px 0}
 a{color:#b8740f;text-decoration:none;border-bottom:1px solid #e9cfa0}
 ul,ol{margin:8px 0;padding-left:22px}
@@ -114,6 +117,14 @@ li{margin:5px 0;line-height:1.45}
 strong{color:#111}
 .brand{margin-bottom:20px}
 .brand img{height:34px;width:auto}
+/* position:fixed repeats on every printed page in Chrome, which is what makes one element enough.
+   Behind the text via z-index, and non-selectable so copy-paste out of the PDF stays clean. */
+.watermark{position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-38deg);
+  font-size:150px;font-weight:800;letter-spacing:14px;
+  color:rgba(180,116,15,.10);
+  z-index:0;pointer-events:none;user-select:none;white-space:nowrap}
+.page-content{position:relative;z-index:1}
 """
 
 # NO_LOGO=1 suppresses the wordmark. Governance proposals put to a vote of a body we are only one
@@ -124,9 +135,12 @@ if os.path.exists(LOGO) and os.environ.get("NO_LOGO") != "1":
     logo_b64 = base64.b64encode(open(LOGO, "rb").read()).decode()
     brand = f'<div class="brand"><img src="data:image/png;base64,{logo_b64}" alt="Flare Registry"></div>'
 
+mark = f'<div class="watermark">{html.escape(WATERMARK)}</div>' if WATERMARK else ""
+
 tmp = "/tmp/report-%d.html" % os.getpid()
 open(tmp, "w").write(
-    f'<html><head><meta charset="utf-8"><style>{css}</style></head><body>{brand}{body}</body></html>'
+    f'<html><head><meta charset="utf-8"><style>{css}</style></head>'
+    f'<body>{mark}<div class="page-content">{brand}{body}</div></body></html>'
 )
 # Guard against the converter silently leaving markdown in the output.
 rendered = open(tmp).read()

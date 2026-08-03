@@ -69,6 +69,7 @@ function Advantage({
 }
 
 const CARDS = [
+  "canonical",
   "selfService",
   "ownership",
   "metrics",
