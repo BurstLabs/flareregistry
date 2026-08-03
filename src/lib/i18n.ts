@@ -142,7 +142,7 @@ const en: Dict = {
   // Home
   "home.title": "FTSO Signal Provider Registry",
   "home.intro":
-    "A self-service directory for Flare and Songbird signal providers. Prove control of your on-chain address with a wallet signature and manage your own listing. Providers earn a Qualified status automatically from on-chain data, with every criterion checked transparently. New providers clear a 30-day review window before they list.",
+    "The maintained source of truth for Flare and Songbird signal provider listings. Providers prove control of their on-chain address with a wallet signature and manage their own entry, so nobody curates the list on their behalf. Qualified status is derived automatically from on-chain data with every criterion checked transparently, and new providers clear a 30-day review window before they list.",
   "home.listProvider": "List your provider",
   "home.qualifiedProviders": "qualified providers",
   "home.providers": "providers",
@@ -715,6 +715,9 @@ const en: Dict = {
   "why.intro": "Flare Registry is a self-service registry for FTSO signal providers on Flare and Songbird. Providers prove control of their on-chain address and manage their own listing, and every listing is enriched with live, verifiable data straight from Flare. Here is what that gives providers and delegators.",
   "why.card.selfService.title": "Self-service listing",
   "why.card.selfService.body": "Connect your wallet, sign a message to prove you control your on-chain address, and manage your own listing right away. New providers list in the feed 30 days after claiming, a short review window before reaching wallets.",
+  "why.card.canonical.title": "The maintained list",
+  "why.card.canonical.body":
+    "Earlier provider lists were assembled by hand and are no longer maintained for that purpose. This registry updates continuously from on-chain data, every entry is controlled by the provider it describes, and the feed is public and versioned. Where two lists disagree, this is the one that was checked today.",
   "why.card.ownership.title": "Cryptographic ownership",
   "why.card.ownership.body": "A listing is only editable by the wallet that signed for its address, so nobody can list or alter a provider they do not control.",
   "why.card.metrics.title": "Live on-chain metrics",
@@ -851,7 +854,7 @@ const es: Dict = {
   "faq.a.askAdoption": "Contacta a su equipo e ind\u00edcales que pueden cargar nuestro feed p\u00fablico en lugar de su lista actual. El argumento es simple: nuestro feed es un superconjunto compatible del esquema est\u00e1ndar de listas de proveedores, as\u00ed que cualquier sitio que ya lea esa lista puede leer Flare Registry sin cambios de c\u00f3digo, solo apuntando a nuestra URL. Adem\u00e1s obtienen el estado Cualificado verificado, los logos y datos on-chain actualizados. La p\u00e1gina [api] contiene la URL del feed y un ejemplo que puedes reenviarles.",
   "home.title": "Registro de proveedores de señales FTSO",
   "home.intro":
-    "Un directorio autogestionado para proveedores de señales de Flare y Songbird. Demuestra el control de tu dirección on-chain con una firma de cartera y gestiona tu propia ficha. Los proveedores obtienen el estado Cualificado automáticamente a partir de datos on-chain, con cada criterio verificado de forma transparente. Los nuevos proveedores superan una ventana de revisión de 30 días antes de listarse.",
+    "La fuente de referencia mantenida para los listados de proveedores de señales de Flare y Songbird. Los proveedores demuestran el control de su dirección on-chain mediante una firma de billetera y gestionan su propia entrada, de modo que nadie cura la lista en su nombre. El estado Cualificado se deriva automáticamente de datos on-chain, con cada criterio verificado de forma transparente, y los nuevos proveedores superan una ventana de revisión de 30 días antes de aparecer.",
   "home.listProvider": "Publica tu proveedor",
   "home.qualifiedProviders": "proveedores cualificados",
   "home.providers": "proveedores",
@@ -1427,6 +1430,9 @@ const es: Dict = {
   "why.intro": "Flare Registry es un registro autogestionado para proveedores de señales FTSO en Flare y Songbird. Los proveedores demuestran el control de su dirección on-chain y gestionan su propia ficha, y cada ficha se enriquece con datos en vivo y verificables directamente de Flare. Esto es lo que aporta a proveedores y delegadores.",
   "why.card.selfService.title": "Listado autogestionado",
   "why.card.selfService.body": "Conecta tu cartera, firma un mensaje para demostrar que controlas tu dirección on-chain y gestiona tu propia ficha al instante. Los nuevos proveedores se listan en el feed 30 días después de reclamar, una breve ventana de revisión antes de llegar a las carteras.",
+  "why.card.canonical.title": "La lista mantenida",
+  "why.card.canonical.body":
+    "Las listas de proveedores anteriores se elaboraron a mano y ya no se mantienen con ese fin. Este registro se actualiza continuamente a partir de datos on-chain, cada entrada está controlada por el proveedor que describe, y el feed es público y versionado. Cuando dos listas discrepan, esta es la que se verificó hoy.",
   "why.card.ownership.title": "Propiedad criptográfica",
   "why.card.ownership.body": "Una ficha solo puede editarla la cartera que firmó por su dirección, así que nadie puede listar ni alterar un proveedor que no controla.",
   "why.card.metrics.title": "Métricas on-chain en vivo",
@@ -1563,7 +1569,7 @@ const zh: Dict = {
   "faq.a.askAdoption": "联系他们的团队，说明他们可以加载我们的公开数据源来替代当前列表。理由很简单：我们的数据源是标准提供商列表架构的兼容超集，因此任何已经读取该列表的网站，无需改动代码，只需将 URL 指向我们即可读取 Flare Registry。此外还能获得经过验证的合格状态、徽标和最新的链上数据。[api]页面提供数据源 URL 和可转发的示例。",
   "home.title": "FTSO 信号提供商登记处",
   "home.intro":
-    "面向 Flare 和 Songbird 信号提供商的自助目录。用钱包签名证明您对链上地址的控制权，并自行管理您的条目。提供商根据链上数据自动获得「合格」状态，每项标准都以透明方式核验。新提供商需度过 30 天审核窗口才会列出。",
+    "Flare 与 Songbird 信号提供商名录的权威维护来源。提供商通过钱包签名证明对其链上地址的控制权并自行管理条目，无需他人代为编纂名单。Qualified 状态由链上数据自动推导，每项标准均可透明核验；新提供商需经过 30 天审核期后方可列入。",
   "home.listProvider": "登记您的提供商",
   "home.qualifiedProviders": "个合格提供商",
   "home.providers": "个提供商",
@@ -2138,6 +2144,9 @@ const zh: Dict = {
   "why.intro": "Flare Registry 是面向 Flare 和 Songbird 上 FTSO 信号提供商的自助登记处。提供商证明对其链上地址的控制权并自行管理条目，每条条目都用直接来自 Flare 的实时可验证数据加以丰富。这就是它为提供商和委托人带来的价值。",
   "why.card.selfService.title": "自助登记",
   "why.card.selfService.body": "连接你的钱包，签名以证明你控制链上地址，并即时管理你自己的条目。新提供商在认领后 30 天列入 feed，这是触达钱包前的短暂审核窗口。",
+  "why.card.canonical.title": "持续维护的名单",
+  "why.card.canonical.body":
+    "以往的提供商名单由人工编制，且已不再为此目的维护。本登记处依据链上数据持续更新，每个条目均由其所描述的提供商自行控制，数据源公开且带版本。若两份名单出现分歧，本名单是今天核验过的那一份。",
   "why.card.ownership.title": "加密所有权",
   "why.card.ownership.body": "条目只能由为其地址签名的钱包编辑，因此没有人能登记或更改自己不控制的提供商。",
   "why.card.metrics.title": "实时链上指标",
@@ -2274,7 +2283,7 @@ const ja: Dict = {
   "faq.a.askAdoption": "先方のチームに連絡し、現在のリストの代わりに当方の公開フィードを読み込めることを伝えてください。理屈は単純です。当方のフィードは標準プロバイダーリストスキーマの互換スーパーセットなので、すでにそのリストを読んでいるサイトはコード変更なしで、URL を当方に向けるだけで Flare Registry を読み込めます。さらに検証済みの適格ステータス、ロゴ、最新のオンチェーンデータが得られます。[api]ページにフィード URL と共有できる例があります。",
   "home.title": "FTSO シグナルプロバイダー登録簿",
   "home.intro":
-    "Flare および Songbird のシグナルプロバイダー向けセルフサービスディレクトリ。ウォレット署名でオンチェーンアドレスの管理権を証明し、自分のリスティングを管理できます。プロバイダーはオンチェーンデータから自動的に「適格」ステータスを獲得し、各基準は透明に検証されます。新規プロバイダーは掲載される前に30日間の審査期間を過ぎます。",
+    "Flare および Songbird のシグナルプロバイダー掲載情報について、継続的に維持される信頼できる情報源です。プロバイダーはウォレット署名でオンチェーンアドレスの管理権を証明し、自身の掲載情報を自分で管理するため、第三者が代わりに一覧を編集することはありません。Qualified ステータスはオンチェーンデータから自動的に導出され、各基準は透明に検証されます。新規プロバイダーは掲載前に 30 日間の審査期間を経ます。",
   "home.listProvider": "プロバイダーを登録",
   "home.qualifiedProviders": "件の適格プロバイダー",
   "home.providers": "件のプロバイダー",
@@ -2850,6 +2859,9 @@ const ja: Dict = {
   "why.intro": "Flare Registry は Flare と Songbird 上の FTSO シグナルプロバイダー向けのセルフサービス登録簿です。プロバイダーは自分のオンチェーンアドレスの管理権を証明して自分の掲載を管理し、各掲載は Flare から直接取得した実時間で検証可能なデータで充実します。これがプロバイダーと委任者にもたらすものです。",
   "why.card.selfService.title": "セルフサービス掲載",
   "why.card.selfService.body": "ウォレットを接続し、オンチェーンアドレスを管理していることを証明するメッセージに署名すれば、自分の掲載を即座に管理できます。新規プロバイダーは申請後30日で feed に掲載されます。これはウォレットに届く前の短い審査期間です。",
+  "why.card.canonical.title": "維持されている一覧",
+  "why.card.canonical.body":
+    "従来のプロバイダー一覧は手作業で作成されており、その目的では既に維持されていません。本登記はオンチェーンデータから継続的に更新され、各項目はそれが記述するプロバイダー自身が管理し、フィードは公開かつバージョン管理されています。二つの一覧が食い違う場合、本一覧が本日検証されたものです。",
   "why.card.ownership.title": "暗号的な所有権",
   "why.card.ownership.body": "掲載はそのアドレスに署名したウォレットだけが編集でき、誰も自分が管理していないプロバイダーを掲載したり変更したりできません。",
   "why.card.metrics.title": "実時間オンチェーン指標",
@@ -2986,7 +2998,7 @@ const ko: Dict = {
   "faq.a.askAdoption": "그들의 팀에 연락해 현재 목록 대신 우리의 공개 피드를 불러올 수 있다고 알려주세요. 논리는 간단합니다. 우리 피드는 표준 제공자 목록 스키마의 호환 상위 집합이므로, 이미 그 목록을 읽는 사이트라면 코드 변경 없이 URL만 우리 쪽으로 바꾸면 Flare Registry를 읽을 수 있습니다. 여기에 더해 검증된 Qualified 상태, 로고, 최신 온체인 데이터를 얻습니다. [api] 페이지에 피드 URL과 전달할 수 있는 예시가 있습니다.",
   "home.title": "FTSO 시그널 프로바이더 레지스트리",
   "home.intro":
-    "Flare 및 Songbird 시그널 프로바이더를 위한 셀프 서비스 디렉터리. 지갑 서명으로 온체인 주소의 소유권을 증명하고 직접 리스팅을 관리하세요. 프로바이더는 온체인 데이터를 기반으로 자동으로 '인증' 상태를 획득하며, 모든 기준이 투명하게 확인됩니다. 신규 제공자는 게시되기 전에 30일 검토 기간을 지납니다.",
+    "Flare 및 Songbird 시그널 제공자 등재 정보의 지속적으로 관리되는 신뢰 출처입니다. 제공자는 지갑 서명으로 온체인 주소에 대한 통제권을 증명하고 자신의 등재 정보를 직접 관리하므로, 제3자가 대신 목록을 선별하지 않습니다. Qualified 상태는 온체인 데이터에서 자동으로 도출되며 모든 기준이 투명하게 검증되고, 신규 제공자는 등재 전 30일 검토 기간을 거칩니다.",
   "home.listProvider": "프로바이더 등록",
   "home.qualifiedProviders": "개의 인증 프로바이더",
   "home.providers": "개의 프로바이더",
@@ -3561,6 +3573,9 @@ const ko: Dict = {
   "why.intro": "Flare Registry은 Flare와 Songbird의 FTSO 시그널 제공자를 위한 셀프서비스 등록부입니다. 제공자는 자신의 온체인 주소에 대한 통제권을 증명하고 자신의 등록을 직접 관리하며, 모든 등록은 Flare에서 직접 가져온 실시간 검증 가능한 데이터로 보강됩니다. 이것이 제공자와 위임자에게 제공하는 가치입니다.",
   "why.card.selfService.title": "셀프서비스 등록",
   "why.card.selfService.body": "지갑을 연결하고 온체인 주소를 통제함을 증명하는 메시지에 서명하면 자신의 등록을 즉시 관리할 수 있습니다. 신규 제공자는 등록 신청 후 30일이 지나면 feed에 게시되며, 이는 지갑에 도달하기 전의 짧은 검토 기간입니다.",
+  "why.card.canonical.title": "관리되는 목록",
+  "why.card.canonical.body":
+    "기존 제공자 목록은 수작업으로 작성되었으며 더 이상 그 목적으로 관리되지 않습니다. 이 등록부는 온체인 데이터에서 지속적으로 갱신되고, 각 항목은 해당 제공자가 직접 관리하며, 피드는 공개되고 버전이 관리됩니다. 두 목록이 다를 경우, 이 목록이 오늘 검증된 것입니다.",
   "why.card.ownership.title": "암호학적 소유권",
   "why.card.ownership.body": "등록은 해당 주소에 대해 서명한 지갑만 편집할 수 있으므로, 누구도 자신이 통제하지 않는 제공자를 등록하거나 변경할 수 없습니다.",
   "why.card.metrics.title": "실시간 온체인 지표",
@@ -3697,7 +3712,7 @@ const de: Dict = {
   "faq.a.askAdoption": "Wende dich an ihr Team und weise darauf hin, dass sie unseren öffentlichen Feed anstelle ihrer aktuellen Liste laden können. Das Argument ist einfach: Unser Feed ist eine kompatible Obermenge des Standardschemas für Anbieterlisten, sodass jede Website, die diese Liste bereits liest, Flare Registry ohne Codeänderung lesen kann, nur durch Zeigen auf unsere URL. Zusätzlich erhalten sie den verifizierten Qualifiziert-Status, Logos und aktuelle On-Chain-Daten. Die [api]-Seite enthält die Feed-URL und ein Beispiel, das du weitergeben kannst.",
   "home.title": "FTSO-Signalanbieter-Verzeichnis",
   "home.intro":
-    "Ein Self-Service-Verzeichnis für Flare- und Songbird-Signalanbieter. Weisen Sie die Kontrolle über Ihre On-Chain-Adresse per Wallet-Signatur nach und verwalten Sie Ihren eigenen Eintrag. Anbieter erhalten den Status „Qualifiziert“ automatisch aus On-Chain-Daten, wobei jedes Kriterium transparent geprüft wird. Neue Anbieter durchlaufen ein 30-tägiges Prüfzeitfenster, bevor sie gelistet werden.",
+    "Die gepflegte Referenzquelle für Signalanbieter-Einträge auf Flare und Songbird. Anbieter weisen die Kontrolle über ihre On-Chain-Adresse per Wallet-Signatur nach und verwalten ihren Eintrag selbst, sodass niemand die Liste in ihrem Namen kuratiert. Der Qualified-Status wird automatisch aus On-Chain-Daten abgeleitet, jedes Kriterium wird transparent geprüft, und neue Anbieter durchlaufen ein 30-tägiges Prüffenster, bevor sie gelistet werden.",
   "home.listProvider": "Anbieter eintragen",
   "home.qualifiedProviders": "qualifizierte Anbieter",
   "home.providers": "Anbieter",
@@ -4273,6 +4288,9 @@ const de: Dict = {
   "why.intro": "Flare Registry ist ein Selfservice-Verzeichnis für FTSO-Signalanbieter auf Flare und Songbird. Anbieter weisen die Kontrolle über ihre On-Chain-Adresse nach und verwalten ihren eigenen Eintrag, und jeder Eintrag wird mit aktuellen, überprüfbaren Daten direkt von Flare angereichert. Das bietet es Anbietern und Delegatoren.",
   "why.card.selfService.title": "Selfservice-Eintrag",
   "why.card.selfService.body": "Verbinde deine Wallet, signiere eine Nachricht, um die Kontrolle über deine On-Chain-Adresse nachzuweisen, und verwalte deinen Eintrag sofort. Neue Anbieter werden 30 Tage nach der Beanspruchung im Feed gelistet, ein kurzes Prüfzeitfenster, bevor sie Wallets erreichen.",
+  "why.card.canonical.title": "Die gepflegte Liste",
+  "why.card.canonical.body":
+    "Frühere Anbieterlisten wurden von Hand erstellt und werden zu diesem Zweck nicht mehr gepflegt. Dieses Register aktualisiert sich fortlaufend aus On-Chain-Daten, jeder Eintrag wird von dem Anbieter kontrolliert, den er beschreibt, und der Feed ist öffentlich und versioniert. Wenn zwei Listen sich widersprechen, ist dies die heute geprüfte.",
   "why.card.ownership.title": "Kryptografisches Eigentum",
   "why.card.ownership.body": "Ein Eintrag ist nur von der Wallet bearbeitbar, die für seine Adresse signiert hat, sodass niemand einen Anbieter eintragen oder ändern kann, den er nicht kontrolliert.",
   "why.card.metrics.title": "Live-On-Chain-Kennzahlen",
@@ -4410,7 +4428,7 @@ const fr: Dict = {
   "faq.a.askAdoption": "Contactez leur équipe et indiquez qu'ils peuvent charger notre feed public à la place de leur liste actuelle. L'argument est simple : notre feed est un sur-ensemble compatible du schéma standard de liste de fournisseurs, donc tout site qui lit déjà cette liste peut lire Flare Registry sans changement de code, juste en pointant vers notre URL. Ils obtiennent en plus le statut Qualifié vérifié, les logos et des données à jour on-chain. La page [api] contient l'URL du feed et un exemple à leur transmettre.",
   // Home
   "home.title": "Registre des fournisseurs de signaux FTSO",
-  "home.intro": "Un répertoire en libre-service pour les fournisseurs de signaux Flare et Songbird. Prouvez le contrôle de votre adresse on-chain avec une signature de portefeuille et gérez votre propre inscription. Les fournisseurs obtiennent automatiquement un statut Qualifié à partir des données on-chain, avec chaque critère vérifié en toute transparence. Les nouveaux fournisseurs franchissent une période d'examen de 30 jours avant d'être listés.",
+  "home.intro": "La source de référence maintenue pour les fiches des fournisseurs de signaux Flare et Songbird. Les fournisseurs prouvent le contrôle de leur adresse on-chain par signature de portefeuille et gèrent leur propre fiche, si bien que personne ne cure la liste à leur place. Le statut Qualifié est dérivé automatiquement des données on-chain, chaque critère étant vérifié de façon transparente, et les nouveaux fournisseurs passent une fenêtre d'examen de 30 jours avant d'être listés.",
   "home.listProvider": "Inscrire votre fournisseur",
   "home.qualifiedProviders": "fournisseurs qualifiés",
   "home.providers": "fournisseurs",
@@ -4989,6 +5007,9 @@ const fr: Dict = {
   "why.intro": "Flare Registry est un registre en libre-service pour les fournisseurs de signaux FTSO sur Flare et Songbird. Les fournisseurs prouvent le contrôle de leur adresse on-chain et gèrent leur propre fiche, et chaque fiche est enrichie de données en direct et vérifiables provenant directement de Flare. Voici ce que cela apporte aux fournisseurs et aux délégateurs.",
   "why.card.selfService.title": "Référencement en libre-service",
   "why.card.selfService.body": "Connectez votre portefeuille, signez un message pour prouver que vous contrôlez votre adresse on-chain, et gérez votre fiche instantanément. Les nouveaux fournisseurs sont listés dans le feed 30 jours après la revendication, une courte période d'examen avant d'atteindre les portefeuilles.",
+  "why.card.canonical.title": "La liste maintenue",
+  "why.card.canonical.body":
+    "Les listes de fournisseurs antérieures étaient constituées à la main et ne sont plus maintenues à cette fin. Ce registre se met à jour en continu à partir des données on-chain, chaque fiche est contrôlée par le fournisseur qu'elle décrit, et le flux est public et versionné. Lorsque deux listes divergent, celle-ci est celle qui a été vérifiée aujourd'hui.",
   "why.card.ownership.title": "Propriété cryptographique",
   "why.card.ownership.body": "Une fiche n'est modifiable que par le portefeuille qui a signé pour son adresse, de sorte que personne ne peut référencer ni modifier un fournisseur qu'il ne contrôle pas.",
   "why.card.metrics.title": "Métriques on-chain en direct",
