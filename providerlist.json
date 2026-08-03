@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-03T17:47:02.071Z",
+  "timestamp": "2026-08-03T18:14:55.379Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -4498,6 +4498,90 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.716Z",
+          "lastSubmittedEpoch": 420,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Seraphim FTSO",
+      "description": "\"Seraphim FTSO is a Flare oracle entity providing anchor price feeds and FDC attestations, operated by Seraphim Lab, a Canadian-incorporated company.\"",
+      "url": "https://seraphimlab.ca",
+      "address": "0xCD1eADB3Ea02B3500e9d3425f3fB08AAb8F33378",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "9386909301211180463989621",
+        "votePowerCapped": "9386909301211180560285696",
+        "feedCount": 63,
+        "lastEpoch": 420,
+        "delegatorRewardLastEpoch": "2576565448408115961278",
+        "feeRewardLastEpoch": "5138832470166847708612",
+        "entity": {
+          "identity": "0x0e6A50e6Fe42ba2299409Fa77F5279E0ABc07489",
+          "submit": "0x9e36C786BD1FaFC9CbDb05f16eFd08345b25CDa1",
+          "submitSignatures": "0x84896CfdB9b2caA6Eb92Bf18C016eae22366A9cd",
+          "signingPolicy": "0x5530D66F100AD83755cF7b8352236cFf909b7D44",
+          "delegation": "0xCD1eADB3Ea02B3500e9d3425f3fB08AAb8F33378"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-79xXFeS8ZqXiBah4sxUzTYPksuJYS82cv",
+            "feePercent": 10,
+            "uptimePercent": 99.9942,
+            "connected": true,
+            "weight": "3500000000000000",
+            "selfBond": "1000000000000000",
+            "delegatedWeight": "2500000000000000",
+            "delegatorCount": 2
+          },
+          {
+            "nodeId": "NodeID-4FUZ69HaskWngaUyU9nFmEkPXAM1zx4yG",
+            "feePercent": 10,
+            "uptimePercent": 99.9916,
+            "connected": true,
+            "weight": "4333333330000000",
+            "selfBond": "3333333330000000",
+            "delegatedWeight": "1000000000000000",
+            "delegatorCount": 1
+          },
+          {
+            "nodeId": "NodeID-P4vXckSMDUNvfCm1eDhEgUFsyawwneQuR",
+            "feePercent": 10,
+            "uptimePercent": 99.9997,
+            "connected": true,
+            "weight": "5222222220000000",
+            "selfBond": "2222222220000000",
+            "delegatedWeight": "3000000000000000",
+            "delegatorCount": 1
+          },
+          {
+            "nodeId": "NodeID-2hWCwcnHGDE9bsHJ6ikV8Eu38FSaAFnbo",
+            "feePercent": 20,
+            "uptimePercent": 100,
+            "connected": true,
+            "weight": "1048333000000000",
+            "selfBond": "1048333000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:19.217Z",
           "lastSubmittedEpoch": 420,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
