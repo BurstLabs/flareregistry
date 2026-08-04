@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-04T16:47:02.209Z",
+  "timestamp": "2026-08-04T17:01:59.744Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -742,7 +742,7 @@
       "flareregistry": {
         "verified": true,
         "registered": true,
-        "managementGroup": true,
+        "managementGroup": false,
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
@@ -4900,7 +4900,7 @@
       "flareregistry": {
         "verified": false,
         "registered": true,
-        "managementGroup": true,
+        "managementGroup": false,
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
@@ -5480,7 +5480,7 @@
       "flareregistry": {
         "verified": false,
         "registered": true,
-        "managementGroup": true,
+        "managementGroup": false,
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
@@ -6028,7 +6028,7 @@
       "flareregistry": {
         "verified": true,
         "registered": true,
-        "managementGroup": true,
+        "managementGroup": false,
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
@@ -7773,7 +7773,7 @@
       "flareregistry": {
         "verified": false,
         "registered": true,
-        "managementGroup": true,
+        "managementGroup": false,
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
@@ -8074,7 +8074,7 @@
       "flareregistry": {
         "verified": false,
         "registered": true,
-        "managementGroup": true,
+        "managementGroup": false,
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
