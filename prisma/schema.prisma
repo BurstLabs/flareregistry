@@ -235,26 +235,36 @@ model ProviderOnchain {
   // they are the contract's own answer rather than ours. The streak/remaining pair is our transcription
   // of the contract's walk-back and exists only to turn "no" into "how far off". Where the two
   // disagree the simulation wins; the script logs the disagreement rather than papering over it.
-  mgEligible         Boolean?
-  mgVerdict          String? // verbatim revert string, or "SUCCESS"
-  mgBlockReason      String? // rewards | chilled | recently-removed | delegation-address
-  mgRewardedStreak   Int? // consecutive initialised epochs with rewards
+  mgEligible            Boolean?
+  mgVerdict             String? // verbatim revert string, or "SUCCESS"
+  mgBlockReason         String? // rewards | chilled | recently-removed | delegation-address
+  mgRewardedStreak      Int? // consecutive initialised epochs with rewards
   // addAfterRewardedEpochs as it stood when this row was checked. Governance can change it, and the
   // page says "5 of N", so the N is recorded per check rather than hardcoded in the UI where a
   // governance vote would silently make it a lie.
-  mgRequiredEpochs   Int?
-  mgEpochsRemaining  Int? // null when no honest countdown exists (member, or no delegation address)
-  mgBlockedAtEpoch   Int? // the epoch that broke the streak, so a provider can go look at it
+  mgRequiredEpochs      Int?
+  mgEpochsRemaining     Int? // null when no honest countdown exists (member, or no delegation address)
+  mgBlockedAtEpoch      Int? // the epoch that broke the streak, so a provider can go look at it
   // The recently-removed gate is a 7-day timer, not an epoch count. Such a provider usually still
   // holds a full reward streak, so the epoch countdown is 0 and would render as "eligible now" while
   // the contract keeps refusing. When the block is time-based the answer is a date.
-  mgBlockedUntil     DateTime?
-  mgMemberSinceEpoch Int?
-  mgCheckedEpoch     Int?
-  mgCheckedAt        DateTime?
+  mgBlockedUntil        DateTime?
+  // Wall-clock dates, so a provider does not have to know that a reward epoch is 3.5 days to work out
+  // what a 20-epoch countdown means. Both are derived from the chain's own timing getters
+  // (currentRewardEpochExpectedEndTs, getRewardEpochStartInfo) rather than arithmetic on a hardcoded
+  // genesis timestamp.
+  //
+  // mgEligibleEstimatedAt is an ESTIMATE and the copy says so: it assumes the provider is rewarded in
+  // every intervening epoch, and epochs end when the next signing policy is set rather than strictly
+  // on the timer, so the real date can drift later.
+  mgEligibleEstimatedAt DateTime?
+  mgBlockedAtEpochTs    DateTime?
+  mgMemberSinceEpoch    Int?
+  mgCheckedEpoch        Int?
+  mgCheckedAt           DateTime?
   // Member of Flare's on-chain FTSO Management Group (PollingManagementGroup contract): the
   // curated set of eligible, well-performing providers. Refreshed from a live RPC query.
-  managementGroup    Boolean   @default(false)
+  managementGroup       Boolean   @default(false)
 
   lastEpochSeen Int
   createdAt     DateTime @default(now())

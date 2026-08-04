@@ -61,7 +61,10 @@ export interface DetailData {
     epochsRemaining: number | null;
     blockedAtEpoch: number | null;
     blockedUntil: string | null;
+    eligibleEstimatedAt: string | null;
+    blockedAtEpochTs: string | null;
     checkedEpoch: number | null;
+    checkedAt: string | null;
   } | null;
   addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
   // The full registered on-chain entity addresses (all five roles) per matched network.
@@ -75,6 +78,32 @@ export interface DetailData {
     votePowerLabel: string | null;
     rewardLabel: string | null;
   }[];
+}
+
+// A reward epoch is 3.5 days, which nobody reading a countdown should have to know. Every epoch figure
+// in the Management Group section is therefore paired with a wall-clock date. Rendered in the viewer's
+// own locale and timezone (undefined locale = browser default), so the date means what it says wherever
+// it is read.
+function day(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+// With the time of day, for the one figure where the exact instant matters: when we last asked the
+// contract. A stale reading is the main way this section could mislead, so it is stated precisely.
+function moment(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  return new Date(iso).toLocaleString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // Minimal SVG sparkline (no chart lib). Values are wei strings; scale by magnitude.
@@ -435,19 +464,25 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   <span className="text-amber-500 dark:text-amber-400">⏳</span>
                   <span className="text-muted">
                     {d.mg.blockReason === "recently-removed" && d.mg.blockedUntil
-                      ? t("mg.blockedRemoved", {
-                          date: new Date(d.mg.blockedUntil).toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          }),
-                        })
+                      ? t("mg.blockedRemoved", { date: moment(d.mg.blockedUntil)! })
                       : d.mg.blockReason === "delegation-address"
                         ? t("mg.blockedDelegation")
                         : d.mg.blockReason === "chilled" && d.mg.epochsRemaining != null
-                          ? t("mg.blockedChilled", { epochs: d.mg.epochsRemaining })
+                          ? // Fall back to the undated wording when the projection is missing, rather
+                            // than printing an empty date into the sentence.
+                            day(d.mg.eligibleEstimatedAt)
+                            ? t("mg.blockedChilledDated", {
+                                epochs: d.mg.epochsRemaining,
+                                date: day(d.mg.eligibleEstimatedAt)!,
+                              })
+                            : t("mg.blockedChilled", { epochs: d.mg.epochsRemaining })
                           : d.mg.epochsRemaining != null
-                            ? t("mg.eligibleIn", { epochs: d.mg.epochsRemaining })
+                            ? day(d.mg.eligibleEstimatedAt)
+                              ? t("mg.eligibleInDated", {
+                                  epochs: d.mg.epochsRemaining,
+                                  date: day(d.mg.eligibleEstimatedAt)!,
+                                })
+                              : t("mg.eligibleIn", { epochs: d.mg.epochsRemaining })
                             : t("mg.notEligible")}
                   </span>
                 </p>
@@ -460,14 +495,29 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       need: d.mg.requiredEpochs,
                     })}
                     {d.mg.blockedAtEpoch != null && (
-                      <> {t("mg.brokeAt", { epoch: d.mg.blockedAtEpoch })}</>
+                      <>
+                        {" "}
+                        {day(d.mg.blockedAtEpochTs)
+                          ? t("mg.brokeAtDated", {
+                              epoch: d.mg.blockedAtEpoch,
+                              date: day(d.mg.blockedAtEpochTs)!,
+                            })
+                          : t("mg.brokeAt", { epoch: d.mg.blockedAtEpoch })}
+                      </>
                     )}
                   </p>
                 )}
               </>
             )}
             {d.mg.checkedEpoch != null && (
-              <p className="mt-3 text-xs text-faint">{t("mg.checked", { epoch: d.mg.checkedEpoch })}</p>
+              <p className="mt-3 text-xs text-faint">
+                {moment(d.mg.checkedAt)
+                  ? t("mg.checkedDated", {
+                      epoch: d.mg.checkedEpoch,
+                      datetime: moment(d.mg.checkedAt)!,
+                    })
+                  : t("mg.checked", { epoch: d.mg.checkedEpoch })}
+              </p>
             )}
           </div>
         </section>
