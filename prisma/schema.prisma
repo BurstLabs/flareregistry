@@ -241,6 +241,10 @@ model ProviderOnchain {
   mgRewardedStreak   Int? // consecutive initialised epochs with rewards, out of the 20 required
   mgEpochsRemaining  Int? // null when no honest countdown exists (member, or no delegation address)
   mgBlockedAtEpoch   Int? // the epoch that broke the streak, so a provider can go look at it
+  // The recently-removed gate is a 7-day timer, not an epoch count. Such a provider usually still
+  // holds a full reward streak, so the epoch countdown is 0 and would render as "eligible now" while
+  // the contract keeps refusing. When the block is time-based the answer is a date.
+  mgBlockedUntil     DateTime?
   mgMemberSinceEpoch Int?
   mgCheckedEpoch     Int?
   mgCheckedAt        DateTime?
