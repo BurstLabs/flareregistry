@@ -119,7 +119,10 @@ export default async function ProviderDetail({
           epochsRemaining: flareEntity.mgEpochsRemaining,
           blockedAtEpoch: flareEntity.mgBlockedAtEpoch,
           blockedUntil: flareEntity.mgBlockedUntil?.toISOString() ?? null,
+          eligibleEstimatedAt: flareEntity.mgEligibleEstimatedAt?.toISOString() ?? null,
+          blockedAtEpochTs: flareEntity.mgBlockedAtEpochTs?.toISOString() ?? null,
           checkedEpoch: flareEntity.mgCheckedEpoch,
+          checkedAt: flareEntity.mgCheckedAt?.toISOString() ?? null,
         }
       : null;
 

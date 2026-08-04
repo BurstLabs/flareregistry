@@ -58,6 +58,9 @@ const SEL_CURRENT_EPOCH = "0x70562697"; // getCurrentRewardEpochId()
 const SEL_VOTE_POWER_BLOCK = "0xc2632216"; // getVotePowerBlock(uint256)
 const SEL_NO_OF_WEIGHT_CLAIMS = "0xc581e791"; // noOfWeightBasedClaims(uint256,uint256)
 const SEL_REWARDS_HASH = "0x647006e2"; // rewardsHash(uint256)
+const SEL_EPOCH_EXPECTED_END = "0xed54fd63"; // currentRewardEpochExpectedEndTs()
+const SEL_EPOCH_DURATION = "0x85f3c9c9"; // rewardEpochDurationSeconds()
+const SEL_EPOCH_START_INFO = "0x00ddae53"; // getRewardEpochStartInfo(uint24) -> (startTs, startBlock)
 // --- RewardManager ---
 const SEL_UNCLAIMED_STATE = "0x9ee5de33"; // getUnclaimedRewardState(address,uint24,uint8)
 const SEL_NO_INITIALISED = "0x4b6e018d"; // noOfInitialisedWeightBasedClaims(uint256)
@@ -169,12 +172,21 @@ function decodeAddressArray(hex) {
   const needNotChilled = asNum(await ethCall(pmg, SEL_ADD_AFTER_NOT_CHILLED));
   const removeForDays = asNum(await ethCall(pmg, SEL_REMOVE_FOR_DAYS));
   const rewardManagerId = asNum(await ethCall(rm, SEL_REWARD_MANAGER_ID));
+  // Timing anchors for turning an epoch countdown into a date. Read from the chain rather than
+  // computed from a genesis constant, so a governance change to the epoch length cannot silently
+  // leave every projected date wrong.
+  const epochExpectedEndTs = asNum(await ethCall(fsm, SEL_EPOCH_EXPECTED_END));
+  const epochDurationSec = asNum(await ethCall(fsm, SEL_EPOCH_DURATION));
 
   // Parameters are governance-settable. Read them rather than hardcode, and print them so a change
   // shows up in the log the day it happens instead of quietly shifting every countdown on the site.
   console.log(
     `epoch ${currentEpoch} | addAfterRewardedEpochs=${needRewarded} ` +
     `addAfterNotChilledEpochs=${needNotChilled} removeForDays=${removeForDays}`
+  );
+  console.log(
+    `epoch ends ${new Date(epochExpectedEndTs * 1000).toISOString()} | ` +
+    `epoch length ${(epochDurationSec / 86400).toFixed(2)}d`
   );
 
   const providers = await prisma.providerOnchain.findMany({
@@ -212,7 +224,11 @@ function decodeAddressArray(hex) {
         voters.forEach((v, i) => delegationByVoter.set(v, got[i]));
       }
     }
-    epochInfo.set(e, { initialised, delegationByVoter });
+    const startInfo = await ethCall(fsm, SEL_EPOCH_START_INFO + pad(e), null, `getRewardEpochStartInfo(${e})`);
+    const startTs = startInfo.ok && startInfo.ok.length > 66
+      ? Number(BigInt("0x" + startInfo.ok.replace(/^0x/, "").slice(0, 64)))
+      : null;
+    epochInfo.set(e, { initialised, delegationByVoter, startTs });
   }
 
   const initialisedCount = [...epochInfo.values()].filter((x) => x.initialised).length;
@@ -321,6 +337,18 @@ function decodeAddressArray(hex) {
         mgBlockedAtEpoch: blockedAt,
         mgBlockedUntil:
           blockReason === "recently-removed" ? new Date(removedUntilTs * 1000) : null,
+        // A provider becomes eligible once the CURRENT epoch has advanced by epochsRemaining, because
+        // the contract's walk-back only ever inspects epochs below the current one. So the earliest
+        // date is the start of epoch (current + epochsRemaining), which is the end of the current
+        // epoch plus the remaining whole epochs after it.
+        mgEligibleEstimatedAt:
+          epochsRemaining != null && epochsRemaining > 0 && epochExpectedEndTs && epochDurationSec
+            ? new Date((epochExpectedEndTs + (epochsRemaining - 1) * epochDurationSec) * 1000)
+            : null,
+        mgBlockedAtEpochTs:
+          blockedAt != null && epochInfo.get(blockedAt)?.startTs
+            ? new Date(epochInfo.get(blockedAt).startTs * 1000)
+            : null,
         mgMemberSinceEpoch: memberSince,
         mgCheckedEpoch: currentEpoch,
         mgCheckedAt: new Date(),
