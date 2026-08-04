@@ -25,6 +25,23 @@ export async function GET() {
       prisma.provider.count({ where: { suspended: true } }),
     ]);
 
+  // --- Management Group eligibility ---
+  // The count of providers who could join today but have not is the actionable number here: it is the
+  // group's available headroom, and it is the reason the eligibility feature exists.
+  //
+  // The freshness pair matters as much as the counts. This whole feature is a cache refreshed by one
+  // cron, and a cron that silently stops looks exactly like "nothing changed" - which is precisely how
+  // the sibling Management Group flag on oracleindependence sat frozen at a migration snapshot while
+  // the real group moved underneath it. Surfacing the epoch and timestamp it was last computed at makes
+  // that failure visible instead of invisible.
+  const [mgEligibleNow, mgFreshness] = await Promise.all([
+    prisma.providerOnchain.count({ where: { network: "flare", mgEligible: true } }),
+    prisma.providerOnchain.aggregate({
+      where: { network: "flare" },
+      _max: { mgCheckedEpoch: true, mgCheckedAt: true },
+    }),
+  ]);
+
   // Per-network verified-address counts (chainId 14 Flare, 19 Songbird).
   const byChainRaw = await prisma.providerAddress.groupBy({
     by: ["chainId"],
@@ -84,10 +101,15 @@ export async function GET() {
       verifiedAddrs,
       qualified,
       managementGroup: mgmt,
+      mgEligibleNow,
       openCases,
       totalCases,
       suspended,
       byChain,
+    },
+    mgEligibility: {
+      checkedEpoch: mgFreshness._max.mgCheckedEpoch,
+      checkedAt: mgFreshness._max.mgCheckedAt,
     },
     traffic: { since, totalHits, totalUniques, trafficByDay, topPaths },
     growthByMonth,

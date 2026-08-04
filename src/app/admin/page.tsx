@@ -245,6 +245,7 @@ function StatsTab() {
           <Stat label="Verified addresses" value={c.verifiedAddrs} />
           <Stat label="Qualified" value={c.qualified} />
           <Stat label="Management Group" value={c.managementGroup} />
+          <Stat label="MG eligible, not joined" value={c.mgEligibleNow ?? "-"} />
           <Stat label="Suspended" value={c.suspended} />
           <Stat label="Open cases" value={c.openCases} />
           <Stat label="Total cases" value={c.totalCases} />
@@ -256,6 +257,21 @@ function StatsTab() {
               {CHAIN_NAME[b.chainId] ?? `chain ${b.chainId}`}: {b.count} verified
             </span>
           ))}
+          {/* Freshness, not just the number. MG eligibility is a cache refreshed by a single cron, and
+              a cron that quietly dies looks identical to "nothing changed" on a dashboard that only
+              shows counts. Amber once the reading is more than a day old. */}
+          {data.mgEligibility?.checkedAt && (
+            <span
+              className={`rounded px-2 py-1 ${
+                Date.now() - new Date(data.mgEligibility.checkedAt).getTime() > 86_400_000
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  : "bg-elev"
+              }`}
+            >
+              MG eligibility checked at epoch {data.mgEligibility.checkedEpoch},{" "}
+              {new Date(data.mgEligibility.checkedAt).toLocaleString()}
+            </span>
+          )}
         </div>
       </div>
 
