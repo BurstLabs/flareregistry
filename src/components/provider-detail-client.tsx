@@ -8,6 +8,7 @@ import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
 import { ManageListingButton } from "./manage-listing-button";
+import { MgJoinButton } from "./mg-join-button";
 
 export interface DetailData {
   name: string;
@@ -47,6 +48,21 @@ export interface DetailData {
   singleEntity: boolean;
   algorithm: string | null;
   checks: { key: string; label: string; status: "pass" | "fail" | "unknown"; detail: string }[];
+  // Management Group standing, from PollingManagementGroup on Flare. Null for a provider with no
+  // Flare entity, or one not yet evaluated: absent is not the same as ineligible.
+  mg: {
+    identity: string;
+    member: boolean;
+    memberSinceEpoch: number | null;
+    eligible: boolean | null;
+    blockReason: string | null;
+    rewardedStreak: number | null;
+    requiredEpochs: number | null;
+    epochsRemaining: number | null;
+    blockedAtEpoch: number | null;
+    blockedUntil: string | null;
+    checkedEpoch: number | null;
+  } | null;
   addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
   // The full registered on-chain entity addresses (all five roles) per matched network.
   entityAddresses: { network: string; roles: { roleKey: string; role: string; address: string }[] }[];
@@ -385,6 +401,75 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {/* Management Group standing. Members see when they joined; everyone else sees how far off they
+          are, in the contract's own terms, plus the button when the contract would actually admit
+          them. */}
+      {d.mg && (
+        <section className="mt-8">
+          <h2 className="mb-1 text-lg font-semibold">{t("card.managementGroup")}</h2>
+          <p className="mb-3 text-xs text-faint">{t("mg.intro")}</p>
+          <div className="surface rounded-xl border p-5 text-sm">
+            {d.mg.member ? (
+              <p className="flex items-start gap-2">
+                <span className="text-emerald-500 dark:text-emerald-400">✓</span>
+                <span className="text-muted">
+                  {d.mg.memberSinceEpoch
+                    ? t("mg.memberSince", { epoch: d.mg.memberSinceEpoch })
+                    : t("mg.member")}
+                </span>
+              </p>
+            ) : d.mg.eligible ? (
+              <>
+                <p className="flex items-start gap-2">
+                  <span className="text-emerald-500 dark:text-emerald-400">✓</span>
+                  <span className="text-muted">{t("mg.eligibleNow")}</span>
+                </p>
+                <MgJoinButton identity={d.mg.identity} />
+              </>
+            ) : (
+              <>
+                <p className="flex items-start gap-2">
+                  <span className="text-amber-500 dark:text-amber-400">⏳</span>
+                  <span className="text-muted">
+                    {d.mg.blockReason === "recently-removed" && d.mg.blockedUntil
+                      ? t("mg.blockedRemoved", {
+                          date: new Date(d.mg.blockedUntil).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }),
+                        })
+                      : d.mg.blockReason === "delegation-address"
+                        ? t("mg.blockedDelegation")
+                        : d.mg.blockReason === "chilled" && d.mg.epochsRemaining != null
+                          ? t("mg.blockedChilled", { epochs: d.mg.epochsRemaining })
+                          : d.mg.epochsRemaining != null
+                            ? t("mg.eligibleIn", { epochs: d.mg.epochsRemaining })
+                            : t("mg.notEligible")}
+                  </span>
+                </p>
+                {/* The streak is the whole explanation of the number above, so it is stated rather
+                    than hidden in a tooltip: a run of N, out of the M the contract wants. */}
+                {d.mg.rewardedStreak != null && d.mg.requiredEpochs != null && (
+                  <p className="mt-2 text-xs text-faint">
+                    {t("mg.streak", {
+                      streak: d.mg.rewardedStreak,
+                      need: d.mg.requiredEpochs,
+                    })}
+                    {d.mg.blockedAtEpoch != null && (
+                      <> {t("mg.brokeAt", { epoch: d.mg.blockedAtEpoch })}</>
+                    )}
+                  </p>
+                )}
+              </>
+            )}
+            {d.mg.checkedEpoch != null && (
+              <p className="mt-3 text-xs text-faint">{t("mg.checked", { epoch: d.mg.checkedEpoch })}</p>
+            )}
+          </div>
         </section>
       )}
 
