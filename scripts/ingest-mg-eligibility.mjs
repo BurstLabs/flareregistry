@@ -116,8 +116,12 @@ async function ethCall(to, data, from, label = "") {
         lastErr = new Error(msg);
         continue;
       }
-      if (typeof j.result === "string" && j.result.length > 2) return { ok: j.result };
-      lastErr = new Error("empty result");
+      // "0x" is a RESULT, not a failure. addMember() returns nothing, so the successful simulation -
+      // the single most important answer this script collects - comes back as an empty string. An
+      // earlier version treated that as an error, which silently dropped exactly the providers who
+      // were eligible and reported "eligible to join now 0" for the whole network.
+      if (typeof j.result === "string") return { ok: j.result };
+      lastErr = new Error("no result field");
     } catch (e) {
       lastErr = e;
     }
@@ -137,7 +141,8 @@ async function resolveContract(name) {
   return a;
 }
 
-const asNum = (r) => (r.ok ? Number(BigInt(r.ok)) : null);
+// "0x" reaches here from void calls; BigInt("0x") throws, so it must be treated as no value.
+const asNum = (r) => (r.ok && r.ok.length > 2 ? Number(BigInt(r.ok)) : null);
 
 function decodeAddressArray(hex) {
   const b = hex.replace(/^0x/, "");
@@ -277,7 +282,11 @@ function decodeAddressArray(hex) {
       epochsRemaining = null;
       blockReason = "delegation-address";
     } else if (removedUntilTs > Date.now() / 1000) {
+      // A time-based gate, and one a departing member usually hits with a FULL reward streak, so the
+      // epoch countdown here is legitimately 0. Publishing that 0 would read as "eligible now" while
+      // the contract goes on refusing. The honest answer is the date the timer expires.
       blockReason = "recently-removed";
+      epochsRemaining = null;
     } else if (chillEpochsLeft > 0) {
       blockReason = "chilled";
     } else if (rewardEpochsLeft > 0) {
@@ -309,6 +318,8 @@ function decodeAddressArray(hex) {
         mgRewardedStreak: isMember ? null : streak,
         mgEpochsRemaining: contractEligible ? 0 : epochsRemaining,
         mgBlockedAtEpoch: blockedAt,
+        mgBlockedUntil:
+          blockReason === "recently-removed" ? new Date(removedUntilTs * 1000) : null,
         mgMemberSinceEpoch: memberSince,
         mgCheckedEpoch: currentEpoch,
         mgCheckedAt: new Date(),
