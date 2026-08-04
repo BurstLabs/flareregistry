@@ -95,7 +95,7 @@ let rpcId = 0;
 
 // A revert is a real answer, not an endpoint failure: addMember() reverting is exactly the information
 // we are here for, so it must not send us round the fallback loop.
-async function ethCall(to, data, from) {
+async function ethCall(to, data, from, label = "") {
   let lastErr = null;
   for (const url of RPCS) {
     try {
@@ -122,7 +122,11 @@ async function ethCall(to, data, from) {
       lastErr = e;
     }
   }
-  throw lastErr ?? new Error("all endpoints failed");
+  // Name the call. "empty result" on its own tells you nothing across a run that makes hundreds of
+  // different calls, and the first version of this script died with exactly that.
+  const e = new Error(`${label || data.slice(0, 10)} @ ${to}: ${lastErr?.message ?? "all endpoints failed"}`);
+  e.rpcFailure = true;
+  throw e;
 }
 
 async function resolveContract(name) {
@@ -217,18 +221,21 @@ function decodeAddressArray(hex) {
   // ---- Per-provider evaluation -----------------------------------------------------------------
   let eligible = 0, disagreements = 0, written = 0;
 
+  let skipped = 0;
+
   for (const p of providers) {
     const voter = p.voter.toLowerCase();
 
-    const isMember = (asNum(await ethCall(pmg, SEL_IS_MEMBER + padAddr(voter))) ?? 0) !== 0;
-    const chilledUntil = asNum(await ethCall(vr, SEL_CHILLED_UNTIL + padBytes20(voter))) ?? 0;
-    const removedAtTs = asNum(await ethCall(pmg, SEL_MEMBER_REMOVED_AT + padAddr(voter))) ?? 0;
+   try {
+    const isMember = (asNum(await ethCall(pmg, SEL_IS_MEMBER + padAddr(voter), null, "isMember")) ?? 0) !== 0;
+    const chilledUntil = asNum(await ethCall(vr, SEL_CHILLED_UNTIL + padBytes20(voter), null, "chilledUntil")) ?? 0;
+    const removedAtTs = asNum(await ethCall(pmg, SEL_MEMBER_REMOVED_AT + padAddr(voter), null, "memberRemovedAtTs")) ?? 0;
     const memberSince = isMember
-      ? asNum(await ethCall(pmg, SEL_MEMBER_ADDED_AT + padAddr(voter)))
+      ? asNum(await ethCall(pmg, SEL_MEMBER_ADDED_AT + padAddr(voter), null, "memberAddedAtRewardEpoch"))
       : null;
 
     // The contract's own verdict. Authoritative.
-    const sim = await ethCall(pmg, SEL_ADD_MEMBER, voter);
+    const sim = await ethCall(pmg, SEL_ADD_MEMBER, voter, "addMember(sim)");
     const simVerdict = sim.revert ?? "SUCCESS";
 
     // Our transcription of the walk-back, for the countdown.
@@ -241,7 +248,10 @@ function decodeAddressArray(hex) {
       const del = info.delegationByVoter.get(voter);
       if (!del || del === voter) { reason = "delegation address not set"; blockedAt = e; break; }
 
-      const st = await ethCall(rm, SEL_UNCLAIMED_STATE + padAddr(del) + pad(e) + pad(CLAIM_TYPE_WNAT));
+      const st = await ethCall(
+        rm, SEL_UNCLAIMED_STATE + padAddr(del) + pad(e) + pad(CLAIM_TYPE_WNAT), null,
+        `getUnclaimedRewardState(${del}, ${e})`
+      );
       const stateInitialised = st.ok ? BigInt("0x" + st.ok.replace(/^0x/, "").slice(0, 64)) !== 0n : false;
 
       if (stateInitialised) { streak++; continue; }
@@ -305,10 +315,16 @@ function decodeAddressArray(hex) {
       },
     });
     written++;
+   } catch (err) {
+    // One provider's bad call must not cost the other 106 their refresh. Leave that row's previous
+    // values in place (they carry mgCheckedEpoch, so staleness is visible) and carry on.
+    skipped++;
+    console.log(`  SKIPPED ${voter}: ${err.message ?? err}`);
+   }
   }
 
   console.log(
-    `written ${written} | members ${providers.filter((p) => p.managementGroup).length} | ` +
+    `written ${written} | skipped ${skipped} | members ${providers.filter((p) => p.managementGroup).length} | ` +
     `eligible to join now ${eligible} | disagreements ${disagreements}`
   );
 
