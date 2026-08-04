@@ -316,6 +316,7 @@ function decodeAddressArray(hex) {
         mgVerdict: simVerdict,
         mgBlockReason: isMember ? null : blockReason,
         mgRewardedStreak: isMember ? null : streak,
+        mgRequiredEpochs: needRewarded,
         mgEpochsRemaining: contractEligible ? 0 : epochsRemaining,
         mgBlockedAtEpoch: blockedAt,
         mgBlockedUntil:

@@ -103,6 +103,26 @@ export default async function ProviderDetail({
     ].filter((r): r is { roleKey: string; role: string; address: string } => !!r.address),
   }));
 
+  // Management Group standing. The group is a single Flare mainnet contract, so only the Flare entity
+  // has one; a Songbird-only provider gets no section rather than a misleading "not eligible".
+  const flareEntity = entities.find((e) => e.network === "flare") ?? null;
+  const mg =
+    flareEntity && flareEntity.mgCheckedEpoch != null
+      ? {
+          identity: flareEntity.voter,
+          member: flareEntity.managementGroup,
+          memberSinceEpoch: flareEntity.mgMemberSinceEpoch,
+          eligible: flareEntity.mgEligible,
+          blockReason: flareEntity.mgBlockReason,
+          rewardedStreak: flareEntity.mgRewardedStreak,
+          requiredEpochs: flareEntity.mgRequiredEpochs,
+          epochsRemaining: flareEntity.mgEpochsRemaining,
+          blockedAtEpoch: flareEntity.mgBlockedAtEpoch,
+          blockedUntil: flareEntity.mgBlockedUntil?.toISOString() ?? null,
+          checkedEpoch: flareEntity.mgCheckedEpoch,
+        }
+      : null;
+
   const gov = (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null;
 
   // New-provider hold, decomposed into its two independent axes so the flag/badge logic stays clear:
@@ -179,6 +199,7 @@ export default async function ProviderDetail({
       testnet: getChain(a.chainId)?.mainnet === false,
     })),
     entityAddresses,
+    mg,
     history: historyRows.map((r) => ({
       epoch: r.epochId,
       feeBips: r.feeBips,
