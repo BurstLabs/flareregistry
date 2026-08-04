@@ -122,7 +122,13 @@ export function useWalletSign(t: TFn) {
       }
       return { address, message, signature };
     },
-    [connectedAddress, isConnected, open, getAddress, signMessageAsync, t]
+    // `open` used to be listed here. Nothing of that name is in scope, so it resolved to the browser
+    // global window.open: harmless in a browser, and undefined in Node, where reading it threw
+    // "ReferenceError: open is not defined" during server rendering. React then discarded the whole
+    // client subtree and re-rendered it on the client, which is why this page's sections never
+    // appeared in the served HTML. openWallet is a module import and is not a reactive value, so the
+    // dependency does not belong here at all.
+    [connectedAddress, isConnected, getAddress, signMessageAsync, t]
   );
 }
 
