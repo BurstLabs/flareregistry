@@ -177,7 +177,9 @@ export function MgJoinButton({ identity }: { identity: string }) {
         disabled={busy || isCaller === false}
         className="rounded-lg bg-flare px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {busy ? t("mg.joining") : t("mg.join")}
+        {/* "Confirm in your wallet" is wrong once the transaction is broadcast: the wallet is done
+            and the wait is on the chain. */}
+        {phase === "mining" ? t("mg.mining") : busy ? t("mg.joining") : t("mg.join")}
       </button>
       {isCaller === false && <p className="mt-2 text-xs text-faint">{t("mg.wrongWallet")}</p>}
       {err && <p className="mt-2 text-xs text-flare">{err}</p>}
