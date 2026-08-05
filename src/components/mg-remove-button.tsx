@@ -25,6 +25,7 @@
 // refusal instead of a reverted transaction the caller paid for.
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from "wagmi";
 import { openWallet } from "@/lib/appkit";
 import { useApp } from "./providers";
@@ -46,6 +47,7 @@ type Phase = "idle" | "confirm" | "checking" | "sending" | "mining" | "done" | "
 
 export function MgRemoveButton({ identity }: { identity: string }) {
   const { t } = useApp();
+  const router = useRouter();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient({ chainId: FLARE_CHAIN_ID });
@@ -108,6 +110,16 @@ export function MgRemoveButton({ identity }: { identity: string }) {
         return;
       }
       setPhase("done");
+      // The page renders from our database, which the crons refresh hourly at best. Without this the
+      // removal lands on-chain and the listing goes on showing the member, and the button, for up to
+      // an hour. Best-effort: the transaction has already succeeded, so a failed refresh must not be
+      // reported as a failed removal.
+      await fetch("/api/mg/refresh", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ voter: identity }),
+      }).catch(() => {});
+      router.refresh();
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
       if (/User rejected|denied transaction|rejected the request/i.test(raw)) {
