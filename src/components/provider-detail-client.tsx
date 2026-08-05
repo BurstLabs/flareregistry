@@ -9,6 +9,7 @@ import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
 import { ManageListingButton } from "./manage-listing-button";
 import { MgJoinButton } from "./mg-join-button";
+import { MgRemoveButton } from "./mg-remove-button";
 
 export interface DetailData {
   name: string;
@@ -65,6 +66,12 @@ export interface DetailData {
     blockedAtEpochTs: string | null;
     checkedEpoch: number | null;
     checkedAt: string | null;
+    removable: boolean | null;
+    removeReason: string | null;
+    missedVotes: number | null;
+    relevantProposals: number | null;
+    missedVotesLimit: number | null;
+    epochsSinceReward: number | null;
   } | null;
   addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
   // The full registered on-chain entity addresses (all five roles) per matched network.
@@ -442,14 +449,63 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           <p className="mb-3 text-xs text-faint">{t("mg.intro")}</p>
           <div className="surface rounded-xl border p-5 text-sm">
             {d.mg.member ? (
-              <p className="flex items-start gap-2">
-                <span className="text-emerald-500 dark:text-emerald-400">✓</span>
-                <span className="text-muted">
-                  {d.mg.memberSinceEpoch
-                    ? t("mg.memberSince", { epoch: d.mg.memberSinceEpoch })
-                    : t("mg.member")}
-                </span>
-              </p>
+              <>
+                <p className="flex items-start gap-2">
+                  <span
+                    className={
+                      d.mg.removable
+                        ? "text-amber-500 dark:text-amber-400"
+                        : "text-emerald-500 dark:text-emerald-400"
+                    }
+                  >
+                    {d.mg.removable ? "⚠" : "✓"}
+                  </span>
+                  <span className="text-muted">
+                    {d.mg.memberSinceEpoch
+                      ? t("mg.memberSince", { epoch: d.mg.memberSinceEpoch })
+                      : t("mg.member")}
+                  </span>
+                </p>
+                {/* Removal standing. Membership is not permanent and is not revoked by a vote: a
+                    member who stops voting or stops earning rewards can be removed by anyone, so the
+                    grounds are stated plainly rather than left to be discovered. */}
+                {d.mg.removable && (
+                  <>
+                    <p className="mt-2 flex items-start gap-2">
+                      <span className="text-flare">✕</span>
+                      <span className="text-muted">
+                        {t("mg.removable")}{" "}
+                        {d.mg.removeReason === "chilled"
+                          ? t("mg.removeGroundChilled")
+                          : d.mg.removeReason === "no-rewards"
+                            ? t("mg.removeGroundNoRewards", { epochs: d.mg.epochsSinceReward ?? 0 })
+                            : d.mg.removeReason === "non-participation"
+                              ? t("mg.removeGroundNonParticipation", {
+                                  missed: d.mg.missedVotes ?? 0,
+                                  window: d.mg.relevantProposals ?? 0,
+                                })
+                              : ""}
+                      </span>
+                    </p>
+                    <MgRemoveButton identity={d.mg.identity} />
+                  </>
+                )}
+                {/* Not removable, but the participation clock still runs. Showing the margin lets a
+                    member see they are one missed vote away rather than find out afterwards. */}
+                {!d.mg.removable &&
+                  d.mg.missedVotes != null &&
+                  d.mg.relevantProposals != null &&
+                  d.mg.missedVotesLimit != null &&
+                  d.mg.relevantProposals > 0 && (
+                    <p className="mt-2 text-xs text-faint">
+                      {t("mg.removeStanding", {
+                        missed: d.mg.missedVotes,
+                        window: d.mg.relevantProposals,
+                        limit: d.mg.missedVotesLimit,
+                      })}
+                    </p>
+                  )}
+              </>
             ) : d.mg.eligible ? (
               <>
                 <p className="flex items-start gap-2">
