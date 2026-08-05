@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-05T12:47:01.728Z",
+  "timestamp": "2026-08-05T13:14:05.330Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1856,6 +1856,60 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.940Z",
+          "lastSubmittedEpoch": 420,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Flare en Español",
+      "description": "Independent Flare infrastructure provider focused on reliable FTSO price submissions, validator operations, and expanding access to the Flare ecosystem for the Spanish-speaking community.",
+      "url": "https://flare.lavadigitalassets.com",
+      "address": "0x7A8FB697C7CBB05bF9175B2D6FE4779e4E12a38b",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "1000000000000000000000",
+        "votePowerCapped": "1000000000000000000000",
+        "feedCount": 63,
+        "lastEpoch": 420,
+        "delegatorRewardLastEpoch": "472892002867202392",
+        "feeRewardLastEpoch": "644433576907269698845",
+        "entity": {
+          "identity": "0xCcf1Dce8A01B32BCF3dcF00C67C72b372E689145",
+          "submit": "0x9059c78F2Eb769f47253EbeB8C9361AcC5e28d15",
+          "submitSignatures": "0xBB912e3B5245cf00FF0Eb2caeBc8Cc5619ECe6Da",
+          "signingPolicy": "0xaE229E281901353525683b0e68738Df5dC6C7405",
+          "delegation": "0x7A8FB697C7CBB05bF9175B2D6FE4779e4E12a38b"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-6Ww2bagQbUaZppGWFdBcGamtNDtjap1sD",
+            "feePercent": 20,
+            "uptimePercent": 99.9998,
+            "connected": true,
+            "weight": "1090000000000000",
+            "selfBond": "1090000000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-08-03T16:18:36.265Z",
           "lastSubmittedEpoch": 420,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
