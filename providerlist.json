@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-05T13:14:05.330Z",
+  "timestamp": "2026-08-05T13:21:43.572Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -6623,6 +6623,49 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.940Z",
+          "lastSubmittedEpoch": 420,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Flare en Español",
+      "description": "Independent Flare infrastructure provider focused on reliable FTSO price submissions, validator operations, and expanding access to the Flare ecosystem for the Spanish-speaking community.",
+      "url": "https://flare.lavadigitalassets.com",
+      "address": "0x7A8FB697C7CBB05bF9175B2D6FE4779e4E12a38b",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "122357000000000000000000",
+        "votePowerCapped": "154404035644577095352320",
+        "feedCount": 63,
+        "lastEpoch": 420,
+        "delegatorRewardLastEpoch": "553610270261774560013",
+        "feeRewardLastEpoch": "138402567565443635537",
+        "entity": {
+          "identity": "0x98957a7a4d5FCD9C410A19d2363959d52FF2965e",
+          "submit": "0xCf5965b26B91347c699B71843E163a0feC6Fd92e",
+          "submitSignatures": "0xe5BFaC2F113F0aBcd4200160716EDe86C597D945",
+          "signingPolicy": "0xF8F10eB8D3d0Ccc808f5BCc8E86373A119649102",
+          "delegation": "0x7A8FB697C7CBB05bF9175B2D6FE4779e4E12a38b"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-08-03T16:18:36.265Z",
           "lastSubmittedEpoch": 420,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
