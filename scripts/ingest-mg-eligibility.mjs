@@ -345,9 +345,13 @@ function decodeAddressArray(hex) {
         const st = await ethCall(
           rm, SEL_UNCLAIMED_STATE + padAddr(del) + pad(e) + pad(CLAIM_TYPE_WNAT), null,
           `getUnclaimedRewardState(${del}, ${e})`
-        ).catch(() => ({ ok: null }));
+        );
         const paid = st.ok ? BigInt("0x" + st.ok.replace(/^0x/, "").slice(0, 64)) !== 0n : false;
         if (paid) break;
+        // An RPC failure used to be caught here and fall through as paid=false, i.e. counted as an
+        // UNREWARDED epoch. That turns a transport hiccup into "no rewards for N epochs" printed next
+        // to a live Remove button. A failed read is not evidence of anything: stop counting instead.
+        if (!st.ok) break;
         if (info.initialised) dry++;
       }
       epochsSinceReward = dry;

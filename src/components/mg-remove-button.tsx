@@ -62,7 +62,12 @@ export function MgRemoveButton({ identity }: { identity: string }) {
     setErr("");
 
     // First press arms, second press acts.
-    if (phase === "idle") {
+    //
+    // Keyed on "not yet armed", NOT on "idle". Every failure path leaves phase === "error", so an
+    // idle-only test re-armed nothing after a failure: the button rendered its un-armed label and the
+    // next single click broadcast the removal. The confirm step disappeared precisely when someone was
+    // retrying after something had already gone wrong.
+    if (phase !== "confirm") {
       setPhase("confirm");
       return;
     }
