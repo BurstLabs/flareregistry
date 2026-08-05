@@ -123,6 +123,13 @@ export default async function ProviderDetail({
           blockedAtEpochTs: flareEntity.mgBlockedAtEpochTs?.toISOString() ?? null,
           checkedEpoch: flareEntity.mgCheckedEpoch,
           checkedAt: flareEntity.mgCheckedAt?.toISOString() ?? null,
+          // Removal standing. Only meaningful for a sitting member; null everywhere else.
+          removable: flareEntity.mgRemovable,
+          removeReason: flareEntity.mgRemoveReason,
+          missedVotes: flareEntity.mgMissedVotes,
+          relevantProposals: flareEntity.mgRelevantProposals,
+          missedVotesLimit: flareEntity.mgMissedVotesLimit,
+          epochsSinceReward: flareEntity.mgEpochsSinceReward,
         }
       : null;
 
