@@ -25,6 +25,7 @@
 //     wrongly refuse it.
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from "wagmi";
 import { openWallet } from "@/lib/appkit";
 import { useApp } from "./providers";
@@ -49,6 +50,7 @@ type Phase = "idle" | "checking" | "ready" | "sending" | "mining" | "done" | "er
 
 export function MgJoinButton({ identity }: { identity: string }) {
   const { t } = useApp();
+  const router = useRouter();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient({ chainId: FLARE_CHAIN_ID });
@@ -131,6 +133,15 @@ export function MgJoinButton({ identity }: { identity: string }) {
         return;
       }
       setPhase("done");
+      // Same staleness problem as the remove button: the listing renders from our database, which the
+      // crons refresh hourly at best, so without this a provider joins and the page goes on offering
+      // them the join button. Best-effort, since the transaction has already succeeded.
+      await fetch("/api/mg/refresh", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ voter: identity }),
+      }).catch(() => {});
+      router.refresh();
     } catch (e) {
       setPhase("error");
       const raw = e instanceof Error ? e.message : String(e);
