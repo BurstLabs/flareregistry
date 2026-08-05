@@ -259,12 +259,24 @@ model ProviderOnchain {
   // on the timer, so the real date can drift later.
   mgEligibleEstimatedAt DateTime?
   mgBlockedAtEpochTs    DateTime?
-  mgMemberSinceEpoch    Int?
-  mgCheckedEpoch        Int?
-  mgCheckedAt           DateTime?
+
+  // REMOVAL STANDING, for sitting members. removeMember() is permissionless the same way addMember()
+  // is, so a member can be one stranger's transaction away from losing their seat. mgRemovable is the
+  // contract's own answer, from simulating that call; the rest explains it and shows how close a
+  // member who is currently safe actually is.
+  mgRemovable         Boolean?
+  mgRemoveVerdict     String? // verbatim revert string, or "REMOVABLE"
+  mgRemoveReason      String? // chilled | no-rewards | non-participation
+  mgMissedVotes       Int? // decided proposals in the window this member did not vote in
+  mgRelevantProposals Int? // size of that window (quorum-met, decided proposals since they joined)
+  mgMissedVotesLimit  Int? // removeAfterNonParticipatingProposals, at which removal becomes possible
+  mgEpochsSinceReward Int? // consecutive initialised epochs with no reward, counting back from now
+  mgMemberSinceEpoch  Int?
+  mgCheckedEpoch      Int?
+  mgCheckedAt         DateTime?
   // Member of Flare's on-chain FTSO Management Group (PollingManagementGroup contract): the
   // curated set of eligible, well-performing providers. Refreshed from a live RPC query.
-  managementGroup       Boolean   @default(false)
+  managementGroup     Boolean   @default(false)
 
   lastEpochSeen Int
   createdAt     DateTime @default(now())

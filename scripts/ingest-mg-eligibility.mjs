@@ -53,6 +53,28 @@ const SEL_MEMBER_REMOVED_AT = "0x3f66935c"; // memberRemovedAtTs(address)
 const SEL_ADD_AFTER_REWARDED = "0x11466e7d"; // addAfterRewardedEpochs()
 const SEL_ADD_AFTER_NOT_CHILLED = "0xf61c90db"; // addAfterNotChilledEpochs()
 const SEL_REMOVE_FOR_DAYS = "0x59c077c0"; // removeForDays()
+// --- PollingManagementGroup, removal side ---
+// removeMember() is permissionless in exactly the way addMember() is: anyone may call it, and the
+// contract removes the member if any one of three grounds holds. A sitting member can therefore be
+// one stranger's transaction away from losing their seat without ever being told.
+const SEL_REMOVE_MEMBER = "0x0b1ca49a"; // removeMember(address)
+const SEL_ID_COUNTER = "0xeb08ab28"; // idCounter()
+const SEL_MEMBER_ADDED_AT_PROPOSAL = "0x96537cbe"; // memberAddedAtProposal(address)
+const SEL_HAS_VOTED = "0x43859632"; // hasVoted(uint256,address)
+const SEL_PROPOSAL_STATE = "0x3e4f49e6"; // state(uint256)
+const SEL_PROPOSAL_VOTES = "0x47c66140"; // getProposalVotes(uint256)
+const SEL_PROPOSAL_INFO = "0xbc903cb8"; // getProposalInfo(uint256)
+const SEL_REMOVE_NOT_REWARDED = "0xddcec244"; // removeAfterNotRewardedEpochs()
+const SEL_REMOVE_ELIGIBLE_PROPOSALS = "0x15281cfb"; // removeAfterEligibleProposals()
+const SEL_REMOVE_NONPARTICIPATING = "0xea4685de"; // removeAfterNonParticipatingProposals()
+
+// ProposalState, from IPollingManagementGroup. NOT the OpenZeppelin Governor ordering: there is no
+// Queued or Executed here, and Canceled is 0 rather than last. Reading it as Governor's enum shifts
+// every label by one and turns an Active vote into a Defeated one.
+const PROPOSAL_STATE = ["Canceled", "Pending", "Active", "Defeated", "Succeeded"];
+const STATE_DEFEATED = 3;
+const STATE_SUCCEEDED = 4;
+
 // --- FlareSystemsManager (deployed abi: uint256, not uint24) ---
 const SEL_CURRENT_EPOCH = "0x70562697"; // getCurrentRewardEpochId()
 const SEL_VOTE_POWER_BLOCK = "0xc2632216"; // getVotePowerBlock(uint256)
@@ -239,8 +261,47 @@ function decodeAddressArray(hex) {
     console.log(`  WARNING: fewer initialised epochs in range than the ${needRewarded} required`);
   }
 
+  // ---- Proposal window, resolved ONCE and shared by every member -------------------------------
+  // The non-participation ground counts, among the most recent DECIDED proposals that also MET
+  // QUORUM, how many a member failed to vote in. Which proposals qualify does not vary by member
+  // (only the "since you joined" cutoff does), so the state/votes/threshold reads happen once here
+  // and the per-member work reduces to one hasVoted call each.
+  //
+  // Quorum is transcribed from _quorum(): for + against >= ceil(threshold * eligibleMembers / 10000).
+  // A proposal that failed quorum is still reported as Defeated by state(), so state alone cannot
+  // tell the two apart, and counting a quorum-less proposal would penalise members for ignoring a
+  // vote the contract itself disregards.
+  const removeNotRewarded = asNum(await ethCall(pmg, SEL_REMOVE_NOT_REWARDED)) ?? 2;
+  const removeEligibleProposals = asNum(await ethCall(pmg, SEL_REMOVE_ELIGIBLE_PROPOSALS)) ?? 4;
+  const removeNonParticipating = asNum(await ethCall(pmg, SEL_REMOVE_NONPARTICIPATING)) ?? 2;
+  const idCounter = asNum(await ethCall(pmg, SEL_ID_COUNTER)) ?? 0;
+
+  const relevantProposals = []; // newest first, ids the contract would count
+  for (let pid = idCounter; pid > 0 && relevantProposals.length < removeEligibleProposals; pid--) {
+    const st = asNum(await ethCall(pmg, SEL_PROPOSAL_STATE + pad(pid), null, `state(${pid})`));
+    if (st !== STATE_DEFEATED && st !== STATE_SUCCEEDED) continue;
+
+    const vres = await ethCall(pmg, SEL_PROPOSAL_VOTES + pad(pid), null, `getProposalVotes(${pid})`);
+    const ires = await ethCall(pmg, SEL_PROPOSAL_INFO + pad(pid), null, `getProposalInfo(${pid})`);
+    if (!vres.ok || !ires.ok) continue;
+    const vb = vres.ok.replace(/^0x/, "");
+    const forVotes = BigInt("0x" + vb.slice(0, 64));
+    const againstVotes = BigInt("0x" + vb.slice(64, 128));
+    // getProposalInfo head: [descOffset, proposer, accept, voteStart, voteEnd, threshold, majority,
+    // eligibleMembers]. The description is dynamic and lives past the head; we only need the tail two.
+    const ib = ires.ok.replace(/^0x/, "");
+    const thresholdBips = BigInt("0x" + ib.slice(5 * 64, 6 * 64));
+    const eligibleMembers = BigInt("0x" + ib.slice(7 * 64, 8 * 64));
+    const needed = (thresholdBips * eligibleMembers + 9999n) / 10000n; // mulDivRoundUp
+    if (forVotes + againstVotes >= needed) relevantProposals.push(pid);
+  }
+  console.log(
+    `proposals: ${idCounter} total, ${relevantProposals.length} counted for participation ` +
+    `(${relevantProposals.join(", ") || "none"}); removal at ${removeNonParticipating} missed`
+  );
+
   // ---- Per-provider evaluation -----------------------------------------------------------------
-  let eligible = 0, disagreements = 0, written = 0;
+  let eligible = 0, disagreements = 0, written = 0, removableNow = 0;
 
   let skipped = 0;
 
@@ -258,6 +319,59 @@ function decodeAddressArray(hex) {
     // The contract's own verdict. Authoritative.
     const sim = await ethCall(pmg, SEL_ADD_MEMBER, voter, "addMember(sim)");
     const simVerdict = sim.revert ?? "SUCCESS";
+
+    // ---- Removal standing, members only ---------------------------------------------------------
+    let removable = null, removeVerdict = null, removeReason = null;
+    let missedVotes = null, relevantForMember = null, epochsSinceReward = null;
+
+    if (isMember) {
+      // Permissionless, so the caller is irrelevant; simulate from the member for symmetry with
+      // addMember. This is the authoritative yes/no.
+      // NB: not named `rm` - that is the RewardManager address, and shadowing it here silently broke
+      // the reward lookup below.
+      const rmSim = await ethCall(pmg, SEL_REMOVE_MEMBER + padAddr(voter), voter, "removeMember(sim)");
+      removeVerdict = rmSim.revert ?? "REMOVABLE";
+      removable = rmSim.revert == null;
+
+      // How many consecutive INITIALISED epochs back to the member's last reward. The contract removes
+      // at removeNotRewarded, and only once the member has been in longer than that.
+      let dry = 0;
+      for (let e = currentEpoch - 1; e >= Math.max(0, currentEpoch - MAX_LOOKBACK); e--) {
+        const info = epochInfo.get(e);
+        if (!info) break;
+        if (memberSince != null && e < memberSince) break;
+        const del = info.delegationByVoter.get(voter);
+        if (!del) break;
+        const st = await ethCall(
+          rm, SEL_UNCLAIMED_STATE + padAddr(del) + pad(e) + pad(CLAIM_TYPE_WNAT), null,
+          `getUnclaimedRewardState(${del}, ${e})`
+        ).catch(() => ({ ok: null }));
+        const paid = st.ok ? BigInt("0x" + st.ok.replace(/^0x/, "").slice(0, 64)) !== 0n : false;
+        if (paid) break;
+        if (info.initialised) dry++;
+      }
+      epochsSinceReward = dry;
+
+      // Participation: of the shared window, how many did this member miss? Proposals from before
+      // they joined do not count against them, matching the firstProposalId cutoff in the contract.
+      const joinedAtProposal =
+        asNum(await ethCall(pmg, SEL_MEMBER_ADDED_AT_PROPOSAL + padAddr(voter), null, "memberAddedAtProposal")) ?? 0;
+      const mine = relevantProposals.filter((pid) => pid > joinedAtProposal);
+      let missed = 0;
+      for (const pid of mine) {
+        const hv = asNum(await ethCall(pmg, SEL_HAS_VOTED + pad(pid) + padAddr(voter), null, `hasVoted(${pid})`));
+        if (!hv) missed++;
+      }
+      relevantForMember = mine.length;
+      missedVotes = missed;
+
+      // Which ground actually bites, checked in the contract's own order.
+      if (removable) {
+        if (chilledUntil > 0 && chilledUntil + needNotChilled >= currentEpoch) removeReason = "chilled";
+        else if (epochsSinceReward >= removeNotRewarded) removeReason = "no-rewards";
+        else if (missed >= removeNonParticipating) removeReason = "non-participation";
+      }
+    }
 
     // Our transcription of the walk-back, for the countdown.
     let streak = 0;
@@ -321,6 +435,7 @@ function decodeAddressArray(hex) {
       );
     }
     if (contractEligible) eligible++;
+    if (removable) removableNow++;
 
     await prisma.providerOnchain.update({
       where: { id: p.id },
@@ -350,6 +465,13 @@ function decodeAddressArray(hex) {
             ? new Date(epochInfo.get(blockedAt).startTs * 1000)
             : null,
         mgMemberSinceEpoch: memberSince,
+        mgRemovable: removable,
+        mgRemoveVerdict: removeVerdict,
+        mgRemoveReason: removeReason,
+        mgMissedVotes: missedVotes,
+        mgRelevantProposals: relevantForMember,
+        mgMissedVotesLimit: isMember ? removeNonParticipating : null,
+        mgEpochsSinceReward: epochsSinceReward,
         mgCheckedEpoch: currentEpoch,
         mgCheckedAt: new Date(),
       },
@@ -365,7 +487,7 @@ function decodeAddressArray(hex) {
 
   console.log(
     `written ${written} | skipped ${skipped} | members ${providers.filter((p) => p.managementGroup).length} | ` +
-    `eligible to join now ${eligible} | disagreements ${disagreements}`
+    `eligible to join now ${eligible} | REMOVABLE NOW ${removableNow} | disagreements ${disagreements}`
   );
 
   await prisma.$disconnect();
