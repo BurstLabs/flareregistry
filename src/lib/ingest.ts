@@ -14,7 +14,9 @@ export const NETWORKS = ["flare", "songbird"] as const;
 export type Network = (typeof NETWORKS)[number];
 
 // Don't walk the entire history on first run by default; cap how far back we backfill.
-const DEFAULT_MAX_BACKFILL = 12; // ~6 weeks of 3.5-day epochs
+// 30, not 12. The reward CLAIM window is about 25 epochs (rewardExpiryOffsetSeconds 7,776,000 over a
+// 302,400s epoch), so a 12-epoch window cannot see the epochs closest to expiring.
+const DEFAULT_MAX_BACKFILL = 30;
 
 async function fetchJson(url: string): Promise<any | null> {
   const res = await fetch(url, {
@@ -44,13 +46,16 @@ async function getState(network: Network): Promise<number> {
 /** Fetch and parse one epoch, or null if its files are not present/complete. */
 async function loadEpoch(network: Network, epochId: number): Promise<ParsedEpoch | null> {
   const base = `${RAW_BASE}/${network}/${epochId}`;
-  const [info, dist] = await Promise.all([
+  const [info, dist, passes] = await Promise.all([
     fetchJson(`${base}/reward-epoch-info.json`),
     fetchJson(`${base}/reward-distribution-data.json`),
+    // Minimal conditions. OPTIONAL: absent for older epochs and for the newest one or two, since
+    // GitHub publication trails the chain. Its absence leaves goodStanding NULL, never true.
+    fetchJson(`${base}/passes.json`),
   ]);
   if (!info || !dist) return null;
   try {
-    return parseEpoch(info, dist, network);
+    return parseEpoch(info, dist, network, passes);
   } catch {
     return null;
   }
@@ -88,7 +93,9 @@ async function persistEpoch(parsed: ParsedEpoch): Promise<void> {
       signingWeight: id.signingWeight,
       feedCount: metric?.feedCount ?? null,
       registered: true,
-      goodStanding: metric?.goodStanding ?? true,
+      // NULL, not true. Defaulting an unknown verdict to "in good standing" is the exact bug this
+      // change exists to remove; it must not survive in the snapshot write.
+      goodStanding: metric?.goodStanding ?? null,
       lastEpochSeen: epochId,
     };
     await prisma.providerOnchain.upsert({

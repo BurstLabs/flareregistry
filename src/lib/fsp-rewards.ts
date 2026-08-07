@@ -37,7 +37,9 @@ export interface EpochProviderMetric {
   delegatorReward: string;
   stakerReward: string;
   registered: boolean;
-  goodStanding: boolean;
+  goodStanding: boolean | null;
+  passes: number | null;
+  failures: string[];
 }
 
 export interface ParsedEpoch {
@@ -58,7 +60,8 @@ function lower(a: unknown): string | null {
 export function parseEpoch(
   info: any,
   dist: any,
-  network?: string
+  network?: string,
+  passes?: any
 ): ParsedEpoch {
   const epochId: number = info.rewardEpochId ?? dist.rewardEpochId;
   const net: string = network ?? dist.network ?? "flare";
@@ -142,6 +145,20 @@ export function parseEpoch(
     else if (body.claimType === CLAIM_MIRROR) add(stake, voter, amount);
   }
 
+  // voterAddress -> minimal-conditions verdict for this epoch.
+  const cond = new Map<string, { eligible: boolean | null; passes: number | null; failures: string[] }>();
+  for (const p of Array.isArray(passes) ? passes : []) {
+    const v = typeof p?.voterAddress === "string" ? p.voterAddress.toLowerCase() : null;
+    if (!v) continue;
+    cond.set(v, {
+      eligible: typeof p.eligibleForReward === "boolean" ? p.eligibleForReward : null,
+      passes: typeof p.passes === "number" ? p.passes : null,
+      failures: Array.isArray(p.failures)
+        ? p.failures.map((f: any) => f?.failureId).filter(Boolean)
+        : [],
+    });
+  }
+
   const metrics: EpochProviderMetric[] = identities.map((id) => ({
     voter: id.voter,
     feeBips: id.feeBips,
@@ -154,9 +171,11 @@ export function parseEpoch(
     delegatorReward: (del.get(id.voter) ?? 0n).toString(),
     stakerReward: (stake.get(id.voter) ?? 0n).toString(),
     registered: true,
-    // appliedMinConditions at the file level signals penalties were applied this epoch; a
-    // per-voter good-standing refinement can read passes.json later. Default true.
-    goodStanding: true,
+    // From passes.json, verbatim. Was hardcoded true, which reported every provider as in good
+    // standing during epochs where Flare had burned all of their rewards.
+    goodStanding: cond.get(id.voter)?.eligible ?? null,
+    passes: cond.get(id.voter)?.passes ?? null,
+    failures: cond.get(id.voter)?.failures ?? [],
   }));
 
   return { epochId, network: net, identities, metrics };

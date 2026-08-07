@@ -228,7 +228,9 @@ model ProviderOnchain {
   // wei^0.75, so divide by 10^13.5 for FLR^0.75.
   registrationWeight String?
   registrationEpoch  Int?
-  goodStanding       Boolean @default(true)
+  // Latest known minimal-conditions verdict, carried from the newest ingested epoch. Nullable for the
+  // same reason as on ProviderMetricEpoch: "we have not been told" must not render as "passed".
+  goodStanding       Boolean?
 
   // MANAGEMENT GROUP ELIGIBILITY, from scripts/ingest-mg-eligibility.mjs. Flare only.
   // mgEligible and mgVerdict come from simulating PollingManagementGroup.addMember() with eth_call, so
@@ -344,8 +346,21 @@ model ProviderMetricEpoch {
   stakerReward    String? // claimType 3 (mirror/staking)
 
   // Was the entity registered/active this epoch, and in good standing (no applied penalties).
-  registered   Boolean @default(true)
-  goodStanding Boolean @default(true)
+  registered   Boolean  @default(true)
+  // MINIMAL CONDITIONS, from passes.json in the same epoch folder we already walk.
+  //
+  // goodStanding is eligibleForReward, verbatim. It used to be hardcoded true, which meant the
+  // registry reported every provider as in good standing during epochs where Flare had burned all of
+  // their rewards: 12 of 98 in epoch 420 alone. Null means the file was absent for that epoch, which
+  // is not the same as passing, and must not be rendered as a tick.
+  goodStanding Boolean?
+  // Pass balance (0..3). A provider on 0 loses everything on the next failure, so the balance is the
+  // early warning the eligibility flag alone cannot give.
+  passes       Int?
+  // Failure ids for the epoch, e.g. ["FDC_FAILURE"]. Flare attributes the cause directly, so this is
+  // recorded rather than inferred. Empty list means no failures recorded; goodStanding carries the
+  // "we were not told" signal, so this does not need to be nullable as well.
+  failures     String[]
 
   createdAt DateTime @default(now())
 

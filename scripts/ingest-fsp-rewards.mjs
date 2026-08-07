@@ -12,7 +12,10 @@ const RAW_BASE = "https://raw.githubusercontent.com/flare-foundation/fsp-rewards
 const API_BASE = "https://api.github.com/repos/flare-foundation/fsp-rewards/contents";
 const NETWORKS = ["flare", "songbird"];
 const arg = process.argv.indexOf("--backfill");
-const MAX_BACKFILL = arg > -1 ? Number(process.argv[arg + 1]) : 12;
+// 30, not 12. The reward CLAIM window is about 25 epochs (rewardExpiryOffsetSeconds 7,776,000 over a
+// 302,400s epoch), so a 12-epoch backfill cannot see the epochs closest to expiring, which are the
+// only ones where being able to see them still matters.
+const MAX_BACKFILL = arg > -1 ? Number(process.argv[arg + 1]) : 30;
 
 const prisma = new PrismaClient();
 const auth = process.env.GITHUB_ASSETS_TOKEN
@@ -32,7 +35,7 @@ async function latestEpoch(network) {
   return e.length ? Math.max(...e) : null;
 }
 
-function parseEpoch(info, dist, network) {
+function parseEpoch(info, dist, network, passes) {
   const epochId = info.rewardEpochId ?? dist.rewardEpochId;
   // signingPolicy.voters are signingPolicyAddresses (not identity voters); map by that.
   const sp = (info.signingPolicy?.voters ?? []).map((v) => v.toLowerCase());
@@ -88,6 +91,18 @@ function parseEpoch(info, dist, network) {
     else if (b.claimType === 3) add(stk, v, String(b.amount));
   }
 
+  // voterAddress -> minimal-conditions verdict for this epoch.
+  const cond = new Map();
+  for (const p of Array.isArray(passes) ? passes : []) {
+    const v = low(p.voterAddress);
+    if (!v) continue;
+    cond.set(v, {
+      eligible: typeof p.eligibleForReward === "boolean" ? p.eligibleForReward : null,
+      passes: typeof p.passes === "number" ? p.passes : null,
+      failures: Array.isArray(p.failures) ? p.failures.map((f) => f.failureId).filter(Boolean) : [],
+    });
+  }
+
   const metrics = identities.map((id) => ({
     voter: id.voter,
     feeBips: id.feeBips,
@@ -100,7 +115,11 @@ function parseEpoch(info, dist, network) {
     delegatorReward: (del.get(id.voter) ?? 0n).toString(),
     stakerReward: (stk.get(id.voter) ?? 0n).toString(),
     registered: true,
-    goodStanding: true,
+    // From passes.json, verbatim. Was hardcoded true, which reported every provider as in good
+    // standing during epochs where Flare had burned all of their rewards.
+    goodStanding: cond.get(id.voter)?.eligible ?? null,
+    passes: cond.get(id.voter)?.passes ?? null,
+    failures: cond.get(id.voter)?.failures ?? [],
   }));
   return { epochId, network, identities, metrics };
 }
@@ -132,7 +151,9 @@ async function persist(parsed) {
       signingWeight: id.signingWeight,
       feedCount: metric?.feedCount ?? null,
       registered: true,
-      goodStanding: metric?.goodStanding ?? true,
+      // NULL, not true. Defaulting an unknown verdict to "in good standing" is the exact bug this
+      // change exists to remove; it must not survive in the snapshot write.
+      goodStanding: metric?.goodStanding ?? null,
       lastEpochSeen: epochId,
     };
     await prisma.providerOnchain.upsert({
@@ -155,12 +176,15 @@ async function ingestNetwork(network) {
   let n = 0;
   for (let epoch = start; epoch <= latest; epoch++) {
     const base = `${RAW_BASE}/${network}/${epoch}`;
-    const [info, dist] = await Promise.all([
+    const [info, dist, passes] = await Promise.all([
       getJson(`${base}/reward-epoch-info.json`),
       getJson(`${base}/reward-distribution-data.json`),
+      // Minimal conditions. OPTIONAL: absent for older epochs and for the newest one or two, since
+      // GitHub publication trails the chain. Its absence must leave goodStanding NULL, never true.
+      getJson(`${base}/passes.json`),
     ]);
     if (!info || !dist) continue;
-    await persist(parseEpoch(info, dist, network));
+    await persist(parseEpoch(info, dist, network, passes));
     await prisma.ingestState.upsert({
       where: { network },
       create: { network, lastEpochIngested: epoch },
