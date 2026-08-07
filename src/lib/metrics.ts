@@ -42,7 +42,7 @@ export interface ProviderMetrics {
   wNatCappedWeight: string | null;
   feedCount: number | null;
   registered: boolean;
-  goodStanding: boolean;
+  goodStanding: boolean | null;
   lastEpoch: number;
   // Latest-epoch reward amounts (wei strings).
   feeReward: string | null;
