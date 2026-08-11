@@ -76,7 +76,10 @@ export interface DetailData {
   } | null;
   // Composite reputation over Flare's own measurements. Weights are published and versioned; scoring
   // is absolute rather than relative, so no provider's figure moves when a competitor's does.
-  reputation: {
+  reputation:
+    | { departed: true; epochsAbsent: number; lastEpochSeen: number }
+    | {
+    departed?: false;
     score: number;
     band: "strong" | "solid" | "mixed" | "attention";
     components: { key: string; raw: string; ratio: number; weight: number; points: number }[];
@@ -90,7 +93,8 @@ export interface DetailData {
       validatorUptime: number | null;
       validatorCount: number;
     };
-  } | null;
+  }
+    | null;
   addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
   // The full registered on-chain entity addresses (all five roles) per matched network.
   entityAddresses: { network: string; roles: { roleKey: string; role: string; address: string }[] }[];
@@ -606,7 +610,16 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           <h2 className="mb-1 text-lg font-semibold">{t("card.reputation")}</h2>
           <p className="mb-3 text-xs text-faint">{t("rep.intro")}</p>
           <div className="surface rounded-xl border p-5 text-sm">
-            {!d.reputation.mature ? (
+            {d.reputation.departed ? (
+              // No score for an entity that has left. A figure here would read as "operating badly"
+              // when the truth is "not operating".
+              <p className="flex items-start gap-2">
+                <span className="text-faint">-</span>
+                <span className="text-muted">
+                  {t("rep.departed", { epoch: d.reputation.lastEpochSeen })}
+                </span>
+              </p>
+            ) : !d.reputation.mature ? (
               <p className="text-muted">{t("rep.immature")}</p>
             ) : (
               <>
@@ -653,6 +666,8 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 </ul>
               </>
             )}
+            {!d.reputation.departed && (
+              <>
             {/* Context, never scored. Stated as such so nobody reads it as a hidden input. The
                 heading is conditional: a provider with no Management Group seat, no vote record and
                 no validators would otherwise get a "shown for context" label introducing an empty
@@ -690,6 +705,8 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
             <p className="mt-2 text-xs text-faint">
               {t("rep.version", { version: d.reputation.version })}
             </p>
+              </>
+            )}
           </div>
         </section>
       )}

@@ -57,6 +57,14 @@ export const WEIGHTS = {
 export const LONGEVITY_FULL_EPOCHS = 100;
 
 /**
+ * Epochs an entity may be absent before it is treated as departed rather than as failing.
+ *
+ * 8 is about a month. Generous on purpose: Flare's 100 seats are full, so displacement is routine,
+ * and a provider bumped for a couple of epochs is having a bad week, not gone.
+ */
+export const DEPARTED_AFTER_EPOCHS = 8;
+
+/**
  * Accuracy carries LESS weight while we have little history of it, and earns its way up.
  *
  * Every other input is either a replayable file (passes.json, back to epoch 251) or a count we hold
@@ -93,7 +101,14 @@ export interface ReputationComponent {
   points: number;
 }
 
+export interface Departed {
+  departed: true;
+  epochsAbsent: number;
+  lastEpochSeen: number;
+}
+
 export interface Reputation {
+  departed?: false;
   score: number;
   band: Band;
   components: ReputationComponent[];
@@ -124,10 +139,14 @@ function band(score: number): Band {
 const bps = (v: number | null | undefined): number | null =>
   v == null ? null : Math.max(0, Math.min(1, v / 10000));
 
-export async function reputationFor(network: string, voter: string): Promise<Reputation | null> {
+export async function reputationFor(
+  network: string,
+  voter: string
+): Promise<Reputation | Departed | null> {
   const entity = await prisma.providerOnchain.findFirst({
     where: { network, voter: voter.toLowerCase() },
     select: {
+      lastEpochSeen: true,
       successPrimary: true,
       successSecondary: true,
       successAvailability: true,
@@ -138,6 +157,23 @@ export async function reputationFor(network: string, voter: string): Promise<Rep
     },
   });
   if (!entity) return null;
+
+  // DEPARTED ENTITIES GET NO SCORE.
+  //
+  // A provider that stopped operating is never reward-eligible, has no recent success rate and looks
+  // identical to one that is present and failing. Scoring it produces a confident, precise, wrong
+  // statement: an entity last seen at epoch 231 rendered as 2.6 out of 100, which reads as "operating
+  // very badly" rather than "gone since last year".
+  //
+  // The threshold is deliberately generous. Publication lag and a missed cron can put a live provider
+  // an epoch or two behind, and briefly losing a seat is routine now that Flare's 100 are full, so
+  // this only fires on an absence no working provider would have.
+  const st = await prisma.ingestState.findUnique({ where: { network } });
+  const latest = st?.lastEpochIngested ?? null;
+  const epochsAbsent = latest != null ? latest - entity.lastEpochSeen : 0;
+  if (latest != null && epochsAbsent > DEPARTED_AFTER_EPOCHS) {
+    return { departed: true, epochsAbsent, lastEpochSeen: entity.lastEpochSeen };
+  }
 
   const record = await eligibilityRecord(network, voter);
 
