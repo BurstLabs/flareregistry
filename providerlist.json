@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-11T17:47:01.813Z",
+  "timestamp": "2026-08-11T18:47:03.001Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -3655,7 +3655,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.175Z",
+          "qualifiedSince": "2026-06-22T23:47:18.864Z",
           "lastSubmittedEpoch": 422,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -7433,7 +7433,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.175Z",
+          "qualifiedSince": "2026-06-22T23:47:18.864Z",
           "lastSubmittedEpoch": 422,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -7580,18 +7580,24 @@
       "listed": true,
       "flareregistry": {
         "verified": false,
-        "registered": false,
+        "registered": true,
         "managementGroup": false,
         "qualified": true,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "3800000000000000000000",
+        "votePowerCapped": "3800000000000000000000",
+        "feedCount": 63,
+        "lastEpoch": 389,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xFE0E628e4810085A70884D5D18D9BB1F98D92140",
+          "submit": "0xdF49F4CC10D40fc15B865Aaf1fC29E02cFBD1dCD",
+          "submitSignatures": "0xA0BB9D3b1f277019369e884e81b586621c974791",
+          "signingPolicy": "0xc510fEc08711a1bFb7b33441eE235d1068df2D0a",
+          "delegation": "0x54Ab61FB24d3ba8409bc608C7256F44De8376d88"
+        },
         "validators": [],
         "selfDeclared": {
           "privateNode": null,
@@ -7703,18 +7709,24 @@
       "listed": true,
       "flareregistry": {
         "verified": false,
-        "registered": false,
+        "registered": true,
         "managementGroup": false,
         "qualified": true,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "88721594159636517127627266",
+        "votePowerCapped": "88721594159636517127627266",
+        "feedCount": 62,
+        "lastEpoch": 350,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x75306a2aE227b444E2501908Ade7c4c2B1E22423",
+          "submit": "0xA96BD136F602B17A1d405A11844f0F60A479b1Fa",
+          "submitSignatures": "0x43c7c5bBAfd15ea506Ce14B47a45081713678f7d",
+          "signingPolicy": "0x0fB8fE4480de02093A828BeB554D09CB5c31895A",
+          "delegation": "0xE70d5351a842131c66AAeBC4bD604912BF3cBa72"
+        },
         "validators": [],
         "selfDeclared": {
           "privateNode": null,
