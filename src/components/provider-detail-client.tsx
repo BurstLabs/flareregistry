@@ -656,7 +656,11 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       <span className="text-fg">
                         {c.key === "longevity"
                           ? t("rep.comp.longevityRaw", { epochs: c.raw })
-                          : c.raw}
+                          : c.key === "independence"
+                            ? // Translated wording, never the raw class name: "candidate" reads as an
+                              // accusation, and the screen it comes from is explicit that it is not one.
+                              t(`rep.raw.${c.raw}`)
+                            : c.raw}
                       </span>
                       <span className="text-faint">
                         {c.points.toFixed(1)} / {t("rep.weight", { weight: Math.round(c.weight) })}
