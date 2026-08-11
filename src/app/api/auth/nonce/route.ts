@@ -17,6 +17,7 @@ export const SIGN_ACTIONS = [
   "delete", // remove a listing
   "logo", // logo upload / report
   "governance", // any Management Group / provider governance mutation
+  "telegram", // request access to the providers Telegram group
 ] as const;
 
 const bodySchema = z.object({

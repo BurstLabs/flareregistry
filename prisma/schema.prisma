@@ -149,6 +149,57 @@ model ProviderAddress {
   @@index([providerId])
 }
 
+// PERMISSIONLESS TELEGRAM ACCESS for signal providers.
+//
+// A provider proves control of any of its five on-chain role addresses by signature, and the bot lets
+// it into the group. Nobody approves anyone: the chain decides and the bot executes.
+//
+// Why a per-entity invite link rather than a one-time link. A link with member_limit 1 guarantees that
+// SOMEONE gets in, not that the RIGHT someone does, and a forwarded URL inside the expiry window is a
+// real hole. Instead each entity gets its own link created with creates_join_request true. Telegram's
+// chat_join_request update carries the invite_link that was used, so the bot can match the joining
+// account back to the entity that earned the link and approve only that one. A leaked link produces a
+// request the bot declines, because approval is keyed to the token rather than to holding the URL.
+//
+// Keyed on `voter` alone, not (network, voter): a voter address belongs to one operator, so this is
+// the natural sybil unit, and an operator running on both chains should get one seat rather than two.
+model TelegramAccess {
+  id String @id @default(cuid())
+
+  // Identity (voter) address of the entity that earned access. Lowercased.
+  voter   String @unique
+  // Network the entity qualified on at issue time. Informational: eligibility is rechecked across
+  // both chains, so qualifying on either keeps access.
+  network String
+
+  // Random URL-safe token, carried in the invite link's `name` so the webhook can match a join
+  // request back to this row without trusting anything the joining user sends.
+  token      String  @unique
+  // The invite link Telegram returned. Compared against ChatJoinRequest.invite_link.invite_link.
+  inviteLink String?
+
+  // issued -> joined, or -> declined. `removed` is set by the revocation job.
+  state String @default("issued")
+
+  // Telegram identity, recorded only once they actually join. The user id is what banChatMember
+  // needs; the username is kept purely so a human admin can tell who is who in the member list.
+  telegramUserId   String?
+  telegramUsername String?
+
+  issuedAt DateTime  @default(now())
+  joinedAt DateTime?
+
+  // REVOCATION. Set when a sweep first finds the entity no longer eligible, cleared the moment it
+  // qualifies again. Once it has stood for TELEGRAM_REVOKE_AFTER_DAYS the bot removes the member.
+  // Stored as a timestamp rather than a countdown so a restarted or missed cron cannot reset the
+  // clock in the member's favour or against them.
+  ineligibleSince DateTime?
+  removedAt       DateTime?
+
+  @@index([state])
+  @@index([ineligibleSince])
+}
+
 // One-time signing challenges. A nonce is issued for an address, consumed on successful
 // verification, and expires shortly after issue so a leaked nonce is not reusable.
 model AuthChallenge {

@@ -77,6 +77,7 @@ const CARDS = [
   "registeredOnly",
   "sticky",
   "managementGroup",
+  "telegram",
   "governance",
   "api",
   "logos",
