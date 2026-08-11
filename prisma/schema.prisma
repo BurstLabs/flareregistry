@@ -200,6 +200,40 @@ model TelegramAccess {
   @@index([ineligibleSince])
 }
 
+// SUCCESS-RATE HISTORY.
+//
+// Flare's systems explorer serves success rates as a LIVE GAUGE, not a series: the object carries no
+// epoch, there is no historical endpoint, and every poll overwrites the last. So unlike passes.json,
+// which sits in git and can be replayed for any epoch, the past here is unrecoverable. The only way
+// to ever have a series is to start keeping one.
+//
+// That matters because success rates are the largest continuous input to the reputation figure. Until
+// this table has depth, a provider whose accuracy score moves cannot be shown why, and last month's
+// number cannot be reconstructed if it is disputed. That is the opacity criticism this registry was
+// built to replace, so it should not be left standing in our own scoring.
+//
+// A SEPARATE TABLE, deliberately not extra columns on ProviderMetricEpoch. That table is keyed per
+// reward epoch and is also what the longevity component counts; writing success snapshots into it
+// would create rows for epochs whose reward data has not published yet, and every such row would
+// silently add a point of tenure to the provider it belongs to.
+model ProviderSuccessSnapshot {
+  id      String @id @default(cuid())
+  network String
+  voter   String
+  // The reward epoch the explorer attributed the reading to. Unique per entity so repeated polls
+  // within one epoch update rather than pile up.
+  epochId Int
+
+  primary      Int?
+  secondary    Int?
+  availability Int?
+
+  takenAt DateTime @default(now())
+
+  @@unique([network, voter, epochId])
+  @@index([network, epochId])
+}
+
 // One-time signing challenges. A nonce is issued for an address, consumed on successful
 // verification, and expires shortly after issue so a leaked nonce is not reusable.
 model AuthChallenge {

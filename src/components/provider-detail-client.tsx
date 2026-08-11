@@ -646,7 +646,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                           : c.raw}
                       </span>
                       <span className="text-faint">
-                        {c.points.toFixed(1)} / {t("rep.weight", { weight: c.weight })}
+                        {c.points.toFixed(1)} / {t("rep.weight", { weight: Math.round(c.weight) })}
                       </span>
                     </li>
                   ))}

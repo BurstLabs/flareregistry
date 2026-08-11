@@ -61,6 +61,7 @@ async function ingest(network) {
   }
 
   const now = new Date();
+  let snapped = 0;
   let updated = 0, missing = 0, noRate = 0;
   for (const e of entities) {
     const voter = String(e.identity_address ?? "").toLowerCase();
@@ -92,10 +93,36 @@ async function ingest(network) {
       },
     });
     updated++;
+
+    // Append to the history table as well as overwriting the snapshot.
+    //
+    // The explorer gives no epoch on the success-rate object itself and offers no historical endpoint,
+    // so every poll destroys the previous reading and the past cannot be recovered later. Keeping a
+    // series is the only way the accuracy component will ever be explainable over time, or checkable
+    // by a provider who disputes it.
+    //
+    // Keyed by the epoch the explorer attributes the reading to, so repeated polls inside one epoch
+    // update a single row instead of accumulating one per hour.
+    const snapEpoch = sp.reward_epoch ?? epoch ?? null;
+    if (snapEpoch != null) {
+      const snap = {
+        primary: Number.isFinite(sr.primary) ? sr.primary : null,
+        secondary: Number.isFinite(sr.secondary) ? sr.secondary : null,
+        availability: Number.isFinite(sr.availability) ? sr.availability : null,
+        takenAt: now,
+      };
+      await prisma.providerSuccessSnapshot.upsert({
+        where: { network_voter_epochId: { network, voter, epochId: snapEpoch } },
+        create: { network, voter, epochId: snapEpoch, ...snap },
+        update: snap,
+      });
+      snapped++;
+    }
   }
   console.log(
     `${network}: ${entities.length} entities from explorer (epoch ${epoch ?? "?"}), ` +
-      `${updated} updated, ${noRate} without a success rate, ${missing} not in ProviderOnchain`
+      `${updated} updated, ${snapped} history rows, ${noRate} without a success rate, ` +
+      `${missing} not in ProviderOnchain`
   );
   if (missing > 0) {
     console.log(
