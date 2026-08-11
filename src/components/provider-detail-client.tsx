@@ -85,6 +85,23 @@ export interface DetailData {
     latestEpoch: number | null;
     causes: string[];
   } | null;
+  // Composite reputation over Flare's own measurements. Weights are published and versioned; scoring
+  // is absolute rather than relative, so no provider's figure moves when a competitor's does.
+  reputation: {
+    score: number;
+    band: "strong" | "solid" | "mixed" | "attention";
+    components: { key: string; raw: string; ratio: number; weight: number; points: number }[];
+    version: string;
+    mature: boolean;
+    epochsSeen: number;
+    context: {
+      managementGroup: boolean;
+      missedVotes: number | null;
+      relevantProposals: number | null;
+      validatorUptime: number | null;
+      validatorCount: number;
+    };
+  } | null;
   addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
   // The full registered on-chain entity addresses (all five roles) per matched network.
   entityAddresses: { network: string; roles: { roleKey: string; role: string; address: string }[] }[];
@@ -587,6 +604,87 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   : t("mg.checked", { epoch: d.mg.checkedEpoch })}
               </p>
             )}
+          </div>
+        </section>
+      )}
+
+      {/* Reputation. A composite over Flare's own measurements, with the weights printed rather than
+          hidden, and scored on an absolute scale so nobody's figure moves when a competitor's does.
+          The excluded list is shown deliberately: what is left out is as much of the method as what
+          is counted. See lib/reputation. */}
+      {d.reputation && (
+        <section className="mt-8">
+          <h2 className="mb-1 text-lg font-semibold">{t("card.reputation")}</h2>
+          <p className="mb-3 text-xs text-faint">{t("rep.intro")}</p>
+          <div className="surface rounded-xl border p-5 text-sm">
+            {!d.reputation.mature ? (
+              <p className="text-muted">{t("rep.immature")}</p>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-3">
+                  <span
+                    className={
+                      d.reputation.band === "strong"
+                        ? "text-2xl font-bold text-emerald-500 dark:text-emerald-400"
+                        : d.reputation.band === "solid"
+                          ? "text-2xl font-bold text-beacon"
+                          : d.reputation.band === "mixed"
+                            ? "text-2xl font-bold text-amber-500 dark:text-amber-400"
+                            : "text-2xl font-bold text-flare"
+                    }
+                  >
+                    {t(`rep.band.${d.reputation.band}`)}
+                  </span>
+                  <span className="text-muted">
+                    {t("rep.of100", { score: Math.round(d.reputation.score) })}
+                  </span>
+                </div>
+                {/* Every component with its raw value and what it contributed, so the headline is
+                    never the only thing on offer. */}
+                <ul className="mt-3 space-y-1">
+                  {d.reputation.components.map((c) => (
+                    <li key={c.key} className="flex flex-wrap items-baseline gap-x-2 text-xs">
+                      <span className="text-muted">{t(`rep.comp.${c.key}`)}</span>
+                      <span className="text-fg">
+                        {c.key === "longevity"
+                          ? t("rep.comp.longevityRaw", { epochs: c.raw })
+                          : c.raw}
+                      </span>
+                      <span className="text-faint">
+                        {c.points.toFixed(1)} / {t("rep.weight", { weight: c.weight })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {/* Context, never scored. Stated as such so nobody reads it as a hidden input. */}
+            <p className="mt-4 text-xs text-faint">{t("rep.context")}</p>
+            <ul className="mt-1 space-y-0.5 text-xs text-faint">
+              {d.reputation.context.managementGroup && <li>{t("rep.ctx.mg")}</li>}
+              {d.reputation.context.missedVotes != null &&
+                d.reputation.context.relevantProposals != null &&
+                d.reputation.context.relevantProposals > 0 && (
+                  <li>
+                    {t("rep.ctx.votes", {
+                      missed: d.reputation.context.missedVotes,
+                      window: d.reputation.context.relevantProposals,
+                    })}
+                  </li>
+                )}
+              {d.reputation.context.validatorUptime != null && (
+                <li>
+                  {t("rep.ctx.uptime", {
+                    uptime: d.reputation.context.validatorUptime.toFixed(2),
+                    count: d.reputation.context.validatorCount,
+                  })}
+                </li>
+              )}
+            </ul>
+            <p className="mt-3 text-xs text-faint">{t("rep.excluded")}</p>
+            <p className="mt-2 text-xs text-faint">
+              {t("rep.version", { version: d.reputation.version })}
+            </p>
           </div>
         </section>
       )}
