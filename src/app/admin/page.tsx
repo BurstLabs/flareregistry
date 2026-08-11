@@ -23,6 +23,7 @@ type Tab =
   | "reports"
   | "consumers"
   | "detection"
+  | "telegram"
   | "system";
 
 // Minimal English-only translator so the shared wallet-sign hook (which throws localised keys) shows
@@ -154,6 +155,7 @@ export default function AdminPage() {
     { id: "governance", label: "Governance" },
     { id: "reports", label: "Logo reports" },
     { id: "consumers", label: "Consumers" },
+    { id: "telegram", label: "Telegram" },
     { id: "system", label: "System" },
   ];
 
@@ -200,6 +202,7 @@ export default function AdminPage() {
         {tab === "governance" && <GovernanceTab />}
         {tab === "reports" && <ReportsTab />}
         {tab === "consumers" && <ConsumersTab />}
+        {tab === "telegram" && <TelegramTab />}
         {tab === "system" && <SystemTab />}
       </div>
     </div>
@@ -1175,6 +1178,189 @@ function SystemTab() {
         </p>
       </Card>
       {out && <pre className="surface overflow-auto rounded-lg border p-3 text-xs">{out}</pre>}
+    </div>
+  );
+}
+
+// Telegram access: config health, membership, and the removal clock.
+//
+// Config health leads because every failure mode of this feature is a configuration one. A missing
+// webhook secret means the endpoint fails closed and NOBODY can join; a missing chat_join_request in
+// allowed_updates means the bot never hears about joins at all. Neither is visible from the member
+// list, and both look identical to "the feature is broken".
+function TelegramTab() {
+  const [data, setData] = useState<any>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState("");
+
+  const load = useCallback(async () => {
+    setErr("");
+    try {
+      const r = await fetch("/api/admin/telegram");
+      if (!r.ok) throw new Error("load failed");
+      setData(await r.json());
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "load failed");
+    }
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function act(action: string, id: string, label: string) {
+    if (!confirm(`${label}?`)) return;
+    setBusy(id + action);
+    setErr("");
+    try {
+      const r = await fetch("/api/admin/telegram", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, id }),
+      });
+      const b = await r.json().catch(() => null);
+      if (!r.ok) throw new Error(b?.error ?? "failed");
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (!data) return <div className="text-sm text-muted">{err || "Loading…"}</div>;
+  const c = data.config;
+  const wh = data.webhook;
+  const Pill = ({ ok, label }: { ok: boolean; label: string }) => (
+    <span
+      className={`rounded px-2 py-1 text-xs ${
+        ok ? "bg-emerald-500/15 text-emerald-500" : "bg-flare/15 text-flare"
+      }`}
+    >
+      {ok ? "\u2713" : "\u2715"} {label}
+    </span>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="mb-2 text-sm font-semibold text-muted">Configuration</h2>
+        <div className="flex flex-wrap gap-2">
+          <Pill ok={c.botToken} label="bot token" />
+          <Pill ok={c.chatId} label="chat id" />
+          <Pill ok={c.webhookSecret} label="webhook secret" />
+          <span className="rounded bg-elev px-2 py-1 text-xs text-muted">
+            grace {c.graceEpochs} epochs · removes after {c.revokeAfterDays}d ineligible
+          </span>
+        </div>
+        {!c.webhookSecret && (
+          <p className="mt-2 text-xs text-flare">
+            TELEGRAM_WEBHOOK_SECRET is unset, so the webhook rejects every delivery and nobody can
+            join. It fails closed on purpose.
+          </p>
+        )}
+        {wh && (
+          <div className="mt-2 space-y-1 text-xs text-faint">
+            <div>webhook url: {wh.url || <span className="text-flare">not registered</span>}</div>
+            {wh.allowedUpdates && (
+              <div>
+                allowed updates: {String(wh.allowedUpdates)}
+                {!String(wh.allowedUpdates).includes("chat_join_request") && (
+                  <span className="text-flare">
+                    {" "}
+                    (chat_join_request missing: the bot will never see joins)
+                  </span>
+                )}
+              </div>
+            )}
+            {wh.pendingUpdateCount ? <div>pending updates: {wh.pendingUpdateCount}</div> : null}
+            {wh.lastErrorMessage && (
+              <div className="text-flare">last error: {wh.lastErrorMessage}</div>
+            )}
+            {wh.error && <div className="text-flare">getWebhookInfo: {wh.error}</div>}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h2 className="mb-2 text-sm font-semibold text-muted">
+          Members: {data.counts.joined} joined · {data.counts.issued} link issued ·{" "}
+          {data.counts.removed} removed
+          {data.counts.onClock > 0 && (
+            <span className="text-amber-500"> · {data.counts.onClock} on the removal clock</span>
+          )}
+        </h2>
+        {err && <p className="mb-2 text-sm text-flare">{err}</p>}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs text-faint">
+              <tr>
+                <th className="py-1 pr-3">Provider</th>
+                <th className="py-1 pr-3">Telegram</th>
+                <th className="py-1 pr-3">State</th>
+                <th className="py-1 pr-3">Eligible now</th>
+                <th className="py-1 pr-3">Removal</th>
+                <th className="py-1 pr-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.rows.map((r: any) => (
+                <tr key={r.id} className="border-t border-themed/40">
+                  <td className="py-1.5 pr-3">
+                    {r.name ?? <span className="font-mono text-xs">{r.voter.slice(0, 10)}…</span>}
+                    <div className="font-mono text-[10px] text-faint">{r.voter}</div>
+                  </td>
+                  <td className="py-1.5 pr-3">
+                    {r.telegramUsername ? `@${r.telegramUsername}` : r.telegramUserId || "-"}
+                  </td>
+                  <td className="py-1.5 pr-3">{r.state}</td>
+                  <td className="py-1.5 pr-3">
+                    <span className={r.eligibleNow ? "text-emerald-500" : "text-flare"}>
+                      {r.eligibleNow ? r.eligibleReason : `no (${r.eligibleReason})`}
+                    </span>
+                    {r.epochsSinceSeen != null && r.epochsSinceSeen > 0 && (
+                      <span className="text-faint"> · {r.epochsSinceSeen}ep since seen</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 pr-3">
+                    {r.removesInDays != null ? (
+                      <span className="text-amber-500">in {r.removesInDays}d</span>
+                    ) : (
+                      <span className="text-faint">-</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 pr-3">
+                    {r.hasLink && (
+                      <button
+                        onClick={() => act("revokeLink", r.id, "Revoke this invite link")}
+                        disabled={busy === r.id + "revokeLink"}
+                        className="mr-2 text-xs text-muted underline disabled:opacity-50"
+                      >
+                        revoke link
+                      </button>
+                    )}
+                    {r.telegramUserId && r.state === "joined" && (
+                      <button
+                        onClick={() => act("removeMember", r.id, `Remove ${r.name ?? r.voter} from the group`)}
+                        disabled={busy === r.id + "removeMember"}
+                        className="text-xs text-flare underline disabled:opacity-50"
+                      >
+                        remove
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {!data.rows.length && (
+                <tr>
+                  <td colSpan={6} className="py-3 text-sm text-faint">
+                    Nobody has requested access yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

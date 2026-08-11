@@ -10,6 +10,7 @@ import { InfoTip } from "./info-tip";
 import { ManageListingButton } from "./manage-listing-button";
 import { MgJoinButton } from "./mg-join-button";
 import { MgRemoveButton } from "./mg-remove-button";
+import { TelegramPanel } from "./telegram-panel";
 
 export interface DetailData {
   name: string;
@@ -578,6 +579,8 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           </div>
         </section>
       )}
+
+      <TelegramPanel />
 
       {/* Self-declared */}
       {(d.singleEntity || d.privateNode || d.algorithm) && (
