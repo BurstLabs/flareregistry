@@ -133,11 +133,12 @@ export default async function ProviderDetail({
         }
       : null;
 
-  // Reward-eligibility record, per matched entity. Scoped to the entity the page's metrics describe,
-  // so it never averages a healthy chain together with a struggling one.
+  // Reputation, per matched entity. Scoped to the entity the page's metrics describe, so it never
+  // averages a healthy chain together with a struggling one. The eligibility record still exists and
+  // still feeds the reliability component; it just no longer gets a section of its own, since the
+  // component already states it.
   const { reputationFor } = await import("@/lib/reputation");
   const reputation = metrics ? await reputationFor(metrics.network, metrics.voter) : null;
-  const record = reputation?.record ?? null;
 
   const gov = (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null;
 
@@ -216,7 +217,6 @@ export default async function ProviderDetail({
     })),
     entityAddresses,
     mg,
-    record,
     reputation,
     history: historyRows.map((r) => ({
       epoch: r.epochId,
