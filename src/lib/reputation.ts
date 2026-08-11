@@ -18,6 +18,13 @@
 //     a feedback loop, not a measurement.
 //   - Fee. All 107 registered Flare entities sit at exactly the 2000 bips floor, so it carries no
 //     information at all.
+//   - Availability. Removed in 1.2 for exactly the same reason, having been included in error. Across
+//     the healthy field it ranges 0.97 to 1.00 with a standard deviation of 0.005, and 84 of 109
+//     entities sit at precisely 10000 bps. It was taking 15 of the weight and producing 1.3% of the
+//     differentiation between providers. Worse, because effectively everyone scored full marks on it,
+//     it dragged all 92 scored providers toward 100 in unison and was itself a major cause of the
+//     compression at the top of the range. Dropping it widens the useful spread using information
+//     that was already there, rather than by inventing any.
 //   - Management Group vote participation. Only 45 entities are members, and scoring non-members on
 //     participation in a body they do not belong to would be incoherent. Shown as context instead.
 //
@@ -32,7 +39,7 @@ import { eligibilityRecord, type EligibilityRecord } from "@/lib/eligibility-rec
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "1.1";
+export const REPUTATION_VERSION = "1.2";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -42,8 +49,6 @@ export const WEIGHTS = {
    * This is the ceiling, reached once there is enough snapshot history to average over.
    */
   accuracy: 30,
-  /** Flare's availability rate: were you there at all. */
-  availability: 15,
   /** Epochs seen registered, saturating at LONGEVITY_FULL_EPOCHS. */
   longevity: 10,
 } as const;
@@ -92,7 +97,7 @@ export function accuracyWeight(snapshotEpochs: number): number {
 export type Band = "strong" | "solid" | "mixed" | "attention";
 
 export interface ReputationComponent {
-  key: "reliability" | "accuracy" | "availability" | "longevity";
+  key: "reliability" | "accuracy" | "longevity";
   /** Human-readable raw value, e.g. "28 of 30 epochs" or "95.4%". */
   raw: string;
   /** 0..1 before weighting. */
@@ -149,7 +154,6 @@ export async function reputationFor(
       lastEpochSeen: true,
       successPrimary: true,
       successSecondary: true,
-      successAvailability: true,
       managementGroup: true,
       mgMissedVotes: true,
       mgRelevantProposals: true,
@@ -243,17 +247,6 @@ export async function reputationFor(
       ratio,
       weight: WEIGHTS.longevity,
       points: ratio * WEIGHTS.longevity,
-    });
-  }
-
-  const avail = bps(entity.successAvailability);
-  if (avail != null) {
-    components.push({
-      key: "availability",
-      raw: `${(avail * 100).toFixed(2)}%`,
-      ratio: avail,
-      weight: WEIGHTS.availability,
-      points: avail * WEIGHTS.availability,
     });
   }
 
