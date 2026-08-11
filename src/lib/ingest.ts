@@ -138,6 +138,23 @@ export async function ingestNetwork(
     });
   }
 
+  // DEREGISTRATION SWEEP. An entity that stops operating simply stops appearing in
+  // reward-epoch-info.json and its row is never touched again, so without this `registered` latches
+  // true forever and feeds a public "Registered" badge on entities that left over a year ago.
+  //
+  // Only when the NEWEST published epoch was just persisted: during a backfill, marking everyone
+  // absent from an old epoch as deregistered would wipe the column for the whole current field. The
+  // size floor stops a truncated file deregistering the network in one run.
+  if (ingested.length && ingested[ingested.length - 1] === latest) {
+    const present = await prisma.providerMetricEpoch.count({ where: { network, epochId: latest } });
+    if (present >= 20) {
+      await prisma.providerOnchain.updateMany({
+        where: { network, registered: true, lastEpochSeen: { lt: latest } },
+        data: { registered: false },
+      });
+    }
+  }
+
   return { network, ingested, from: start, to: latest };
 }
 

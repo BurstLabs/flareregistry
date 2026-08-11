@@ -174,6 +174,7 @@ async function ingestNetwork(network) {
   const last = state?.lastEpochIngested ?? 0;
   const start = last > 0 ? last + 1 : Math.max(1, latest - MAX_BACKFILL + 1);
   let n = 0;
+  let lastPersisted = null;
   for (let epoch = start; epoch <= latest; epoch++) {
     const base = `${RAW_BASE}/${network}/${epoch}`;
     const [info, dist, passes] = await Promise.all([
@@ -191,7 +192,35 @@ async function ingestNetwork(network) {
       update: { lastEpochIngested: epoch },
     });
     n++;
+    lastPersisted = epoch;
   }
+  // DEREGISTRATION SWEEP.
+  //
+  // An entity that stops operating simply stops appearing in reward-epoch-info.json. Nothing else
+  // ever touches its row, so without this `registered` is a latching true: it goes up and never comes
+  // down. Measured before the fix: 179 rows on a network with 100 seats, every one of them true,
+  // including entities last seen at epoch 231 against a current 422. That fed a public "Registered"
+  // badge on their provider pages and scored them as if they were live but failing.
+  //
+  // Only sweep when we have just persisted the NEWEST published epoch. During a backfill the loop
+  // walks old epochs, and marking everyone absent from epoch 250 as deregistered would wipe the
+  // column for the entire current field.
+  //
+  // The size floor is the same guard used by the Management Group sync: a truncated or partial file
+  // must not be able to deregister the whole network in one run.
+  if (lastPersisted === latest && n > 0) {
+    const present = await prisma.providerMetricEpoch.count({ where: { network, epochId: latest } });
+    if (present >= 20) {
+      const gone = await prisma.providerOnchain.updateMany({
+        where: { network, registered: true, lastEpochSeen: { lt: latest } },
+        data: { registered: false },
+      });
+      if (gone.count) console.log(`${network}: ${gone.count} entity(ies) no longer registered at epoch ${latest}`);
+    } else {
+      console.log(`${network}: only ${present} entities in epoch ${latest}; skipping deregistration sweep`);
+    }
+  }
+
   console.log(`${network}: ingested ${n} epoch(s) [${start}..${latest}]`);
 }
 
