@@ -74,17 +74,6 @@ export interface DetailData {
     missedVotesLimit: number | null;
     epochsSinceReward: number | null;
   } | null;
-  // Flare's own reward-eligibility verdicts, counted. Not a score: see lib/eligibility-record.
-  record: {
-    scored: number;
-    eligible: number;
-    window: number;
-    recentScored: number;
-    recentEligible: number;
-    mature: boolean;
-    latestEpoch: number | null;
-    causes: string[];
-  } | null;
   // Composite reputation over Flare's own measurements. Weights are published and versioned; scoring
   // is absolute rather than relative, so no provider's figure moves when a competitor's does.
   reputation: {
@@ -635,16 +624,22 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   >
                     {t(`rep.band.${d.reputation.band}`)}
                   </span>
-                  <span className="text-muted">
-                    {t("rep.of100", { score: Math.round(d.reputation.score) })}
-                  </span>
+                  <InfoTip
+                    label={t("rep.of100", { score: Math.round(d.reputation.score) })}
+                    tip={t("rep.tip.score")}
+                    triggerClassName="text-muted"
+                  />
                 </div>
                 {/* Every component with its raw value and what it contributed, so the headline is
                     never the only thing on offer. */}
                 <ul className="mt-3 space-y-1">
                   {d.reputation.components.map((c) => (
                     <li key={c.key} className="flex flex-wrap items-baseline gap-x-2 text-xs">
-                      <span className="text-muted">{t(`rep.comp.${c.key}`)}</span>
+                      <InfoTip
+                        label={t(`rep.comp.${c.key}`)}
+                        tip={t(`rep.tip.${c.key}`)}
+                        triggerClassName="text-muted"
+                      />
                       <span className="text-fg">
                         {c.key === "longevity"
                           ? t("rep.comp.longevityRaw", { epochs: c.raw })
@@ -658,7 +653,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 </ul>
               </>
             )}
-            {/* Context, never scored. Stated as such so nobody reads it as a hidden input. */}
+            {/* Context, never scored. Stated as such so nobody reads it as a hidden input. The
+                heading is conditional: a provider with no Management Group seat, no vote record and
+                no validators would otherwise get a "shown for context" label introducing an empty
+                list, which reads as missing data rather than as nothing to say. */}
+            {(d.reputation.context.managementGroup ||
+              d.reputation.context.validatorUptime != null ||
+              (d.reputation.context.missedVotes != null &&
+                (d.reputation.context.relevantProposals ?? 0) > 0)) && (
+              <>
             <p className="mt-4 text-xs text-faint">{t("rep.context")}</p>
             <ul className="mt-1 space-y-0.5 text-xs text-faint">
               {d.reputation.context.managementGroup && <li>{t("rep.ctx.mg")}</li>}
@@ -681,69 +684,12 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 </li>
               )}
             </ul>
+              </>
+            )}
             <p className="mt-3 text-xs text-faint">{t("rep.excluded")}</p>
             <p className="mt-2 text-xs text-faint">
               {t("rep.version", { version: d.reputation.version })}
             </p>
-          </div>
-        </section>
-      )}
-
-      {/* Reward eligibility record. Flare's own per-epoch verdicts, counted, with no weighting by this
-          site: see lib/eligibility-record for why it is deliberately not a score. Below the maturity
-          gate it says so rather than printing a percentage nobody should rely on. */}
-      {d.record && (
-        <section className="mt-8">
-          <h2 className="mb-1 text-lg font-semibold">{t("card.record")}</h2>
-          <p className="mb-3 text-xs text-faint">{t("rec.intro")}</p>
-          <div className="surface rounded-xl border p-5 text-sm">
-            {!d.record.mature ? (
-              <p className="flex items-start gap-2">
-                <span className="text-faint">-</span>
-                <span className="text-muted">
-                  {t("rec.immature", { scored: d.record.scored, min: 20 })}
-                </span>
-              </p>
-            ) : (
-              <>
-                <p className="flex items-start gap-2">
-                  <span
-                    className={
-                      d.record.eligible === d.record.scored
-                        ? "text-emerald-500 dark:text-emerald-400"
-                        : "text-amber-500 dark:text-amber-400"
-                    }
-                  >
-                    {d.record.eligible === d.record.scored ? "\u2713" : "\u25CB"}
-                  </span>
-                  <span className="text-muted">
-                    {d.record.eligible === d.record.scored
-                      ? t("rec.perfect", { scored: d.record.scored })
-                      : t("rec.line", { eligible: d.record.eligible, scored: d.record.scored })}
-                  </span>
-                </p>
-                {/* The short window exists so a provider who has just fixed something can show it,
-                    instead of carrying a dent for another three months. */}
-                {d.record.recentScored > 0 && d.record.eligible !== d.record.scored && (
-                  <p className="mt-2 text-xs text-faint">
-                    {t("rec.recent", {
-                      recentScored: d.record.recentScored,
-                      recentEligible: d.record.recentEligible,
-                    })}
-                  </p>
-                )}
-                {d.record.causes.length > 0 && (
-                  <p className="mt-2 text-xs text-faint">
-                    {t("rec.causes", { causes: d.record.causes.join(", ") })}
-                  </p>
-                )}
-              </>
-            )}
-            {d.record.latestEpoch != null && (
-              <p className="mt-3 text-xs text-faint">
-                {t("rec.asOf", { epoch: d.record.latestEpoch })}
-              </p>
-            )}
           </div>
         </section>
       )}
