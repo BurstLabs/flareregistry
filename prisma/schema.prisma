@@ -359,11 +359,25 @@ model ProviderOnchain {
   mgMissedVotesLimit  Int? // removeAfterNonParticipatingProposals, at which removal becomes possible
   mgEpochsSinceReward Int? // consecutive initialised epochs with no reward, counting back from now
   mgMemberSinceEpoch  Int?
-  mgCheckedEpoch      Int?
-  mgCheckedAt         DateTime?
+  // IMPLEMENTATION INDEPENDENCE, mirrored daily from oracleindependence.com.
+  //
+  // That screen states its own limits and they are carried through here: it is a suspicion score
+  // rather than proof, it holds zero confirmed positives, and the signal is ONE-SIDED. A low tick-grid
+  // lift is strong evidence of an independent implementation; a high one proves nothing, because any
+  // median-of-prints implementation reads above the field whether or not it is the reference code.
+  //
+  // So the scored component built on this is asymmetric by design: the exclusions, which are the
+  // reliable half, earn credit, and the unreliable half costs very little. Mirrored rather than
+  // fetched live so a page render never depends on another site being up.
+  oiClass             String? // excluded | candidate | other-median | pending
+  oiExternalP         Float? // a third party's independent probability, where they publish one
+  oiCheckedAt         DateTime?
+
+  mgCheckedEpoch  Int?
+  mgCheckedAt     DateTime?
   // Member of Flare's on-chain FTSO Management Group (PollingManagementGroup contract): the
   // curated set of eligible, well-performing providers. Refreshed from a live RPC query.
-  managementGroup     Boolean   @default(false)
+  managementGroup Boolean   @default(false)
 
   lastEpochSeen Int
   createdAt     DateTime @default(now())

@@ -39,7 +39,7 @@ import { eligibilityRecord, type EligibilityRecord } from "@/lib/eligibility-rec
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "1.2";
+export const REPUTATION_VERSION = "1.3";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -51,7 +51,36 @@ export const WEIGHTS = {
   accuracy: 30,
   /** Epochs seen registered, saturating at LONGEVITY_FULL_EPOCHS. */
   longevity: 10,
+  /**
+   * Implementation independence, mirrored from oracleindependence.com. The SMALLEST weight in the
+   * model, deliberately: the source describes itself as a suspicion score holding zero confirmed
+   * positives, and says its signal must never drive an automated determination. This is as close to
+   * honouring that as including it at all allows.
+   */
+  independence: 5,
 } as const;
+
+/**
+ * Class to ratio, ASYMMETRIC because the underlying signal is asymmetric.
+ *
+ * The screen is explicit that a low tick-grid lift is strong evidence of an independent
+ * implementation, while a high one proves nothing, since any median-of-prints implementation reads
+ * above the field whether or not it is the reference code. So an exclusion earns full credit, and a
+ * candidate classification costs a little rather than everything. At weight 5, the entire distance
+ * between the best and worst outcome here is under four points of the final score.
+ *
+ * A candidate that a THIRD PARTY independently flags scores lowest. Two methods sharing no signals is
+ * the one case where the screen's own caveats say the evidence is worth more, and it is still only
+ * worth those few points.
+ */
+export function independenceRatio(klass: string | null, externalP: number | null): number | null {
+  if (!klass) return null;
+  if (klass === "excluded") return 1;
+  if (klass === "other-median") return 0.75;
+  if (klass === "pending") return null; // no verdict yet: omit rather than guess
+  if (klass === "candidate") return externalP != null && externalP >= 0.5 ? 0 : 0.25;
+  return null;
+}
 
 /**
  * Tenure at which longevity is worth full marks: 100 epochs, about a year at 3.5 days each.
@@ -97,7 +126,7 @@ export function accuracyWeight(snapshotEpochs: number): number {
 export type Band = "strong" | "solid" | "mixed" | "attention";
 
 export interface ReputationComponent {
-  key: "reliability" | "accuracy" | "longevity";
+  key: "reliability" | "accuracy" | "longevity" | "independence";
   /** Human-readable raw value, e.g. "28 of 30 epochs" or "95.4%". */
   raw: string;
   /** 0..1 before weighting. */
@@ -155,6 +184,9 @@ export async function reputationFor(
       successPrimary: true,
       successSecondary: true,
       managementGroup: true,
+      oiClass: true,
+      oiExternalP: true,
+      oiCheckedAt: true,
       mgMissedVotes: true,
       mgRelevantProposals: true,
       nodeIds: true,
@@ -247,6 +279,17 @@ export async function reputationFor(
       ratio,
       weight: WEIGHTS.longevity,
       points: ratio * WEIGHTS.longevity,
+    });
+  }
+
+  const indep = independenceRatio(entity.oiClass, entity.oiExternalP);
+  if (indep != null) {
+    components.push({
+      key: "independence",
+      raw: entity.oiClass ?? "",
+      ratio: indep,
+      weight: WEIGHTS.independence,
+      points: indep * WEIGHTS.independence,
     });
   }
 
