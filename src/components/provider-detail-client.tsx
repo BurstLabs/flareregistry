@@ -74,6 +74,17 @@ export interface DetailData {
     missedVotesLimit: number | null;
     epochsSinceReward: number | null;
   } | null;
+  // Flare's own reward-eligibility verdicts, counted. Not a score: see lib/eligibility-record.
+  record: {
+    scored: number;
+    eligible: number;
+    window: number;
+    recentScored: number;
+    recentEligible: number;
+    mature: boolean;
+    latestEpoch: number | null;
+    causes: string[];
+  } | null;
   addresses: { chainId: number; chain: string; address: string; verified: boolean; testnet: boolean }[];
   // The full registered on-chain entity addresses (all five roles) per matched network.
   entityAddresses: { network: string; roles: { roleKey: string; role: string; address: string }[] }[];
@@ -574,6 +585,65 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       datetime: moment(d.mg.checkedAt)!,
                     })
                   : t("mg.checked", { epoch: d.mg.checkedEpoch })}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Reward eligibility record. Flare's own per-epoch verdicts, counted, with no weighting by this
+          site: see lib/eligibility-record for why it is deliberately not a score. Below the maturity
+          gate it says so rather than printing a percentage nobody should rely on. */}
+      {d.record && (
+        <section className="mt-8">
+          <h2 className="mb-1 text-lg font-semibold">{t("card.record")}</h2>
+          <p className="mb-3 text-xs text-faint">{t("rec.intro")}</p>
+          <div className="surface rounded-xl border p-5 text-sm">
+            {!d.record.mature ? (
+              <p className="flex items-start gap-2">
+                <span className="text-faint">-</span>
+                <span className="text-muted">
+                  {t("rec.immature", { scored: d.record.scored, min: 20 })}
+                </span>
+              </p>
+            ) : (
+              <>
+                <p className="flex items-start gap-2">
+                  <span
+                    className={
+                      d.record.eligible === d.record.scored
+                        ? "text-emerald-500 dark:text-emerald-400"
+                        : "text-amber-500 dark:text-amber-400"
+                    }
+                  >
+                    {d.record.eligible === d.record.scored ? "\u2713" : "\u25CB"}
+                  </span>
+                  <span className="text-muted">
+                    {d.record.eligible === d.record.scored
+                      ? t("rec.perfect", { scored: d.record.scored })
+                      : t("rec.line", { eligible: d.record.eligible, scored: d.record.scored })}
+                  </span>
+                </p>
+                {/* The short window exists so a provider who has just fixed something can show it,
+                    instead of carrying a dent for another three months. */}
+                {d.record.recentScored > 0 && d.record.eligible !== d.record.scored && (
+                  <p className="mt-2 text-xs text-faint">
+                    {t("rec.recent", {
+                      recentScored: d.record.recentScored,
+                      recentEligible: d.record.recentEligible,
+                    })}
+                  </p>
+                )}
+                {d.record.causes.length > 0 && (
+                  <p className="mt-2 text-xs text-faint">
+                    {t("rec.causes", { causes: d.record.causes.join(", ") })}
+                  </p>
+                )}
+              </>
+            )}
+            {d.record.latestEpoch != null && (
+              <p className="mt-3 text-xs text-faint">
+                {t("rec.asOf", { epoch: d.record.latestEpoch })}
               </p>
             )}
           </div>

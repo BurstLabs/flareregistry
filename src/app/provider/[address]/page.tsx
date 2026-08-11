@@ -133,6 +133,11 @@ export default async function ProviderDetail({
         }
       : null;
 
+  // Reward-eligibility record, per matched entity. Scoped to the entity the page's metrics describe,
+  // so it never averages a healthy chain together with a struggling one.
+  const { eligibilityRecord } = await import("@/lib/eligibility-record");
+  const record = metrics ? await eligibilityRecord(metrics.network, metrics.voter) : null;
+
   const gov = (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null;
 
   // New-provider hold, decomposed into its two independent axes so the flag/badge logic stays clear:
@@ -210,6 +215,7 @@ export default async function ProviderDetail({
     })),
     entityAddresses,
     mg,
+    record,
     history: historyRows.map((r) => ({
       epoch: r.epochId,
       feeBips: r.feeBips,
