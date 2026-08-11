@@ -32,12 +32,15 @@ import { eligibilityRecord, type EligibilityRecord } from "@/lib/eligibility-rec
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "1.0";
+export const REPUTATION_VERSION = "1.1";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
   reliability: 45,
-  /** Flare's primary and secondary success rates: how close your values were to consensus. */
+  /**
+   * Flare's primary and secondary success rates. NOT a fixed weight: see accuracyWeight().
+   * This is the ceiling, reached once there is enough snapshot history to average over.
+   */
   accuracy: 30,
   /** Flare's availability rate: were you there at all. */
   availability: 15,
@@ -52,6 +55,31 @@ export const WEIGHTS = {
  * from epoch 228 would outrank an equally good one from epoch 320 forever, on nothing but a head start.
  */
 export const LONGEVITY_FULL_EPOCHS = 100;
+
+/**
+ * Accuracy carries LESS weight while we have little history of it, and earns its way up.
+ *
+ * Every other input is either a replayable file (passes.json, back to epoch 251) or a count we hold
+ * ourselves. Success rates are neither: Flare's explorer serves them as a live gauge with no epoch
+ * and no historical endpoint, so until ProviderSuccessSnapshot has depth, this component is a single
+ * unaudited reading taken at whatever moment the cron last fired. Giving a spot value the same weight
+ * as a 30-epoch record would be treating the weakest evidence as the strongest.
+ *
+ * So the weight is a DETERMINISTIC function of how many epochs of history we hold for that entity,
+ * not a number anyone adjusts by hand. It starts at the floor and reaches the ceiling at
+ * ACCURACY_FULL_EPOCHS. Because the total weight is normalised, the shortfall redistributes across
+ * the other components automatically rather than deflating the score.
+ *
+ * The weight in force is printed next to the component, so a reader can always see how much of the
+ * figure it is currently allowed to move.
+ */
+export const ACCURACY_WEIGHT_FLOOR = 10;
+export const ACCURACY_FULL_EPOCHS = 20;
+
+export function accuracyWeight(snapshotEpochs: number): number {
+  const span = WEIGHTS.accuracy - ACCURACY_WEIGHT_FLOOR;
+  return ACCURACY_WEIGHT_FLOOR + span * Math.min(1, snapshotEpochs / ACCURACY_FULL_EPOCHS);
+}
 
 export type Band = "strong" | "solid" | "mixed" | "attention";
 
@@ -130,17 +158,39 @@ export async function reputationFor(network: string, voter: string): Promise<Rep
 
   // Accuracy: the mean of Flare's primary and secondary rates. Both are published for every registered
   // entity, and they measure different bands of the same thing, so averaging them is not mixing units.
-  const prim = bps(entity.successPrimary);
-  const sec = bps(entity.successSecondary);
-  const accParts = [prim, sec].filter((x): x is number => x != null);
-  if (accParts.length) {
-    const ratio = accParts.reduce((a, b) => a + b, 0) / accParts.length;
+  //
+  // Averaged ACROSS EPOCHS once we hold history, and only falling back to the live snapshot value
+  // while we do not. A spot reading of a volatile gauge is a worse measurement than a mean over
+  // twenty of them, so the component upgrades itself the moment it can, rather than needing anyone to
+  // decide it is now trustworthy.
+  const snapshots = await prisma.providerSuccessSnapshot.findMany({
+    where: { network, voter: voter.toLowerCase() },
+    orderBy: { epochId: "desc" },
+    take: ACCURACY_FULL_EPOCHS,
+    select: { primary: true, secondary: true },
+  });
+  const perEpoch = snapshots
+    .map((r) => [bps(r.primary), bps(r.secondary)].filter((x): x is number => x != null))
+    .filter((parts) => parts.length)
+    .map((parts) => parts.reduce((a, b) => a + b, 0) / parts.length);
+
+  const spotParts = [bps(entity.successPrimary), bps(entity.successSecondary)].filter(
+    (x): x is number => x != null
+  );
+  const ratio = perEpoch.length
+    ? perEpoch.reduce((a, b) => a + b, 0) / perEpoch.length
+    : spotParts.length
+      ? spotParts.reduce((a, b) => a + b, 0) / spotParts.length
+      : null;
+
+  if (ratio != null) {
+    const weight = accuracyWeight(perEpoch.length);
     components.push({
       key: "accuracy",
       raw: `${(ratio * 100).toFixed(2)}%`,
       ratio,
-      weight: WEIGHTS.accuracy,
-      points: ratio * WEIGHTS.accuracy,
+      weight,
+      points: ratio * weight,
     });
   }
 
