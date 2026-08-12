@@ -671,7 +671,23 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                     their score is down and nothing about what to fix; FDC at 47% next to three
                     conditions at 100% tells them exactly where to look. */}
                 {(() => {
+                  // Component points and maxima are shown RESCALED so the column always totals 100.
+                  //
+                  // The model weights sum to 90 (45+25+5+10+5), and the score has always been
+                  // normalised over the components a provider actually has, so the raw column added
+                  // up to 90 for most providers, 85 for the 29 with no independence verdict, and 10
+                  // for the 3 with almost no history. Printing "68.5 / 90" next to a headline of
+                  // "76 out of 100" made the reader do the conversion, and no fixed weight set fixes
+                  // it: rescaling the weights to sum to 100 would still show /95 and /11 to those
+                  // same providers.
+                  //
+                  // Rescaling the display instead makes every row state its TRUE influence on this
+                  // provider's score, which the raw weight does not: for an entity with no
+                  // independence verdict, reward eligibility is worth 52.9 of their 100, not 45.
+                  // The base weights are published on /reputation, which is where a reader who wants
+                  // the model rather than this provider's arithmetic should be looking.
                   const total = d.reputation!.components.reduce((a, c) => a + c.weight, 0);
+                  const scale = total ? 100 / total : 0;
                   return (
                     <ul className="mt-4 space-y-3">
                       {d.reputation!.components.map((c) => (
@@ -692,7 +708,8 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                               </span>
                             </span>
                             <span className="tabular-nums text-faint">
-                              {c.points.toFixed(1)} / {Math.round(c.weight)} {t("rep.pts")}
+                              {(c.points * scale).toFixed(1)} / {(c.weight * scale).toFixed(1)}{" "}
+                              {t("rep.pts")}
                             </span>
                           </div>
                           {/* ONE track length for every row, filled by how much of that component was
@@ -762,19 +779,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                           )}
                         </li>
                       ))}
-                      {/* The sum, stated. Otherwise the reader has to add five numbers to check us. */}
-                      {/* Show the normalisation. The points sum to a total out of the available
-                          weight, and the headline is that expressed out of 100. Printing only the
-                          first left the reader to work out why 52.0 / 90 was being called 58. */}
+                      {/* The sum, stated, so the reader is not made to add five numbers to check us.
+                          On the rescaled column the components add to the score itself, so this row
+                          no longer needs to show a conversion: it IS the headline figure. */}
                       <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                         <span className="text-muted">{t("rep.total")}</span>
                         <span className="tabular-nums text-fg">
-                          {d.reputation!.components.reduce((a, c) => a + c.points, 0).toFixed(1)} /{" "}
-                          {total}
-                          <span className="text-faint">
-                            {" = "}
-                            {t("rep.of100", { score: Math.round(d.reputation!.score) })}
-                          </span>
+                          {d.reputation!.score.toFixed(1)} / 100 {t("rep.pts")}
                         </span>
                       </li>
                     </ul>
