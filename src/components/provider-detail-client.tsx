@@ -86,6 +86,9 @@ export interface DetailData {
     components: {
       key: string; raw: string; ratio: number; weight: number; points: number;
       detail?: { key: string; ratio: number; met?: boolean | null }[];
+      /** Strikes only: Flare's recorded worst, its age in this provider's own rows, and the
+       *  age-discounted value the score actually uses. Both, because they can differ. */
+      strike?: { worst: number; ageRows: number; weighted: number };
     }[];
     version: string;
     mature: boolean;
@@ -704,7 +707,22 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                                   ? t("rep.comp.longevityRaw", { epochs: c.raw })
                                   : c.key === "independence"
                                     ? t(`rep.raw.${c.raw}`)
-                                    : c.raw}
+                                    : /* Strikes reports BOTH figures. The score uses an age-discounted
+                                         value, and the epoch it comes from is often not the epoch of the
+                                         worst strike Flare recorded, so printing only the discounted one
+                                         under the label "strikes" would misstate the protocol's own
+                                         number. Providers who recorded a 3 would have seen "1". */
+                                      c.key === "strikes" && c.strike
+                                      ? c.strike.worst === 0
+                                        ? t("rep.strikes.clean")
+                                        : c.strike.ageRows === 0
+                                          ? t("rep.strikes.now", { worst: c.strike.worst })
+                                          : t("rep.strikes.ago", {
+                                              worst: c.strike.worst,
+                                              n: c.strike.ageRows,
+                                              weighted: c.strike.weighted.toFixed(2),
+                                            })
+                                      : c.raw}
                               </span>
                             </span>
                             <span className="tabular-nums text-faint">

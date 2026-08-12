@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.0";
+export const REPUTATION_VERSION = "2.1";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -84,8 +84,10 @@ export const WEIGHTS = {
  * The screen is explicit that a low tick-grid lift is strong evidence of an independent
  * implementation, while a high one proves nothing, since any median-of-prints implementation reads
  * above the field whether or not it is the reference code. So an exclusion earns full credit, and a
- * candidate classification costs a little rather than everything. At weight 5, the entire distance
- * between the best and worst outcome here is under four points of the final score.
+ * candidate classification costs a little rather than everything. At weight 5 of 90, the entire
+ * distance between the best and worst outcome here is about five and a half points of the final
+ * score. (It read "under four points" until 2.1, left over from a version whose weights summed to a
+ * larger total.)
  *
  * A candidate that a THIRD PARTY independently flags scores lowest. Two methods sharing no signals is
  * the one case where the screen's own caveats say the evidence is worth more, and it is still only
@@ -166,6 +168,44 @@ export const DEPARTED_AFTER_EPOCHS = 8;
  */
 export const STRIKES_FLOOR = 3;
 
+/**
+ * The heaviest strike in the window after an age discount, plus the raw figure Flare recorded.
+ *
+ * DECAY IS BY ROW INDEX, NOT BY EPOCH DISTANCE, and the difference is the whole security of this
+ * component. Ageing by epoch distance would let a provider discount a strike by going quiet: two
+ * rows, the bad one and a single clean one k epochs later, would buy exactly what k consecutive
+ * clean epochs buy. Since an operating provider carries roughly an 11.7% chance of a new strike per
+ * epoch and a deregistered one carries none, deregistering would strictly beat operating on this
+ * component. Indexing into the provider's own newest-first rows means silence stalls recovery
+ * instead of granting it: only epochs they actually turned up for move the figure.
+ *
+ * It is the same clock `recencyWeighted` uses for reward eligibility, so the two components no
+ * longer disagree about what "recent" means.
+ *
+ * Returns the recorded worst as well as the decayed value, because the two can point at different
+ * epochs and the page must not report the second under the name of the first.
+ */
+export function weightedWorstStrike(
+  strikes: number[]
+): { worst: number; ageRows: number; weighted: number } | null {
+  if (!strikes.length) return null;
+  const decay = Math.pow(0.5, 1 / RELIABILITY_HALF_LIFE);
+  let worst = 0;
+  let ageRows = 0;
+  let weighted = 0;
+  strikes.forEach((s, i) => {
+    if (s > worst) {
+      worst = s;
+      ageRows = i;
+    }
+    // d^0 = 1, so a strike in the newest row is never discounted and a live failure is never
+    // absolved by a clean history.
+    const w = s * Math.pow(decay, i);
+    if (w > weighted) weighted = w;
+  });
+  return { worst, ageRows, weighted };
+}
+
 export type Band = "strong" | "solid" | "mixed" | "attention";
 
 /** A named sub-rate inside a component, so a provider can see WHICH part is failing. */
@@ -178,6 +218,12 @@ export interface ComponentDetail {
 
 export interface ReputationComponent {
   key: "reliability" | "conditions" | "strikes" | "longevity" | "independence";
+  /**
+   * Strikes only. `worst` is the figure Flare actually recorded and `weighted` is the aged value the
+   * score uses; they can come from different epochs, so both are carried rather than letting the
+   * page print one under the other's name.
+   */
+  strike?: { worst: number; ageRows: number; weighted: number };
   /**
    * The parts this component averages, where it averages anything.
    *
@@ -390,36 +436,40 @@ export async function reputationFor(
     });
   }
 
-  // STRIKES: the worst count seen in the window, not the latest.
+  // STRIKES: the heaviest strike in the window after an age discount.
   //
-  // KNOWN DEFECTIVE, kept deliberately until the replacement is right rather than swapped for a fix
-  // that failed review. Measured against the published files, epochs 393-422, 2,942 provider-epochs:
+  // WHAT A STRIKE IS, measured rather than assumed. Across epochs 393-422, 2,942 provider-epochs,
+  // `strikes` is exactly the number of the four minimal conditions that failed IN THAT EPOCH, with
+  // zero mismatches. It is a per-epoch severity count, not a running tally: nothing accumulates and
+  // Flare expires nothing, so the previous comment here ("the window already expires them") was
+  // wrong on both counts.
   //
-  //   - `strikes` is a PER-EPOCH SEVERITY COUNT, exactly the number of the four minimal conditions
-  //     that failed in that epoch. It is not a running total, and nothing accumulates across epochs.
-  //     The claim below that "the window already expires them" is therefore wrong: there is nothing
-  //     to expire, and max() over 30 epochs is a worst-single-day statistic that throws away the
-  //     other 29 epochs of evidence. One provider scores 0/5 today on a single epoch 28 back, having
-  //     been clean every epoch since.
-  //   - Flare DOES publish a counter with memory, `passesHeld` (0..3, +1 per clean epoch, minus the
-  //     strike count on a bad one), and we already ingest it as ProviderMetricEpoch.passes. Reading
-  //     that instead of inventing our own decay is the obvious direction, but it is not a drop-in:
-  //     a pass is withheld when staking obstructs it even at zero strikes, on 314 of the rows here.
+  // That is why a flat max() over 30 epochs was the wrong estimator. It is a worst-single-day
+  // statistic that throws away the other 29 epochs, and it left providers scoring zero on the
+  // strength of one bad epoch nearly three months gone: one had been clean for 28 consecutive
+  // epochs and was back at Flare's full three passes. The old note claimed the window expired
+  // strikes, but a fixed window does not decay anything, it just drops it off a cliff.
   //
-  // A recency-weighted replacement was drafted and rejected on review: weighting by epoch DISTANCE
-  // let a provider age a strike off by deregistering, which strictly beat operating, and reporting
-  // the argmax of the decayed value under the label "worst" would have misstated Flare's recorded
-  // figure for 8 of 56 penalised providers.
+  // NOT SWITCHED TO `passes`, though that is Flare's own counter with memory (0..3, +1 per clean
+  // epoch, minus the strike count on a bad one) and we already ingest it. It is not a drop-in: a
+  // pass is withheld whenever staking obstructs it even at zero strikes, on 314 rows in this
+  // window, so reading it directly would penalise clean providers for a condition this component
+  // does not claim to measure. Worth revisiting deliberately rather than as part of this fix.
   //
-  // Strikes are consumed as they are worked off, so reading only the newest epoch would erase a
-  // provider's recent trouble the moment it recovered one.
+  // A 4 IS POSSIBLE and is not equivalent to a 3. FIP.12 added FDC as a fourth protocol, so four
+  // conditions can fail at once; 25 Flare provider-epochs record a 4. Both clamp to zero while
+  // fresh, but once discounted a 4 stays worse than a 3 for the rest of the window, which is the
+  // behaviour the old hard clamp erased.
   const strikeVals = condRows.map((r) => r.strikes).filter((x): x is number => x != null);
-  if (strikeVals.length) {
-    const worst = Math.max(...strikeVals);
-    const r = 1 - Math.min(1, worst / STRIKES_FLOOR);
+  const ws = weightedWorstStrike(strikeVals);
+  if (ws) {
+    const r = 1 - Math.min(1, ws.weighted / STRIKES_FLOOR);
     components.push({
       key: "strikes",
-      raw: String(worst),
+      // The page builds its own label from `strike`; this stays as the plain recorded figure so any
+      // API consumer reading `raw` still gets Flare's number rather than our discounted one.
+      raw: String(ws.worst),
+      strike: ws,
       ratio: r,
       weight: WEIGHTS.strikes,
       points: r * WEIGHTS.strikes,
