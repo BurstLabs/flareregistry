@@ -262,7 +262,6 @@ score      = max(0, components - deduction)`}</Formula>
         />
         <P k="repdoc.chill.judgement" />
         <P k="repdoc.chill.clean" />
-        <P k="repdoc.chill.source" />
       </Section>
 
       {/* ---- what the score refuses to do, which is as much of the method as what it counts ---- */}
