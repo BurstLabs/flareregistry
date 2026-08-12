@@ -46,6 +46,9 @@ export function Footer() {
           <Link href="/why" className="text-muted hover:text-beacon">
             {t("nav.why")}
           </Link>
+          <Link href="/reputation" className="text-muted hover:text-beacon">
+            {t("nav.reputation")}
+          </Link>
           <Link href="/governance" className="text-muted hover:text-beacon">
             {t("nav.governance")}
           </Link>
