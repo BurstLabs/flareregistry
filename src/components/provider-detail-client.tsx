@@ -687,9 +687,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                               {c.points.toFixed(1)} / {Math.round(c.weight)}
                             </span>
                           </div>
-                          {/* Track width is the component's share of total weight. */}
+                          {/* Track width is the component's share of total weight, so a 45-weight bar
+                              is nine times the width of a 5-weight one. The track needs real contrast:
+                              at 5/90 it is only about 6% of the row, and with a zero fill it read as a
+                              MISSING bar rather than an empty one, which is the opposite of the point.
+                              A ring makes the unearned remainder visible at any width. */}
                           <div
-                            className="mt-1 h-2 rounded-full bg-elev"
+                            className="mt-1 h-2 rounded-full bg-black/10 ring-1 ring-inset ring-themed dark:bg-white/10"
                             style={{ width: `${(c.weight / total) * 100}%` }}
                           >
                             <div
@@ -747,11 +751,18 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                         </li>
                       ))}
                       {/* The sum, stated. Otherwise the reader has to add five numbers to check us. */}
+                      {/* Show the normalisation. The points sum to a total out of the available
+                          weight, and the headline is that expressed out of 100. Printing only the
+                          first left the reader to work out why 52.0 / 90 was being called 58. */}
                       <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                         <span className="text-muted">{t("rep.total")}</span>
                         <span className="tabular-nums text-fg">
                           {d.reputation!.components.reduce((a, c) => a + c.points, 0).toFixed(1)} /{" "}
                           {total}
+                          <span className="text-faint">
+                            {" = "}
+                            {t("rep.of100", { score: Math.round(d.reputation!.score) })}
+                          </span>
                         </span>
                       </li>
                     </ul>
