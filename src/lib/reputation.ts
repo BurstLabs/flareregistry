@@ -35,20 +35,39 @@
 // incumbents and tells delegators that the oldest provider is the best one. It therefore saturates at
 // LONGEVITY_FULL_EPOCHS, after which more age buys nothing.
 
-import { eligibilityRecord, type EligibilityRecord } from "@/lib/eligibility-record";
+import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/eligibility-record";
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "1.5";
+export const REPUTATION_VERSION = "2.0";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
   reliability: 45,
   /**
-   * Flare's primary and secondary success rates. NOT a fixed weight: see accuracyWeight().
-   * This is the ceiling, reached once there is enough snapshot history to average over.
+   * Flare's four minimal conditions, as PROPORTIONAL RATES rather than the binary outcome.
+   *
+   * Replaces the old accuracy component in 2.0, on the reasoning of three FTSO operators who reviewed
+   * this and independently landed on the same objection. Accuracy was the mean of Flare's primary and
+   * secondary reward-band rates, and the primary band is tight, so it paid for proximity to the
+   * consensus median. As one of them put it, a provider that misses the band but stays very close is
+   * doing better work than a consensus machine that tracks the median to hit it.
+   *
+   * The replacement is better on every axis that matters here. It comes from minimal-conditions.json,
+   * a published file with 195 epochs of replayable history, rather than a live gauge with no epoch,
+   * no historical endpoint and no way for a provider to check last month's figure. And it measures
+   * whether the provider did the four jobs the protocol asks of it, not how closely it agreed with
+   * everyone else.
+   *
+   * FDC is where the differentiation actually is: across epoch 420, 28 of 98 providers sat below 90%
+   * on FDC against only 3 on FTSO scaling.
    */
-  accuracy: 30,
+  conditions: 25,
+  /**
+   * Flare's own strike count. Published per epoch, so there is no need to scrape a forum for it, which
+   * was the other suggestion and would have been unverifiable.
+   */
+  strikes: 5,
   /** Epochs seen registered, saturating at LONGEVITY_FULL_EPOCHS. */
   longevity: 10,
   /**
@@ -151,18 +170,13 @@ export const DEPARTED_AFTER_EPOCHS = 8;
  * The weight in force is printed next to the component, so a reader can always see how much of the
  * figure it is currently allowed to move.
  */
-export const ACCURACY_WEIGHT_FLOOR = 10;
-export const ACCURACY_FULL_EPOCHS = 20;
-
-export function accuracyWeight(snapshotEpochs: number): number {
-  const span = WEIGHTS.accuracy - ACCURACY_WEIGHT_FLOOR;
-  return ACCURACY_WEIGHT_FLOOR + span * Math.min(1, snapshotEpochs / ACCURACY_FULL_EPOCHS);
-}
+/** Strikes at which the strike component reaches zero. Flare's scale runs 0..3. */
+export const STRIKES_FLOOR = 3;
 
 export type Band = "strong" | "solid" | "mixed" | "attention";
 
 export interface ReputationComponent {
-  key: "reliability" | "accuracy" | "longevity" | "independence";
+  key: "reliability" | "conditions" | "strikes" | "longevity" | "independence";
   /** Human-readable raw value, e.g. "28 of 30 epochs" or "95.4%". */
   raw: string;
   /** 0..1 before weighting. */
@@ -227,8 +241,6 @@ export async function reputationFor(
     where: { network, voter: voter.toLowerCase() },
     select: {
       lastEpochSeen: true,
-      successPrimary: true,
-      successSecondary: true,
       managementGroup: true,
       oiClass: true,
       oiExternalP: true,
@@ -282,41 +294,61 @@ export async function reputationFor(
     });
   }
 
-  // Accuracy: the mean of Flare's primary and secondary rates. Both are published for every registered
-  // entity, and they measure different bands of the same thing, so averaging them is not mixing units.
+  // CONDITIONS: the four minimal conditions as rates, averaged across the window.
   //
-  // Averaged ACROSS EPOCHS once we hold history, and only falling back to the live snapshot value
-  // while we do not. A spot reading of a volatile gauge is a worse measurement than a mean over
-  // twenty of them, so the component upgrades itself the moment it can, rather than needing anyone to
-  // decide it is now trustworthy.
-  const snapshots = await prisma.providerSuccessSnapshot.findMany({
+  // Each epoch contributes the mean of whichever of the four it has, so a provider is not punished for
+  // a condition Flare did not publish that epoch. Fast updates is capped at 1: it is measured against
+  // an expected count and routinely exceeds it (one provider ran 122% of expected), and letting
+  // overshoot bank credit would pay for spamming rather than for doing the job.
+  const condRows = await prisma.providerMetricEpoch.findMany({
     where: { network, voter: voter.toLowerCase() },
     orderBy: { epochId: "desc" },
-    take: ACCURACY_FULL_EPOCHS,
-    select: { primary: true, secondary: true },
+    take: RECORD_WINDOW,
+    select: {
+      ftsoHits: true, ftsoPossible: true, fdcRounds: true, fdcTotal: true,
+      fastUpdates: true, fastExpected: true, stakingOk: true, strikes: true,
+    },
   });
-  const perEpoch = snapshots
-    .map((r) => [bps(r.primary), bps(r.secondary)].filter((x): x is number => x != null))
+  const ratio = (n: number | null, d: number | null) =>
+    n != null && d != null && d > 0 ? Math.min(1, n / d) : null;
+
+  const perEpochCond = condRows
+    .map((r) =>
+      [
+        ratio(r.ftsoHits, r.ftsoPossible),
+        ratio(r.fdcRounds, r.fdcTotal),
+        ratio(r.fastUpdates, r.fastExpected),
+        r.stakingOk == null ? null : r.stakingOk ? 1 : 0,
+      ].filter((x): x is number => x != null)
+    )
     .filter((parts) => parts.length)
     .map((parts) => parts.reduce((a, b) => a + b, 0) / parts.length);
 
-  const spotParts = [bps(entity.successPrimary), bps(entity.successSecondary)].filter(
-    (x): x is number => x != null
-  );
-  const ratio = perEpoch.length
-    ? perEpoch.reduce((a, b) => a + b, 0) / perEpoch.length
-    : spotParts.length
-      ? spotParts.reduce((a, b) => a + b, 0) / spotParts.length
-      : null;
-
-  if (ratio != null) {
-    const weight = accuracyWeight(perEpoch.length);
+  if (perEpochCond.length) {
+    const r = perEpochCond.reduce((a, b) => a + b, 0) / perEpochCond.length;
     components.push({
-      key: "accuracy",
-      raw: `${(ratio * 100).toFixed(2)}%`,
-      ratio,
-      weight,
-      points: ratio * weight,
+      key: "conditions",
+      raw: `${(r * 100).toFixed(2)}%`,
+      ratio: r,
+      weight: WEIGHTS.conditions,
+      points: r * WEIGHTS.conditions,
+    });
+  }
+
+  // STRIKES: the worst count seen in the window, not the latest.
+  //
+  // Strikes are consumed as they are worked off, so reading only the newest epoch would erase a
+  // provider's recent trouble the moment it recovered one. The window already expires them.
+  const strikeVals = condRows.map((r) => r.strikes).filter((x): x is number => x != null);
+  if (strikeVals.length) {
+    const worst = Math.max(...strikeVals);
+    const r = 1 - Math.min(1, worst / STRIKES_FLOOR);
+    components.push({
+      key: "strikes",
+      raw: String(worst),
+      ratio: r,
+      weight: WEIGHTS.strikes,
+      points: r * WEIGHTS.strikes,
     });
   }
 

@@ -40,6 +40,15 @@ export interface EpochProviderMetric {
   goodStanding: boolean | null;
   passes: number | null;
   failures: string[];
+  ftsoHits: number | null;
+  ftsoPossible: number | null;
+  fdcRounds: number | null;
+  fdcTotal: number | null;
+  fastUpdates: number | null;
+  fastExpected: number | null;
+  stakingOk: boolean | null;
+  strikes: number | null;
+  passesHeld: number | null;
 }
 
 export interface ParsedEpoch {
@@ -61,7 +70,8 @@ export function parseEpoch(
   info: any,
   dist: any,
   network?: string,
-  passes?: any
+  passes?: any,
+  conds?: any
 ): ParsedEpoch {
   const epochId: number = info.rewardEpochId ?? dist.rewardEpochId;
   const net: string = network ?? dist.network ?? "flare";
@@ -145,12 +155,33 @@ export function parseEpoch(
     else if (body.claimType === CLAIM_MIRROR) add(stake, voter, amount);
   }
 
-  // voterAddress -> minimal-conditions verdict for this epoch.
-  const cond = new Map<string, { eligible: boolean | null; passes: number | null; failures: string[] }>();
+  // voterAddress -> proportional minimal conditions. Kept identical to the .mjs parse, which is what
+  // the cron actually runs.
+  const num = (x: any) => (typeof x === "number" && Number.isFinite(x) ? x : null);
+  const cond = new Map<string, any>();
+  for (const c of Array.isArray(conds) ? conds : []) {
+    const v = typeof c?.voterAddress === "string" ? c.voterAddress.toLowerCase() : null;
+    if (!v) continue;
+    cond.set(v, {
+      ftsoHits: num(c.ftsoScaling?.totalHits),
+      ftsoPossible: num(c.ftsoScaling?.allPossibleHits),
+      fdcRounds: num(c.fdc?.rewardedVotingRounds),
+      fdcTotal: num(c.fdc?.totalRewardedVotingRounds),
+      fastUpdates: num(c.fastUpdates?.updates),
+      // expectedUpdates arrives as a decimal STRING, not a number.
+      fastExpected: c.fastUpdates?.expectedUpdates != null ? Number(c.fastUpdates.expectedUpdates) : null,
+      stakingOk: typeof c.staking?.conditionMet === "boolean" ? c.staking.conditionMet : null,
+      strikes: num(c.strikes),
+      passesHeld: num(c.passesHeld),
+    });
+  }
+
+  // voterAddress -> pass/eligibility verdict for this epoch.
+  const pass = new Map<string, { eligible: boolean | null; passes: number | null; failures: string[] }>();
   for (const p of Array.isArray(passes) ? passes : []) {
     const v = typeof p?.voterAddress === "string" ? p.voterAddress.toLowerCase() : null;
     if (!v) continue;
-    cond.set(v, {
+    pass.set(v, {
       eligible: typeof p.eligibleForReward === "boolean" ? p.eligibleForReward : null,
       passes: typeof p.passes === "number" ? p.passes : null,
       failures: Array.isArray(p.failures)
@@ -173,9 +204,18 @@ export function parseEpoch(
     registered: true,
     // From passes.json, verbatim. Was hardcoded true, which reported every provider as in good
     // standing during epochs where Flare had burned all of their rewards.
-    goodStanding: cond.get(id.voter)?.eligible ?? null,
-    passes: cond.get(id.voter)?.passes ?? null,
-    failures: cond.get(id.voter)?.failures ?? [],
+    goodStanding: pass.get(id.voter)?.eligible ?? null,
+    passes: pass.get(id.voter)?.passes ?? null,
+    failures: pass.get(id.voter)?.failures ?? [],
+    ftsoHits: cond.get(id.voter)?.ftsoHits ?? null,
+    ftsoPossible: cond.get(id.voter)?.ftsoPossible ?? null,
+    fdcRounds: cond.get(id.voter)?.fdcRounds ?? null,
+    fdcTotal: cond.get(id.voter)?.fdcTotal ?? null,
+    fastUpdates: cond.get(id.voter)?.fastUpdates ?? null,
+    fastExpected: cond.get(id.voter)?.fastExpected ?? null,
+    stakingOk: cond.get(id.voter)?.stakingOk ?? null,
+    strikes: cond.get(id.voter)?.strikes ?? null,
+    passesHeld: cond.get(id.voter)?.passesHeld ?? null,
   }));
 
   return { epochId, network: net, identities, metrics };

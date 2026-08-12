@@ -456,6 +456,20 @@ model ProviderMetricEpoch {
   // Pass balance (0..3). A provider on 0 loses everything on the next failure, so the balance is the
   // early warning the eligibility flag alone cannot give.
   passes       Int?
+  // MINIMAL CONDITIONS, proportional. From minimal-conditions.json in the same epoch folder we already
+  // walk. eligibleForReward alone is the binary outcome; these are the rates underneath it, which is
+  // where the differentiation actually lives: across epoch 420, 28 of 98 providers sat below 90% on
+  // FDC while only 3 did on FTSO scaling.
+  ftsoHits     Int?
+  ftsoPossible Int?
+  fdcRounds    Int?
+  fdcTotal     Int?
+  fastUpdates  Int?
+  fastExpected Int?
+  stakingOk    Boolean?
+  // Flare's own strike count, 0..3. Published per epoch, so there is no need to scrape a forum for it.
+  strikes      Int?
+  passesHeld   Int?
   // Failure ids for the epoch, e.g. ["FDC_FAILURE"]. Flare attributes the cause directly, so this is
   // recorded rather than inferred. Empty list means no failures recorded; goodStanding carries the
   // "we were not told" signal, so this does not need to be nullable as well.

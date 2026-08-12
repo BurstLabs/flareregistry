@@ -35,7 +35,7 @@ async function latestEpoch(network) {
   return e.length ? Math.max(...e) : null;
 }
 
-function parseEpoch(info, dist, network, passes) {
+function parseEpoch(info, dist, network, passes, conds) {
   const epochId = info.rewardEpochId ?? dist.rewardEpochId;
   // signingPolicy.voters are signingPolicyAddresses (not identity voters); map by that.
   const sp = (info.signingPolicy?.voters ?? []).map((v) => v.toLowerCase());
@@ -91,12 +91,32 @@ function parseEpoch(info, dist, network, passes) {
     else if (b.claimType === 3) add(stk, v, String(b.amount));
   }
 
-  // voterAddress -> minimal-conditions verdict for this epoch.
+  // voterAddress -> proportional minimal conditions for this epoch.
   const cond = new Map();
+  for (const c of Array.isArray(conds) ? conds : []) {
+    const v = low(c.voterAddress);
+    if (!v) continue;
+    const n = (x) => (typeof x === "number" && Number.isFinite(x) ? x : null);
+    cond.set(v, {
+      ftsoHits: n(c.ftsoScaling?.totalHits),
+      ftsoPossible: n(c.ftsoScaling?.allPossibleHits),
+      fdcRounds: n(c.fdc?.rewardedVotingRounds),
+      fdcTotal: n(c.fdc?.totalRewardedVotingRounds),
+      // expectedUpdates arrives as a decimal STRING, not a number.
+      fastUpdates: n(c.fastUpdates?.updates),
+      fastExpected: c.fastUpdates?.expectedUpdates != null ? Number(c.fastUpdates.expectedUpdates) : null,
+      stakingOk: typeof c.staking?.conditionMet === "boolean" ? c.staking.conditionMet : null,
+      strikes: n(c.strikes),
+      passesHeld: n(c.passesHeld),
+    });
+  }
+
+  // voterAddress -> pass/eligibility verdict for this epoch.
+  const pass = new Map();
   for (const p of Array.isArray(passes) ? passes : []) {
     const v = low(p.voterAddress);
     if (!v) continue;
-    cond.set(v, {
+    pass.set(v, {
       eligible: typeof p.eligibleForReward === "boolean" ? p.eligibleForReward : null,
       passes: typeof p.passes === "number" ? p.passes : null,
       failures: Array.isArray(p.failures) ? p.failures.map((f) => f.failureId).filter(Boolean) : [],
@@ -117,9 +137,10 @@ function parseEpoch(info, dist, network, passes) {
     registered: true,
     // From passes.json, verbatim. Was hardcoded true, which reported every provider as in good
     // standing during epochs where Flare had burned all of their rewards.
-    goodStanding: cond.get(id.voter)?.eligible ?? null,
-    passes: cond.get(id.voter)?.passes ?? null,
-    failures: cond.get(id.voter)?.failures ?? [],
+    goodStanding: pass.get(id.voter)?.eligible ?? null,
+    passes: pass.get(id.voter)?.passes ?? null,
+    failures: pass.get(id.voter)?.failures ?? [],
+    ...(cond.get(id.voter) ?? {}),
   }));
   return { epochId, network, identities, metrics };
 }
@@ -177,15 +198,18 @@ async function ingestNetwork(network) {
   let lastPersisted = null;
   for (let epoch = start; epoch <= latest; epoch++) {
     const base = `${RAW_BASE}/${network}/${epoch}`;
-    const [info, dist, passes] = await Promise.all([
+    const [info, dist, passes, conds] = await Promise.all([
       getJson(`${base}/reward-epoch-info.json`),
       getJson(`${base}/reward-distribution-data.json`),
       // Minimal conditions. OPTIONAL: absent for older epochs and for the newest one or two, since
       // GitHub publication trails the chain. Its absence must leave goodStanding NULL, never true.
       getJson(`${base}/passes.json`),
+      // Proportional minimal conditions. Same folder, same optionality as passes.json: absent for
+      // older epochs, and its absence must leave the rates NULL rather than zero.
+      getJson(`${base}/minimal-conditions.json`),
     ]);
     if (!info || !dist) continue;
-    await persist(parseEpoch(info, dist, network, passes));
+    await persist(parseEpoch(info, dist, network, passes, conds));
     await prisma.ingestState.upsert({
       where: { network },
       create: { network, lastEpochIngested: epoch },
