@@ -47,11 +47,10 @@ export const WEIGHTS = {
   /**
    * Flare's four minimal conditions, as PROPORTIONAL RATES rather than the binary outcome.
    *
-   * Replaces the old accuracy component in 2.0, on the reasoning of three FTSO operators who reviewed
-   * this and independently landed on the same objection. Accuracy was the mean of Flare's primary and
-   * secondary reward-band rates, and the primary band is tight, so it paid for proximity to the
-   * consensus median. As one of them put it, a provider that misses the band but stays very close is
-   * doing better work than a consensus machine that tracks the median to hit it.
+   * Replaces the old accuracy component in 2.0. Accuracy was the mean of Flare's primary and secondary
+   * reward-band rates, and the primary band is tight, so it paid for proximity to the consensus
+   * median. A provider that misses the band but stays very close is doing better work than one that
+   * tracks the median in order to hit it, and the old component could not tell those apart.
    *
    * The replacement is better on every axis that matters here. It comes from minimal-conditions.json,
    * a published file with 195 epochs of replayable history, rather than a live gauge with no epoch,
@@ -64,8 +63,8 @@ export const WEIGHTS = {
    */
   conditions: 25,
   /**
-   * Flare's own strike count. Published per epoch, so there is no need to scrape a forum for it, which
-   * was the other suggestion and would have been unverifiable.
+   * Flare's own strike count. Published per epoch and therefore verifiable, unlike anything that would
+   * have to be scraped from a forum.
    */
   strikes: 5,
   /** Epochs seen registered, saturating at LONGEVITY_FULL_EPOCHS. */
