@@ -17,6 +17,8 @@ import {
   WEIGHTS,
   BAND_FLOORS,
   CLEAN_FLOOR,
+  CHILL_PENALTY_MAX,
+  CHILL_RECOVERY_EPOCHS,
   STRIKES_FLOOR,
   LONGEVITY_FULL_EPOCHS,
   RELIABILITY_HALF_LIFE,
@@ -43,6 +45,9 @@ export default function ReputationMethodologyPage() {
       totalWeight={Object.values(WEIGHTS).reduce((a, b) => a + b, 0)}
       bands={BAND_FLOORS.map(([name, floor]) => ({ name, floor }))}
       cleanFloor={CLEAN_FLOOR}
+      chillPenalty={CHILL_PENALTY_MAX}
+      chillRecovery={CHILL_RECOVERY_EPOCHS}
+      chillRecoveryDays={days(CHILL_RECOVERY_EPOCHS)}
       window={RECORD_WINDOW}
       windowDays={days(RECORD_WINDOW)}
       minEpochs={RECORD_MIN_EPOCHS}

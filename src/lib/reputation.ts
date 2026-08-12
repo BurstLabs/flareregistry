@@ -410,32 +410,30 @@ export const CLEAN_FLOOR = 95;
  */
 const FULL_MARKS = 1 - 1e-9;
 
-function band(
-  score: number,
-  components: ReputationComponent[],
-  chills: { inWindow: boolean }[]
-): Band {
+function band(score: number, components: ReputationComponent[], chillPenalty: number): Band {
   const ratioOf = (k: ReputationComponent["key"]) =>
     components.find((c) => c.key === k)?.ratio ?? null;
   const strikes = ratioOf("strikes");
   const reliability = ratioOf("reliability");
   // A missing component is not a pass: no record means no clean record.
-  // A GOVERNANCE CHILL DISQUALIFIES THE CLEAN BAND OUTRIGHT, for the whole time it overlaps the
-  // window. Clean record is a factual claim that Flare recorded nothing against this provider over
-  // that period, and a chill is the most serious thing Flare can record. Letting an entity carry
-  // that label while governance had it barred from registering would make the label false.
+  // A GOVERNANCE CHILL DISQUALIFIES THE CLEAN BAND for exactly as long as it is still costing
+  // points. Clean record is a factual claim that Flare recorded nothing against this provider, and a
+  // chill is the most serious thing Flare can record, so carrying the label while still serving one
+  // would make the label false.
   //
-  // It gates the label rather than deducting points, and it expires with the window rather than
-  // following the provider for ever, because governance sets the term of a chill itself. Scoring
-  // beyond that term would be substituting our judgement for the one this model exists to report.
-  // A chill outside the window is still published, as context, permanently.
+  // GATED ON THE DEDUCTION, not on the 30-epoch window. Tying it to the window would have given the
+  // same fact two different horizons: a chill would have stopped blocking the band after 30 epochs
+  // while still costing points for another 70, so a provider could hold "Clean record" and a visible
+  // chill deduction at the same time. One fact, one clock.
+  //
+  // A fully served chill is still published, permanently, as a statement of record.
   if (
     score >= CLEAN_FLOOR &&
     strikes != null &&
     strikes >= FULL_MARKS &&
     reliability != null &&
     reliability >= FULL_MARKS &&
-    !chills.some((c) => c.inWindow)
+    chillPenalty === 0
   ) {
     return "clean";
   }
@@ -737,7 +735,7 @@ export async function reputationFor(
   return {
     network,
     score,
-    band: band(score, components, chills),
+    band: band(score, components, chillPenalty),
     components,
     version: REPUTATION_VERSION,
     // The eligibility record carries the maturity gate, and it gates the whole figure: without enough
