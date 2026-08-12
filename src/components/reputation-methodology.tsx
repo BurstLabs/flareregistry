@@ -23,6 +23,9 @@ export interface MethodologyProps {
   totalWeight: number;
   bands: Band[];
   cleanFloor: number;
+  chillPenalty: number;
+  chillRecovery: number;
+  chillRecoveryDays: number;
   window: number;
   windowDays: number;
   minEpochs: number;
@@ -90,10 +93,12 @@ export function ReputationMethodology(p: MethodologyProps) {
           and the unexplained 90 is the first thing they want accounted for. */}
       <Section title={t("repdoc.headline.h")}>
         <P k="repdoc.headline.body" />
-        <Formula>{`score = 100 x (sum of points) / (sum of weights)
+        <Formula>{`components = 100 x (sum of points) / (sum of weights)
 
 points(component) = ratio(component) x weight(component)
-    where ratio is always 0..1`}</Formula>
+    where ratio is always 0..1
+
+score = max(0, components - chill deduction)`}</Formula>
         <P k="repdoc.headline.normalise" v={{ total: p.totalWeight }} />
         <Formula>{`shown on a provider page =
     weight x 100 / (sum of that provider's available weights)`}</Formula>
@@ -238,6 +243,26 @@ ${t("rep.raw.candidate")}
 no verdict yet
     -> component omitted entirely`}</Formula>
         <P k="repdoc.independence.asym" />
+      </Section>
+
+      {/* CHILLS get a section rather than a component row, because they are not a measurement. Every
+          other input here is something Flare's protocol counted; this is something Flare's governance
+          decided. It belongs on the page for the same reason it belongs in the score, and it belongs
+          in its own section because folding it in with the measurements would blur that distinction. */}
+      <Section id="chill" title={t("repdoc.chill.h")}>
+        <P k="repdoc.chill.what" />
+        <Formula>{`recovery = min(1, (current epoch - until epoch) / ${p.chillRecovery})
+           = 0 while the chill is still in force
+
+deduction  = ${p.chillPenalty} x (1 - recovery)
+score      = max(0, components - deduction)`}</Formula>
+        <P
+          k="repdoc.chill.terms"
+          v={{ max: p.chillPenalty, n: p.chillRecovery, days: p.chillRecoveryDays }}
+        />
+        <P k="repdoc.chill.judgement" />
+        <P k="repdoc.chill.clean" />
+        <P k="repdoc.chill.source" />
       </Section>
 
       {/* ---- what the score refuses to do, which is as much of the method as what it counts ---- */}
