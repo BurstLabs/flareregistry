@@ -173,7 +173,13 @@ ratio = sum( v * d^i ) / sum( d^i )     over the last ${p.window} scored epochs`
     fastUpdates:  1 if met, else 0
     staking:      1 if met, else 0
 
-ratio = mean of those per-epoch means, over the last ${p.window} epochs`}</Formula>
+then, over the last ${p.window} scored epochs:
+
+d     = 0.5 ^ (1 / ${p.halfLife})     # the same decay as every other component
+i     = the epoch's position in this provider's own
+        newest-first history (0 = newest)
+
+ratio = sum( epochMean * d^i ) / sum( d^i )`}</Formula>
         <ul className="mt-2 space-y-1 text-xs text-faint">
           {(
             [

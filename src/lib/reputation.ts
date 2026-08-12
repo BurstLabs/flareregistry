@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.1";
+export const REPUTATION_VERSION = "2.2";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -124,18 +124,33 @@ export function independenceRatio(klass: string | null, externalP: number | null
  */
 export const RELIABILITY_HALF_LIFE = 10;
 
-/** Verdicts newest first. Returns null when there is nothing to weight. */
-export function recencyWeighted(verdicts: boolean[]): number | null {
-  if (!verdicts.length) return null;
+/**
+ * Recency-weighted mean of values given NEWEST FIRST. Null when there is nothing to weight.
+ *
+ * The single decay in this file. Reward eligibility, minimal conditions and strikes all run on it,
+ * so the components can no longer disagree about what "recent" means, which they did until 2.2.
+ *
+ * The index is the value's position in the array it was given, and callers pass already-filtered
+ * arrays. That is deliberate: age is measured in epochs the provider actually published, never in
+ * calendar epochs, so an entity that stops reporting freezes its own history rather than ageing out
+ * of it. See weightedWorstStrike for why that distinction is load-bearing.
+ */
+export function recencyWeightedMean(values: number[]): number | null {
+  if (!values.length) return null;
   const decay = Math.pow(0.5, 1 / RELIABILITY_HALF_LIFE);
   let num = 0;
   let den = 0;
-  verdicts.forEach((ok, i) => {
+  values.forEach((v, i) => {
     const w = Math.pow(decay, i);
     den += w;
-    if (ok) num += w;
+    num += v * w;
   });
   return den ? num / den : null;
+}
+
+/** Verdicts newest first. Returns null when there is nothing to weight. */
+export function recencyWeighted(verdicts: boolean[]): number | null {
+  return recencyWeightedMean(verdicts.map((ok) => (ok ? 1 : 0)));
 }
 
 /**
@@ -397,13 +412,22 @@ export async function reputationFor(
     .map((parts) => parts.reduce((a, b) => a + b, 0) / parts.length);
 
   if (perEpochCond.length) {
-    const r = perEpochCond.reduce((a, b) => a + b, 0) / perEpochCond.length;
-    // Each condition averaged separately across the window, so the sub-rates add up to the story the
-    // headline percentage tells.
-    const mean = (xs: (number | null)[]) => {
-      const v = xs.filter((x): x is number => x != null);
-      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
-    };
+    // RECENCY WEIGHTED from 2.2, on the same half-life as reward eligibility and strikes.
+    //
+    // This was a flat mean over 30 epochs, which is the treatment RELIABILITY_HALF_LIFE exists to
+    // argue against, applied to a component worth five times what strikes is worth. It said a
+    // provider whose FDC broke three months ago and one whose FDC is broken right now are the same
+    // provider, and it dropped an epoch off a cliff at the window edge for up to 0.93 published
+    // points with no change in anyone's behaviour.
+    //
+    // Nothing about a rate made it exempt. It was simply never revisited when reliability was
+    // weighted, and the tooltip stated the flatness as a plain fact because no reason existed.
+    const r = recencyWeightedMean(perEpochCond)!;
+    // Each condition weighted separately across the window, so the sub-rates add up to the story the
+    // headline percentage tells. Nulls are dropped BEFORE weighting, so an epoch where Flare did not
+    // publish a condition does not silently age the ones around it.
+    const mean = (xs: (number | null)[]) =>
+      recencyWeightedMean(xs.filter((x): x is number => x != null));
     const detail = (
       [
         ["ftso", condRows.map((x) => ratio(x.ftsoHits, x.ftsoPossible))],
