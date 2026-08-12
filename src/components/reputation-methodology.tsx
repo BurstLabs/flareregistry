@@ -94,6 +94,8 @@ export function ReputationMethodology(p: MethodologyProps) {
 points(component) = ratio(component) x weight(component)
     where ratio is always 0..1`}</Formula>
         <P k="repdoc.headline.normalise" v={{ total: p.totalWeight }} />
+        <Formula>{`shown on a provider page =
+    weight x 100 / (sum of that provider's available weights)`}</Formula>
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-sm">
