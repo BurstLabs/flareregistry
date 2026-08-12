@@ -93,7 +93,16 @@ export interface DetailData {
     version: string;
     mature: boolean;
     epochsSeen: number;
-    chills: { untilEpoch: number; appliedAt: string; txHash: string; active: boolean; inWindow: boolean }[];
+    chills: {
+      untilEpoch: number;
+      appliedAt: string;
+      txHash: string;
+      active: boolean;
+      inWindow: boolean;
+      penalty: number;
+    }[];
+    baseScore: number;
+    chillPenalty: number;
     context: {
       managementGroup: boolean;
       missedVotes: number | null;
@@ -808,6 +817,25 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       {/* The sum, stated, so the reader is not made to add five numbers to check us.
                           On the rescaled column the components add to the score itself, so this row
                           no longer needs to show a conversion: it IS the headline figure. */}
+                      {/* The chill deduction is shown as its own subtraction, never folded silently
+                          into the total. A provider is entitled to see which number was theirs and
+                          which was taken off, and by how much. */}
+                      {d.reputation!.chillPenalty > 0 && (
+                        <>
+                          <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
+                            <span className="text-muted">{t("rep.subtotal")}</span>
+                            <span className="tabular-nums text-fg">
+                              {d.reputation!.baseScore.toFixed(1)} / 100 {t("rep.pts")}
+                            </span>
+                          </li>
+                          <li className="flex items-baseline justify-between text-xs">
+                            <span className="text-flare">{t("rep.chill.deduction")}</span>
+                            <span className="tabular-nums text-flare">
+                              -{d.reputation!.chillPenalty.toFixed(1)} {t("rep.pts")}
+                            </span>
+                          </li>
+                        </>
+                      )}
                       <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                         <span className="text-muted">{t("rep.total")}</span>
                         <span className="tabular-nums text-fg">
@@ -876,8 +904,10 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       >
                         {t("rep.chill.tx")}
                       </a>
-                      {c.inWindow && (
-                        <span className="ml-1 text-faint">{t("rep.chill.gating")}</span>
+                      {c.penalty > 0 && (
+                        <span className="ml-1 text-faint">
+                          {t("rep.chill.costing", { pts: c.penalty.toFixed(1) })}
+                        </span>
                       )}
                     </li>
                   ))}

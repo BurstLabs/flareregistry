@@ -39,7 +39,40 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.6";
+export const REPUTATION_VERSION = "2.7";
+
+/**
+ * Points deducted from the final score for a chill still in force, decaying to nothing as the
+ * provider serves out the recovery period.
+ *
+ * A DEDUCTION AND NOT A COMPONENT, deliberately. Adding a sixth weighted component would give every
+ * provider who has never been chilled another ratio of exactly 1.000, and the top of this scale is
+ * already carrying 60 of its 90 weight units at exactly 1.000 explaining 0.0% of the variance. A
+ * component that 99% of the field maxes out adds nothing but compression. A deduction leaves every
+ * unchilled provider's score untouched and moves only the providers the finding is about.
+ *
+ * 20 points is a judgement, and the only one in this file that is not read off a measurement. It is
+ * chosen to be roughly one band wide: large enough that a chill visibly changes what the page says
+ * about a provider, small enough that it does not permanently brand someone governance has already
+ * released.
+ */
+export const CHILL_PENALTY_MAX = 20;
+
+/**
+ * Epochs after a chill's term ends before the deduction reaches zero. 100 epochs is about a year,
+ * matching LONGEVITY_FULL_EPOCHS rather than inventing a second horizon.
+ *
+ * The clock starts when the term Flare set ENDS, not when the chill was applied. Governance decides
+ * how long someone is barred; this decides how long the fact stays visible in the number afterwards,
+ * and starting it any earlier would let a long chill expire faster than a short one.
+ */
+export const CHILL_RECOVERY_EPOCHS = 100;
+
+/** 0 while a chill is in force, rising to 1 over CHILL_RECOVERY_EPOCHS after its term ends. */
+export function chillRecovery(untilEpoch: number, currentEpoch: number): number {
+  if (currentEpoch < untilEpoch) return 0;
+  return Math.min(1, (currentEpoch - untilEpoch) / CHILL_RECOVERY_EPOCHS);
+}
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -286,7 +319,16 @@ export interface Reputation {
    * Governance chills against any of this entity's addresses, newest first. Always present when one
    * exists, whether or not it still affects the score.
    */
-  chills: { untilEpoch: number; appliedAt: string; txHash: string; active: boolean; inWindow: boolean }[];
+  chills: {
+    untilEpoch: number;
+    appliedAt: string;
+    txHash: string;
+    active: boolean;
+    inWindow: boolean;
+    penalty: number;
+  }[];
+  baseScore: number;
+  chillPenalty: number;
   /** Context, shown but never scored. */
   context: {
     managementGroup: boolean;
@@ -639,13 +681,29 @@ export async function reputationFor(
   // `latest` is null only before the first ingest has run. Treat that as "cannot tell", which means
   // no chill is scored, rather than silently deciding every chill is out of window.
   const windowStart = latest != null ? latest - RECORD_WINDOW + 1 : null;
-  const chills = chillRows.map((c) => ({
-    untilEpoch: c.untilEpoch,
-    appliedAt: c.appliedAt.toISOString(),
-    txHash: c.txHash,
-    active: latest != null && c.untilEpoch > latest,
-    inWindow: windowStart != null && c.untilEpoch >= windowStart,
-  }));
+  // ONE ROW PER GOVERNANCE ACTION, not per address. The December 2025 action chilled two addresses
+  // for each entity in a single transaction, so an entity matching on both rendered the identical
+  // sentence twice. Keyed on the transaction because that is what a single governance decision is.
+  const seenTx = new Set<string>();
+  const chills = chillRows
+    .filter((c) => (seenTx.has(c.txHash) ? false : (seenTx.add(c.txHash), true)))
+    .map((c) => ({
+      untilEpoch: c.untilEpoch,
+      appliedAt: c.appliedAt.toISOString(),
+      txHash: c.txHash,
+      active: latest != null && c.untilEpoch > latest,
+      inWindow: windowStart != null && c.untilEpoch >= windowStart,
+      // Points still being deducted for this chill, 0 once fully served.
+      penalty:
+        latest == null
+          ? 0
+          : CHILL_PENALTY_MAX * (1 - chillRecovery(c.untilEpoch, latest)),
+    }));
+
+  // Only the HEAVIEST outstanding chill is deducted, not the sum. Two chills are not twice as
+  // disqualifying as one, and the December action alone would otherwise have counted six times over
+  // for an entity matching every address in it.
+  const chillPenalty = chills.reduce((a, c) => Math.max(a, c.penalty), 0);
 
   const indep = independenceRatio(entity.oiClass, entity.oiExternalP);
   if (indep != null) {
@@ -661,7 +719,9 @@ export async function reputationFor(
   // Normalise over the components we actually have, so a missing input neither silently zeroes a
   // provider nor quietly inflates them. The page states which components were available.
   const totalWeight = components.reduce((a, c) => a + c.weight, 0);
-  const score = totalWeight ? (components.reduce((a, c) => a + c.points, 0) / totalWeight) * 100 : 0;
+  const base = totalWeight ? (components.reduce((a, c) => a + c.points, 0) / totalWeight) * 100 : 0;
+  // Floored at 0 so a deduction can never produce a negative published figure.
+  const score = Math.max(0, base - chillPenalty);
 
   const validators = (entity.nodeIds as string[] | null) ?? [];
   let validatorUptime: number | null = null;
@@ -686,6 +746,9 @@ export async function reputationFor(
     record,
     epochsSeen,
     chills,
+    /** The score before the chill deduction, so the page can show the subtraction rather than assert it. */
+    baseScore: base,
+    chillPenalty,
     context: {
       managementGroup: entity.managementGroup,
       missedVotes: entity.mgMissedVotes,
