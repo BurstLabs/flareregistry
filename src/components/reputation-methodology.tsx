@@ -196,15 +196,14 @@ ratio = mean of those per-epoch means, over the last ${p.window} epochs`}</Formu
 
       <Section id="strikes" title={t("rep.comp.strikes")} weight={weightLabel(p.weights.strikes)}>
         <P k="repdoc.strikes.what" v={{ floor: p.strikesFloor }} />
-        <Formula>{`worst = max( strikes ) over the last ${p.window} epochs
+        <Formula>{`d = 0.5 ^ (1 / ${p.halfLife})          # same decay as reward eligibility
+i = the row's position in this provider's own
+    newest-first history (0 = newest), NOT
+    the calendar distance in epochs
 
-ratio = 1 - min(1, worst / ${p.strikesFloor})`}</Formula>
-        <P k="repdoc.strikes.why" />
-        {/* Stated plainly because it is true and a provider reading this page is exactly the person
-            entitled to know it. Removed when the treatment changes. */}
-        <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-muted">
-          {t("repdoc.strikes.review")}
-        </p>
+x     = max( strikes * d^i )    over the last ${p.window} scored epochs
+ratio = 1 - min(1, x / ${p.strikesFloor})`}</Formula>
+        <P k="repdoc.strikes.why" v={{ floor: p.strikesFloor }} />
       </Section>
 
       <Section id="longevity" title={t("rep.comp.longevity")} weight={weightLabel(p.weights.longevity)}>
