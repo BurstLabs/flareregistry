@@ -174,8 +174,22 @@ export const STRIKES_FLOOR = 3;
 
 export type Band = "strong" | "solid" | "mixed" | "attention";
 
+/** A named sub-rate inside a component, so a provider can see WHICH part is failing. */
+export interface ComponentDetail {
+  key: string;
+  ratio: number;
+}
+
 export interface ReputationComponent {
   key: "reliability" | "conditions" | "strikes" | "longevity" | "independence";
+  /**
+   * The parts this component averages, where it averages anything.
+   *
+   * "Minimal conditions 86.88%" tells a provider their score is down and nothing about what to fix.
+   * The four conditions move independently, and FDC is where the field actually separates, so the
+   * breakdown is the difference between a number and an instruction.
+   */
+  detail?: ComponentDetail[];
   /** Human-readable raw value, e.g. "28 of 30 epochs" or "95.4%". */
   raw: string;
   /** 0..1 before weighting. */
@@ -325,12 +339,30 @@ export async function reputationFor(
 
   if (perEpochCond.length) {
     const r = perEpochCond.reduce((a, b) => a + b, 0) / perEpochCond.length;
+    // Each condition averaged separately across the window, so the sub-rates add up to the story the
+    // headline percentage tells.
+    const mean = (xs: (number | null)[]) => {
+      const v = xs.filter((x): x is number => x != null);
+      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+    };
+    const detail = (
+      [
+        ["ftso", condRows.map((x) => ratio(x.ftsoHits, x.ftsoPossible))],
+        ["fdc", condRows.map((x) => ratio(x.fdcRounds, x.fdcTotal))],
+        ["fast", condRows.map((x) => ratio(x.fastUpdates, x.fastExpected))],
+        ["staking", condRows.map((x) => (x.stakingOk == null ? null : x.stakingOk ? 1 : 0))],
+      ] as const
+    )
+      .map(([key, xs]) => ({ key: key as string, ratio: mean(xs) }))
+      .filter((d): d is ComponentDetail => d.ratio != null);
+
     components.push({
       key: "conditions",
       raw: `${(r * 100).toFixed(2)}%`,
       ratio: r,
       weight: WEIGHTS.conditions,
       points: r * WEIGHTS.conditions,
+      detail,
     });
   }
 

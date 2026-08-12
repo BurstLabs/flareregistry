@@ -83,7 +83,10 @@ export interface DetailData {
     network: string;
     score: number;
     band: "strong" | "solid" | "mixed" | "attention";
-    components: { key: string; raw: string; ratio: number; weight: number; points: number }[];
+    components: {
+      key: string; raw: string; ratio: number; weight: number; points: number;
+      detail?: { key: string; ratio: number }[];
+    }[];
     version: string;
     mature: boolean;
     epochsSeen: number;
@@ -650,31 +653,92 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                     triggerClassName="text-muted"
                   />
                 </div>
-                {/* Every component with its raw value and what it contributed, so the headline is
-                    never the only thing on offer. */}
-                <ul className="mt-3 space-y-1">
-                  {d.reputation.components.map((c) => (
-                    <li key={c.key} className="flex flex-wrap items-baseline gap-x-2 text-xs">
-                      <InfoTip
-                        label={t(`rep.comp.${c.key}`)}
-                        tip={t(`rep.tip.${c.key}`)}
-                        triggerClassName="text-muted"
-                      />
-                      <span className="text-fg">
-                        {c.key === "longevity"
-                          ? t("rep.comp.longevityRaw", { epochs: c.raw })
-                          : c.key === "independence"
-                            ? // Translated wording, never the raw class name: "candidate" reads as an
-                              // accusation, and the screen it comes from is explicit that it is not one.
-                              t(`rep.raw.${c.raw}`)
-                            : c.raw}
-                      </span>
-                      <span className="text-faint">
-                        {c.points.toFixed(1)} / {t("rep.weight", { weight: Math.round(c.weight) })}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                {/* Every component as a BAR whose width is its weight and whose fill is how much
+                    of that weight was earned. Two facts at a glance that a list of numbers makes you
+                    compute: how much this component can move the score, and how much of it you got.
+                    A 45-weight bar is nine times the width of a 5-weight one, so nobody has to be
+                    told which parts matter.
+
+                    Minimal conditions expands into its four sub-rates. "86.88%" tells a provider
+                    their score is down and nothing about what to fix; FDC at 47% next to three
+                    conditions at 100% tells them exactly where to look. */}
+                {(() => {
+                  const total = d.reputation!.components.reduce((a, c) => a + c.weight, 0);
+                  return (
+                    <ul className="mt-4 space-y-3">
+                      {d.reputation!.components.map((c) => (
+                        <li key={c.key}>
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs">
+                            <span>
+                              <InfoTip
+                                label={t(`rep.comp.${c.key}`)}
+                                tip={t(`rep.tip.${c.key}`)}
+                                triggerClassName="text-muted"
+                              />
+                              <span className="ml-2 text-fg">
+                                {c.key === "longevity"
+                                  ? t("rep.comp.longevityRaw", { epochs: c.raw })
+                                  : c.key === "independence"
+                                    ? t(`rep.raw.${c.raw}`)
+                                    : c.raw}
+                              </span>
+                            </span>
+                            <span className="tabular-nums text-faint">
+                              {c.points.toFixed(1)} / {Math.round(c.weight)}
+                            </span>
+                          </div>
+                          {/* Track width is the component's share of total weight. */}
+                          <div
+                            className="mt-1 h-2 rounded-full bg-elev"
+                            style={{ width: `${(c.weight / total) * 100}%` }}
+                          >
+                            <div
+                              className={`h-2 rounded-full ${
+                                c.ratio >= 0.9
+                                  ? "bg-emerald-500"
+                                  : c.ratio >= 0.6
+                                    ? "bg-beacon"
+                                    : c.ratio > 0
+                                      ? "bg-amber-500"
+                                      : "bg-flare"
+                              }`}
+                              style={{ width: `${Math.max(0, Math.min(1, c.ratio)) * 100}%` }}
+                            />
+                          </div>
+                          {c.detail && c.detail.length > 0 && (
+                            <ul className="mt-1.5 ml-3 space-y-0.5">
+                              {c.detail.map((dd) => (
+                                <li
+                                  key={dd.key}
+                                  className="flex items-baseline gap-2 text-[11px] text-faint"
+                                >
+                                  <span className="w-28 shrink-0">{t(`rep.cond.${dd.key}`)}</span>
+                                  <span
+                                    className={
+                                      dd.ratio >= 0.9
+                                        ? "tabular-nums text-muted"
+                                        : "tabular-nums text-amber-500 dark:text-amber-400"
+                                    }
+                                  >
+                                    {(dd.ratio * 100).toFixed(1)}%
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      ))}
+                      {/* The sum, stated. Otherwise the reader has to add five numbers to check us. */}
+                      <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
+                        <span className="text-muted">{t("rep.total")}</span>
+                        <span className="tabular-nums text-fg">
+                          {d.reputation!.components.reduce((a, c) => a + c.points, 0).toFixed(1)} /{" "}
+                          {total}
+                        </span>
+                      </li>
+                    </ul>
+                  );
+                })()}
               </>
             )}
             {!d.reputation.departed && (
