@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.3";
+export const REPUTATION_VERSION = "2.4";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -301,7 +301,11 @@ export interface Reputation {
  */
 export const BAND_FLOORS: ReadonlyArray<readonly [Band, number]> = [
   ["strong", 95],
-  ["solid", 75],
+  // 85, not 75, from 2.4. At 75 this band held 42 of 95 providers spanning 76.1 to 94.7 and was the
+  // largest in the model, which is the same failure the old 90 floor had at the other end: one band
+  // carrying most of the field says little about anyone in it. Raising the floor moves 10 providers
+  // between 76.1 and 84.2 into Mixed.
+  ["solid", 85],
   ["mixed", 50],
   ["attention", 0],
 ] as const;
