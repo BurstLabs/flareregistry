@@ -39,7 +39,7 @@ import { eligibilityRecord, type EligibilityRecord } from "@/lib/eligibility-rec
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "1.3";
+export const REPUTATION_VERSION = "1.4";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -74,12 +74,48 @@ export const WEIGHTS = {
  * worth those few points.
  */
 export function independenceRatio(klass: string | null, externalP: number | null): number | null {
-  if (!klass) return null;
+  if (!klass || klass === "pending") return null; // no verdict yet: omit rather than guess
+
+  // The exclusions are the source's RELIABLE half, so they are not overridden by a third party. Three
+  // of the 59 excluded entities are flagged by the external screen, and letting that pull down a
+  // verified independent implementation would invert which half of the signal we said we trust.
   if (klass === "excluded") return 1;
-  if (klass === "other-median") return 0.75;
-  if (klass === "pending") return null; // no verdict yet: omit rather than guess
-  if (klass === "candidate") return externalP != null && externalP >= 0.5 ? 0 : 0.25;
+
+  // Corroboration from an unaffiliated method applies to EVERY non-excluded class, not just to
+  // candidates. That inconsistency was real: 6 of the 8 other-median entities are externally flagged
+  // and the external reading was being ignored for all of them purely because of which branch they
+  // landed in.
+  const corroborated = externalP != null && externalP >= 0.5;
+  if (klass === "other-median") return corroborated ? 0.5 : 0.75;
+  if (klass === "candidate") return corroborated ? 0 : 0.25;
   return null;
+}
+
+/**
+ * Half-life, in reward epochs, for the recency weighting on reward eligibility.
+ *
+ * A flat rate over 30 epochs says a provider who broke three months ago and one who is broken right
+ * now are identical, which is plainly wrong: the first has a fixed problem and the second has a live
+ * one. Weighting by recency lets the single figure carry the direction of travel.
+ *
+ * 10 epochs is about 35 days. The most recent epoch counts double one from 10 epochs back and roughly
+ * seven times one from the far end of the window, so a run of recent misses moves the figure hard
+ * while an old scar fades without ever quite disappearing.
+ */
+export const RELIABILITY_HALF_LIFE = 10;
+
+/** Verdicts newest first. Returns null when there is nothing to weight. */
+export function recencyWeighted(verdicts: boolean[]): number | null {
+  if (!verdicts.length) return null;
+  const decay = Math.pow(0.5, 1 / RELIABILITY_HALF_LIFE);
+  let num = 0;
+  let den = 0;
+  verdicts.forEach((ok, i) => {
+    const w = Math.pow(decay, i);
+    den += w;
+    if (ok) num += w;
+  });
+  return den ? num / den : null;
 }
 
 /**
@@ -217,11 +253,19 @@ export async function reputationFor(
 
   // Reliability. Absent history is not a pass, so a provider with no verdicts scores nothing here and
   // is marked immature rather than being handed the benefit of the doubt.
-  const reliabilityRatio = record && record.scored > 0 ? record.eligible / record.scored : null;
+  const reliabilityRatio = record ? recencyWeighted(record.verdicts) : null;
   if (reliabilityRatio != null && record) {
+    // Show the plain count, because that is what actually happened and it is checkable. Add the
+    // weighted figure only when the two differ enough to matter, so the points can be reconciled with
+    // what is on screen instead of looking like arithmetic that does not add up.
+    const flat = record.eligible / record.scored;
+    const raw =
+      Math.abs(flat - reliabilityRatio) >= 0.01
+        ? `${record.eligible}/${record.scored} (${(reliabilityRatio * 100).toFixed(0)}% weighted)`
+        : `${record.eligible}/${record.scored}`;
     components.push({
       key: "reliability",
-      raw: `${record.eligible}/${record.scored}`,
+      raw,
       ratio: reliabilityRatio,
       weight: WEIGHTS.reliability,
       points: reliabilityRatio * WEIGHTS.reliability,
