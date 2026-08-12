@@ -105,6 +105,9 @@ function parseEpoch(info, dist, network, passes, conds) {
       // expectedUpdates arrives as a decimal STRING, not a number.
       fastUpdates: n(c.fastUpdates?.updates),
       fastExpected: c.fastUpdates?.expectedUpdates != null ? Number(c.fastUpdates.expectedUpdates) : null,
+      ftsoMet: typeof c.ftsoScaling?.conditionMet === "boolean" ? c.ftsoScaling.conditionMet : null,
+      fdcMet: typeof c.fdc?.conditionMet === "boolean" ? c.fdc.conditionMet : null,
+      fastMet: typeof c.fastUpdates?.conditionMet === "boolean" ? c.fastUpdates.conditionMet : null,
       stakingOk: typeof c.staking?.conditionMet === "boolean" ? c.staking.conditionMet : null,
       strikes: n(c.strikes),
       passesHeld: n(c.passesHeld),

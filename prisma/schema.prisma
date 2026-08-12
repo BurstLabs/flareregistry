@@ -466,6 +466,12 @@ model ProviderMetricEpoch {
   fdcTotal     Int?
   fastUpdates  Int?
   fastExpected Int?
+  // conditionMet PER CONDITION, which is NOT implied by the rate. A provider can sit at 98.7% of
+  // expected fast updates and still fail, because low-weight entities are exempted separately, and
+  // FDC's pass line sits near 60% so a rate alone never says which side of it you are on.
+  ftsoMet      Boolean?
+  fdcMet       Boolean?
+  fastMet      Boolean?
   stakingOk    Boolean?
   // Flare's own strike count, 0..3. Published per epoch, so there is no need to scrape a forum for it.
   strikes      Int?

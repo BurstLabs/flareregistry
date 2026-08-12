@@ -85,7 +85,7 @@ export interface DetailData {
     band: "strong" | "solid" | "mixed" | "attention";
     components: {
       key: string; raw: string; ratio: number; weight: number; points: number;
-      detail?: { key: string; ratio: number }[];
+      detail?: { key: string; ratio: number; met?: boolean | null }[];
     }[];
     version: string;
     mature: boolean;
@@ -712,15 +712,33 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                                   key={dd.key}
                                   className="flex items-baseline gap-2 text-[11px] text-faint"
                                 >
+                                  {/* Pass/fail first, rate second. The rate says how comfortably; only
+                                      the verdict says which side of the line, and for fast updates the
+                                      two can disagree outright. */}
+                                  <span
+                                    className={
+                                      dd.met === false
+                                        ? "w-3 shrink-0 text-flare"
+                                        : "w-3 shrink-0 text-emerald-500 dark:text-emerald-400"
+                                    }
+                                  >
+                                    {dd.met == null ? "" : dd.met ? "\u2713" : "\u2715"}
+                                  </span>
                                   <span className="w-28 shrink-0">{t(`rep.cond.${dd.key}`)}</span>
                                   <span
                                     className={
-                                      dd.ratio >= 0.9
-                                        ? "tabular-nums text-muted"
-                                        : "tabular-nums text-amber-500 dark:text-amber-400"
+                                      dd.met === false
+                                        ? "tabular-nums text-flare"
+                                        : dd.ratio >= 0.9
+                                          ? "tabular-nums text-muted"
+                                          : "tabular-nums text-amber-500 dark:text-amber-400"
                                     }
                                   >
-                                    {(dd.ratio * 100).toFixed(1)}%
+                                    {dd.key === "fast" || dd.key === "staking"
+                                      ? t(dd.ratio >= 0.999 ? "rep.cond.met" : "rep.cond.partial", {
+                                          pct: (dd.ratio * 100).toFixed(0),
+                                        })
+                                      : `${(dd.ratio * 100).toFixed(1)}%`}
                                   </span>
                                 </li>
                               ))}
