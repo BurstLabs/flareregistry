@@ -1143,3 +1143,36 @@ model CorrelationSnapshot {
   @@index([network, voter, createdAt])
   @@index([network, createdAt])
 }
+
+// GOVERNANCE CHILLS, ingested from historical event logs rather than read from a live view.
+//
+// The chill state does NOT survive Flare's contract migrations. Flare replaces these contracts and
+// repoints the registry rather than upgrading a proxy, and the successor starts with empty storage:
+// the retired VoterRegistry 0x2580101692366e2f331e891180d9ffdF861Fce83 still returns 358 for the
+// entities chilled in December 2025, while the current 0xA480457953Af3583E54DCd630b219353B8FC9Af7
+// returns 0 for every one of them. Reading the live contract would therefore report "never chilled"
+// about entities that were demonstrably chilled, which is worse than not reporting at all.
+//
+// The durable record is the LOG. Four contract generations have carried a chill mechanism and two
+// of them fired: VoterWhitelister 0x072A1996 (15 chills, 2023-06 to 2024-03) and VoterRegistry
+// 0x2580 (6 chills, all in one transaction on 2025-12-18). The event signature also changed between
+// VoterRegistry generations, uint256 to uint32, so the two have different topic0 values and a scan
+// for one silently misses the other.
+model ProviderChill {
+  id          String   @id @default(cuid())
+  network     String
+  /// Lowercased beneficiary from the event: an identity/voter address or a node id.
+  beneficiary String
+  /// Reward epoch the chill runs until, as recorded on-chain.
+  untilEpoch  Int
+  /// Where it came from, so a reader can audit it.
+  contract    String
+  blockNumber Int
+  txHash      String
+  /// Block timestamp, for display.
+  appliedAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([network, beneficiary, txHash])
+  @@index([network, beneficiary])
+}
