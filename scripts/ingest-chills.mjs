@@ -96,9 +96,82 @@ async function blockTime(blockNumber) {
   return ts ? new Date(parseInt(ts, 16) * 1000) : new Date(0);
 }
 
+const REGISTRY = "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019";
+/** getContractAddressByName(string) — selector computed with cast sig, not guessed. */
+const GET_BY_NAME = "0x82760fca";
+
+/**
+ * Ask the chain which VoterRegistry is live RIGHT NOW, and cover it even if it is one we have never
+ * seen before.
+ *
+ * THIS IS THE WHOLE POINT OF THE FILE. Flare has already replaced this contract twice, and the
+ * original error here was a scan pointed at addresses that had since been retired: it returned zero,
+ * and zero looked like an answer. A hardcoded list recreates that failure the moment Flare deploys a
+ * successor. So the list is a floor, not the definition, and anything the registry names that we do
+ * not already cover gets queried too, under BOTH known event signatures, with a warning loud enough
+ * to be acted on.
+ */
+async function liveVoterRegistry() {
+  // abi.encodeWithSelector(GET_BY_NAME, "VoterRegistry"): offset, length, then the padded string.
+  const name = Buffer.from("VoterRegistry", "utf8").toString("hex").padEnd(64, "0");
+  const data =
+    GET_BY_NAME +
+    (32).toString(16).padStart(64, "0") +
+    (13).toString(16).padStart(64, "0") +
+    name;
+  const res = await fetch(RPC, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "eth_call",
+      params: [{ to: REGISTRY, data }, "latest"],
+    }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  const j = await res.json();
+  const out = j?.result;
+  if (typeof out !== "string" || out.length < 66) return null;
+  return "0x" + out.slice(-40);
+}
+
 (async () => {
   let total = 0;
   let written = 0;
+
+  // Extend the source list before scanning, never after.
+  try {
+    const live = await liveVoterRegistry();
+    if (!live) {
+      console.error("chills: could not resolve the live VoterRegistry; using the known list only");
+    } else if (!SOURCES.some((s) => s.address.toLowerCase() === live.toLowerCase())) {
+      console.error(
+        `chills: WARNING the registry now points VoterRegistry at ${live}, which is NOT in the known ` +
+          `list. Flare has replaced this contract before. Scanning it under both known event ` +
+          `signatures, but a NEW signature would still be missed: verify and add it explicitly.`
+      );
+      for (const [i, topic0] of [
+        "0x0a5e087b026d8f1c57e75d9d0cb0394c2ad3535e7a15d97d553be80476274cd0", // uint256 variant
+        "0x23a1b7932916d24f6177b7f7282bb925e3733697d5699c07e0372cd149696345", // uint32 variant
+      ].entries()) {
+        SOURCES.push({
+          label: `VoterRegistry (newly registered ${live}) variant ${i + 1}`,
+          address: live,
+          topic0,
+          fromBlock: 0,
+          decode: (log) => ({
+            beneficiary: "0x" + log.topics[1].slice(2).slice(0, 40),
+            untilEpoch: parseInt(log.data, 16),
+          }),
+        });
+      }
+    } else {
+      console.log(`chills: registry points VoterRegistry at ${live}, which is covered`);
+    }
+  } catch (e) {
+    console.error(`chills: live-registry check failed (${e.message ?? e}); using the known list only`);
+  }
   for (const src of SOURCES) {
     let logs;
     try {
