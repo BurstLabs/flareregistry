@@ -236,7 +236,7 @@ no verdict yet
       <Section title={t("repdoc.excluded.h")}>
         <P k="repdoc.excluded.intro" />
         <ul className="mt-2 space-y-2 text-sm text-muted">
-          {["size", "fee", "availability", "mg"].map((k) => (
+          {["size", "fee", "mg"].map((k) => (
             <li key={k} className="flex gap-2">
               <span aria-hidden className="text-faint">
                 &bull;
