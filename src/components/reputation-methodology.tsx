@@ -76,9 +76,13 @@ export function ReputationMethodology(p: MethodologyProps) {
   const weightLabel = (n: number) => t("rep.weight", { weight: n });
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold">{t("repdoc.title")}</h1>
-      <P k="repdoc.intro" />
+    /* No <main> and no mx-auto here: layout.tsx already wraps every page in
+       `mx-auto w-full max-w-5xl px-4 py-8`. Nesting a second <main> inside it was invalid markup,
+       and centring a 3xl box inside a 5xl one indented this page away from the header and from
+       every other page on the site. Matches /why and /faq: prose capped at 3xl, flush left. */
+    <div className="max-w-3xl">
+      <h1 className="text-3xl font-bold tracking-tight">{t("repdoc.title")}</h1>
+      <p className="mt-3 leading-relaxed text-muted">{t("repdoc.intro")}</p>
       <P k="repdoc.reproduce" />
 
       {/* THE HEADLINE FIRST. Readers arriving from a provider page have just seen "78.1 / 90 = 87"
@@ -258,6 +262,6 @@ no verdict yet
           {t("nav.faq")}
         </Link>
       </p>
-    </main>
+    </div>
   );
 }
