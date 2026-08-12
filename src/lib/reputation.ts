@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.4";
+export const REPUTATION_VERSION = "2.5";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -306,7 +306,9 @@ export const BAND_FLOORS: ReadonlyArray<readonly [Band, number]> = [
   // carrying most of the field says little about anyone in it. Raising the floor moves 10 providers
   // between 76.1 and 84.2 into Mixed.
   ["solid", 85],
-  ["mixed", 50],
+  // 80, not 50, from 2.5. The bottom of the scale is deliberately demanding: below 80 is called out
+  // rather than described as merely uneven. Mixed now spans a narrow 80 to 85.
+  ["mixed", 80],
   ["attention", 0],
 ] as const;
 
