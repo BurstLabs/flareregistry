@@ -46,16 +46,19 @@ async function getState(network: Network): Promise<number> {
 /** Fetch and parse one epoch, or null if its files are not present/complete. */
 async function loadEpoch(network: Network, epochId: number): Promise<ParsedEpoch | null> {
   const base = `${RAW_BASE}/${network}/${epochId}`;
-  const [info, dist, passes] = await Promise.all([
+  const [info, dist, passes, conds]: [any, any, any, any] = await Promise.all([
     fetchJson(`${base}/reward-epoch-info.json`),
     fetchJson(`${base}/reward-distribution-data.json`),
     // Minimal conditions. OPTIONAL: absent for older epochs and for the newest one or two, since
     // GitHub publication trails the chain. Its absence leaves goodStanding NULL, never true.
     fetchJson(`${base}/passes.json`),
+    // Proportional minimal conditions. Same folder, same optionality: absent for older epochs, and
+    // its absence must leave the rates NULL rather than zero.
+    fetchJson(`${base}/minimal-conditions.json`),
   ]);
   if (!info || !dist) return null;
   try {
-    return parseEpoch(info, dist, network, passes);
+    return parseEpoch(info, dist, network, passes, conds);
   } catch {
     return null;
   }
