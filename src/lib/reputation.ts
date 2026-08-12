@@ -152,23 +152,6 @@ export const LONGEVITY_FULL_EPOCHS = 100;
  */
 export const DEPARTED_AFTER_EPOCHS = 8;
 
-/**
- * Accuracy carries LESS weight while we have little history of it, and earns its way up.
- *
- * Every other input is either a replayable file (passes.json, back to epoch 251) or a count we hold
- * ourselves. Success rates are neither: Flare's explorer serves them as a live gauge with no epoch
- * and no historical endpoint, so until ProviderSuccessSnapshot has depth, this component is a single
- * unaudited reading taken at whatever moment the cron last fired. Giving a spot value the same weight
- * as a 30-epoch record would be treating the weakest evidence as the strongest.
- *
- * So the weight is a DETERMINISTIC function of how many epochs of history we hold for that entity,
- * not a number anyone adjusts by hand. It starts at the floor and reaches the ceiling at
- * ACCURACY_FULL_EPOCHS. Because the total weight is normalised, the shortfall redistributes across
- * the other components automatically rather than deflating the score.
- *
- * The weight in force is printed next to the component, so a reader can always see how much of the
- * figure it is currently allowed to move.
- */
 /** Strikes at which the strike component reaches zero. Flare's scale runs 0..3. */
 export const STRIKES_FLOOR = 3;
 
@@ -237,10 +220,22 @@ export interface Reputation {
   };
 }
 
+/**
+ * Band floors, exported so /reputation prints the same numbers the scorer applies.
+ *
+ * The published methodology page reads every constant from this file rather than restating it. A
+ * methodology that has drifted from the code is worse than none, because it invites a provider to
+ * recompute their figure, get a different answer, and conclude the score is arbitrary.
+ */
+export const BAND_FLOORS: ReadonlyArray<readonly [Band, number]> = [
+  ["strong", 90],
+  ["solid", 75],
+  ["mixed", 50],
+  ["attention", 0],
+] as const;
+
 function band(score: number): Band {
-  if (score >= 90) return "strong";
-  if (score >= 75) return "solid";
-  if (score >= 50) return "mixed";
+  for (const [name, floor] of BAND_FLOORS) if (score >= floor) return name;
   return "attention";
 }
 

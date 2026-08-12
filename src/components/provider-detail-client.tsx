@@ -614,10 +614,20 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           {/* Says Flare even though it is now always Flare. A provider running on both chains should
               not have to guess which operation this describes, and this page previously showed a
               Songbird figure under an unlabelled heading. */}
-          <h2 className="mb-1 text-lg font-semibold">
-            {t("card.reputation")}
-            <span className="ml-2 text-sm font-normal text-faint">Flare</span>
-          </h2>
+          {/* The methodology link sits ON the heading row, not buried at the foot of the card. The
+              tooltips explain what each component MEANS; only /reputation gives the arithmetic, and
+              the reader most likely to want it is the provider who has just seen a number about
+              themselves they disagree with. Making them scroll past their own bad score to find the
+              rules would be the wrong way round. */}
+          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3">
+            <h2 className="text-lg font-semibold">
+              {t("card.reputation")}
+              <span className="ml-2 text-sm font-normal text-faint">Flare</span>
+            </h2>
+            <Link href="/reputation" className="text-xs text-beacon hover:underline">
+              {t("rep.howCalculated")}
+            </Link>
+          </div>
           <p className="mb-3 text-xs text-faint">{t("rep.intro")}</p>
           <div className="surface rounded-xl border p-5 text-sm">
             {d.reputation.departed ? (
@@ -653,11 +663,9 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                     triggerClassName="text-muted"
                   />
                 </div>
-                {/* Every component as a BAR whose width is its weight and whose fill is how much
-                    of that weight was earned. Two facts at a glance that a list of numbers makes you
-                    compute: how much this component can move the score, and how much of it you got.
-                    A 45-weight bar is nine times the width of a 5-weight one, so nobody has to be
-                    told which parts matter.
+                {/* Every component as a BAR on an identical track, filled by how much of that
+                    component was earned, with the weight stated numerically beside it. See the note
+                    on the track itself for why weight is no longer encoded as track width.
 
                     Minimal conditions expands into its four sub-rates. "86.88%" tells a provider
                     their score is down and nothing about what to fix; FDC at 47% next to three
@@ -811,7 +819,10 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
             )}
             <p className="mt-3 text-xs text-faint">{t("rep.excluded")}</p>
             <p className="mt-2 text-xs text-faint">
-              {t("rep.version", { version: d.reputation.version })}
+              {t("rep.version", { version: d.reputation.version })}{" "}
+              <Link href="/reputation" className="text-beacon hover:underline">
+                {t("rep.howCalculated")}
+              </Link>
             </p>
               </>
             )}
