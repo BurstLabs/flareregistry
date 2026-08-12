@@ -684,18 +684,22 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                               </span>
                             </span>
                             <span className="tabular-nums text-faint">
-                              {c.points.toFixed(1)} / {Math.round(c.weight)}
+                              {c.points.toFixed(1)} / {Math.round(c.weight)} {t("rep.pts")}
                             </span>
                           </div>
-                          {/* Track width is the component's share of total weight, so a 45-weight bar
-                              is nine times the width of a 5-weight one. The track needs real contrast:
-                              at 5/90 it is only about 6% of the row, and with a zero fill it read as a
-                              MISSING bar rather than an empty one, which is the opposite of the point.
-                              A ring makes the unearned remainder visible at any width. */}
-                          <div
-                            className="mt-1 h-2 rounded-full bg-black/10 ring-1 ring-inset ring-themed dark:bg-white/10"
-                            style={{ width: `${(c.weight / total) * 100}%` }}
-                          >
+                          {/* ONE track length for every row, filled by how much of that component was
+                              earned.
+
+                              Tracks used to be sized by weight, so filled length meant points. Two
+                              problems in practice. Adjacent rows scoring 20.7 and 21.3 produced bars of
+                              23.0% and 23.7%, visually identical, while the longer empty track above
+                              made the worse score look better: the eye reads track length, not fill.
+                              And a 5-weight component came out as a 6%-wide stub that looked like a
+                              rendering fault rather than a component nobody earned.
+
+                              The weight is stated numerically right beside it, so nothing is lost by
+                              letting the bar answer one question consistently. */}
+                          <div className="mt-1 h-2 w-full rounded-full bg-black/10 ring-1 ring-inset ring-themed dark:bg-white/10">
                             <div
                               className={`h-2 rounded-full ${
                                 c.ratio >= 0.9
