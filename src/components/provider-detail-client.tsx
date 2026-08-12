@@ -93,6 +93,7 @@ export interface DetailData {
     version: string;
     mature: boolean;
     epochsSeen: number;
+    chills: { untilEpoch: number; appliedAt: string; txHash: string; active: boolean; inWindow: boolean }[];
     context: {
       managementGroup: boolean;
       missedVotes: number | null;
@@ -852,6 +853,36 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
               )}
             </ul>
               </>
+            )}
+            {/* CHILLS. Shown whenever one exists, in full, for ever, and separately from the
+                component list because a chill is not a measurement: it is an explicit finding by
+                Flare governance. It stops gating the Clean band once its term falls out of the
+                window, but it never stops being true, so it never stops being published. */}
+            {d.reputation.chills.length > 0 && (
+              <div className="mt-4 rounded-lg border border-flare/40 bg-flare/5 p-3">
+                <p className="text-xs font-medium text-fg">{t("rep.chill.h")}</p>
+                <ul className="mt-1 space-y-1 text-xs text-muted">
+                  {d.reputation.chills.map((c) => (
+                    <li key={c.txHash + c.untilEpoch}>
+                      {t(c.active ? "rep.chill.active" : "rep.chill.past", {
+                        date: c.appliedAt.slice(0, 10),
+                        epoch: c.untilEpoch,
+                      })}{" "}
+                      <a
+                        href={`https://flare-explorer.flare.network/tx/${c.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-beacon hover:underline"
+                      >
+                        {t("rep.chill.tx")}
+                      </a>
+                      {c.inWindow && (
+                        <span className="ml-1 text-faint">{t("rep.chill.gating")}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             <p className="mt-3 text-xs text-faint">{t("rep.excluded")}</p>
             <p className="mt-2 text-xs text-faint">
