@@ -178,6 +178,8 @@ export type Band = "strong" | "solid" | "mixed" | "attention";
 export interface ComponentDetail {
   key: string;
   ratio: number;
+  /** Whether Flare judged the condition MET. Not implied by the ratio: see the note below. */
+  met?: boolean | null;
 }
 
 export interface ReputationComponent {
@@ -320,6 +322,7 @@ export async function reputationFor(
     select: {
       ftsoHits: true, ftsoPossible: true, fdcRounds: true, fdcTotal: true,
       fastUpdates: true, fastExpected: true, stakingOk: true, strikes: true,
+      ftsoMet: true, fdcMet: true, fastMet: true,
     },
   });
   const ratio = (n: number | null, d: number | null) =>
@@ -330,7 +333,11 @@ export async function reputationFor(
       [
         ratio(r.ftsoHits, r.ftsoPossible),
         ratio(r.fdcRounds, r.fdcTotal),
-        ratio(r.fastUpdates, r.fastExpected),
+        // conditionMet, NOT the rate. Fast updates is measured against an expected count that low-
+        // weight entities are exempted from, so the rate and the verdict are not monotonic: a provider
+        // failed this at 98.7% of expected in epoch 420. Scoring the rate would credit a provider
+        // Flare had just failed.
+        r.fastMet == null ? null : r.fastMet ? 1 : 0,
         r.stakingOk == null ? null : r.stakingOk ? 1 : 0,
       ].filter((x): x is number => x != null)
     )
@@ -349,12 +356,23 @@ export async function reputationFor(
       [
         ["ftso", condRows.map((x) => ratio(x.ftsoHits, x.ftsoPossible))],
         ["fdc", condRows.map((x) => ratio(x.fdcRounds, x.fdcTotal))],
-        ["fast", condRows.map((x) => ratio(x.fastUpdates, x.fastExpected))],
+        ["fast", condRows.map((x) => (x.fastMet == null ? null : x.fastMet ? 1 : 0))],
         ["staking", condRows.map((x) => (x.stakingOk == null ? null : x.stakingOk ? 1 : 0))],
       ] as const
     )
       .map(([key, xs]) => ({ key: key as string, ratio: mean(xs) }))
       .filter((d): d is ComponentDetail => d.ratio != null);
+
+    // Attach the LATEST pass/fail verdict per condition. The rate says how comfortably; this says
+    // which side of the line. FDC's threshold sits near 60%, so a rate on its own never tells a
+    // provider whether they passed.
+    const latest = condRows[0];
+    if (latest) {
+      const metBy: Record<string, boolean | null | undefined> = {
+        ftso: latest.ftsoMet, fdc: latest.fdcMet, fast: latest.fastMet, staking: latest.stakingOk,
+      };
+      for (const dd of detail) dd.met = metBy[dd.key] ?? null;
+    }
 
     components.push({
       key: "conditions",

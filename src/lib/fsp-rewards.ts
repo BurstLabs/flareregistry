@@ -46,6 +46,9 @@ export interface EpochProviderMetric {
   fdcTotal: number | null;
   fastUpdates: number | null;
   fastExpected: number | null;
+  ftsoMet: boolean | null;
+  fdcMet: boolean | null;
+  fastMet: boolean | null;
   stakingOk: boolean | null;
   strikes: number | null;
   passesHeld: number | null;
@@ -170,6 +173,9 @@ export function parseEpoch(
       fastUpdates: num(c.fastUpdates?.updates),
       // expectedUpdates arrives as a decimal STRING, not a number.
       fastExpected: c.fastUpdates?.expectedUpdates != null ? Number(c.fastUpdates.expectedUpdates) : null,
+      ftsoMet: typeof c.ftsoScaling?.conditionMet === "boolean" ? c.ftsoScaling.conditionMet : null,
+      fdcMet: typeof c.fdc?.conditionMet === "boolean" ? c.fdc.conditionMet : null,
+      fastMet: typeof c.fastUpdates?.conditionMet === "boolean" ? c.fastUpdates.conditionMet : null,
       stakingOk: typeof c.staking?.conditionMet === "boolean" ? c.staking.conditionMet : null,
       strikes: num(c.strikes),
       passesHeld: num(c.passesHeld),
@@ -213,6 +219,9 @@ export function parseEpoch(
     fdcTotal: cond.get(id.voter)?.fdcTotal ?? null,
     fastUpdates: cond.get(id.voter)?.fastUpdates ?? null,
     fastExpected: cond.get(id.voter)?.fastExpected ?? null,
+    ftsoMet: cond.get(id.voter)?.ftsoMet ?? null,
+    fdcMet: cond.get(id.voter)?.fdcMet ?? null,
+    fastMet: cond.get(id.voter)?.fastMet ?? null,
     stakingOk: cond.get(id.voter)?.stakingOk ?? null,
     strikes: cond.get(id.voter)?.strikes ?? null,
     passesHeld: cond.get(id.voter)?.passesHeld ?? null,
