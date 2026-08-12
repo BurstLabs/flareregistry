@@ -47,6 +47,8 @@ export interface EligibilityRecord {
   latestEpoch: number | null;
   /** Distinct failure causes Flare attributed in the window, e.g. ["FDC_FAILURE"]. */
   causes: string[];
+  /** Verdicts NEWEST FIRST, so a caller can weight by recency. Only epochs carrying a verdict. */
+  verdicts: boolean[];
 }
 
 /**
@@ -87,5 +89,6 @@ export async function eligibilityRecord(
     mature: scoredRows.length >= RECORD_MIN_EPOCHS,
     latestEpoch: rows[0]?.epochId ?? null,
     causes,
+    verdicts: scoredRows.map((r) => r.goodStanding === true),
   };
 }
