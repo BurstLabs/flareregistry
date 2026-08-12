@@ -137,8 +137,13 @@ export default async function ProviderDetail({
   // averages a healthy chain together with a struggling one. The eligibility record still exists and
   // still feeds the reliability component; it just no longer gets a section of its own, since the
   // component already states it.
+  // FLARE ONLY, and keyed off the Flare entity rather than whichever network metricsForProvider
+  // happened to pick. That helper prefers the most recently active network, so a provider active on
+  // both would get whichever entity was one epoch fresher: Comfy Nodes scored 73.6 on Flare and 15 on
+  // Songbird, and the page showed the Songbird figure under an unlabelled heading. A Songbird-only
+  // provider now gets no section at all, which is honest, rather than a number that reads as Flare.
   const { reputationFor } = await import("@/lib/reputation");
-  const reputation = metrics ? await reputationFor(metrics.network, metrics.voter) : null;
+  const reputation = flareEntity ? await reputationFor("flare", flareEntity.voter) : null;
 
   const gov = (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null;
 
