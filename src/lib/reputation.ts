@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.5";
+export const REPUTATION_VERSION = "2.6";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -282,6 +282,11 @@ export interface Reputation {
   record: EligibilityRecord | null;
   /** Epochs we have seen this entity registered. Drives the longevity component. */
   epochsSeen: number;
+  /**
+   * Governance chills against any of this entity's addresses, newest first. Always present when one
+   * exists, whether or not it still affects the score.
+   */
+  chills: { untilEpoch: number; appliedAt: string; txHash: string; active: boolean; inWindow: boolean }[];
   /** Context, shown but never scored. */
   context: {
     managementGroup: boolean;
@@ -363,18 +368,32 @@ export const CLEAN_FLOOR = 95;
  */
 const FULL_MARKS = 1 - 1e-9;
 
-function band(score: number, components: ReputationComponent[]): Band {
+function band(
+  score: number,
+  components: ReputationComponent[],
+  chills: { inWindow: boolean }[]
+): Band {
   const ratioOf = (k: ReputationComponent["key"]) =>
     components.find((c) => c.key === k)?.ratio ?? null;
   const strikes = ratioOf("strikes");
   const reliability = ratioOf("reliability");
   // A missing component is not a pass: no record means no clean record.
+  // A GOVERNANCE CHILL DISQUALIFIES THE CLEAN BAND OUTRIGHT, for the whole time it overlaps the
+  // window. Clean record is a factual claim that Flare recorded nothing against this provider over
+  // that period, and a chill is the most serious thing Flare can record. Letting an entity carry
+  // that label while governance had it barred from registering would make the label false.
+  //
+  // It gates the label rather than deducting points, and it expires with the window rather than
+  // following the provider for ever, because governance sets the term of a chill itself. Scoring
+  // beyond that term would be substituting our judgement for the one this model exists to report.
+  // A chill outside the window is still published, as context, permanently.
   if (
     score >= CLEAN_FLOOR &&
     strikes != null &&
     strikes >= FULL_MARKS &&
     reliability != null &&
-    reliability >= FULL_MARKS
+    reliability >= FULL_MARKS &&
+    !chills.some((c) => c.inWindow)
   ) {
     return "clean";
   }
@@ -394,6 +413,13 @@ export async function reputationFor(
     where: { network, voter: voter.toLowerCase() },
     select: {
       lastEpochSeen: true,
+      // All five role addresses: the December 2025 action chilled TWO addresses per entity, so
+      // matching chills on the identity alone would have found one of them and missed the other.
+      voter: true,
+      delegationAddress: true,
+      submitAddress: true,
+      submitSignaturesAddress: true,
+      signingPolicyAddress: true,
       managementGroup: true,
       oiClass: true,
       oiExternalP: true,
@@ -587,6 +613,40 @@ export async function reputationFor(
     });
   }
 
+  // GOVERNANCE CHILLS. Flare's most serious sanction and, unlike everything else here, an explicit
+  // finding by governance rather than a measurement. Matched across ALL FIVE role addresses because
+  // the December 2025 action chilled two addresses per entity, and matching on the identity alone
+  // would have found one of them.
+  const chillRows = await prisma.providerChill.findMany({
+    where: {
+      network,
+      beneficiary: {
+        in: [
+          entity.voter,
+          entity.delegationAddress,
+          entity.submitAddress,
+          entity.submitSignaturesAddress,
+          entity.signingPolicyAddress,
+        ]
+          .filter((a): a is string => !!a)
+          .map((a) => a.toLowerCase()),
+      },
+    },
+    orderBy: { blockNumber: "desc" },
+  });
+  // A chill is dated by the epoch it runs UNTIL, so "in window" means its term overlapped any epoch
+  // the score is currently looking at.
+  // `latest` is null only before the first ingest has run. Treat that as "cannot tell", which means
+  // no chill is scored, rather than silently deciding every chill is out of window.
+  const windowStart = latest != null ? latest - RECORD_WINDOW + 1 : null;
+  const chills = chillRows.map((c) => ({
+    untilEpoch: c.untilEpoch,
+    appliedAt: c.appliedAt.toISOString(),
+    txHash: c.txHash,
+    active: latest != null && c.untilEpoch > latest,
+    inWindow: windowStart != null && c.untilEpoch >= windowStart,
+  }));
+
   const indep = independenceRatio(entity.oiClass, entity.oiExternalP);
   if (indep != null) {
     components.push({
@@ -617,7 +677,7 @@ export async function reputationFor(
   return {
     network,
     score,
-    band: band(score, components),
+    band: band(score, components, chills),
     components,
     version: REPUTATION_VERSION,
     // The eligibility record carries the maturity gate, and it gates the whole figure: without enough
@@ -625,6 +685,7 @@ export async function reputationFor(
     mature: !!record?.mature,
     record,
     epochsSeen,
+    chills,
     context: {
       managementGroup: entity.managementGroup,
       missedVotes: entity.mgMissedVotes,
