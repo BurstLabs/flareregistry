@@ -39,7 +39,7 @@ import { eligibilityRecord, type EligibilityRecord } from "@/lib/eligibility-rec
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "1.4";
+export const REPUTATION_VERSION = "1.5";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -173,12 +173,22 @@ export interface ReputationComponent {
 
 export interface Departed {
   departed: true;
+  network: string;
   epochsAbsent: number;
   lastEpochSeen: number;
 }
 
 export interface Reputation {
   departed?: false;
+  /**
+   * The network this figure describes. NOT decoration.
+   *
+   * A listing resolves to whichever of its entities was most recently active, and the two can differ
+   * enormously: Comfy Nodes scored 73.6 on Flare and 15 on Songbird, and the page silently showed the
+   * Songbird figure because that entity was one epoch fresher. Without the network on the label a
+   * reader reasonably assumes Flare, and concludes a working operation is failing.
+   */
+  network: string;
   score: number;
   band: Band;
   components: ReputationComponent[];
@@ -244,7 +254,7 @@ export async function reputationFor(
   const latest = st?.lastEpochIngested ?? null;
   const epochsAbsent = latest != null ? latest - entity.lastEpochSeen : 0;
   if (latest != null && epochsAbsent > DEPARTED_AFTER_EPOCHS) {
-    return { departed: true, epochsAbsent, lastEpochSeen: entity.lastEpochSeen };
+    return { departed: true, network, epochsAbsent, lastEpochSeen: entity.lastEpochSeen };
   }
 
   const record = await eligibilityRecord(network, voter);
@@ -354,6 +364,7 @@ export async function reputationFor(
   }
 
   return {
+    network,
     score,
     band: band(score),
     components,

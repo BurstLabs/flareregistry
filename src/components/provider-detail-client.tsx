@@ -77,9 +77,10 @@ export interface DetailData {
   // Composite reputation over Flare's own measurements. Weights are published and versioned; scoring
   // is absolute rather than relative, so no provider's figure moves when a competitor's does.
   reputation:
-    | { departed: true; epochsAbsent: number; lastEpochSeen: number }
+    | { departed: true; network: string; epochsAbsent: number; lastEpochSeen: number }
     | {
     departed?: false;
+    network: string;
     score: number;
     band: "strong" | "solid" | "mixed" | "attention";
     components: { key: string; raw: string; ratio: number; weight: number; points: number }[];
@@ -607,7 +608,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           is counted. See lib/reputation. */}
       {d.reputation && (
         <section className="mt-8">
-          <h2 className="mb-1 text-lg font-semibold">{t("card.reputation")}</h2>
+          {/* Says Flare even though it is now always Flare. A provider running on both chains should
+              not have to guess which operation this describes, and this page previously showed a
+              Songbird figure under an unlabelled heading. */}
+          <h2 className="mb-1 text-lg font-semibold">
+            {t("card.reputation")}
+            <span className="ml-2 text-sm font-normal text-faint">Flare</span>
+          </h2>
           <p className="mb-3 text-xs text-faint">{t("rep.intro")}</p>
           <div className="surface rounded-xl border p-5 text-sm">
             {d.reputation.departed ? (

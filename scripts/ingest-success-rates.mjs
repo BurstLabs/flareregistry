@@ -78,12 +78,26 @@ async function ingest(network) {
     });
     if (!existing) { missing++; continue; }
 
+    // ALL THREE EXACTLY ZERO MEANS NO READING, NOT A SCORE OF ZERO.
+    //
+    // The explorer returns 0/0/0 for an entity it currently has no rates for, which happens the moment
+    // one drops off the voter set. Storing that as a measurement is the same mistake as the latching
+    // `registered` column: absence recorded as a value. It cost Comfy Nodes about seven points of
+    // reputation for the crime of being one epoch off the list, on a page anyone can read.
+    //
+    // A genuinely dead provider does read 0/0/0, but it also fails reward eligibility, which carries
+    // nine times the weight and comes from a published file rather than a live gauge. So nothing is
+    // lost by declining to score this, and a false zero is avoided.
+    const allZero =
+      (sr.primary ?? 0) === 0 && (sr.secondary ?? 0) === 0 && (sr.availability ?? 0) === 0;
+    const num = (v) => (allZero ? null : Number.isFinite(v) ? v : null);
+
     await prisma.providerOnchain.update({
       where: { network_voter: { network, voter } },
       data: {
-        successPrimary: Number.isFinite(sr.primary) ? sr.primary : null,
-        successSecondary: Number.isFinite(sr.secondary) ? sr.secondary : null,
-        successAvailability: Number.isFinite(sr.availability) ? sr.availability : null,
+        successPrimary: num(sr.primary),
+        successSecondary: num(sr.secondary),
+        successAvailability: num(sr.availability),
         successEpoch: sp.reward_epoch ?? epoch ?? null,
         successUpdatedAt: now,
         // Current-epoch weights. w_nat_weight is exactly what the explorer shows as DELEGATION WEIGHT.
@@ -105,12 +119,8 @@ async function ingest(network) {
     // update a single row instead of accumulating one per hour.
     const snapEpoch = sp.reward_epoch ?? epoch ?? null;
     if (snapEpoch != null) {
-      const snap = {
-        primary: Number.isFinite(sr.primary) ? sr.primary : null,
-        secondary: Number.isFinite(sr.secondary) ? sr.secondary : null,
-        availability: Number.isFinite(sr.availability) ? sr.availability : null,
-        takenAt: now,
-      };
+      const snap = { primary: num(sr.primary), secondary: num(sr.secondary),
+                     availability: num(sr.availability), takenAt: now };
       await prisma.providerSuccessSnapshot.upsert({
         where: { network_voter_epochId: { network, voter, epochId: snapEpoch } },
         create: { network, voter, epochId: snapEpoch, ...snap },
