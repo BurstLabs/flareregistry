@@ -473,7 +473,7 @@ model ProviderMetricEpoch {
   fdcMet       Boolean?
   fastMet      Boolean?
   stakingOk    Boolean?
-  // Flare's own strike count, 0..3. Published per epoch, so there is no need to scrape a forum for it.
+  // Flare's own per-epoch strike count, 0..4 (one per failed minimal condition; FIP.12 added FDC as a fourth). Published per epoch, so there is no need to scrape a forum for it.
   strikes      Int?
   passesHeld   Int?
   // Failure ids for the epoch, e.g. ["FDC_FAILURE"]. Flare attributes the cause directly, so this is

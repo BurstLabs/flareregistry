@@ -152,7 +152,18 @@ export const LONGEVITY_FULL_EPOCHS = 100;
  */
 export const DEPARTED_AFTER_EPOCHS = 8;
 
-/** Strikes at which the strike component reaches zero. Flare's scale runs 0..3. */
+/**
+ * Strikes at which the strike component reaches zero.
+ *
+ * FLARE'S SCALE IS 0..4, NOT 0..3. A strike is one failed minimal condition in that epoch, and FIP.12
+ * added FDC as a fourth protocol, so four can fail at once: 25 provider-epochs on Flare record a 4.
+ * The comment here claimed 0..3 and was simply wrong.
+ *
+ * The floor stays at 3 anyway, because 3 is where the protocol's own protection is exhausted: a
+ * provider holds at most 3 passes, so a 3-strike epoch already burns the rewards of anyone at full
+ * protection. What the floor does hide is that a 4 is worse than a 3, since min(1, worst/3) clamps
+ * both to zero. That is a real limitation of this component, recorded rather than papered over.
+ */
 export const STRIKES_FLOOR = 3;
 
 export type Band = "strong" | "solid" | "mixed" | "attention";
@@ -381,8 +392,27 @@ export async function reputationFor(
 
   // STRIKES: the worst count seen in the window, not the latest.
   //
+  // KNOWN DEFECTIVE, kept deliberately until the replacement is right rather than swapped for a fix
+  // that failed review. Measured against the published files, epochs 393-422, 2,942 provider-epochs:
+  //
+  //   - `strikes` is a PER-EPOCH SEVERITY COUNT, exactly the number of the four minimal conditions
+  //     that failed in that epoch. It is not a running total, and nothing accumulates across epochs.
+  //     The claim below that "the window already expires them" is therefore wrong: there is nothing
+  //     to expire, and max() over 30 epochs is a worst-single-day statistic that throws away the
+  //     other 29 epochs of evidence. One provider scores 0/5 today on a single epoch 28 back, having
+  //     been clean every epoch since.
+  //   - Flare DOES publish a counter with memory, `passesHeld` (0..3, +1 per clean epoch, minus the
+  //     strike count on a bad one), and we already ingest it as ProviderMetricEpoch.passes. Reading
+  //     that instead of inventing our own decay is the obvious direction, but it is not a drop-in:
+  //     a pass is withheld when staking obstructs it even at zero strikes, on 314 of the rows here.
+  //
+  // A recency-weighted replacement was drafted and rejected on review: weighting by epoch DISTANCE
+  // let a provider age a strike off by deregistering, which strictly beat operating, and reporting
+  // the argmax of the decayed value under the label "worst" would have misstated Flare's recorded
+  // figure for 8 of 56 penalised providers.
+  //
   // Strikes are consumed as they are worked off, so reading only the newest epoch would erase a
-  // provider's recent trouble the moment it recovered one. The window already expires them.
+  // provider's recent trouble the moment it recovered one.
   const strikeVals = condRows.map((r) => r.strikes).filter((x): x is number => x != null);
   if (strikeVals.length) {
     const worst = Math.max(...strikeVals);
