@@ -82,7 +82,7 @@ export interface DetailData {
     departed?: false;
     network: string;
     score: number;
-    band: "strong" | "solid" | "mixed" | "attention";
+    band: "clean" | "strong" | "solid" | "mixed" | "attention";
     components: {
       key: string; raw: string; ratio: number; weight: number; points: number;
       detail?: { key: string; ratio: number; met?: boolean | null }[];
@@ -647,9 +647,12 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
             ) : (
               <>
                 <div className="flex items-baseline gap-3">
+                  {/* Clean shares Strong's colour deliberately. It is NOT a rank above Strong, it is
+                      the same score range plus a fact about the record, and giving it a brighter
+                      colour would assert the ranking the data does not contain. */}
                   <span
                     className={
-                      d.reputation.band === "strong"
+                      d.reputation.band === "clean" || d.reputation.band === "strong"
                         ? "text-2xl font-bold text-emerald-500 dark:text-emerald-400"
                         : d.reputation.band === "solid"
                           ? "text-2xl font-bold text-beacon"
@@ -660,8 +663,12 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   >
                     {t(`rep.band.${d.reputation.band}`)}
                   </span>
+                  {/* FLOOR, not round. Math.round showed "95 out of 100" for a provider at 94.6
+                      while labelling them Solid, so the number and the label contradicted each
+                      other. Every band floor is an integer, so floor(score) >= 95 is exactly
+                      equivalent to score >= 95 and the two can no longer disagree. */}
                   <InfoTip
-                    label={t("rep.of100", { score: Math.round(d.reputation.score) })}
+                    label={t("rep.of100", { score: Math.floor(d.reputation.score) })}
                     tip={t("rep.tip.score")}
                     triggerClassName="text-muted"
                   />

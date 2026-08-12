@@ -22,6 +22,7 @@ export interface MethodologyProps {
   weights: Record<string, number>;
   totalWeight: number;
   bands: Band[];
+  cleanFloor: number;
   window: number;
   windowDays: number;
   minEpochs: number;
@@ -135,6 +136,13 @@ points(component) = ratio(component) x weight(component)
 
         <h3 className="mt-5 text-sm font-semibold">{t("repdoc.bands.h")}</h3>
         <ul className="mt-2 space-y-1 text-sm text-muted">
+          {/* Clean is listed FIRST but its right-hand column states a rule, not a floor, because it
+              is not a fifth threshold on the score. Printing a number beside it would imply a rank
+              above Strong that the two bands do not have: they overlap in score on purpose. */}
+          <li className="flex justify-between gap-4">
+            <span>{t("rep.band.clean")}</span>
+            <span className="text-faint">{t("repdoc.bands.cleanRule", { n: p.cleanFloor })}</span>
+          </li>
           {p.bands.map((b, i) => (
             <li key={b.name} className="flex justify-between gap-4">
               <span>{t(`rep.band.${b.name}`)}</span>
@@ -146,6 +154,7 @@ points(component) = ratio(component) x weight(component)
             </li>
           ))}
         </ul>
+        <p className="mt-3 text-sm text-muted">{t("repdoc.bands.cleanWhy")}</p>
       </Section>
 
       {/* ---- the five components, heaviest first, same order as the provider page ---- */}

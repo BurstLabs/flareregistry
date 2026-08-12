@@ -16,6 +16,7 @@ import type { Metadata } from "next";
 import {
   WEIGHTS,
   BAND_FLOORS,
+  CLEAN_FLOOR,
   STRIKES_FLOOR,
   LONGEVITY_FULL_EPOCHS,
   RELIABILITY_HALF_LIFE,
@@ -41,6 +42,7 @@ export default function ReputationMethodologyPage() {
       weights={WEIGHTS}
       totalWeight={Object.values(WEIGHTS).reduce((a, b) => a + b, 0)}
       bands={BAND_FLOORS.map(([name, floor]) => ({ name, floor }))}
+      cleanFloor={CLEAN_FLOOR}
       window={RECORD_WINDOW}
       windowDays={days(RECORD_WINDOW)}
       minEpochs={RECORD_MIN_EPOCHS}
