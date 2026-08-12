@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.2";
+export const REPUTATION_VERSION = "2.3";
 
 export const WEIGHTS = {
   /** Did Flare consider you eligible for rewards? The protocol's own verdict on doing the job. */
@@ -221,7 +221,7 @@ export function weightedWorstStrike(
   return { worst, ageRows, weighted };
 }
 
-export type Band = "strong" | "solid" | "mixed" | "attention";
+export type Band = "clean" | "strong" | "solid" | "mixed" | "attention";
 
 /** A named sub-rate inside a component, so a provider can see WHICH part is failing. */
 export interface ComponentDetail {
@@ -300,13 +300,78 @@ export interface Reputation {
  * recompute their figure, get a different answer, and conclude the score is arbitrary.
  */
 export const BAND_FLOORS: ReadonlyArray<readonly [Band, number]> = [
-  ["strong", 90],
+  ["strong", 95],
   ["solid", 75],
   ["mixed", 50],
   ["attention", 0],
 ] as const;
 
-function band(score: number): Band {
+/**
+ * THE STRONG FLOOR MOVED FROM 90 TO 95 IN 2.3, on measurement rather than taste.
+ *
+ * Over epochs 402-422, 21 of 94 providers crossed 90 at least once, 31 times, 7 of them oscillating,
+ * and 70% of everyone within two points of it crossed: it sat on the steepest slope in the
+ * distribution. 95 crossed 7, oscillated 2, and sits in a density trough holding 4.3 to 5.9 providers
+ * within a point of it at every sampled epoch. 75 and 50 are unchanged: 75 is the cleanest line in
+ * the file (8 crossers, zero oscillators) and 50 sits inside the largest gap in the whole
+ * distribution, 20.9 points wide.
+ */
+
+/**
+ * CLEAN is a CONJUNCTIVE CAP, not a fifth score cut, and the distinction is the whole justification
+ * for the band existing.
+ *
+ * There is no room at the top of this scale for another threshold. The 44 providers above 97.5 are at
+ * ratio exactly 1.000 on reliability, longevity AND independence, every one of them: 60 of the 90
+ * weight is constant there and explains 0.0% of the variance. What is left is 2.4 points wide, its
+ * largest internal gap is 0.545, its median internal gap is 0.0089, and the median provider inside it
+ * moves 0.008 per epoch. Gaps and jitter are the same size, and no gap that exists inside the cluster
+ * has an inversion rate under about 7.5%. Any line drawn in there would report a rank the data does
+ * not contain, and 57% of what it would be reading is the strikes decay ramp, whose value changes
+ * every epoch with no change in anyone's conduct.
+ *
+ * So the extra distinction is not a narrower slice of the same number. It is a separate, binary,
+ * checkable FACT: Flare recorded no failed minimal condition and no ineligible epoch in any of the
+ * last RECORD_WINDOW epochs. A strike is exactly the count of the four conditions that failed that
+ * epoch, so a zero-strike window means all four jobs done, every epoch, for a month and a half. It
+ * changes only when a real event happens, never because a third significant figure drifted.
+ *
+ * INDEPENDENCE AND LONGEVITY ARE DELIBERATELY EXCLUDED from the cap. Independence is a third-party
+ * suspicion screen whose own source says it must never drive an automated determination, and gating a
+ * band on it would hand it exactly that. Longevity is the one input a new entrant cannot earn at any
+ * price, and gating the top band on tenure would entrench incumbents, which is the reason that
+ * component is capped and weighted lightly in the first place.
+ *
+ * NOT A RANK ABOVE STRONG. The two bands overlap in score, 96.49 to 99.99 against 96.74 to 99.48.
+ * Clean says something strong does not say; it does not say it louder.
+ */
+export const CLEAN_FLOOR = 95;
+
+/**
+ * Tolerance for "this component is at full marks".
+ *
+ * Both ratios are exactly 1 in IEEE terms when the record is unblemished, so this only guards against
+ * a future refactor introducing a rounding path. The margin is enormous either way: the highest
+ * non-perfect values in the field are 0.9487 on strikes and 0.9821 on reliability, because the
+ * smallest possible blemish is a single strike at the far end of the window, worth 0.5^3 / 3.
+ */
+const FULL_MARKS = 1 - 1e-9;
+
+function band(score: number, components: ReputationComponent[]): Band {
+  const ratioOf = (k: ReputationComponent["key"]) =>
+    components.find((c) => c.key === k)?.ratio ?? null;
+  const strikes = ratioOf("strikes");
+  const reliability = ratioOf("reliability");
+  // A missing component is not a pass: no record means no clean record.
+  if (
+    score >= CLEAN_FLOOR &&
+    strikes != null &&
+    strikes >= FULL_MARKS &&
+    reliability != null &&
+    reliability >= FULL_MARKS
+  ) {
+    return "clean";
+  }
   for (const [name, floor] of BAND_FLOORS) if (score >= floor) return name;
   return "attention";
 }
@@ -546,7 +611,7 @@ export async function reputationFor(
   return {
     network,
     score,
-    band: band(score),
+    band: band(score, components),
     components,
     version: REPUTATION_VERSION,
     // The eligibility record carries the maturity gate, and it gates the whole figure: without enough
