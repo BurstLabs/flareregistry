@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
-import { FlagAction, ReportLogoAction } from "./governance-actions";
+import { FlagAction, ConductAction, ReportLogoAction } from "./governance-actions";
 import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
@@ -20,6 +20,7 @@ export interface DetailData {
   verified: boolean;
   registered: boolean;
   managementGroup: boolean;
+  conductEligible: boolean;
   conduct: {
     caseId: string;
     decidedAt: string | null;
@@ -362,6 +363,10 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
 
       {/* Management Group flag action (new providers only, when not already under review). */}
       {d.flaggable && !d.governance?.underReview && <FlagAction providerId={d.providerId} />}
+      {/* Conduct is for ESTABLISHED providers, so it appears exactly where the new-provider flag
+          does not: past the 30-day window, on a listed provider. Membership is enforced on the
+          signature server-side, as it is for the flag. */}
+      {d.conductEligible && <ConductAction providerId={d.providerId} />}
 
       {/* Self-service watch: anyone can be emailed if this new provider is flagged, during review. */}
       {d.watchable && (

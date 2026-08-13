@@ -179,6 +179,11 @@ export default async function ProviderDetail({
     managementGroup: (await (await import("@/lib/management-group")).managementGroupByProvider()).get(p.id) ?? false,
     governance: gov,
     conduct,
+    // A conduct case is the instrument for an ESTABLISHED provider, so it is offered exactly where
+    // the new-provider flag is not: matched on-chain, not archived, and past the flag window. The
+    // server enforces Management Group membership on the signature; this only decides whether the
+    // form is worth showing at all.
+    conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(p.createdAt, nowDate),
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
     hasLogo: !!p.logoURI,
