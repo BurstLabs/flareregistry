@@ -6747,7 +6747,12 @@ export function translate(
 ): string {
   const dict = DICTIONARIES[locale] ?? en;
   let s = dict[key] ?? en[key] ?? key;
-  if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(`{${k}}`, String(v));
+  // replaceAll, not replace. A single replace substitutes only the FIRST occurrence, so any string
+  // using a placeholder twice rendered the second one literally, e.g. "the case opens at {required}".
+  // That was live in gov.act.flagRecorded across all seven locales. Every translator on the conduct
+  // work spotted it independently and worked around it by rephrasing; fixing it here removes the
+  // constraint from the strings entirely and stops the next one being written with the same bug.
+  if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
   return s;
 }
 
