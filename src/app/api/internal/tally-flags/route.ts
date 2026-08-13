@@ -52,6 +52,23 @@ export async function POST(req: NextRequest) {
   }
 
   // 1) Discussion -> voting.
+  // 0b) CONDUCT: notice ended -> discussion. Still entirely private; the subject has now had the
+  //     notice period to prepare, which is the merit gate a flag does not have.
+  const toDiscussion = await prisma.providerFlagCase.findMany({
+    where: { kind: "CONDUCT", state: "NOTICE", noticeEndsAt: { lte: now } },
+    select: { id: true },
+  });
+  for (const c of toDiscussion) {
+    await prisma.providerFlagCase.update({
+      where: { id: c.id },
+      data: { state: "OPEN_DISCUSSION" },
+    });
+    await prisma.providerCaseAudit.create({
+      data: { caseId: c.id, action: "NOTICE_ENDED", actor: "system" },
+    });
+    transitions.push({ caseId: c.id, to: "OPEN_DISCUSSION" });
+  }
+
   const toVoting = await prisma.providerFlagCase.findMany({
     where: { state: "OPEN_DISCUSSION", discussionEndsAt: { lte: now } },
     select: { id: true },
@@ -67,7 +84,9 @@ export async function POST(req: NextRequest) {
       state: { in: ["OPEN_VOTING", "OPEN_DISCUSSION"] },
       votingEndsAt: { lte: now },
     },
-    include: { votes: true },
+    // defense and the subject's addresses come along so service status can be recorded at decision
+    // time, when it is finally knowable, rather than inferred later from a page that lacks a reply.
+    include: { votes: true, defense: true, provider: { include: { addresses: true } } },
   });
 
   if (toTally.length) {
@@ -99,15 +118,49 @@ export async function POST(req: NextRequest) {
       //   Appeal      - it must AFFIRMATIVELY overturn the original denial to lift the suspension, so
       //                 only CLEARED (a keep majority) un-suspends. DENIED (deny majority upholds the
       //                 denial) and FAILED_QUORUM (not enough votes to overturn) both KEEP it suspended.
-      const suspend = c.isReVote
-        ? decided !== "CLEARED" // appeal: only a CLEARED appeal lifts the suspension
-        : decided === "DENIED"; // flag: only a DENIED flag suspends
+      // CONDUCT outcomes are a different vocabulary and, crucially, a different consequence.
+      //
+      // A conduct case NEVER suspends. It produces a published finding or it produces nothing at
+      // all, and the sanction question is a separate instrument that does not exist yet. The same
+      // deny-supermajority math decides it: a DENY here means "substantiated".
+      //
+      // PUBLICATION HAPPENS ONLY ON SUBSTANTIATION. Everything else seals: no case page, no index
+      // entry, no trace on the provider page. Without that rule four rivals could publish an
+      // accusation by filing one and never need to win the vote, which is the whole attack.
+      const isConduct = c.kind === "CONDUCT";
+      // SERVICE STATUS, recorded now and published beside the finding.
+      //
+      // A subject can only be served if someone controls the listing: `verified` is set only after
+      // a valid signature from a listed address, so an unclaimed entry has nobody to notify. Most
+      // of the directory is imported rather than claimed, so this is the common case, not an edge
+      // one. Publishing "no defence" against an operator who was never reachable would read as a
+      // refusal to answer, which is why the three outcomes are distinguished rather than collapsed.
+      const claimed = c.provider.addresses.some((a) => a.verified);
+      const serviceStatus = !claimed
+        ? "UNCLAIMED_NOT_SERVED"
+        : c.defense
+          ? "SERVED_DEFENDED"
+          : "SERVED_NO_DEFENCE";
+      const conductState =
+        decided === "DENIED"
+          ? "SUBSTANTIATED"
+          : decided === "CLEARED"
+            ? "NOT_SUBSTANTIATED"
+            : "FAILED_QUORUM";
+      const suspend = isConduct
+        ? false
+        : c.isReVote
+          ? decided !== "CLEARED" // appeal: only a CLEARED appeal lifts the suspension
+          : decided === "DENIED"; // flag: only a DENIED flag suspends
       await prisma.$transaction(async (tx) => {
         await tx.providerFlagCase.update({
           where: { id: c.id },
           data: {
-            state: decided,
+            state: isConduct ? conductState : decided,
             decidedAt: now,
+            // The seal lifts here and only here.
+            ...(isConduct && conductState === "SUBSTANTIATED" ? { publishedAt: now } : {}),
+            ...(isConduct ? { serviceStatus } : {}),
             outcomeTurnout: votesCast,
             outcomeDeny: denyVotes,
           },

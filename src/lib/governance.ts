@@ -37,6 +37,65 @@ export const FLARE_MAJORITY_BIPS = 5000; // >50%
  */
 export type CaseKind = "FLAG" | "CONDUCT";
 
+// ---------------------------------------------------------------------------------------------
+// CONDUCT case parameters.
+//
+// Every number here differs from the FLAG equivalent, and each difference has one reason: the
+// subject. A FLAG subject is inside its 30-day hold, unlisted in every wallet, with no delegators.
+// A CONDUCT subject is listed, earning, and has delegators who move on a headline. The FLAG numbers
+// are calibrated to delay an unknown newcomer by 14 days; they are not calibrated to attach a
+// permanent public finding to an established business.
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Distinct member entities required to open a conduct case, against 2 for a flag.
+ *
+ * 2-of-45 is a pair of rivals and one phone call. 4 is not collusion-proof either, but it is the
+ * point at which a case needs members who do not all share an interest, and it is the only barrier
+ * standing between an accusation and the private process, since nothing is published before a vote.
+ */
+export const CONDUCT_CO_INITIATORS_REQUIRED = 4;
+
+/**
+ * Days between the 4th signature and the start of discussion, during which the subject is served
+ * and may prepare.
+ *
+ * This is the merit gate every professional body has and this registry did not: a period in which
+ * the subject learns of the case before anyone else can act on it. Nothing about a conduct case is
+ * public during it, or at any point before substantiation.
+ */
+export const CONDUCT_NOTICE_DAYS = 14;
+/** Discussion, after notice. Longer than the flag's 3 days: the subject is answering a track record. */
+export const CONDUCT_DISCUSSION_DAYS = 14;
+/** Voting, after discussion. */
+export const CONDUCT_VOTING_DAYS = 21;
+
+/**
+ * Whether the subject could be told, and what they did about it. A PUBLISHED FIELD, not a gate.
+ *
+ * Silence from a provider who was asked and declined, and silence from one who was never reachable
+ * because the listing has never been claimed, are different facts. Rendering them alike would let a
+ * reader infer a refusal to answer where none happened.
+ */
+export type ServiceStatus = "SERVED_DEFENDED" | "SERVED_NO_DEFENCE" | "UNCLAIMED_NOT_SERVED";
+
+/** Conduct case deadlines, measured from the moment the 4th signature lands. */
+export function conductDeadlines(openedAt: Date): {
+  noticeEndsAt: Date;
+  discussionEndsAt: Date;
+  votingEndsAt: Date;
+} {
+  const noticeEndsAt = new Date(openedAt.getTime() + CONDUCT_NOTICE_DAYS * DAY_MS);
+  const discussionEndsAt = new Date(
+    noticeEndsAt.getTime() + CONDUCT_DISCUSSION_DAYS * DAY_MS
+  );
+  return {
+    noticeEndsAt,
+    discussionEndsAt,
+    votingEndsAt: new Date(discussionEndsAt.getTime() + CONDUCT_VOTING_DAYS * DAY_MS),
+  };
+}
+
 /**
  * May this case be shown to the public?
  *

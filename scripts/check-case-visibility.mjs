@@ -32,6 +32,8 @@ const CLASSIFIED = {
   "app/api/admin/governance/route.ts": "ADMIN",
   "app/api/admin/pending-counts/route.ts": "ADMIN",
   "app/api/admin/stats/route.ts": "ADMIN",
+  // Counts conduct cases to refuse deleting their subject. Operator-only, no case data emitted.
+  "app/api/admin/providers/route.ts": "ADMIN",
 
   // SIWE-authenticated, act on a single case the caller is party to.
   "app/api/governance/flag/route.ts": "ACTION",
@@ -43,6 +45,8 @@ const CLASSIFIED = {
   "app/api/governance/edit-grounds/route.ts": "ACTION",
   "app/api/governance/add-grounds/route.ts": "ACTION",
   "app/api/governance/appeal/route.ts": "ACTION",
+  // Creates conduct cases. Reads only to find the live case a member is joining; emits no case body.
+  "app/api/governance/conduct/route.ts": "ACTION",
 
   // Internal cron.
   "app/api/internal/tally-flags/route.ts": "CRON",
