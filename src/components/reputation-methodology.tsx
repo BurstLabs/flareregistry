@@ -26,6 +26,9 @@ export interface MethodologyProps {
   chillPenalty: number;
   chillRecovery: number;
   chillRecoveryDays: number;
+  findingPenalty: number;
+  findingRecovery: number;
+  findingRecoveryDays: number;
   window: number;
   windowDays: number;
   minEpochs: number;
@@ -262,6 +265,21 @@ score      = max(0, components - deduction)`}</Formula>
         />
         <P k="repdoc.chill.judgement" />
         <P k="repdoc.chill.clean" />
+      </Section>
+
+      {/* Findings sit next to chills because they are the same shape of thing, a deduction for a
+          verdict rather than a component measuring performance, and different in one way the reader
+          needs: a chill is the protocol's verdict, a finding is this registry's. */}
+      <Section id="finding" title={t("repdoc.finding.h")}>
+        <P k="repdoc.finding.what" />
+        <Formula>{`recovery  = min(1, (current epoch - decided epoch) / ${p.findingRecovery})
+deduction = ${p.findingPenalty} x (1 - recovery)
+score     = max(0, components - chill deduction - finding deduction)`}</Formula>
+        <P
+          k="repdoc.finding.terms"
+          v={{ max: p.findingPenalty, n: p.findingRecovery, days: p.findingRecoveryDays }}
+        />
+        <P k="repdoc.finding.why" />
       </Section>
 
       {/* ---- what the score refuses to do, which is as much of the method as what it counts ---- */}

@@ -560,6 +560,10 @@ model ProviderFlagCase {
   /// and PUBLISHED alongside the finding, because silence from a subject who declined to answer and
   /// silence from one who was never reachable are different facts.
   serviceStatus    String?
+  /// The reward epoch at which a conduct case was decided. Stored rather than derived from
+  /// decidedAt, because the score ages a finding in EPOCHS and converting a timestamp back to an
+  /// epoch after the fact would silently disagree with the ingest head the score actually uses.
+  decidedEpoch     Int?
   /// Set when a subject claims its listing AFTER a finding was published without a defence, and
   /// exercises the reply that was never available to it. The finding stays; the reply is published
   /// beside it with equal prominence.

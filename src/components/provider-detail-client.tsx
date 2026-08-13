@@ -124,6 +124,8 @@ export interface DetailData {
     }[];
     baseScore: number;
     chillPenalty: number;
+    findings: { caseId: string; decidedAt: string | null; penalty: number }[];
+    findingPenalty: number;
     context: {
       managementGroup: boolean;
       missedVotes: number | null;
@@ -707,6 +709,16 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                     </li>
                   ))}
                 </ul>
+                {(() => {
+                  const f = d.reputation && !d.reputation.departed
+                    ? d.reputation.findings.find((x) => x.caseId === c.caseId)
+                    : undefined;
+                  return f && f.penalty > 0 ? (
+                    <p className="mt-2 text-xs text-faint">
+                      {t("conduct.costing", { pts: f.penalty.toFixed(1) })}
+                    </p>
+                  ) : null;
+                })()}
                 {c.hasDefence && (
                   <p className="mt-3 rounded-lg border border-themed/60 p-2 text-xs text-muted">
                     {t(c.lateReplyAt ? "conduct.replyLate" : "conduct.replyOnTime")}
@@ -934,7 +946,8 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       {/* The chill deduction is shown as its own subtraction, never folded silently
                           into the total. A provider is entitled to see which number was theirs and
                           which was taken off, and by how much. */}
-                      {d.reputation!.chillPenalty > 0 && (
+                      {(d.reputation!.chillPenalty > 0 ||
+                        d.reputation!.findingPenalty > 0) && (
                         <>
                           <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                             <span className="text-muted">{t("rep.subtotal")}</span>
@@ -942,12 +955,24 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                               {d.reputation!.baseScore.toFixed(1)} / 100 {t("rep.pts")}
                             </span>
                           </li>
-                          <li className="flex items-baseline justify-between text-xs">
-                            <span className="text-flare">{t("rep.chill.deduction")}</span>
-                            <span className="tabular-nums text-flare">
-                              -{d.reputation!.chillPenalty.toFixed(1)} {t("rep.pts")}
-                            </span>
-                          </li>
+                          {d.reputation!.chillPenalty > 0 && (
+                            <li className="flex items-baseline justify-between text-xs">
+                              <span className="text-flare">{t("rep.chill.deduction")}</span>
+                              <span className="tabular-nums text-flare">
+                                -{d.reputation!.chillPenalty.toFixed(1)} {t("rep.pts")}
+                              </span>
+                            </li>
+                          )}
+                          {/* Shown as its own line, never folded into the total. A provider is
+                              entitled to see which number was theirs and what was taken off it. */}
+                          {d.reputation!.findingPenalty > 0 && (
+                            <li className="flex items-baseline justify-between text-xs">
+                              <span className="text-flare">{t("rep.finding.deduction")}</span>
+                              <span className="tabular-nums text-flare">
+                                -{d.reputation!.findingPenalty.toFixed(1)} {t("rep.pts")}
+                              </span>
+                            </li>
+                          )}
                         </>
                       )}
                       <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">

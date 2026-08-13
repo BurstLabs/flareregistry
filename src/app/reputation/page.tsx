@@ -19,6 +19,8 @@ import {
   CLEAN_FLOOR,
   CHILL_PENALTY_MAX,
   CHILL_RECOVERY_EPOCHS,
+  FINDING_PENALTY_MAX,
+  FINDING_RECOVERY_EPOCHS,
   STRIKES_FLOOR,
   LONGEVITY_FULL_EPOCHS,
   RELIABILITY_HALF_LIFE,
@@ -48,6 +50,9 @@ export default function ReputationMethodologyPage() {
       chillPenalty={CHILL_PENALTY_MAX}
       chillRecovery={CHILL_RECOVERY_EPOCHS}
       chillRecoveryDays={days(CHILL_RECOVERY_EPOCHS)}
+      findingPenalty={FINDING_PENALTY_MAX}
+      findingRecovery={FINDING_RECOVERY_EPOCHS}
+      findingRecoveryDays={days(FINDING_RECOVERY_EPOCHS)}
       window={RECORD_WINDOW}
       windowDays={days(RECORD_WINDOW)}
       minEpochs={RECORD_MIN_EPOCHS}
