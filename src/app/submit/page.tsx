@@ -212,6 +212,7 @@ function SubmitPageInner() {
   // Self-declared (provider-attested) fields.
   const [privateNode, setPrivateNode] = useState(false);
   const [singleEntity, setSingleEntity] = useState(false);
+  const [noticeEmail, setNoticeEmail] = useState("");
   const [algorithm, setAlgorithm] = useState<"" | "in-house" | "open-source">("");
   const [busy, setBusy] = useState(false);
   // Set when the signed-in address already exists in the registry, so the form is a claim/edit.
@@ -341,6 +342,7 @@ function SubmitPageInner() {
       if (p.logoURI) setLogoUri(p.logoURI);
       setPrivateNode(!!p.privateNode);
       setSingleEntity(!!p.singleEntity);
+      setNoticeEmail(p.noticeEmail ?? "");
       if (p.algorithm === "in-house" || p.algorithm === "open-source") setAlgorithm(p.algorithm);
       // Pin chainId to the network the save should write. Priority:
       //  1. The network the user explicitly picked in the verify step (preferredChainId). This is the
@@ -516,6 +518,7 @@ function SubmitPageInner() {
           url,
           privateNode,
           singleEntity,
+          noticeEmail: noticeEmail.trim() || null,
           algorithm: algorithm || null,
           logoURI: logoUri || null,
           addresses: [{ chainId, address }],
@@ -791,6 +794,25 @@ function SubmitPageInner() {
               placeholder="https://"
             />
           </label>
+
+          {/* NOTICE ADDRESS. Its own block, not folded into the self-declared attestations, because
+              it is not a claim about the provider: it is the only way we can reach them. Claiming a
+              listing is a wallet signature and this registry has never held an address, so without
+              it the only notice of a governance case is the one on their own page when they next
+              sign in. Optional, and never published. */}
+          <div className="rounded border border-themed bg-elev/50 p-3">
+            <p className="mb-2 text-sm font-medium">{t("submit.notice.title")}</p>
+            <p className="mb-3 text-xs text-faint">{t("submit.notice.note")}</p>
+            <input
+              type="email"
+              value={noticeEmail}
+              onChange={(e) => setNoticeEmail(e.target.value)}
+              maxLength={200}
+              placeholder={t("submit.notice.placeholder")}
+              className="block w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
+            />
+            <p className="mt-2 text-xs text-faint">{t("submit.notice.privacy")}</p>
+          </div>
 
           {/* Self-declared fields: provider-attested, not verifiable on-chain. */}
           <div className="rounded border border-themed bg-elev/50 p-3">

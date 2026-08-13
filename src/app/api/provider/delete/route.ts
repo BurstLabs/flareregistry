@@ -12,7 +12,7 @@ import { listingAddressesForSigner } from "@/lib/metrics";
 // The most destructive action, so it is gated:
 //   - The caller must be signed in with an address that belongs to the listing (proof of ownership).
 //   - The body must echo the listing's exact name as a confirmation (guards against a stray call).
-// Deleting the Provider cascades to its addresses and flag cases (onDelete: Cascade), so the listing
+// Deleting the Provider cascades to its addresses, so the listing
 // vanishes from the registry and the feed. The provider can then list again from scratch.
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "submit", 10, 60_000);
@@ -50,6 +50,23 @@ export async function POST(req: NextRequest) {
   }
 
   // Cascades to ProviderAddress + ProviderFlagCase.
+  // A CONDUCT CASE BLOCKS DELETION, and this is the same hole that was closed on the admin side.
+  // Without it, self-service deletion is an undo button for an adjudicated finding: the subject of a
+  // case could remove their listing and take the record with them, then list again from scratch. The
+  // FK is RESTRICT so the database would refuse anyway, but a checked refusal with a reason beats a
+  // raw constraint error.
+  const conduct = await prisma.providerFlagCase.count({
+    where: { providerId: owned.providerId, kind: "CONDUCT" },
+  });
+  if (conduct > 0) {
+    return NextResponse.json(
+      {
+        error:
+          "this listing carries a Management Group conduct case; the case is a permanent record and the listing cannot be deleted",
+      },
+      { status: 409 }
+    );
+  }
   await prisma.provider.delete({ where: { id: owned.providerId } });
 
   await publishFeedToRepo();

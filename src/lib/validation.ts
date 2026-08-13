@@ -67,6 +67,11 @@ export const providerInputSchema = z.object({
   privateNode: z.boolean().nullish(),
   algorithm: z.enum(["in-house", "open-source"]).nullish(),
   singleEntity: z.boolean().nullish(),
+  // Where to send a governance notice. Optional and PRIVATE: never emitted to the feed, the public
+  // API or the provider page. There is no other way to reach a provider, since claiming a listing is
+  // a wallet signature and this registry has never held an address for one, so without it the only
+  // notice a subject gets is the one on their own page when they next sign in.
+  noticeEmail: z.string().email().max(200).nullish(),
   // Logo URI from a prior /api/provider/logo upload. Required for new listings; on update it may
   // be omitted when the provider already has a logo. Enforced in the route.
   logoURI: z.string().url().max(400).nullish(),

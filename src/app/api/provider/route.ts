@@ -190,6 +190,12 @@ export async function POST(req: NextRequest) {
       privateNode: input.privateNode ?? null,
       algorithm: input.algorithm ?? null,
       singleEntity: input.singleEntity ?? null,
+      // Only overwrite when the caller sent something. An edit that omits the field must not silently
+      // erase a notice address the provider set earlier, which would quietly cut the only channel we
+      // have for telling them a case has been opened.
+      ...(input.noticeEmail !== undefined
+        ? { noticeEmail: input.noticeEmail ? input.noticeEmail.toLowerCase() : null }
+        : {}),
       source: "submitted",
       // A logo uploaded before publish goes through the SAME review window as any change: it is
       // stored as PENDING (held LOGO_REVIEW_DAYS, promoted by cron), not live. The /api/provider/logo

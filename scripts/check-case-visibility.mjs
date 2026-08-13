@@ -40,6 +40,8 @@ const CLASSIFIED = {
   // Operator view of conduct cases INCLUDING sealed ones. Sealed is sealed against the public,
   // not against the venue that must run the process. Read-only: no PATCH, no DELETE.
   "app/api/admin/conduct/route.ts": "ADMIN",
+  // Refuses self-deletion of a listing carrying a conduct case. Counts only; emits no case data.
+  "app/api/provider/delete/route.ts": "ACTION",
 
   // SIWE-authenticated, act on a single case the caller is party to.
   "app/api/governance/flag/route.ts": "ACTION",
@@ -55,6 +57,9 @@ const CLASSIFIED = {
   "app/api/governance/conduct/route.ts": "ACTION",
   // Subject answers a published finding after claiming the listing. Reads its own case only.
   "app/api/governance/late-reply/route.ts": "ACTION",
+  // The SUBJECT reading a sealed case against them. Authenticated to a verified owner address; the
+  // seal exists to protect them from the public, not to hide the case from the person answering it.
+  "app/api/governance/my-case/route.ts": "ACTION",
 
   // Internal cron.
   "app/api/internal/tally-flags/route.ts": "CRON",
