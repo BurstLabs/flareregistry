@@ -702,6 +702,11 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                     </li>
                   ))}
                 </ul>
+                {c.hasDefence && (
+                  <p className="mt-3 rounded-lg border border-themed/60 p-2 text-xs text-muted">
+                    {t(c.lateReplyAt ? "conduct.replyLate" : "conduct.replyOnTime")}
+                  </p>
+                )}
                 <p className="mt-3 text-xs text-faint">
                   {t("conduct.noScore")}{" "}
                   <Link href={`/governance/${c.caseId}`} className="text-beacon hover:underline">

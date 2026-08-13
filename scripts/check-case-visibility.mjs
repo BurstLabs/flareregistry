@@ -47,6 +47,8 @@ const CLASSIFIED = {
   "app/api/governance/appeal/route.ts": "ACTION",
   // Creates conduct cases. Reads only to find the live case a member is joining; emits no case body.
   "app/api/governance/conduct/route.ts": "ACTION",
+  // Subject answers a published finding after claiming the listing. Reads its own case only.
+  "app/api/governance/late-reply/route.ts": "ACTION",
 
   // Internal cron.
   "app/api/internal/tally-flags/route.ts": "CRON",
