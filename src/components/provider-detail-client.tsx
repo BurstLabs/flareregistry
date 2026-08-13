@@ -94,6 +94,7 @@ export interface DetailData {
     mature: boolean;
     epochsSeen: number;
     chills: {
+      network: string;
       untilEpoch: number;
       appliedAt: string;
       txHash: string;
@@ -896,6 +897,11 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                         date: c.appliedAt.slice(0, 10),
                         epoch: c.untilEpoch,
                       })}{" "}
+                      {/* Name the chain. A Songbird chill counts toward this Flare score, so the
+                          reader is entitled to see that the epoch number is a Songbird one. */}
+                      <span className="text-faint">
+                        {c.network === "songbird" ? "Songbird" : "Flare"}
+                      </span>{" "}
                       <a
                         href={`https://flare-explorer.flare.network/tx/${c.txHash}`}
                         target="_blank"
