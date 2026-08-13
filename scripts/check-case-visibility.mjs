@@ -27,6 +27,9 @@ const CLASSIFIED = {
   "app/api/governance/case/[id]/route.ts": "PUBLIC",
   "app/governance/[id]/page.tsx": "PUBLIC",
   "lib/governance.ts": "PUBLIC",
+  // The reputation score reads substantiated findings to deduct points. Public: the score is public,
+  // so a sealed case reaching it would leak by moving a published number.
+  "lib/reputation.ts": "PUBLIC",
 
   // Operator-only. Sees everything by design.
   "app/api/admin/governance/route.ts": "ADMIN",

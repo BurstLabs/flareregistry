@@ -90,6 +90,10 @@ export async function POST(req: NextRequest) {
   });
 
   if (toTally.length) {
+    // The current reward epoch, for dating a conduct finding. Flare-headed: conduct cases carry a
+    // network, and a finding's age is measured on the chain the case was raised on.
+    const headState = await prisma.ingestState.findUnique({ where: { network: "flare" } });
+    const headEpoch = headState?.lastEpochIngested ?? null;
     let members;
     try {
       members = await loadMembers();
@@ -161,6 +165,10 @@ export async function POST(req: NextRequest) {
             // The seal lifts here and only here.
             ...(isConduct && conductState === "SUBSTANTIATED" ? { publishedAt: now } : {}),
             ...(isConduct ? { serviceStatus } : {}),
+            // The epoch the finding was decided, so the score can age it. Read from the ingest head
+            // rather than converted from a timestamp later, which would silently disagree with the
+            // head the score itself uses.
+            ...(isConduct ? { decidedEpoch: headEpoch } : {}),
             outcomeTurnout: votesCast,
             outcomeDeny: denyVotes,
           },

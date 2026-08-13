@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.8";
+export const REPUTATION_VERSION = "2.9";
 
 /**
  * Points deducted from the final score for a chill still in force, decaying to nothing as the
@@ -59,14 +59,60 @@ export const REPUTATION_VERSION = "2.8";
 export const CHILL_PENALTY_MAX = 20;
 
 /**
- * Epochs after a chill's term ends before the deduction reaches zero. 100 epochs is about a year,
- * matching LONGEVITY_FULL_EPOCHS rather than inventing a second horizon.
+ * Epochs after a chill's term ends before the deduction reaches zero.
+ *
+ * FIVE YEARS: 522 epochs at 3.5 days each, about 1,827 days. Set deliberately long. A chill is the
+ * most serious thing Flare governance does to a provider, it has happened 51 times in three years
+ * across both chains, and a sanction that fades inside a year would be forgotten by the number
+ * before it is forgotten by anyone who was there.
  *
  * The clock starts when the term Flare set ENDS, not when the chill was applied. Governance decides
  * how long someone is barred; this decides how long the fact stays visible in the number afterwards,
  * and starting it any earlier would let a long chill expire faster than a short one.
+ *
+ * Note that a chill Flare gave a far-future term, which is how it expresses a permanent ban, never
+ * begins recovering at all: chillRecovery returns 0 while currentEpoch < untilEpoch.
  */
-export const CHILL_RECOVERY_EPOCHS = 100;
+export const CHILL_RECOVERY_EPOCHS = 522;
+
+/**
+ * Points deducted for a substantiated Management Group finding, decaying to nothing over
+ * FINDING_RECOVERY_EPOCHS from the day it was decided.
+ *
+ * HALF A CHILL, and the ratio is the argument. A chill is Flare governance's own sanction, decided
+ * by the protocol's token holders, and it bars a provider from registering at all. A finding is this
+ * registry's venue reaching a verdict with 45 members voting. It is real evidence about an operator
+ * and it belongs in the number, but it is not the protocol speaking, and weighting it as though it
+ * were would overstate what it is.
+ *
+ * A DEDUCTION, NOT A COMPONENT, for the same reason chills are. A sixth weighted component would
+ * hand every provider who has never been found against another ratio of exactly 1.000, and 60 of the
+ * 90 weight units already sit at 1.000 across the top of the field explaining 0.0% of the variance.
+ * A deduction moves only the providers the finding is about.
+ *
+ * This and the recovery period are judgement, not measurement, exactly as the chill constants are,
+ * and /reputation says so.
+ */
+export const FINDING_PENALTY_MAX = 10;
+
+/**
+ * Epochs after a finding is decided before its deduction reaches zero.
+ *
+ * FIVE YEARS, the same horizon as a chill. The two sanctions differ in WEIGHT, not in how long the
+ * fact matters: a finding costs half a chill's points because it is this registry's verdict rather
+ * than the protocol's, but a substantiated finding of misconduct does not become less true faster
+ * than a chill does.
+ *
+ * The clock starts at the DECISION, because unlike a chill a finding carries no term: the Management
+ * Group decides that something happened, not that a provider is barred until some date.
+ */
+export const FINDING_RECOVERY_EPOCHS = CHILL_RECOVERY_EPOCHS;
+
+/** 0 on the day a finding is decided, rising to 1 over FINDING_RECOVERY_EPOCHS. */
+export function findingRecovery(decidedEpoch: number, currentEpoch: number): number {
+  if (currentEpoch <= decidedEpoch) return 0;
+  return Math.min(1, (currentEpoch - decidedEpoch) / FINDING_RECOVERY_EPOCHS);
+}
 
 /** 0 while a chill is in force, rising to 1 over CHILL_RECOVERY_EPOCHS after its term ends. */
 export function chillRecovery(untilEpoch: number, currentEpoch: number): number {
@@ -341,6 +387,9 @@ export interface Reputation {
   }[];
   baseScore: number;
   chillPenalty: number;
+  /** Substantiated Management Group findings still costing points, newest first. */
+  findings: { caseId: string; decidedAt: string | null; penalty: number }[];
+  findingPenalty: number;
   /** Context, shown but never scored. */
   context: {
     managementGroup: boolean;
@@ -422,7 +471,7 @@ export const CLEAN_FLOOR = 95;
  */
 const FULL_MARKS = 1 - 1e-9;
 
-function band(score: number, components: ReputationComponent[], chillPenalty: number): Band {
+function band(score: number, components: ReputationComponent[], sanctionPenalty: number): Band {
   const ratioOf = (k: ReputationComponent["key"]) =>
     components.find((c) => c.key === k)?.ratio ?? null;
   const strikes = ratioOf("strikes");
@@ -432,6 +481,9 @@ function band(score: number, components: ReputationComponent[], chillPenalty: nu
   // points. Clean record is a factual claim that Flare recorded nothing against this provider, and a
   // chill is the most serious thing Flare can record, so carrying the label while still serving one
   // would make the label false.
+  //
+  // A SUBSTANTIATED FINDING BLOCKS IT TOO, for as long as it is still costing points, and for the
+  // same reason: the band asserts an unblemished record, and a finding is a recorded blemish.
   //
   // GATED ON THE DEDUCTION, not on the 30-epoch window. Tying it to the window would have given the
   // same fact two different horizons: a chill would have stopped blocking the band after 30 epochs
@@ -445,7 +497,7 @@ function band(score: number, components: ReputationComponent[], chillPenalty: nu
     strikes >= FULL_MARKS &&
     reliability != null &&
     reliability >= FULL_MARKS &&
-    chillPenalty === 0
+    sanctionPenalty === 0
   ) {
     return "clean";
   }
@@ -717,7 +769,7 @@ export async function reputationFor(
 
   const listing = await prisma.providerAddress.findFirst({
     where: { address: { in: ownAddresses } },
-    select: { provider: { select: { addresses: { select: { address: true } } } } },
+    select: { providerId: true, provider: { select: { addresses: { select: { address: true } } } } },
   });
   const chillAddresses = new Set(ownAddresses);
   if (listing) {
@@ -799,6 +851,36 @@ export async function reputationFor(
   // for an entity matching every address in it.
   const chillPenalty = chills.reduce((a, c) => Math.max(a, c.penalty), 0);
 
+  // SUBSTANTIATED MANAGEMENT GROUP FINDINGS.
+  //
+  // Published findings only, and the filter is on `publishedAt` rather than on the state name so an
+  // outcome that forgets to set it cannot silently reach the score. A sealed case must never move a
+  // published number: the whole design rests on a case that fails leaving no trace anywhere.
+  //
+  // Keyed on the LISTING, not the on-chain entity, because a case is brought against a provider
+  // rather than against one of its chain identities. `listing` is resolved just above for chills.
+  const findingRows = listing
+    ? await prisma.providerFlagCase.findMany({
+        where: { kind: "CONDUCT", publishedAt: { not: null }, providerId: listing.providerId },
+        orderBy: { decidedAt: "desc" },
+        select: { id: true, decidedAt: true, decidedEpoch: true },
+      })
+    : [];
+  const findings = findingRows.map((f) => ({
+    caseId: f.id,
+    decidedAt: f.decidedAt?.toISOString() ?? null,
+    // A finding with no recorded epoch cannot be aged, so it costs nothing rather than costing the
+    // maximum for ever. Absence is not evidence, which is the same rule the components follow.
+    penalty:
+      latest == null || f.decidedEpoch == null
+        ? 0
+        : FINDING_PENALTY_MAX * (1 - findingRecovery(f.decidedEpoch, latest)),
+  }));
+  // Heaviest outstanding finding, not the sum, matching the chill rule. Two findings are not twice
+  // as disqualifying as one, and summing would let a provider be driven to zero by a handful of
+  // cases from a group that all compete with them.
+  const findingPenalty = findings.reduce((a, f) => Math.max(a, f.penalty), 0);
+
   const indep = independenceRatio(entity.oiClass, entity.oiExternalP);
   if (indep != null) {
     components.push({
@@ -815,7 +897,7 @@ export async function reputationFor(
   const totalWeight = components.reduce((a, c) => a + c.weight, 0);
   const base = totalWeight ? (components.reduce((a, c) => a + c.points, 0) / totalWeight) * 100 : 0;
   // Floored at 0 so a deduction can never produce a negative published figure.
-  const score = Math.max(0, base - chillPenalty);
+  const score = Math.max(0, base - chillPenalty - findingPenalty);
 
   const validators = (entity.nodeIds as string[] | null) ?? [];
   let validatorUptime: number | null = null;
@@ -831,7 +913,7 @@ export async function reputationFor(
   return {
     network,
     score,
-    band: band(score, components, chillPenalty),
+    band: band(score, components, chillPenalty + findingPenalty),
     components,
     version: REPUTATION_VERSION,
     // The eligibility record carries the maturity gate, and it gates the whole figure: without enough
@@ -843,6 +925,8 @@ export async function reputationFor(
     /** The score before the chill deduction, so the page can show the subtraction rather than assert it. */
     baseScore: base,
     chillPenalty,
+    findings,
+    findingPenalty,
     context: {
       managementGroup: entity.managementGroup,
       missedVotes: entity.mgMissedVotes,
