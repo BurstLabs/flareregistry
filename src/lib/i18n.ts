@@ -296,6 +296,8 @@ const en: Dict = {
   "conduct.document": "document",
   "conduct.noScore": "Findings do not change the reputation score or the listing.",
   "conduct.record": "Full record",
+  "conduct.replyOnTime": "This provider's response was submitted during the case and is published with the record.",
+  "conduct.replyLate": "This provider claimed the listing after the finding was published and has since submitted a response, published with the record. It was not available to the Management Group when it voted.",
   "rep.subtotal": "Components",
   "rep.chill.deduction": "Chilled by governance",
   "rep.chill.costing": "(costing {pts} points, easing as the recovery period runs)",
