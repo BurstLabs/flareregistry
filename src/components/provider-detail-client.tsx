@@ -85,7 +85,14 @@ export interface DetailData {
     band: "clean" | "strong" | "solid" | "mixed" | "attention";
     components: {
       key: string; raw: string; ratio: number; weight: number; points: number;
-      detail?: { key: string; ratio: number; met?: boolean | null }[];
+      detail?: {
+        key: string;
+        ratio: number;
+        met?: boolean | null;
+        /** The epoch the tick/cross came from, and whether that is the newest ingested epoch. */
+        metEpoch?: number | null;
+        metCurrent?: boolean;
+      }[];
       /** Strikes only: Flare's recorded worst, its age in this provider's own rows, and the
        *  age-discounted value the score actually uses. Both, because they can differ. */
       strike?: { worst: number; ageRows: number; weighted: number };
@@ -793,7 +800,19 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                                   >
                                     {dd.met == null ? "" : dd.met ? "\u2713" : "\u2715"}
                                   </span>
-                                  <span className="w-28 shrink-0">{t(`rep.cond.${dd.key}`)}</span>
+                                  <span className="w-28 shrink-0">
+                                    {t(`rep.cond.${dd.key}`)}
+                                    {/* A tick reads as "passing now". It is the newest row THIS
+                                        entity has, and an entity absent for up to
+                                        DEPARTED_AFTER_EPOCHS epochs is still scored, so it can be
+                                        weeks old. Say which epoch it came from whenever that is not
+                                        the newest one ingested, rather than implying currency. */}
+                                    {dd.met != null && dd.metCurrent === false && dd.metEpoch != null && (
+                                      <span className="ml-1 text-faint">
+                                        {t("rep.cond.asOf", { epoch: dd.metEpoch })}
+                                      </span>
+                                    )}
+                                  </span>
                                   <span
                                     className={
                                       dd.met === false

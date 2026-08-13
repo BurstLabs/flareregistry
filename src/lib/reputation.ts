@@ -262,6 +262,16 @@ export interface ComponentDetail {
   ratio: number;
   /** Whether Flare judged the condition MET. Not implied by the ratio: see the note below. */
   met?: boolean | null;
+  /**
+   * The epoch that verdict came from, and whether it is the newest epoch ingested for the network.
+   *
+   * A tick or a cross reads as a statement about NOW. It is not: it is the newest row this entity
+   * has, and an entity may be absent for up to DEPARTED_AFTER_EPOCHS epochs while still being
+   * scored, so the verdict can be over a month old and still render. Carrying the epoch lets the
+   * page say so instead of implying currency it does not have.
+   */
+  metEpoch?: number | null;
+  metCurrent?: boolean;
 }
 
 export interface ReputationComponent {
@@ -526,6 +536,10 @@ export async function reputationFor(
     orderBy: { epochId: "desc" },
     take: RECORD_WINDOW,
     select: {
+      // epochId is needed to know how OLD the pass/fail verdict is. Without it the code cannot
+      // detect staleness, which is exactly why a verdict up to DEPARTED_AFTER_EPOCHS old used to
+      // render as if it were current.
+      epochId: true,
       ftsoHits: true, ftsoPossible: true, fdcRounds: true, fdcTotal: true,
       fastUpdates: true, fastExpected: true, stakingOk: true, strikes: true,
       ftsoMet: true, fdcMet: true, fastMet: true,
@@ -581,12 +595,24 @@ export async function reputationFor(
     // Attach the LATEST pass/fail verdict per condition. The rate says how comfortably; this says
     // which side of the line. FDC's threshold sits near 60%, so a rate on its own never tells a
     // provider whether they passed.
-    const latest = condRows[0];
-    if (latest) {
+    //
+    // AND SAY WHICH EPOCH IT CAME FROM. This is a ONE-ROW horizon sitting beside a 30-epoch rate,
+    // and the two were rendered identically. `condRows[0]` is the newest row THIS ENTITY has, not
+    // the newest epoch on the network: a provider absent for up to DEPARTED_AFTER_EPOCHS epochs is
+    // still scored, so a tick could be a month stale and still read as "passing right now".
+    const newest = condRows[0];
+    if (newest) {
       const metBy: Record<string, boolean | null | undefined> = {
-        ftso: latest.ftsoMet, fdc: latest.fdcMet, fast: latest.fastMet, staking: latest.stakingOk,
+        ftso: newest.ftsoMet, fdc: newest.fdcMet, fast: newest.fastMet, staking: newest.stakingOk,
       };
-      for (const dd of detail) dd.met = metBy[dd.key] ?? null;
+      for (const dd of detail) {
+        dd.met = metBy[dd.key] ?? null;
+        dd.metEpoch = newest.epochId;
+        // Current means the verdict is from the newest epoch ingested for this network, so there is
+        // nothing more recent to know. `latest` is null only before the first ingest, and an unknown
+        // head must not be reported as currency.
+        dd.metCurrent = latest != null && newest.epochId === latest;
+      }
     }
 
     components.push({
