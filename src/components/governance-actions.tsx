@@ -128,6 +128,199 @@ export function FlagAction({ providerId }: { providerId: string }) {
   );
 }
 
+/**
+ * Raise a CONDUCT case against an established provider.
+ *
+ * Deliberately heavier than FlagAction, because it should be. A flag delays an unlisted newcomer by
+ * 14 days; a conduct case can end in a permanent public finding against a business with delegators.
+ * The form makes that weight visible: it states the co-initiator count and that nothing is published
+ * unless the vote substantiates it, and it will not submit without at least one primary source.
+ *
+ * EVIDENCE IS STRUCTURED, not prose. Each row is a reference plus a CLAIM of what it shows, because
+ * a transaction hash proves only that a transaction happened. The Management Group votes on the
+ * claim; the reference merely has to be real. Free text would let a member cite a chat screenshot,
+ * which is exactly what this mechanism refuses to adjudicate.
+ */
+type EvidenceRow = { kind: string; chain: string; ref: string; claim: string };
+
+export function ConductAction({ providerId }: { providerId: string }) {
+  const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [grounds, setGrounds] = useState("");
+  const [title, setTitle] = useState("");
+  const [rows, setRows] = useState<EvidenceRow[]>([
+    { kind: "TX", chain: "flare", ref: "", claim: "" },
+  ]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  const setRow = (i: number, patch: Partial<EvidenceRow>) =>
+    setRows((r) => r.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+
+  async function submit() {
+    setErr("");
+    setOk("");
+    if (grounds.trim().length < 10) {
+      setErr(t("gov.act.err.groundsTooShort"));
+      return;
+    }
+    const evidence = rows
+      .filter((r) => r.ref.trim() && r.claim.trim())
+      .map((r) => ({
+        kind: r.kind,
+        chain: r.kind === "DOCUMENT" ? undefined : r.chain,
+        ref: r.ref.trim(),
+        claim: r.claim.trim(),
+      }));
+    if (!evidence.length) {
+      setErr(t("gov.conduct.err.noEvidence"));
+      return;
+    }
+    setBusy(true);
+    try {
+      const sig = await signChallenge();
+      const res = await fetch("/api/governance/conduct", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          providerId,
+          grounds,
+          title: title.trim() || undefined,
+          evidence,
+          message: sig.message,
+          signature: sig.signature,
+        }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.conduct.err.failed"));
+      // No redirect to a case page: a conduct case is sealed, so there is nothing to look at. Say
+      // where it stands instead.
+      setOk(
+        b.state === "NOTICE"
+          ? t("gov.conduct.opened")
+          : t("gov.conduct.recorded", { n: b.signatures, required: b.required })
+      );
+      setGrounds("");
+      setTitle("");
+      setRows([{ kind: "TX", chain: "flare", ref: "", claim: "" }]);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.conduct.err.failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-themed bg-elev/40 p-4 text-sm">
+      <button onClick={() => setOpen((o) => !o)} className="font-medium text-muted hover:text-beacon">
+        {t("gov.conduct.toggle")} {open ? "\u2212" : "+"}
+      </button>
+      {open && (
+        <div className="mt-3">
+          <p className="text-muted">{t("gov.conduct.blurb")}</p>
+          <p className="mt-2 rounded-lg border border-themed/60 p-2 text-xs text-faint">
+            {t("gov.conduct.sealed")}
+          </p>
+
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={120}
+            placeholder={t("gov.conduct.titlePlaceholder")}
+            className="mt-3 block w-full rounded border border-themed bg-elev px-3 py-2"
+          />
+          <textarea
+            value={grounds}
+            onChange={(e) => setGrounds(e.target.value)}
+            maxLength={2000}
+            placeholder={t("gov.conduct.groundsPlaceholder")}
+            className="mt-2 block min-h-[110px] w-full rounded border border-themed bg-elev px-3 py-2"
+          />
+
+          <p className="mt-4 font-medium text-fg">{t("gov.conduct.evidenceH")}</p>
+          <p className="text-xs text-faint">{t("gov.conduct.evidenceBlurb")}</p>
+          {rows.map((r, i) => (
+            <div key={i} className="mt-2 rounded border border-themed/60 p-2">
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={r.kind}
+                  onChange={(e) => setRow(i, { kind: e.target.value })}
+                  className="rounded border border-themed bg-elev px-2 py-1 text-xs"
+                >
+                  {["TX", "ADDRESS", "CONTRACT", "DOCUMENT"].map((k) => (
+                    <option key={k} value={k}>
+                      {t(`gov.conduct.kind.${k}`)}
+                    </option>
+                  ))}
+                </select>
+                {r.kind !== "DOCUMENT" && (
+                  <select
+                    value={r.chain}
+                    onChange={(e) => setRow(i, { chain: e.target.value })}
+                    className="rounded border border-themed bg-elev px-2 py-1 text-xs"
+                  >
+                    <option value="flare">Flare</option>
+                    <option value="songbird">Songbird</option>
+                  </select>
+                )}
+                {rows.length > 1 && (
+                  <button
+                    onClick={() => setRows((x) => x.filter((_, j) => j !== i))}
+                    className="ml-auto text-xs text-faint hover:text-flare"
+                  >
+                    {t("gov.conduct.removeRow")}
+                  </button>
+                )}
+              </div>
+              <input
+                value={r.ref}
+                onChange={(e) => setRow(i, { ref: e.target.value })}
+                placeholder={
+                  r.kind === "DOCUMENT"
+                    ? t("gov.conduct.refUrl")
+                    : r.kind === "TX"
+                      ? t("gov.conduct.refTx")
+                      : t("gov.conduct.refAddr")
+                }
+                className="mt-2 block w-full rounded border border-themed bg-elev px-2 py-1 font-mono text-xs"
+              />
+              <input
+                value={r.claim}
+                onChange={(e) => setRow(i, { claim: e.target.value })}
+                maxLength={500}
+                placeholder={t("gov.conduct.claimPlaceholder")}
+                className="mt-2 block w-full rounded border border-themed bg-elev px-2 py-1 text-xs"
+              />
+            </div>
+          ))}
+          <button
+            onClick={() => setRows((x) => [...x, { kind: "TX", chain: "flare", ref: "", claim: "" }])}
+            className="mt-2 text-xs text-beacon hover:underline"
+          >
+            {t("gov.conduct.addRow")}
+          </button>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={submit}
+              disabled={busy}
+              className="rounded-lg border border-flare px-4 py-2 font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
+            >
+              {busy ? t("gov.act.signing") : t("gov.act.signSubmit")}
+            </button>
+          </div>
+          {err && <Note kind="err" text={err} />}
+          {ok && <Note kind="ok" text={ok} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Report-logo form. Shown on a provider page; only a Management Group member can submit (the server
 // enforces membership on the signature). The report is recorded and emailed; the logo stays live
 // until an admin acts. A non-member who tries gets a clear "members only" error from the server.
