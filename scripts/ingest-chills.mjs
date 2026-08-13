@@ -19,11 +19,18 @@
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-const EXPLORER = "https://flare-explorer.flare.network/api";
-const RPC = process.env.FLARE_RPC ?? "https://flare-api.flare.network/ext/C/rpc";
+const EXPLORER = {
+  flare: "https://flare-explorer.flare.network/api",
+  songbird: "https://songbird-explorer.flare.network/api",
+};
+const RPC = {
+  flare: process.env.FLARE_RPC ?? "https://flare-api.flare.network/ext/C/rpc",
+  songbird: process.env.SONGBIRD_RPC ?? "https://songbird-api.flare.network/ext/C/rpc",
+};
 
 const SOURCES = [
   {
+    chain: "flare",
     label: "VoterWhitelister gen-2 (v1 era)",
     address: "0x072A199670fAD8883c7A92D108dFA56828EfCE87",
     // VoterChilled(address,uint256), neither parameter indexed: both live in data.
@@ -35,6 +42,7 @@ const SOURCES = [
     }),
   },
   {
+    chain: "flare",
     label: "VoterRegistry gen-1 (FSP era)",
     address: "0x2580101692366e2f331e891180d9ffdF861Fce83",
     // BeneficiaryChilled(bytes20,uint256), beneficiary INDEXED. bytes20 is LEFT-aligned in the
@@ -47,6 +55,7 @@ const SOURCES = [
     }),
   },
   {
+    chain: "flare",
     label: "VoterRegistry gen-2 (current)",
     address: "0xA480457953Af3583E54DCd630b219353B8FC9Af7",
     // Same event, uint32 instead of uint256, so a DIFFERENT topic0. No occurrences yet, but it is
@@ -58,11 +67,51 @@ const SOURCES = [
       untilEpoch: parseInt(log.data, 16),
     }),
   },
+  // SONGBIRD. Found by scanning topic0 with NO address filter, which is the only reason they were
+  // found at all: neither emitting contract is what the Songbird registry points at today
+  // (VoterWhitelister now 0xEfF0A449…, VoterRegistry now 0xd23FAE88…). Exactly the same trap as
+  // Flare, and a second demonstration that a registry-resolved address list silently misses history.
+  //
+  // Songbird runs the same chill policy as Flare: STP.03 is the Songbird twin of FIP.02, with the
+  // same 2-epoch first chill and permanent ban on a second.
+  {
+    chain: "songbird",
+    label: "VoterWhitelister (retired, Songbird v1 era)",
+    address: "0x6ce15a3add04d1a4c575b6be19674d6bb11ba614",
+    topic0: "0x0c2fcef22ab22997ed46cd27f7f0aa308600145401a7a141065d61c5d87341d2",
+    fromBlock: 0,
+    decode: (log) => ({
+      beneficiary: "0x" + log.data.slice(2).slice(24, 64),
+      untilEpoch: parseInt(log.data.slice(2).slice(64, 128), 16),
+    }),
+  },
+  {
+    chain: "songbird",
+    label: "VoterRegistry (retired, Songbird FSP era)",
+    address: "0x31b9ec65c731c7d973a33ef3fc83b653f540dc8d",
+    topic0: "0x0a5e087b026d8f1c57e75d9d0cb0394c2ad3535e7a15d97d553be80476274cd0",
+    fromBlock: 0,
+    decode: (log) => ({
+      beneficiary: "0x" + log.topics[1].slice(2).slice(0, 40),
+      untilEpoch: parseInt(log.data, 16),
+    }),
+  },
+  {
+    chain: "songbird",
+    label: "VoterRegistry (current, Songbird)",
+    address: "0xd23FAE88c09e6A77dD9eFcc29D6bBC55D2e74310",
+    topic0: "0x23a1b7932916d24f6177b7f7282bb925e3733697d5699c07e0372cd149696345",
+    fromBlock: 0,
+    decode: (log) => ({
+      beneficiary: "0x" + log.topics[1].slice(2).slice(0, 40),
+      untilEpoch: parseInt(log.data, 16),
+    }),
+  },
 ];
 
 async function fetchLogs(src) {
   const url =
-    `${EXPLORER}?module=logs&action=getLogs&fromBlock=${src.fromBlock}` +
+    `${EXPLORER[src.chain]}?module=logs&action=getLogs&fromBlock=${src.fromBlock}` +
     `&toBlock=99999999&address=${src.address}&topic0=${src.topic0}`;
   const res = await fetch(url, {
     headers: { "user-agent": "Mozilla/5.0" },
@@ -79,8 +128,8 @@ async function fetchLogs(src) {
 }
 
 /** Block timestamp, so a chill can be shown with a date rather than only an epoch number. */
-async function blockTime(blockNumber) {
-  const res = await fetch(RPC, {
+async function blockTime(chain, blockNumber) {
+  const res = await fetch(RPC[chain], {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -119,7 +168,7 @@ async function liveVoterRegistry() {
     (32).toString(16).padStart(64, "0") +
     (13).toString(16).padStart(64, "0") +
     name;
-  const res = await fetch(RPC, {
+  const res = await fetch(RPC.flare, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -188,9 +237,9 @@ async function liveVoterRegistry() {
     for (const log of logs) {
       const { beneficiary, untilEpoch } = src.decode(log);
       const blockNumber = parseInt(log.blockNumber, 16);
-      const appliedAt = await blockTime(blockNumber);
+      const appliedAt = await blockTime(src.chain, blockNumber);
       const data = {
-        network: "flare",
+        network: src.chain,
         beneficiary: beneficiary.toLowerCase(),
         untilEpoch,
         contract: src.address.toLowerCase(),
@@ -201,7 +250,7 @@ async function liveVoterRegistry() {
       await prisma.providerChill.upsert({
         where: {
           network_beneficiary_txHash: {
-            network: "flare",
+            network: src.chain,
             beneficiary: data.beneficiary,
             txHash: data.txHash,
           },
