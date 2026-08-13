@@ -16,6 +16,11 @@ export type ApiErrorCode =
   | "CASE_NOT_FOUND"
   // content validation
   | "GROUNDS_LENGTH"
+  | "EVIDENCE_REQUIRED"
+  | "EVIDENCE_KIND"
+  | "EVIDENCE_REF"
+  | "EVIDENCE_CLAIM"
+  | "EVIDENCE_CHAIN"
   | "DEFENSE_LENGTH"
   | "REPLY_LENGTH"
   | "INAPPROPRIATE_LANGUAGE"
@@ -57,6 +62,11 @@ export const API_ERROR_I18N: Record<ApiErrorCode, string> = {
   MEMBERSHIP_UNVERIFIED: "apiErr.membershipUnverified",
   CASE_NOT_FOUND: "apiErr.caseNotFound",
   GROUNDS_LENGTH: "apiErr.groundsLength",
+  EVIDENCE_REQUIRED: "apiErr.evidenceRequired",
+  EVIDENCE_KIND: "apiErr.evidenceKind",
+  EVIDENCE_REF: "apiErr.evidenceRef",
+  EVIDENCE_CLAIM: "apiErr.evidenceClaim",
+  EVIDENCE_CHAIN: "apiErr.evidenceChain",
   DEFENSE_LENGTH: "apiErr.defenseLength",
   REPLY_LENGTH: "apiErr.replyLength",
   INAPPROPRIATE_LANGUAGE: "apiErr.inappropriate",

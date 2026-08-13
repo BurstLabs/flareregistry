@@ -529,7 +529,10 @@ model QualificationState {
 // See docs/governance-flag-mechanism.md for the full mechanism.
 model ProviderFlagCase {
   id         String   @id @default(cuid())
-  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  /// RESTRICT, not Cascade. Deleting a provider used to destroy its entire case record, which made
+  /// deletion an undo button for an adjudicated finding. A case is a permanent record of a decision
+  /// the Management Group took; the operator must not be able to erase one by removing the subject.
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Restrict)
   providerId String
   network    String
 
@@ -545,9 +548,22 @@ model ProviderFlagCase {
   /// by design; the sole gate for CONDUCT.
   publishedAt DateTime?
 
-  // OPEN_DISCUSSION | OPEN_VOTING | DENIED | CLEARED | FAILED_QUORUM
+  // FLAG:    PENDING | OPEN_DISCUSSION | OPEN_VOTING | DENIED | CLEARED | FAILED_QUORUM
+  // CONDUCT: PENDING | NOTICE | OPEN_DISCUSSION | OPEN_VOTING | SUBSTANTIATED | NOT_SUBSTANTIATED
+  //          | FAILED_QUORUM
   state            String
   openedAt         DateTime  @default(now())
+  /// CONDUCT only: end of the private notice period, during which the subject is served and may
+  /// prepare, and before which nothing happens. Null for FLAG cases, which have no notice stage.
+  noticeEndsAt     DateTime?
+  /// SERVED_DEFENDED | SERVED_NO_DEFENCE | UNCLAIMED_NOT_SERVED. Set when a conduct case is decided
+  /// and PUBLISHED alongside the finding, because silence from a subject who declined to answer and
+  /// silence from one who was never reachable are different facts.
+  serviceStatus    String?
+  /// Set when a subject claims its listing AFTER a finding was published without a defence, and
+  /// exercises the reply that was never available to it. The finding stays; the reply is published
+  /// beside it with equal prominence.
+  lateReplyAt      DateTime?
   discussionEndsAt DateTime
   votingEndsAt     DateTime
   decidedAt        DateTime?
@@ -592,6 +608,7 @@ model ProviderFlagInitiation {
   withdrawnAt       DateTime?
 
   revisions ProviderFlagGroundsRevision[]
+  evidence  ProviderFlagEvidence[]
   // Supplemental grounds the same member adds later (extra evidence/notes). Informational only:
   // they do NOT count as additional co-initiations; the primary `grounds` above is the one flag.
   entries   ProviderFlagGroundsEntry[]
@@ -1188,4 +1205,52 @@ model ProviderChill {
 
   @@unique([network, beneficiary, txHash])
   @@index([network, beneficiary])
+}
+
+/// PRIMARY-SOURCE EVIDENCE attached to a conduct case ground.
+///
+/// Conduct grounds may cite only things that can be checked independently: an on-chain transaction,
+/// an address, a verified contract, or a published document. Not chat screenshots. A 63,522-message
+/// chat export produced 13 relevant messages and established nothing; a single on-chain report was
+/// verified in minutes. One of those is adjudicable.
+///
+/// `resolvedAt` records that the reference was fetched and exists. That is necessary and NOT
+/// sufficient: a hash resolving proves only that a transaction happened, never that it shows what
+/// the ground claims. `claim` is what the member says it shows, so the Management Group votes on the
+/// assertion rather than on the existence of a hash.
+model ProviderFlagEvidence {
+  id           String                 @id @default(cuid())
+  initiation   ProviderFlagInitiation @relation(fields: [initiationId], references: [id], onDelete: Cascade)
+  initiationId String
+  /// TX | ADDRESS | CONTRACT | DOCUMENT
+  kind         String
+  /// "flare" | "songbird" for on-chain kinds; null for a document.
+  chain        String?
+  /// The transaction hash, address, or URL.
+  ref          String
+  /// What the member asserts this reference SHOWS. The thing actually being voted on.
+  claim        String
+  /// Set when the reference was confirmed to exist on the stated chain.
+  resolvedAt   DateTime?
+  createdAt    DateTime               @default(now())
+
+  @@index([initiationId])
+}
+
+/// APPEND-ONLY LOG of operator actions touching a case.
+///
+/// The append-only grounds, defence and vote tables exist so the record cannot be rewritten. An
+/// admin surface that can edit or delete them is the hole in that guarantee. Operator actions are
+/// therefore constrained to the operational, and every one of them lands here.
+model ProviderCaseAudit {
+  id        String   @id @default(cuid())
+  caseId    String
+  /// What was done, e.g. NOTICE_SERVED, TALLY_RUN, SERVICE_STATUS_SET.
+  action    String
+  /// Who did it: an operator identifier or "system" for cron.
+  actor     String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([caseId, createdAt])
 }

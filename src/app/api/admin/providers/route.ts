@@ -53,13 +53,28 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ ok: true, provider });
 }
 
-// DELETE /api/admin/providers  { id }  -> delete a provider (cascades addresses + governance cases).
+// DELETE /api/admin/providers  { id }  -> delete a provider (cascades addresses).
+// REFUSED when the provider carries a conduct case: the FK is RESTRICT, so this would fail at the
+// database anyway, but a checked refusal with a reason beats a raw constraint error, and deleting
+// the subject must never be a way to remove a finding about them.
 export async function DELETE(req: NextRequest) {
   const denied = await requireAdmin(req);
   if (denied) return denied;
   const b = await req.json().catch(() => null);
   const id = typeof b?.id === "string" ? b.id : null;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  const conduct = await prisma.providerFlagCase.count({
+    where: { providerId: id, kind: "CONDUCT" },
+  });
+  if (conduct > 0) {
+    return NextResponse.json(
+      {
+        error:
+          "this provider carries a conduct case; the case is a permanent record and the provider cannot be deleted",
+      },
+      { status: 409 }
+    );
+  }
   await prisma.provider.delete({ where: { id } });
   await publishFeedToRepo().catch(() => {});
   return NextResponse.json({ ok: true });
