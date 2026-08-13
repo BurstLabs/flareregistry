@@ -52,7 +52,7 @@ const CLASSIFIED = {
   "app/api/internal/tally-flags/route.ts": "CRON",
 };
 
-const FILTERS = ["PUBLIC_CASE_WHERE", "isCasePublic", 'kind: "FLAG"'];
+const FILTERS = ["PUBLIC_CASE_WHERE", "isCasePublic", 'kind: "FLAG"', 'publishedAt: { not: null }'];
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir)) {

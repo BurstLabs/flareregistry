@@ -20,6 +20,18 @@ export interface DetailData {
   verified: boolean;
   registered: boolean;
   managementGroup: boolean;
+  conduct: {
+    caseId: string;
+    decidedAt: string | null;
+    serviceStatus: string | null;
+    lateReplyAt: string | null;
+    hasDefence: boolean;
+    points: {
+      title: string | null;
+      grounds: string;
+      evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+    }[];
+  }[];
   governance: { pending: boolean; underReview: boolean; isAppeal: boolean; suspended: boolean; appealReady: boolean; caseId: string | null; state: string | null } | null;
   // Concluded flag cases (archived withdrawn flags + decided cases), newest first, for the record.
   pastCases: { caseId: string; state: string; at: string }[];
@@ -630,6 +642,78 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           hidden, and scored on an absolute scale so nobody's figure moves when a competitor's does.
           The excluded list is shown deliberately: what is left out is as much of the method as what
           is counted. See lib/reputation. */}
+      {/* PUBLISHED CONDUCT FINDINGS.
+          Above the score, because a finding is a decision the Management Group took and the score is
+          a measurement; putting a decision below a number invites reading it as an input to one,
+          which it is not. A finding never moves the score, the band, `qualified` or `held`.
+
+          The service line is as prominent as the finding itself. "No defence" from a provider who
+          was asked and declined, and silence from one who was never reachable because the listing
+          has never been claimed, are different facts, and a reader must not have to infer which. */}
+      {d.conduct.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-1 text-lg font-semibold">{t("conduct.h")}</h2>
+          <p className="mb-3 text-xs text-faint">{t("conduct.intro")}</p>
+          <div className="space-y-4">
+            {d.conduct.map((c) => (
+              <div key={c.caseId} className="surface rounded-xl border border-flare/40 p-5 text-sm">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="font-medium text-fg">{t("conduct.substantiated")}</span>
+                  {c.decidedAt && (
+                    <span className="text-xs text-faint">{c.decidedAt.slice(0, 10)}</span>
+                  )}
+                </div>
+                <p className="mt-2 rounded-lg bg-black/5 p-2 text-xs text-muted dark:bg-white/5">
+                  {t(`conduct.service.${c.serviceStatus ?? "UNKNOWN"}`)}
+                </p>
+                <ul className="mt-3 space-y-3">
+                  {c.points.map((pt, i) => (
+                    <li key={i}>
+                      {pt.title && <p className="font-medium text-fg">{pt.title}</p>}
+                      <p className="mt-1 whitespace-pre-wrap text-muted">{pt.grounds}</p>
+                      {pt.evidence.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {pt.evidence.map((e, j) => (
+                            <li key={j} className="text-xs">
+                              <span className="text-faint">{e.claim}</span>{" "}
+                              {e.chain ? (
+                                <a
+                                  href={`https://${e.chain === "songbird" ? "songbird" : "flare"}-explorer.flare.network/${e.kind === "TX" ? "tx" : "address"}/${e.ref}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-beacon hover:underline"
+                                >
+                                  {e.ref.slice(0, 14)}…
+                                </a>
+                              ) : (
+                                <a
+                                  href={safeExternalUrl(e.ref) ?? "#"}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-beacon hover:underline"
+                                >
+                                  {t("conduct.document")}
+                                </a>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs text-faint">
+                  {t("conduct.noScore")}{" "}
+                  <Link href={`/governance/${c.caseId}`} className="text-beacon hover:underline">
+                    {t("conduct.record")}
+                  </Link>
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {d.reputation && (
         <section className="mt-8">
           {/* Says Flare even though it is now always Flare. A provider running on both chains should

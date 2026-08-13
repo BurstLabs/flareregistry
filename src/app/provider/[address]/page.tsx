@@ -146,6 +146,11 @@ export default async function ProviderDetail({
   const reputation = flareEntity ? await reputationFor("flare", flareEntity.voter) : null;
 
   const gov = (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null;
+  // Published conduct findings, entirely separate from the new-provider case record above. A
+  // finding never affects `qualified`, `held` or the score; it is a statement of what the
+  // Management Group decided, shown next to them.
+  const conduct =
+    (await (await import("@/lib/governance")).conductFindingsByProvider()).get(p.id) ?? [];
 
   // New-provider hold, decomposed into its two independent axes so the flag/badge logic stays clear:
   //  - heldWindow: the raw 30-day new-provider clock (createdAt-anchored), regardless of criteria.
@@ -173,6 +178,7 @@ export default async function ProviderDetail({
     registered: !!metrics?.registered,
     managementGroup: (await (await import("@/lib/management-group")).managementGroupByProvider()).get(p.id) ?? false,
     governance: gov,
+    conduct,
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
     hasLogo: !!p.logoURI,
