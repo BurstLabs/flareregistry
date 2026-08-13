@@ -153,7 +153,9 @@ export default function GovernancePage() {
           is public from the moment it is raised and can suspend a listing, the other is private
           until a vote and can never suspend anything. Every constant is read from lib/governance so
           the page cannot drift from the rules that run. */}
-      <h2 className="mt-10 text-2xl font-bold tracking-tight">{t("gov.docs.c.title")}</h2>
+      <h2 id="conduct" className="mt-10 scroll-mt-24 text-2xl font-bold tracking-tight">
+        {t("gov.docs.c.title")}
+      </h2>
       <p className="mt-3 leading-relaxed text-muted">{t("gov.docs.c.intro")}</p>
 
       <Section title={t("gov.docs.c1.title")}>

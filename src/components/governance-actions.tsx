@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useApp } from "@/components/providers";
 import { useSignChallenge } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
@@ -216,9 +217,21 @@ export function ConductAction({ providerId }: { providerId: string }) {
 
   return (
     <div className="mt-4 rounded-lg border border-themed bg-elev/40 p-4 text-sm">
-      <button onClick={() => setOpen((o) => !o)} className="font-medium text-muted hover:text-beacon">
-        {t("gov.conduct.toggle")} {open ? "\u2212" : "+"}
-      </button>
+      {/* The link sits on the collapsed header, not inside the opened form. Someone who has not
+          opened it yet is exactly the person who needs to know what this is: it can end in a
+          permanent public finding against a named business, and nobody should discover the rules
+          only after deciding to use it. */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="font-medium text-muted hover:text-beacon"
+        >
+          {t("gov.conduct.toggle")} {open ? "\u2212" : "+"}
+        </button>
+        <Link href="/governance#conduct" className="text-xs text-beacon hover:underline">
+          {t("gov.conduct.howItWorks")}
+        </Link>
+      </div>
       {open && (
         <div className="mt-3">
           <p className="text-muted">{t("gov.conduct.blurb")}</p>
