@@ -13,6 +13,10 @@ import {
   DENY_MAJORITY_BIPS,
   APPEAL_COOLDOWN_DAYS,
   APPEAL_DEADLINE_DAYS,
+  CONDUCT_CO_INITIATORS_REQUIRED,
+  CONDUCT_NOTICE_DAYS,
+  CONDUCT_DISCUSSION_DAYS,
+  CONDUCT_VOTING_DAYS,
 } from "@/lib/governance";
 import { useApp } from "@/components/providers";
 
@@ -142,6 +146,47 @@ export default function GovernancePage() {
 
       <Section title={t("gov.docs.s6.title")}>
         <p>{t("gov.docs.s6.body")}</p>
+      </Section>
+
+      {/* CONDUCT. Documented as a SECOND, separate process rather than folded into the sections
+          above, because conflating the two would be the most damaging thing this page could do: one
+          is public from the moment it is raised and can suspend a listing, the other is private
+          until a vote and can never suspend anything. Every constant is read from lib/governance so
+          the page cannot drift from the rules that run. */}
+      <h2 className="mt-10 text-2xl font-bold tracking-tight">{t("gov.docs.c.title")}</h2>
+      <p className="mt-3 leading-relaxed text-muted">{t("gov.docs.c.intro")}</p>
+
+      <Section title={t("gov.docs.c1.title")}>
+        <p>{t("gov.docs.c1.body")}</p>
+      </Section>
+
+      <Section title={t("gov.docs.c2.title")}>
+        <p>{t("gov.docs.c2.body1", { coInitiators: CONDUCT_CO_INITIATORS_REQUIRED })}</p>
+        <p>{t("gov.docs.c2.body2")}</p>
+      </Section>
+
+      <Section title={t("gov.docs.c3.title")}>
+        <p>{t("gov.docs.c3.body")}</p>
+      </Section>
+
+      <Section title={t("gov.docs.c4.title")}>
+        <p>
+          {t("gov.docs.c4.body1", {
+            notice: CONDUCT_NOTICE_DAYS,
+            discussion: CONDUCT_DISCUSSION_DAYS,
+            voting: CONDUCT_VOTING_DAYS,
+          })}
+        </p>
+        <p>{t("gov.docs.c4.body2")}</p>
+      </Section>
+
+      <Section title={t("gov.docs.c5.title")}>
+        <p>{t("gov.docs.c5.body1")}</p>
+        <p>{t("gov.docs.c5.body2")}</p>
+      </Section>
+
+      <Section title={t("gov.docs.c6.title")}>
+        <p>{t("gov.docs.c6.body")}</p>
       </Section>
 
       <FlagRecords />
