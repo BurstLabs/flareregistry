@@ -29,8 +29,14 @@ export async function POST(req: NextRequest) {
 
   // 0) Expire stale PENDING flags: a single-member flag is removed once it is older than
   //    PENDING_EXPIRY_DAYS, or once the subject's new-provider window has ended (whichever first).
+  //
+  //    FLAG CASES ONLY. The new-provider window is meaningless for a CONDUCT case, and worse,
+  //    `windowEnded` is unconditionally true for any provider older than 30 days, which is every
+  //    conceivable CONDUCT subject. Left unscoped this loop would hard-delete every conduct case on
+  //    the first cron tick after it was raised. Conduct expiry is a separate rule and is not
+  //    implemented here yet.
   const pending = await prisma.providerFlagCase.findMany({
-    where: { state: "PENDING" },
+    where: { state: "PENDING", kind: "FLAG" },
     select: { id: true, openedAt: true, provider: { select: { createdAt: true } } },
   });
   let expired = 0;

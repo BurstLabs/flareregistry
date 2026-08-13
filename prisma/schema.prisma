@@ -533,6 +533,18 @@ model ProviderFlagCase {
   providerId String
   network    String
 
+  /// FLAG (new-provider review) | CONDUCT (evidenced record against an established provider).
+  ///
+  /// The two share this table and every append-only child table, but almost nothing else. A FLAG
+  /// case is public from the moment it is raised, which is deliberate: the subject is inside its
+  /// 30-day hold, is not yet listed in any wallet, and the whole point is scrutiny before listing.
+  /// A CONDUCT case is the opposite. Its subject is listed, has delegators and revenue, so an
+  /// unvoted accusation is itself the injury. CONDUCT cases stay sealed until they are published.
+  kind        String    @default("FLAG")
+  /// Null until the case may be shown publicly. Never consulted for FLAG cases, which are public
+  /// by design; the sole gate for CONDUCT.
+  publishedAt DateTime?
+
   // OPEN_DISCUSSION | OPEN_VOTING | DENIED | CLEARED | FAILED_QUORUM
   state            String
   openedAt         DateTime  @default(now())
@@ -548,14 +560,15 @@ model ProviderFlagCase {
   outcomeTurnout    Int?
   outcomeDeny       Int?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
   initiations   ProviderFlagInitiation[]
   votes         ProviderFlagVote[]
   voteRevisions ProviderFlagVoteRevision[]
   pointImages   ProviderFlagPointImage[]
   defense       ProviderFlagDefense?
+
+  @@index([kind, publishedAt])
 }
 
 // A Management Group member co-initiating a flag. Two distinct members open a case.
