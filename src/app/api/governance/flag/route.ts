@@ -143,6 +143,10 @@ export async function POST(req: NextRequest) {
         data: {
           providerId,
           network: entity.network,
+          // Explicit rather than relying on the schema default: this route raises NEW-PROVIDER
+          // flags only. Conduct cases are created elsewhere and must never set flaggedOnce, which
+          // this route does at line ~193 and which a provider gets exactly once.
+          kind: "FLAG",
           state: "PENDING",
           openedAt: now, // provisional; reset to the real open time when the case opens below
           discussionEndsAt: now,

@@ -6,13 +6,14 @@
   "description": "Self-service FTSO signal provider registry. Providers prove address ownership by wallet signature and manage their own listing, which is emitted as a wallet-compatible providerlist.json feed.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/check-case-visibility.mjs && next build",
     "start": "next start -p ${PORT:-3060}",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "check:cases": "node scripts/check-case-visibility.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

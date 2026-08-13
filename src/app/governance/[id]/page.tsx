@@ -8,6 +8,7 @@ import {
   APPEAL_DEADLINE_DAYS,
   QUORUM_TURNOUT_BIPS,
   DENY_MAJORITY_BIPS,
+  isCasePublic,
 } from "@/lib/governance";
 import { GovernanceCaseClient, type CaseView } from "@/components/governance-case-client";
 
@@ -47,7 +48,9 @@ export default async function GovernanceCasePage({
       },
     },
   });
-  if (!c) notFound();
+  // A sealed CONDUCT case 404s like any unknown id: the page must not confirm that an unpublished
+  // accusation exists.
+  if (!c || !isCasePublic(c)) notFound();
 
   // Evidence images for every point on this case, grouped by their owner id so each point can render
   // its own thumbnails. One query, grouped in memory.

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { PUBLIC_CASE_WHERE } from "@/lib/governance";
 
 // GET /api/governance/cases
 // Public, read-only index of all flag cases for the governance records list, so archived/decided
@@ -9,6 +10,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const cases = await prisma.providerFlagCase.findMany({
+    // Sealed CONDUCT cases are excluded. FLAG cases are unaffected: they remain public from the
+    // moment they are raised, which §7 of the spec requires.
+    where: PUBLIC_CASE_WHERE,
     orderBy: [{ decidedAt: "desc" }, { openedAt: "desc" }],
     select: {
       id: true,

@@ -5,6 +5,7 @@ import {
   loadMembers,
   QUORUM_TURNOUT_BIPS,
   DENY_MAJORITY_BIPS,
+  isCasePublic,
 } from "@/lib/governance";
 
 // GET /api/governance/case/:id
@@ -43,7 +44,9 @@ export async function GET(
       },
     },
   });
-  if (!c) return NextResponse.json({ error: "not found" }, { status: 404 });
+  // A sealed CONDUCT case must be indistinguishable from one that does not exist. 404 rather than
+  // 403, so the response never confirms that an unpublished accusation exists.
+  if (!c || !isCasePublic(c)) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   // Live member count for the quorum display (best-effort; fall back to the open snapshot).
   let memberCount = c.memberCountAtOpen;

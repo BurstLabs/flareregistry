@@ -31,6 +31,44 @@ export const DENY_MAJORITY_BIPS = 6667; // >=2/3 of votes cast must be DENY
 export const FLARE_QUORUM_TURNOUT_BIPS = 6600; // 66%
 export const FLARE_MAJORITY_BIPS = 5000; // >50%
 
+/**
+ * Case kinds. FLAG is the original new-provider review; CONDUCT is an evidenced record against an
+ * established provider.
+ */
+export type CaseKind = "FLAG" | "CONDUCT";
+
+/**
+ * May this case be shown to the public?
+ *
+ * FLAG cases are public from the moment they are raised, and that is DELIBERATE, not an oversight:
+ * docs/governance-flag-mechanism.md §7 requires "no privileged view", and the subject is inside its
+ * 30-day hold, unlisted in every wallet, with no delegators to alarm. Scrutiny before listing is the
+ * entire purpose. Nothing about that behaviour changes here.
+ *
+ * CONDUCT is the mirror image. Its subject IS listed, with delegators and revenue, so publication is
+ * itself the injury and arrives long before any vote. Four rivals could otherwise attach a named,
+ * dated accusation to a competitor and never need to win the vote at all. So a CONDUCT case is
+ * invisible until `publishedAt` is set, which happens only on a substantiated outcome.
+ *
+ * Expressed as a kind check rather than "publishedAt is not null" for FLAG too, so preserving the
+ * existing behaviour needs no backfill and cannot be broken by a migration that misses rows.
+ */
+export function isCasePublic(c: { kind: string; publishedAt: Date | null }): boolean {
+  return c.kind === "FLAG" || c.publishedAt !== null;
+}
+
+/**
+ * The same rule as a Prisma filter, for list queries.
+ *
+ * Every PUBLIC read path must spread this. The authoritative list of those paths, and the test that
+ * enforces it, is in src/lib/__tests__/case-visibility.test.ts. Admin routes and authenticated
+ * action routes (vote, defend, edit-grounds and so on) deliberately do NOT use it: an operator needs
+ * to see everything, and a member acting on their own sealed case must still be able to.
+ */
+export const PUBLIC_CASE_WHERE = {
+  OR: [{ kind: "FLAG" }, { publishedAt: { not: null } }],
+};
+
 export type FlagState =
   | "OPEN_DISCUSSION"
   | "OPEN_VOTING"
@@ -258,7 +296,14 @@ export interface PastFlagCase {
  */
 export async function pastCasesByProvider(): Promise<Map<string, PastFlagCase[]>> {
   const cases = await prisma.providerFlagCase.findMany({
-    where: { state: { in: ["WITHDRAWN", "DENIED", "CLEARED", "FAILED_QUORUM"] } },
+    // Sealed CONDUCT cases never reach a provider page or the feed. Spread, not a second `where`
+    // key: two keys silently drops the first.
+    // FLAG only: this is the new-provider case record shown on a provider page. Conduct findings
+    // are rendered separately so the two can never be confused for one another.
+    where: {
+      kind: "FLAG",
+      state: { in: ["WITHDRAWN", "DENIED", "CLEARED", "FAILED_QUORUM"] },
+    },
     orderBy: { decidedAt: "desc" },
     select: { id: true, providerId: true, state: true, decidedAt: true, openedAt: true },
   });
@@ -278,6 +323,11 @@ export async function pastCasesByProvider(): Promise<Map<string, PastFlagCase[]>
  */
 export async function governanceByProvider(): Promise<Map<string, ProviderGovernance>> {
   const cases = await prisma.providerFlagCase.findMany({
+    // FLAG ONLY, and this is load-bearing rather than defensive. This function's output feeds
+    // `liveCase` -> `held` -> `listed:false` in feed.ts and on the provider page. A conduct case
+    // reaching it would let an accusation against an established provider pull them out of every
+    // wallet. Conduct findings get their own display surface and never touch listing.
+    where: { kind: "FLAG" },
     orderBy: { openedAt: "desc" },
     select: {
       id: true,
