@@ -8,6 +8,7 @@ import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
 import { ManageListingButton } from "./manage-listing-button";
+import { OwnerNotices } from "./owner-notices";
 import { MgJoinButton } from "./mg-join-button";
 import { MgRemoveButton } from "./mg-remove-button";
 import { TelegramPanel } from "./telegram-panel";
@@ -338,6 +339,18 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       >
         {d.url}
       </a>
+
+      {/* The owner's own notice channel. Renders only when the connected wallet is a verified
+
+          owner address, and only after they sign, so it discloses nothing to anyone else. */}
+
+      <OwnerNotices
+
+        providerId={d.providerId}
+
+        ownerAddresses={d.addresses.filter((a) => a.verified).map((a) => a.address.toLowerCase())}
+
+      />
 
       <ManageListingButton
         // Managing a claimed listing may be done with ANY of the five on-chain role addresses of a
