@@ -476,3 +476,63 @@ export async function targetBelongsToCase(
   }
   return false;
 }
+
+
+/** A published conduct finding, for the provider page. */
+export interface ConductFinding {
+  caseId: string;
+  decidedAt: string | null;
+  serviceStatus: string | null;
+  lateReplyAt: string | null;
+  points: { title: string | null; grounds: string; evidence: { kind: string; chain: string | null; ref: string; claim: string }[] }[];
+  hasDefence: boolean;
+}
+
+/**
+ * Published conduct findings by provider id.
+ *
+ * PUBLISHED ONLY, and the filter is on `publishedAt` rather than on the state name, so a future
+ * outcome that forgets to set it is invisible rather than accidentally public. Failing closed is the
+ * correct direction for the one query that decides whether an accusation about a named business
+ * appears on their page.
+ */
+export async function conductFindingsByProvider(): Promise<Map<string, ConductFinding[]>> {
+  const cases = await prisma.providerFlagCase.findMany({
+    where: { kind: "CONDUCT", publishedAt: { not: null } },
+    orderBy: { decidedAt: "desc" },
+    select: {
+      id: true,
+      providerId: true,
+      decidedAt: true,
+      serviceStatus: true,
+      lateReplyAt: true,
+      defense: { select: { id: true } },
+      initiations: {
+        where: { withdrawnAt: null },
+        select: {
+          title: true,
+          grounds: true,
+          evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
+        },
+      },
+    },
+  });
+  const map = new Map<string, ConductFinding[]>();
+  for (const c of cases) {
+    const list = map.get(c.providerId) ?? [];
+    list.push({
+      caseId: c.id,
+      decidedAt: c.decidedAt?.toISOString() ?? null,
+      serviceStatus: c.serviceStatus,
+      lateReplyAt: c.lateReplyAt?.toISOString() ?? null,
+      hasDefence: !!c.defense,
+      points: c.initiations.map((i) => ({
+        title: i.title,
+        grounds: i.grounds,
+        evidence: i.evidence,
+      })),
+    });
+    map.set(c.providerId, list);
+  }
+  return map;
+}
