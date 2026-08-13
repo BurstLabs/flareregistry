@@ -38,24 +38,15 @@ export async function DELETE(req: NextRequest) {
   const b = await req.json().catch(() => null);
   const id = typeof b?.id === "string" ? b.id : null;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  // A CONDUCT case is a permanent record of a decision the Management Group took, and the operator
-  // must not be able to erase one. The append-only grounds, defence and vote tables exist precisely
-  // so the record cannot be rewritten; an admin delete would be the hole in that guarantee.
-  // New-provider FLAG cases remain removable, which is the behaviour this surface was built for.
+  // Conduct cases used to be refused here. They are deletable now, by operator decision, through
+  // this route and through /api/admin/conduct. What stands in for the old refusal is the audit row
+  // written below: ProviderCaseAudit.caseId is a plain indexed string rather than a foreign key, so
+  // the trail outlives the case and records that one existed and was removed.
   const target = await prisma.providerFlagCase.findUnique({
     where: { id },
-    select: { kind: true },
+    select: { kind: true, state: true, providerId: true },
   });
   if (!target) return NextResponse.json({ error: "case not found" }, { status: 404 });
-  if (target.kind === "CONDUCT") {
-    await prisma.providerCaseAudit.create({
-      data: { caseId: id, action: "DELETE_REFUSED", actor: "admin" },
-    });
-    return NextResponse.json(
-      { error: "a conduct case is a permanent record and cannot be deleted" },
-      { status: 409 }
-    );
-  }
   // Remove polymorphic image rows first (they reference the case by id, also cascaded, but explicit
   // is safe), then the case (cascades initiations, grounds, defense, votes, revisions).
   await prisma.providerFlagPointImage.deleteMany({ where: { caseId: id } });

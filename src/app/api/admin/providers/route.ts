@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdmin, getAdminAddress } from "@/lib/admin";
 import { publishFeedToRepo } from "@/lib/feed";
 
 export const dynamic = "force-dynamic";
@@ -54,28 +54,53 @@ export async function PATCH(req: NextRequest) {
 }
 
 // DELETE /api/admin/providers  { id }  -> delete a provider (cascades addresses).
-// REFUSED when the provider carries a conduct case: the FK is RESTRICT, so this would fail at the
-// database anyway, but a checked refusal with a reason beats a raw constraint error, and deleting
-// the subject must never be a way to remove a finding about them.
+//
+// This used to be refused when the provider carried a conduct case. It is permitted now. The
+// provider FK on ProviderFlagCase is still RESTRICT, so the cases have to come off first or the
+// database rejects the delete; that is done explicitly below rather than by loosening the schema,
+// because the SUBJECT-side delete route must keep refusing. A provider erasing a case against
+// themselves and an operator clearing a record are not the same act and do not get the same rule.
+//
+// Each case removed this way leaves an audit row. ProviderCaseAudit.caseId is a plain indexed
+// string, not a foreign key, so that row outlives both the case and the provider.
 export async function DELETE(req: NextRequest) {
   const denied = await requireAdmin(req);
   if (denied) return denied;
+  const actor = (await getAdminAddress()) ?? "admin";
   const b = await req.json().catch(() => null);
   const id = typeof b?.id === "string" ? b.id : null;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  const conduct = await prisma.providerFlagCase.count({
-    where: { providerId: id, kind: "CONDUCT" },
+
+  const cases = await prisma.providerFlagCase.findMany({
+    where: { providerId: id },
+    include: {
+      provider: { select: { name: true } },
+      initiations: { select: { memberEntityVoter: true, grounds: true } },
+    },
   });
-  if (conduct > 0) {
-    return NextResponse.json(
-      {
-        error:
-          "this provider carries a conduct case; the case is a permanent record and the provider cannot be deleted",
+  for (const c of cases) {
+    await prisma.providerFlagPointImage.deleteMany({ where: { caseId: c.id } });
+    await prisma.providerFlagCase.delete({ where: { id: c.id } });
+    await prisma.providerCaseAudit.create({
+      data: {
+        caseId: c.id,
+        action: "ADMIN_DELETE_CASE_WITH_PROVIDER",
+        actor,
+        detail: JSON.stringify({
+          provider: c.provider.name,
+          kind: c.kind,
+          state: c.state,
+          published: c.publishedAt !== null,
+          points: c.initiations.map((i) => ({
+            member: i.memberEntityVoter,
+            grounds: i.grounds.slice(0, 600),
+          })),
+        }).slice(0, 4000),
       },
-      { status: 409 }
-    );
+    });
   }
+
   await prisma.provider.delete({ where: { id } });
   await publishFeedToRepo().catch(() => {});
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, casesRemoved: cases.length });
 }
