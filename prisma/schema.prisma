@@ -66,6 +66,11 @@ model Provider {
   flagCases   ProviderFlagCase[]
   logoReports LogoReport[]
   watches     ProviderWatch[]
+  /// Optional address for governance notices, set by a verified owner. There is NO other contact
+  /// path to a provider: claiming is a wallet signature and the model has never held an email, so
+  /// without this the only way to reach a subject is the signed-in notice on their own page.
+  /// Never shown publicly and never used for anything but serving notice.
+  noticeEmail String?
 
   @@index([archivedAt])
   @@index([logoPendingAt])

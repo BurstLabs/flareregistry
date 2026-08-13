@@ -140,11 +140,23 @@ export async function POST(req: NextRequest) {
       // one. Publishing "no defence" against an operator who was never reachable would read as a
       // refusal to answer, which is why the three outcomes are distinguished rather than collapsed.
       const claimed = c.provider.addresses.some((a) => a.verified);
+      // SERVED_NO_DEFENCE IS A CLAIM ABOUT SOMEONE'S CONDUCT, so it is only recorded when the
+      // subject demonstrably knew. The audit trail holds that evidence: NOTICE_EMAILED means a
+      // message went out, SUBJECT_VIEWED means they opened the case while signed in. Neither means
+      // they were reachable at all, and asserting "did not respond" against a provider who never
+      // knew would be the process inventing the very silence it then reports.
+      const audit = await prisma.providerCaseAudit.findMany({
+        where: { caseId: c.id, action: { in: ["NOTICE_EMAILED", "SUBJECT_VIEWED"] } },
+        select: { action: true },
+      });
+      const reached = audit.length > 0;
       const serviceStatus = !claimed
         ? "UNCLAIMED_NOT_SERVED"
         : c.defense
           ? "SERVED_DEFENDED"
-          : "SERVED_NO_DEFENCE";
+          : reached
+            ? "SERVED_NO_DEFENCE"
+            : "NOTICE_UNDELIVERED";
       const conductState =
         decided === "DENIED"
           ? "SUBSTANTIATED"

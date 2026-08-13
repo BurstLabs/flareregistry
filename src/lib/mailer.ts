@@ -254,3 +254,43 @@ export async function sendWatchFlagNotice(opts: {
     text,
   });
 }
+
+
+/**
+ * Governance notice to a provider that a conduct case has been opened against them.
+ *
+ * SUPPLEMENTARY, not primary. Claiming a listing is a wallet signature and the Provider model has
+ * never held an email, so `noticeEmail` is opt-in and usually absent. The reliable channel is the
+ * signed-in notice on the provider's own page; this exists so an operator who has given us an
+ * address does not have to think to go and look.
+ *
+ * The body carries no grounds and no evidence. Email is not authenticated, addresses get forwarded
+ * and inboxes get breached, and a sealed case must not be readable by whoever ends up holding the
+ * message. It says a case exists, where to read it, and by when.
+ */
+export async function sendConductNotice(opts: {
+  to: string;
+  providerName: string;
+  detailUrl: string;
+  respondByISO: string;
+}): Promise<void> {
+  if (!publicMailerConfigured()) return;
+  const name = safeName(opts.providerName);
+  const subject = `A Management Group conduct case has been opened regarding ${name}`;
+  const text = [
+    `A conduct case has been opened regarding ${name} on flareregistry.com.`,
+    "",
+    "The case is private. It is not visible to the public and will not be published unless the",
+    "Management Group votes to substantiate it. If it is not substantiated it leaves no public trace.",
+    "",
+    "To read the case and respond, connect the wallet that claimed this listing and open:",
+    opts.detailUrl,
+    "",
+    `The discussion period begins ${opts.respondByISO}. You can respond at any point before the vote,`,
+    "and your response is published alongside the case if the case is ever published.",
+    "",
+    "This message deliberately contains no details of the case, because email is not a secure channel",
+    "and a private case must not be readable by anyone who happens to hold this message.",
+  ].join("\n");
+  await getPublicTransport().sendMail({ from: PUBLIC_FROM, to: opts.to, subject, text });
+}

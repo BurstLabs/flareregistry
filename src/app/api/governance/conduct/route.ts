@@ -181,6 +181,7 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date();
+  let notifyCaseId: string | null = null;
   const result = await prisma.$transaction(async (tx) => {
     let theCase = live;
     if (!theCase) {
@@ -240,9 +241,61 @@ export async function POST(req: NextRequest) {
       await tx.providerCaseAudit.create({
         data: { caseId: theCase!.id, action: "NOTICE_OPENED", actor: "system", detail: `${signatures} co-initiators` },
       });
+      notifyCaseId = theCase!.id;
     }
     return { caseId: theCase!.id, signatures };
   });
+
+  // SERVE THE SUBJECT, outside the transaction so a mail failure cannot roll back the case.
+  //
+  // Best-effort by necessity: `noticeEmail` is opt-in and usually absent, because claiming a listing
+  // is a wallet signature and this model has never held an email. The reliable channel is the
+  // signed-in notice on the provider's own page, which needs no delivery at all. Every outcome is
+  // recorded, so the tally can later say what actually happened rather than assuming service.
+  if (notifyCaseId) {
+    try {
+      const p = await prisma.provider.findUnique({
+        where: { id: providerId },
+        select: { name: true, noticeEmail: true, addresses: { select: { address: true }, take: 1 } },
+      });
+      const caseRow = await prisma.providerFlagCase.findUnique({
+        where: { id: notifyCaseId },
+        select: { noticeEndsAt: true },
+      });
+      if (p?.noticeEmail) {
+        const { sendConductNotice } = await import("@/lib/mailer");
+        await sendConductNotice({
+          to: p.noticeEmail,
+          providerName: p.name,
+          detailUrl: `${process.env.PUBLIC_BASE_URL ?? "https://flareregistry.com"}/provider/${p.addresses[0]?.address ?? ""}`,
+          respondByISO: caseRow?.noticeEndsAt?.toISOString().slice(0, 10) ?? "",
+        });
+        await prisma.providerCaseAudit.create({
+          data: { caseId: notifyCaseId, action: "NOTICE_EMAILED", actor: "system" },
+        });
+      } else {
+        await prisma.providerCaseAudit.create({
+          data: {
+            caseId: notifyCaseId,
+            action: "NOTICE_NO_EMAIL",
+            actor: "system",
+            detail: "no noticeEmail on the listing; subject can read the case when signed in",
+          },
+        });
+      }
+    } catch (e) {
+      await prisma.providerCaseAudit
+        .create({
+          data: {
+            caseId: notifyCaseId,
+            action: "NOTICE_EMAIL_FAILED",
+            actor: "system",
+            detail: e instanceof Error ? e.message.slice(0, 200) : "unknown",
+          },
+        })
+        .catch(() => {});
+    }
+  }
 
   return NextResponse.json({
     ok: true,

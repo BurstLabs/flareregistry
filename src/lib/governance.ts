@@ -77,7 +77,12 @@ export const CONDUCT_VOTING_DAYS = 21;
  * because the listing has never been claimed, are different facts. Rendering them alike would let a
  * reader infer a refusal to answer where none happened.
  */
-export type ServiceStatus = "SERVED_DEFENDED" | "SERVED_NO_DEFENCE" | "UNCLAIMED_NOT_SERVED";
+export type ServiceStatus =
+  | "SERVED_DEFENDED"
+  | "SERVED_NO_DEFENCE"
+  /** Claimed, but nothing in the audit shows the notice reached them. Not the same as declining. */
+  | "NOTICE_UNDELIVERED"
+  | "UNCLAIMED_NOT_SERVED";
 
 /** Conduct case deadlines, measured from the moment the 4th signature lands. */
 export function conductDeadlines(openedAt: Date): {

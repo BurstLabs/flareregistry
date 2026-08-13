@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { addressSchema } from "@/lib/validation";
 import { listingAddressesForSigner } from "@/lib/metrics";
+import { getSessionAddress } from "@/lib/session";
 
 // GET /api/provider/:address  -> the provider profile that owns this address, with all its
 // addresses and their verification state. Public read. Resolves by a stored listing address OR by
@@ -37,6 +38,14 @@ export async function GET(
   }
 
   const p = owned.provider;
+  // noticeEmail is PRIVATE and this route is public, so it is returned only to a signed-in owner of
+  // this listing, purely so the manage form can prefill it. Emitting it here unconditionally would
+  // publish a contact address that exists solely to receive governance notices, which is close to the
+  // worst thing to leak from a registry that adjudicates cases about the people who gave it.
+  const session = await getSessionAddress();
+  const isOwner =
+    !!session && p.addresses.some((a) => a.verified && a.address === session.toLowerCase());
+
   return NextResponse.json({
     id: p.id,
     name: p.name,
@@ -49,6 +58,7 @@ export async function GET(
     privateNode: p.privateNode,
     singleEntity: p.singleEntity,
     algorithm: p.algorithm,
+    ...(isOwner ? { noticeEmail: p.noticeEmail } : {}),
     addresses: p.addresses.map((a) => ({
       chainId: a.chainId,
       address: a.address,
