@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.7";
+export const REPUTATION_VERSION = "2.8";
 
 /**
  * Points deducted from the final score for a chill still in force, decaying to nothing as the
@@ -320,6 +320,8 @@ export interface Reputation {
    * exists, whether or not it still affects the score.
    */
   chills: {
+    /** Which chain the chill was issued on. Both count; the page says which. */
+    network: string;
     untilEpoch: number;
     appliedAt: string;
     txHash: string;
@@ -654,26 +656,92 @@ export async function reputationFor(
   }
 
   // GOVERNANCE CHILLS. Flare's most serious sanction and, unlike everything else here, an explicit
-  // finding by governance rather than a measurement. Matched across ALL FIVE role addresses because
-  // the December 2025 action chilled two addresses per entity, and matching on the identity alone
-  // would have found one of them.
-  const chillRows = await prisma.providerChill.findMany({
-    where: {
-      network,
-      beneficiary: {
-        in: [
-          entity.voter,
-          entity.delegationAddress,
-          entity.submitAddress,
-          entity.submitSignaturesAddress,
-          entity.signingPolicyAddress,
-        ]
-          .filter((a): a is string => !!a)
-          .map((a) => a.toLowerCase()),
+  // finding by governance rather than a measurement.
+  //
+  // MATCHED ACROSS BOTH CHAINS AND EVERY ROLE ADDRESS, which needs both halves to work.
+  //
+  // Every role, because the December 2025 action chilled three beneficiary types for each entity
+  // (identity, delegation address and node id) in a single transaction, so matching on the identity
+  // alone would have found one of three.
+  //
+  // Both chains, because a chill is a verdict about an OPERATOR, not about performance on a
+  // particular network. Songbird runs the same written policy: STP.03 is the twin of FIP.02, same
+  // two-epoch first chill, same permanent ban on a second, and 30 chills have been issued there. The
+  // same team runs both networks, often on byte-identical keys: sToadz's submit, submitSignatures
+  // and signingPolicy addresses are the same on Flare and Songbird. Counting only the Flare verdict
+  // would let an operator banned outright from Songbird carry a clean Flare score.
+  //
+  // The performance components stay Flare-only. This is deliberately narrow: what crosses the chain
+  // boundary is governance's verdict on the operator, never a measurement of how they performed
+  // somewhere else.
+  //
+  // Sibling entities are resolved through the registry LISTING, because an operator's Flare and
+  // Songbird identities are different addresses. Without that hop a Songbird-only chill would be
+  // invisible from the Flare entity. An unlisted entity falls back to its own addresses, which is
+  // the best that can be done for one we cannot link.
+  const ownAddresses = [
+    entity.voter,
+    entity.delegationAddress,
+    entity.submitAddress,
+    entity.submitSignaturesAddress,
+    entity.signingPolicyAddress,
+  ]
+    .filter((a): a is string => !!a)
+    .map((a) => a.toLowerCase());
+
+  const listing = await prisma.providerAddress.findFirst({
+    where: { address: { in: ownAddresses } },
+    select: { provider: { select: { addresses: { select: { address: true } } } } },
+  });
+  const chillAddresses = new Set(ownAddresses);
+  if (listing) {
+    const listed = listing.provider.addresses.map((a) => a.address.toLowerCase());
+    const siblings = await prisma.providerOnchain.findMany({
+      where: {
+        OR: [
+          { voter: { in: listed } },
+          { delegationAddress: { in: listed } },
+          { submitAddress: { in: listed } },
+          { submitSignaturesAddress: { in: listed } },
+          { signingPolicyAddress: { in: listed } },
+        ],
       },
-    },
+      select: {
+        voter: true,
+        delegationAddress: true,
+        submitAddress: true,
+        submitSignaturesAddress: true,
+        signingPolicyAddress: true,
+      },
+    });
+    for (const a of listed) chillAddresses.add(a);
+    for (const sib of siblings) {
+      for (const a of [
+        sib.voter,
+        sib.delegationAddress,
+        sib.submitAddress,
+        sib.submitSignaturesAddress,
+        sib.signingPolicyAddress,
+      ]) {
+        if (a) chillAddresses.add(a.toLowerCase());
+      }
+    }
+  }
+
+  const chillRows = await prisma.providerChill.findMany({
+    // No network filter: see above.
+    where: { beneficiary: { in: [...chillAddresses] } },
     orderBy: { blockNumber: "desc" },
   });
+  // EACH CHILL IS MEASURED AGAINST ITS OWN CHAIN'S CLOCK.
+  //
+  // Flare and Songbird number their reward epochs independently, and the counts are nowhere near
+  // each other: Flare is past 420 while the Songbird chills on record run to the low 200s. Judging a
+  // Songbird chill's term against the Flare epoch head would mark a live ban as long served, which
+  // is the one error that would make counting Songbird worse than ignoring it.
+  const sgbState = await prisma.ingestState.findUnique({ where: { network: "songbird" } });
+  const headFor = (n: string) => (n === "songbird" ? sgbState?.lastEpochIngested ?? null : latest);
+
   // A chill is dated by the epoch it runs UNTIL, so "in window" means its term overlapped any epoch
   // the score is currently looking at.
   // `latest` is null only before the first ingest has run. Treat that as "cannot tell", which means
@@ -686,16 +754,18 @@ export async function reputationFor(
   const chills = chillRows
     .filter((c) => (seenTx.has(c.txHash) ? false : (seenTx.add(c.txHash), true)))
     .map((c) => ({
+      network: c.network,
       untilEpoch: c.untilEpoch,
       appliedAt: c.appliedAt.toISOString(),
       txHash: c.txHash,
-      active: latest != null && c.untilEpoch > latest,
-      inWindow: windowStart != null && c.untilEpoch >= windowStart,
+      active: headFor(c.network) != null && c.untilEpoch > headFor(c.network)!,
+      inWindow:
+        c.network === network && windowStart != null && c.untilEpoch >= windowStart,
       // Points still being deducted for this chill, 0 once fully served.
       penalty:
-        latest == null
+        headFor(c.network) == null
           ? 0
-          : CHILL_PENALTY_MAX * (1 - chillRecovery(c.untilEpoch, latest)),
+          : CHILL_PENALTY_MAX * (1 - chillRecovery(c.untilEpoch, headFor(c.network)!)),
     }));
 
   // Only the HEAVIEST outstanding chill is deducted, not the sum. Two chills are not twice as
