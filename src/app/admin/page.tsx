@@ -20,6 +20,7 @@ type Tab =
   | "imports"
   | "qualification"
   | "governance"
+  | "conduct"
   | "reports"
   | "consumers"
   | "detection"
@@ -153,6 +154,7 @@ export default function AdminPage() {
     { id: "imports", label: "Imports" },
     { id: "qualification", label: "Qualification" },
     { id: "governance", label: "Governance" },
+    { id: "conduct", label: "Conduct" },
     { id: "reports", label: "Logo reports" },
     { id: "consumers", label: "Consumers" },
     { id: "telegram", label: "Telegram" },
@@ -200,6 +202,7 @@ export default function AdminPage() {
         {tab === "imports" && <ImportsTab />}
         {tab === "qualification" && <QualificationTab />}
         {tab === "governance" && <GovernanceTab />}
+        {tab === "conduct" && <ConductTab />}
         {tab === "reports" && <ReportsTab />}
         {tab === "consumers" && <ConsumersTab />}
         {tab === "telegram" && <TelegramTab />}
@@ -529,6 +532,152 @@ function QualificationTab() {
 }
 
 // ---------- Governance ----------
+
+/**
+ * Conduct cases, including SEALED ones.
+ *
+ * The operator has to run this process: serve notice on a subject, see a case progressing, and
+ * answer for what the system did. None of that works against a case they cannot see. Sealed means
+ * sealed against the PUBLIC, not against the venue.
+ *
+ * READ-ONLY, and that is the point. No edit, no delete, no state override. The append-only grounds,
+ * defence, vote and evidence tables exist so an adjudicated record cannot be rewritten, and an admin
+ * surface able to rewrite them would be the hole in that guarantee. The most useful thing here is
+ * the `claimed` column: it says whether a subject can be served at all, which decides what the
+ * finding will publish about why they did or did not answer.
+ */
+function ConductTab() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api/admin/conduct")
+      .then((r) => r.json())
+      .then((b) => setRows(b.cases ?? []))
+      .catch(() => setRows([]));
+  }, []);
+  return (
+    <div>
+      <Card>
+        <p className="mb-2 text-xs text-muted">
+          Sealed cases are visible here and nowhere else. This view is read-only: a conduct record
+          cannot be edited or deleted, including by an admin.
+        </p>
+        <table className="w-full text-sm">
+          <thead className="text-xs text-faint">
+            <tr>
+              <th className="text-left font-normal">Provider</th>
+              <th className="text-left font-normal">State</th>
+              <th className="text-left font-normal">Public</th>
+              <th className="text-left font-normal">Subject</th>
+              <th className="text-right font-normal">Sigs</th>
+              <th className="text-right font-normal">Votes</th>
+              <th className="text-left font-normal">Next deadline</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((c) => {
+              const next =
+                c.state === "NOTICE"
+                  ? c.noticeEndsAt
+                  : c.state === "OPEN_DISCUSSION"
+                    ? c.discussionEndsAt
+                    : c.state === "OPEN_VOTING"
+                      ? c.votingEndsAt
+                      : null;
+              return (
+                <tr key={c.id} className="border-t border-themed/60 align-top">
+                  <td className="py-1">{c.provider}</td>
+                  <td className="py-1 text-muted">{c.state}</td>
+                  <td className="py-1">
+                    {c.published ? (
+                      <span className="text-emerald-500">published</span>
+                    ) : (
+                      <span className="text-faint">sealed</span>
+                    )}
+                  </td>
+                  <td className="py-1 text-muted">
+                    {c.claimed ? "claimed" : <span className="text-amber-500">unclaimed</span>}
+                    {c.hasDefence ? " · replied" : ""}
+                  </td>
+                  <td className="py-1 text-right">{c.signatures}</td>
+                  <td className="py-1 text-right">
+                    {c.votes.total > 0
+                      ? `${c.votes.deny}D/${c.votes.keep}K/${c.votes.abstain}A`
+                      : "\u2014"}
+                  </td>
+                  <td className="py-1 text-xs text-muted">
+                    {next ? new Date(next).toISOString().slice(0, 10) : "\u2014"}
+                  </td>
+                  <td className="py-1 text-right">
+                    <button
+                      onClick={() => setOpenId(openId === c.id ? null : c.id)}
+                      className="rounded bg-elev px-2 py-0.5 text-xs text-muted"
+                    >
+                      {openId === c.id ? "hide" : "detail"}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-2 text-muted">
+                  No conduct cases.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+      {rows
+        .filter((c) => c.id === openId)
+        .map((c) => (
+          <Card key={c.id}>
+            <p className="text-xs text-faint">
+              {c.provider} · {c.state} · service {c.serviceStatus ?? "not yet recorded"}
+              {c.lateReplyAt ? " · late reply published" : ""}
+            </p>
+            {c.points.map((p: any, i: number) => (
+              <div key={i} className="mt-3 border-t border-themed/60 pt-2">
+                <p className="text-xs text-muted">
+                  {p.member}
+                  {p.withdrawn ? " (withdrawn)" : ""}
+                </p>
+                {p.title && <p className="font-medium">{p.title}</p>}
+                <p className="whitespace-pre-wrap text-sm text-muted">{p.grounds}</p>
+                <ul className="mt-1 space-y-0.5 text-xs">
+                  {p.evidence.map((e: any, j: number) => (
+                    <li key={j}>
+                      <span className="text-faint">
+                        {e.kind}
+                        {e.chain ? ` (${e.chain})` : ""}
+                      </span>{" "}
+                      <span className="font-mono">{e.ref.slice(0, 20)}…</span> — {e.claim}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {c.audit.length > 0 && (
+              <div className="mt-3 border-t border-themed/60 pt-2">
+                <p className="text-xs text-faint">Audit</p>
+                <ul className="text-xs text-muted">
+                  {c.audit.map((a: any, i: number) => (
+                    <li key={i}>
+                      {new Date(a.at).toISOString().slice(0, 16)} · {a.action} · {a.actor}
+                      {a.detail ? ` · ${a.detail}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Card>
+        ))}
+    </div>
+  );
+}
+
 function GovernanceTab() {
   const [rows, setRows] = useState<any[]>([]);
   const [msg, setMsg] = useState("");

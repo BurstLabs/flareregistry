@@ -34,6 +34,9 @@ const CLASSIFIED = {
   "app/api/admin/stats/route.ts": "ADMIN",
   // Counts conduct cases to refuse deleting their subject. Operator-only, no case data emitted.
   "app/api/admin/providers/route.ts": "ADMIN",
+  // Operator view of conduct cases INCLUDING sealed ones. Sealed is sealed against the public,
+  // not against the venue that must run the process. Read-only: no PATCH, no DELETE.
+  "app/api/admin/conduct/route.ts": "ADMIN",
 
   // SIWE-authenticated, act on a single case the caller is party to.
   "app/api/governance/flag/route.ts": "ACTION",
