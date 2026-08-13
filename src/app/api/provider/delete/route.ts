@@ -50,11 +50,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Cascades to ProviderAddress + ProviderFlagCase.
-  // A CONDUCT CASE BLOCKS DELETION, and this is the same hole that was closed on the admin side.
-  // Without it, self-service deletion is an undo button for an adjudicated finding: the subject of a
-  // case could remove their listing and take the record with them, then list again from scratch. The
-  // FK is RESTRICT so the database would refuse anyway, but a checked refusal with a reason beats a
-  // raw constraint error.
+  // A CONDUCT CASE BLOCKS DELETION HERE. Without it, self-service deletion is an undo button for an
+  // adjudicated finding: the SUBJECT of a case could remove their listing, take the record with
+  // them, and list again from scratch. The FK is RESTRICT so the database would refuse anyway, but a
+  // checked refusal with a reason beats a raw constraint error.
+  //
+  // The equivalent admin refusal was lifted, and this one deliberately was not. They are not the
+  // same act: an operator clearing a record answers for it, while the subject of a case erasing
+  // evidence against themselves is the exact move the seal and the append-only tables exist to stop.
   const conduct = await prisma.providerFlagCase.count({
     where: { providerId: owned.providerId, kind: "CONDUCT" },
   });

@@ -534,33 +534,104 @@ function QualificationTab() {
 // ---------- Governance ----------
 
 /**
- * Conduct cases, including SEALED ones.
+ * Conduct cases, including SEALED ones. Full read and write.
  *
- * The operator has to run this process: serve notice on a subject, see a case progressing, and
- * answer for what the system did. None of that works against a case they cannot see. Sealed means
- * sealed against the PUBLIC, not against the venue.
+ * The operator has to run this process: serve notice on a subject, see a case progressing, correct
+ * it when it is wrong, and answer for what the system did. None of that works against a case they
+ * cannot see. Sealed means sealed against the PUBLIC, not against the venue.
  *
- * READ-ONLY, and that is the point. No edit, no delete, no state override. The append-only grounds,
- * defence, vote and evidence tables exist so an adjudicated record cannot be rewritten, and an admin
- * surface able to rewrite them would be the hole in that guarantee. The most useful thing here is
- * the `claimed` column: it says whether a subject can be served at all, which decides what the
- * finding will publish about why they did or did not answer.
+ * EVERY FIELD IS EDITABLE HERE, including state, publication, evidence, votes, the defence, and the
+ * case itself. The two consequential controls are `publishedAt`, which is the single gate that turns
+ * a sealed case into a public finding, and `state`, because a published SUBSTANTIATED case is what
+ * deducts points from that provider's reputation score. Changing either takes effect immediately and
+ * republishes the feed.
+ *
+ * Mutations are recorded in the case audit with the acting admin address and the previous values.
+ * Those rows are keyed by a plain caseId string rather than a foreign key, so they outlive the case:
+ * a deleted case still leaves the record that it existed and was deleted.
  */
 function ConductTab() {
   const [rows, setRows] = useState<any[]>([]);
+  const [trail, setTrail] = useState<any[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
-  useEffect(() => {
-    fetch("/api/admin/conduct")
-      .then((r) => r.json())
-      .then((b) => setRows(b.cases ?? []))
-      .catch(() => setRows([]));
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    const r = await fetch("/api/admin/conduct");
+    const b = await r.json().catch(() => ({}));
+    setRows(b.cases ?? []);
+    setTrail(b.deletedTrail ?? []);
   }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function send(body: any, ok = "Saved.") {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/admin/conduct", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const b = await r.json().catch(() => ({}));
+      setMsg(r.ok ? ok : `Failed: ${b.error ?? r.status}`);
+      if (r.ok) await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function delCase(id: string, provider: string) {
+    if (
+      !confirm(
+        `Delete the conduct case against "${provider}"?\n\nThe case, its points, evidence, votes and defence are removed. An audit row survives recording that this case existed and was deleted.`
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const r = await fetch("/api/admin/conduct", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const b = await r.json().catch(() => ({}));
+      setMsg(r.ok ? "Case deleted." : `Failed: ${b.error ?? r.status}`);
+      if (r.ok) {
+        setOpenId(null);
+        await load();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const STATES = [
+    "PENDING",
+    "NOTICE",
+    "OPEN_DISCUSSION",
+    "OPEN_VOTING",
+    "SUBSTANTIATED",
+    "NOT_SUBSTANTIATED",
+    "FAILED_QUORUM",
+  ];
+  const SERVICE = [
+    "SERVED_DEFENDED",
+    "SERVED_NO_DEFENCE",
+    "NOTICE_UNDELIVERED",
+    "UNCLAIMED_NOT_SERVED",
+  ];
+
   return (
     <div>
+      {msg && <div className="mb-2 text-xs text-muted">{msg}</div>}
       <Card>
         <p className="mb-2 text-xs text-muted">
-          Sealed cases are visible here and nowhere else. This view is read-only: a conduct record
-          cannot be edited or deleted, including by an admin.
+          Sealed cases are visible here and nowhere else. Everything on this tab is editable:
+          publishing a SUBSTANTIATED case makes it public on the provider&apos;s page and deducts
+          points from their reputation score. Changes are recorded in the case audit.
         </p>
         <table className="w-full text-sm">
           <thead className="text-xs text-faint">
@@ -604,17 +675,17 @@ function ConductTab() {
                   <td className="py-1 text-right">
                     {c.votes.total > 0
                       ? `${c.votes.deny}D/${c.votes.keep}K/${c.votes.abstain}A`
-                      : "\u2014"}
+                      : "—"}
                   </td>
                   <td className="py-1 text-xs text-muted">
-                    {next ? new Date(next).toISOString().slice(0, 10) : "\u2014"}
+                    {next ? new Date(next).toISOString().slice(0, 10) : "—"}
                   </td>
                   <td className="py-1 text-right">
                     <button
                       onClick={() => setOpenId(openId === c.id ? null : c.id)}
                       className="rounded bg-elev px-2 py-0.5 text-xs text-muted"
                     >
-                      {openId === c.id ? "hide" : "detail"}
+                      {openId === c.id ? "hide" : "edit"}
                     </button>
                   </td>
                 </tr>
@@ -630,41 +701,314 @@ function ConductTab() {
           </tbody>
         </table>
       </Card>
+
       {rows
         .filter((c) => c.id === openId)
         .map((c) => (
           <Card key={c.id}>
-            <p className="text-xs text-faint">
-              {c.provider} · {c.state} · service {c.serviceStatus ?? "not yet recorded"}
-              {c.lateReplyAt ? " · late reply published" : ""}
-            </p>
-            {c.points.map((p: any, i: number) => (
-              <div key={i} className="mt-3 border-t border-themed/60 pt-2">
-                <p className="text-xs text-muted">
-                  {p.member}
-                  {p.withdrawn ? " (withdrawn)" : ""}
-                </p>
-                {p.title && <p className="font-medium">{p.title}</p>}
-                <p className="whitespace-pre-wrap text-sm text-muted">{p.grounds}</p>
-                <ul className="mt-1 space-y-0.5 text-xs">
-                  {p.evidence.map((e: any, j: number) => (
-                    <li key={j}>
-                      <span className="text-faint">
-                        {e.kind}
-                        {e.chain ? ` (${e.chain})` : ""}
-                      </span>{" "}
-                      <span className="font-mono">{e.ref.slice(0, 20)}…</span> — {e.claim}
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-faint">
+                {c.provider} · {c.network} · case {c.id}
+              </p>
+              <button
+                onClick={() => delCase(c.id, c.provider)}
+                disabled={busy}
+                className="rounded bg-red-500/15 px-2 py-0.5 text-xs text-red-400 disabled:opacity-50"
+              >
+                delete case
+              </button>
+            </div>
+
+            {/* ---- case fields ---- */}
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-themed/60 pt-3 md:grid-cols-3">
+              <label className="text-xs text-faint">
+                state
+                <select
+                  defaultValue={c.state}
+                  onChange={(e) => send({ op: "case", id: c.id, state: e.target.value })}
+                  className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
+                >
+                  {STATES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs text-faint">
+                service status
+                <select
+                  defaultValue={c.serviceStatus ?? ""}
+                  onChange={(e) =>
+                    send({ op: "case", id: c.id, serviceStatus: e.target.value || null })
+                  }
+                  className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
+                >
+                  <option value="">(not recorded)</option>
+                  {SERVICE.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs text-faint">
+                published (public + scored)
+                <input
+                  type="date"
+                  defaultValue={c.publishedAt ? String(c.publishedAt).slice(0, 10) : ""}
+                  onBlur={(e) =>
+                    send({ op: "case", id: c.id, publishedAt: e.target.value || null })
+                  }
+                  className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
+                />
+              </label>
+              {(
+                [
+                  ["noticeEndsAt", "notice ends"],
+                  ["discussionEndsAt", "discussion ends"],
+                  ["votingEndsAt", "voting ends"],
+                  ["decidedAt", "decided at"],
+                  ["lateReplyAt", "late reply at"],
+                  ["openedAt", "opened at"],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className="text-xs text-faint">
+                  {label}
+                  <input
+                    type="date"
+                    defaultValue={c[k] ? String(c[k]).slice(0, 10) : ""}
+                    onBlur={(e) => send({ op: "case", id: c.id, [k]: e.target.value || null })}
+                    className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
+                  />
+                </label>
+              ))}
+              {(
+                [
+                  ["decidedEpoch", "decided epoch"],
+                  ["memberCountAtOpen", "members at open"],
+                  ["outcomeTurnout", "turnout"],
+                  ["outcomeDeny", "deny count"],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className="text-xs text-faint">
+                  {label}
+                  <input
+                    type="number"
+                    defaultValue={c[k] ?? ""}
+                    onBlur={(e) => send({ op: "case", id: c.id, [k]: e.target.value || null })}
+                    className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
+                  />
+                </label>
+              ))}
+            </div>
+
+            {/* ---- points and evidence ---- */}
+            {c.points.map((p: any) => (
+              <div key={p.id} className="mt-3 border-t border-themed/60 pt-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted">
+                    {p.member}
+                    {p.withdrawn ? " (withdrawn)" : ""}
+                  </p>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() =>
+                        send({
+                          op: "initiation",
+                          id: c.id,
+                          initiationId: p.id,
+                          withdrawn: !p.withdrawn,
+                        })
+                      }
+                      disabled={busy}
+                      className="rounded bg-elev px-2 py-0.5 text-xs text-muted disabled:opacity-50"
+                    >
+                      {p.withdrawn ? "restore" : "withdraw"}
+                    </button>
+                    <button
+                      onClick={() =>
+                        confirm("Delete this point and its evidence?") &&
+                        send({ op: "deleteInitiation", id: c.id, initiationId: p.id }, "Point deleted.")
+                      }
+                      disabled={busy}
+                      className="rounded bg-red-500/15 px-2 py-0.5 text-xs text-red-400 disabled:opacity-50"
+                    >
+                      delete
+                    </button>
+                  </div>
+                </div>
+                <input
+                  defaultValue={p.title ?? ""}
+                  placeholder="title"
+                  onBlur={(e) =>
+                    e.target.value !== (p.title ?? "") &&
+                    send({ op: "initiation", id: c.id, initiationId: p.id, title: e.target.value })
+                  }
+                  className="mt-1 w-full rounded bg-elev px-2 py-1 text-sm font-medium text-fg"
+                />
+                <textarea
+                  defaultValue={p.grounds}
+                  rows={4}
+                  onBlur={(e) =>
+                    e.target.value !== p.grounds &&
+                    send({ op: "initiation", id: c.id, initiationId: p.id, grounds: e.target.value })
+                  }
+                  className="mt-1 w-full rounded bg-elev px-2 py-1 text-sm text-muted"
+                />
+                <ul className="mt-1 space-y-1 text-xs">
+                  {p.evidence.map((e: any) => (
+                    <li key={e.id} className="flex items-center gap-1">
+                      <input
+                        defaultValue={e.kind}
+                        onBlur={(ev) =>
+                          ev.target.value !== e.kind &&
+                          send({ op: "evidence", id: c.id, evidenceId: e.id, kind: ev.target.value })
+                        }
+                        className="w-24 rounded bg-elev px-1 py-0.5 font-mono text-fg"
+                      />
+                      <input
+                        defaultValue={e.chain ?? ""}
+                        placeholder="chain"
+                        onBlur={(ev) =>
+                          ev.target.value !== (e.chain ?? "") &&
+                          send({
+                            op: "evidence",
+                            id: c.id,
+                            evidenceId: e.id,
+                            chain: ev.target.value || null,
+                          })
+                        }
+                        className="w-20 rounded bg-elev px-1 py-0.5 text-fg"
+                      />
+                      <input
+                        defaultValue={e.ref}
+                        onBlur={(ev) =>
+                          ev.target.value !== e.ref &&
+                          send({ op: "evidence", id: c.id, evidenceId: e.id, ref: ev.target.value })
+                        }
+                        className="flex-1 rounded bg-elev px-1 py-0.5 font-mono text-fg"
+                      />
+                      <input
+                        defaultValue={e.claim}
+                        onBlur={(ev) =>
+                          ev.target.value !== e.claim &&
+                          send({ op: "evidence", id: c.id, evidenceId: e.id, claim: ev.target.value })
+                        }
+                        className="flex-1 rounded bg-elev px-1 py-0.5 text-muted"
+                      />
+                      <button
+                        onClick={() =>
+                          send({ op: "deleteEvidence", id: c.id, evidenceId: e.id }, "Evidence deleted.")
+                        }
+                        disabled={busy}
+                        className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-400 disabled:opacity-50"
+                      >
+                        x
+                      </button>
                     </li>
                   ))}
                 </ul>
+                <button
+                  onClick={() =>
+                    send(
+                      {
+                        op: "addEvidence",
+                        id: c.id,
+                        initiationId: p.id,
+                        kind: "TX",
+                        chain: c.network,
+                        ref: "",
+                        claim: "",
+                      },
+                      "Evidence row added."
+                    )
+                  }
+                  disabled={busy}
+                  className="mt-1 rounded bg-elev px-2 py-0.5 text-xs text-muted disabled:opacity-50"
+                >
+                  + evidence
+                </button>
               </div>
             ))}
+
+            <AddPoint caseId={c.id} onDone={send} busy={busy} />
+
+            {/* ---- votes ---- */}
+            <div className="mt-3 border-t border-themed/60 pt-2">
+              <p className="text-xs text-faint">Votes</p>
+              <ul className="mt-1 space-y-1 text-xs">
+                {c.votes.rows.map((v: any) => (
+                  <li key={v.id} className="flex items-center gap-1">
+                    <input
+                      defaultValue={v.memberEntityVoter}
+                      onBlur={(ev) =>
+                        ev.target.value !== v.memberEntityVoter &&
+                        send({ op: "vote", id: c.id, voteId: v.id, member: ev.target.value })
+                      }
+                      className="flex-1 rounded bg-elev px-1 py-0.5 font-mono text-fg"
+                    />
+                    <select
+                      defaultValue={v.vote}
+                      onChange={(ev) =>
+                        send({ op: "vote", id: c.id, voteId: v.id, vote: ev.target.value })
+                      }
+                      className="rounded bg-elev px-1 py-0.5 text-fg"
+                    >
+                      {["DENY", "KEEP", "ABSTAIN"].map((x) => (
+                        <option key={x} value={x}>
+                          {x}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => send({ op: "deleteVote", id: c.id, voteId: v.id }, "Vote deleted.")}
+                      disabled={busy}
+                      className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-400 disabled:opacity-50"
+                    >
+                      x
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <AddVote caseId={c.id} onDone={send} busy={busy} />
+            </div>
+
+            {/* ---- defence ---- */}
+            <div className="mt-3 border-t border-themed/60 pt-2">
+              <p className="text-xs text-faint">
+                Defence {c.defence ? "" : "(none on record)"}
+              </p>
+              <textarea
+                defaultValue={c.defence?.body ?? ""}
+                rows={3}
+                placeholder="response body"
+                onBlur={(e) =>
+                  e.target.value !== (c.defence?.body ?? "") &&
+                  send({ op: "defence", id: c.id, title: c.defence?.title ?? null, body: e.target.value })
+                }
+                className="mt-1 w-full rounded bg-elev px-2 py-1 text-sm text-muted"
+              />
+              {c.defence && (
+                <button
+                  onClick={() =>
+                    confirm("Delete the provider's response?") &&
+                    send({ op: "deleteDefence", id: c.id }, "Defence deleted.")
+                  }
+                  disabled={busy}
+                  className="mt-1 rounded bg-red-500/15 px-2 py-0.5 text-xs text-red-400 disabled:opacity-50"
+                >
+                  delete defence
+                </button>
+              )}
+            </div>
+
             {c.audit.length > 0 && (
               <div className="mt-3 border-t border-themed/60 pt-2">
                 <p className="text-xs text-faint">Audit</p>
-                <ul className="text-xs text-muted">
+                <ul className="max-h-64 overflow-y-auto text-xs text-muted">
                   {c.audit.map((a: any, i: number) => (
-                    <li key={i}>
+                    <li key={i} className="break-all">
                       {new Date(a.at).toISOString().slice(0, 16)} · {a.action} · {a.actor}
                       {a.detail ? ` · ${a.detail}` : ""}
                     </li>
@@ -674,6 +1018,112 @@ function ConductTab() {
             )}
           </Card>
         ))}
+
+      {trail.length > 0 && (
+        <Card>
+          <p className="text-xs text-faint">
+            Audit rows for cases that no longer exist. These survive deletion because the trail is
+            keyed by case id rather than by a foreign key.
+          </p>
+          <ul className="mt-1 max-h-64 overflow-y-auto text-xs text-muted">
+            {trail.map((a: any, i: number) => (
+              <li key={i} className="break-all">
+                {new Date(a.at).toISOString().slice(0, 16)} · {a.caseId} · {a.action} ·{" "}
+                {a.actor}
+                {a.detail ? ` · ${a.detail}` : ""}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/** Add a point (initiation) to a case, attributed to a member address, entered by the operator. */
+function AddPoint({
+  caseId,
+  onDone,
+  busy,
+}: {
+  caseId: string;
+  onDone: (body: any, ok?: string) => Promise<void>;
+  busy: boolean;
+}) {
+  const [member, setMember] = useState("");
+  const [grounds, setGrounds] = useState("");
+  return (
+    <div className="mt-3 flex gap-1 border-t border-themed/60 pt-2">
+      <input
+        value={member}
+        onChange={(e) => setMember(e.target.value)}
+        placeholder="member voter address"
+        className="w-64 rounded bg-elev px-2 py-1 text-xs font-mono text-fg"
+      />
+      <input
+        value={grounds}
+        onChange={(e) => setGrounds(e.target.value)}
+        placeholder="grounds"
+        className="flex-1 rounded bg-elev px-2 py-1 text-xs text-fg"
+      />
+      <button
+        onClick={async () => {
+          if (!member || !grounds) return;
+          await onDone({ op: "addInitiation", id: caseId, member, grounds }, "Point added.");
+          setMember("");
+          setGrounds("");
+        }}
+        disabled={busy}
+        className="rounded bg-elev px-2 py-1 text-xs text-muted disabled:opacity-50"
+      >
+        + point
+      </button>
+    </div>
+  );
+}
+
+/** Record a vote on a case on a member's behalf. */
+function AddVote({
+  caseId,
+  onDone,
+  busy,
+}: {
+  caseId: string;
+  onDone: (body: any, ok?: string) => Promise<void>;
+  busy: boolean;
+}) {
+  const [member, setMember] = useState("");
+  const [vote, setVote] = useState("DENY");
+  return (
+    <div className="mt-1 flex gap-1">
+      <input
+        value={member}
+        onChange={(e) => setMember(e.target.value)}
+        placeholder="member voter address"
+        className="flex-1 rounded bg-elev px-2 py-1 text-xs font-mono text-fg"
+      />
+      <select
+        value={vote}
+        onChange={(e) => setVote(e.target.value)}
+        className="rounded bg-elev px-2 py-1 text-xs text-fg"
+      >
+        {["DENY", "KEEP", "ABSTAIN"].map((x) => (
+          <option key={x} value={x}>
+            {x}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={async () => {
+          if (!member) return;
+          await onDone({ op: "addVote", id: caseId, member, vote }, "Vote added.");
+          setMember("");
+        }}
+        disabled={busy}
+        className="rounded bg-elev px-2 py-1 text-xs text-muted disabled:opacity-50"
+      >
+        + vote
+      </button>
     </div>
   );
 }

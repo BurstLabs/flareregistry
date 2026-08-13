@@ -191,6 +191,19 @@ export default function GovernancePage() {
         <p>{t("gov.docs.c6.body")}</p>
       </Section>
 
+      {/* How the subject actually learns a case exists. The timeline above claims the provider "is
+          notified"; these two sections are what makes that claim checkable rather than aspirational,
+          and they explain why a published finding distinguishes "did not answer" from "was never
+          reachable". */}
+      <Section title={t("gov.docs.c7.title")}>
+        <p>{t("gov.docs.c7.body1")}</p>
+        <p>{t("gov.docs.c7.body2")}</p>
+      </Section>
+
+      <Section title={t("gov.docs.c8.title")}>
+        <p>{t("gov.docs.c8.body")}</p>
+      </Section>
+
       <FlagRecords />
     </div>
   );
