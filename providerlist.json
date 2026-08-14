@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-14T12:47:02.792Z",
+  "timestamp": "2026-08-14T13:47:02.190Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -742,7 +742,7 @@
       "flareregistry": {
         "verified": true,
         "registered": true,
-        "managementGroup": false,
+        "managementGroup": true,
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
@@ -3655,7 +3655,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 423,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -6082,7 +6082,7 @@
       "flareregistry": {
         "verified": true,
         "registered": true,
-        "managementGroup": false,
+        "managementGroup": true,
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
@@ -7433,7 +7433,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 423,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
