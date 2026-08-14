@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-14T21:37:03.100Z",
+  "timestamp": "2026-08-14T21:39:48.647Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -54,6 +54,60 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.379Z",
+          "lastSubmittedEpoch": 423,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "4DadsFTSO",
+      "description": "4 dads, a bunch of kids and a FTSO. Furthering efforts of decentralization for Flare Network and it's canary network, Songbird.",
+      "url": "https://4dads.io",
+      "address": "0xC522E6A633545872f1afc0cdD7b2D96d97E3dE67",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x35D73107A089Ac2b3b14a6681D8c408Aab9568D3.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "121758204263387948187676805",
+        "votePowerCapped": "130852755604548329368715264",
+        "feedCount": 63,
+        "lastEpoch": 423,
+        "delegatorRewardLastEpoch": "16793973313321448785876",
+        "feeRewardLastEpoch": "35023279173693968326029",
+        "entity": {
+          "identity": "0x5637eEd1E134f4e17AD7B063b991D18b95Af41A8",
+          "submit": "0x486aC9352F2001d1f43B9c02622Aa26099b86609",
+          "submitSignatures": "0xF190c5AC19A1f54Bd6687D250a527b6ADbb991F9",
+          "signingPolicy": "0x2467a13e8a8fFA25fc35ED1b9fA9167F7341928b",
+          "delegation": "0xC522E6A633545872f1afc0cdD7b2D96d97E3dE67"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-CoNH4gyEwB9gTrEmozwh14Zr8hs6wokRS",
+            "feePercent": 20,
+            "uptimePercent": 99.9992,
+            "connected": true,
+            "weight": "181478151346642426",
+            "selfBond": "13500000000000000",
+            "delegatedWeight": "167978151346642426",
+            "delegatorCount": 85
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:18.564Z",
           "lastSubmittedEpoch": 423,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
