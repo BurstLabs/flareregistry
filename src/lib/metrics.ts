@@ -37,6 +37,13 @@ export async function isRegisteredOnchain(
 export interface ProviderMetrics {
   network: string;
   voter: string;
+  /**
+   * All five on-chain role addresses, labelled. A provider registers under one of them and which one
+   * any given source publishes is arbitrary: Flare's explorer keys on identity, this registry lists
+   * under delegation, a detection tool observes submit. Exposing only one means a reader holding any
+   * of the other four cannot find the provider.
+   */
+  roles: { label: string; address: string }[];
   feeBips: number | null;
   wNatWeight: string | null;
   wNatCappedWeight: string | null;
@@ -85,6 +92,13 @@ async function entityForAddresses(addresses: string[]): Promise<ProviderMetrics 
   return {
     network: oc.network,
     voter: oc.voter,
+    roles: [
+      { label: "Identity", address: oc.voter },
+      { label: "Delegation", address: oc.delegationAddress },
+      { label: "Submit", address: oc.submitAddress },
+      { label: "Submit signatures", address: oc.submitSignaturesAddress },
+      { label: "Signing policy", address: oc.signingPolicyAddress },
+    ].filter((r): r is { label: string; address: string } => !!r.address),
     feeBips: oc.feeBips,
     wNatWeight: oc.wNatWeight,
     wNatCappedWeight: oc.wNatCappedWeight,
