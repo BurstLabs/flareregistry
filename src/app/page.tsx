@@ -28,7 +28,7 @@ export default async function Home({
     // read-only archive endpoint. Without this, archived legacy imports (e.g. SAKURA) still showed.
     where: {
       archivedAt: null,
-      OR: [{ addresses: { some: { verified: true } } }, { source: "imported" }],
+      OR: [{ addresses: { some: { verified: true } } }, { source: { in: ["imported", "onchain"] } }],
     },
     include: { addresses: true },
     orderBy: { name: "asc" },
@@ -78,12 +78,21 @@ export default async function Home({
     (qualifications.get(id)?.checks ?? []).some((c) => c.status === "pass");
 
   const listable = all.filter((p) => hasAnyPass(p.id));
+  // An "onchain" provider was seeded from the chain because it is registered and submitting, but
+  // nothing publishes a name, a site or a logo for it and nobody has claimed it. It is held out of
+  // the default view for that reason and not because of anything about its performance: it may well
+  // be Qualified, and its card says so. Putting a row of bare addresses in front of every visitor
+  // would be worse than the gap it closes, but hiding them entirely is what let a third-party list
+  // decide, invisibly, which competitors this registry shows.
+  const isOnchainOnly = (p: (typeof all)[number]) => p.source === "onchain";
   // Qualified count and the default view both exclude suspended providers. The "show all" view
   // still shows them (with a Suspended chip) so the record stays public.
-  const qualifiedCount = listable.filter((p) => isQualified(p.id) && !isSuspended(p.id)).length;
+  const qualifiedCount = listable.filter(
+    (p) => isQualified(p.id) && !isSuspended(p.id) && !isOnchainOnly(p)
+  ).length;
   const shown = showAll
     ? listable
-    : listable.filter((p) => isQualified(p.id) && !isSuspended(p.id));
+    : listable.filter((p) => isQualified(p.id) && !isSuspended(p.id) && !isOnchainOnly(p));
 
   const metrics = await metricsForProviders(shown);
   const { managementGroupByProvider } = await import("@/lib/management-group");
@@ -110,7 +119,8 @@ export default async function Home({
       heldUntil: heldUntil(p.id),
       registered: !!m?.registered,
       managementGroup: mgByProvider.get(p.id) ?? false,
-      verified: p.source !== "imported",
+      verified: p.source === "submitted",
+      onchainOnly: isOnchainOnly(p),
       governance: govByProvider.get(p.id)
         ? {
             pending: govByProvider.get(p.id)!.pending,

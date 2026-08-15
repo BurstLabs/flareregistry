@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest) {
   if (typeof b.name === "string") data.name = b.name.trim();
   if (typeof b.description === "string") data.description = b.description;
   if (typeof b.url === "string") data.url = b.url.trim();
-  if (b.source === "submitted" || b.source === "imported") data.source = b.source;
+  if (["submitted", "imported", "onchain"].includes(b.source)) data.source = b.source;
   if (typeof b.suspended === "boolean") data.suspended = b.suspended;
   // archived: true -> archive (soft-delete, exclude from feed); false -> restore to the live feed.
   if (typeof b.archived === "boolean") {

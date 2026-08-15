@@ -579,7 +579,7 @@ function SubmitPageInner() {
   // The title follows REALITY: once an existing listing is loaded (an owner editing their own, or
   // claiming an imported entry) the page is a "Manage your listing" flow; otherwise it's the
   // "List your provider" create flow. The ?manage param only seeds the framing before sign-in.
-  const isManaging = manage || (!!existing && existing.source !== "imported");
+  const isManaging = manage || (!!existing && existing.source === "submitted");
 
   return (
     <div className="max-w-xl">
@@ -759,9 +759,9 @@ function SubmitPageInner() {
         <div className="space-y-4">
           {/* The "you already have a listing" notice is redundant in manage mode (the intro already
               says you're editing). The "imported" claim notice is informative, so keep it always. */}
-          {existing && (existing.source === "imported" || !isManaging) && (
+          {existing && (existing.source !== "submitted" || !isManaging) && (
             <div className="rounded border border-beacon/40 bg-beacon/10 px-3 py-2 text-sm text-beacon">
-              {existing.source === "imported"
+              {existing.source !== "submitted"
                 ? t("submit.existing.imported")
                 : t("submit.existing.own")}
             </div>
@@ -874,7 +874,7 @@ function SubmitPageInner() {
               {busy
                 ? t("submit.btn.saving")
                 : existing
-                  ? existing.source === "imported"
+                  ? existing.source !== "submitted"
                     ? t("submit.btn.claim")
                     : t("submit.btn.update")
                   : t("submit.btn.publish")}
@@ -884,7 +884,7 @@ function SubmitPageInner() {
         </div>
       )}
 
-      {step === "form" && existing && existing.source !== "imported" && (
+      {step === "form" && existing && existing.source === "submitted" && (
         <div className="mt-6 rounded border border-flare/30 bg-flare/5 p-4">
           <p className="text-sm font-medium text-flare">{t("submit.delete.heading")}</p>
           <p className="mt-1 text-xs text-muted">{t("submit.delete.body")}</p>

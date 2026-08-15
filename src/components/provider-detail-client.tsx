@@ -19,6 +19,7 @@ export interface DetailData {
   url: string;
   logo: string;
   verified: boolean;
+  onchainOnly: boolean;
   registered: boolean;
   managementGroup: boolean;
   conductEligible: boolean;
@@ -268,6 +269,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   tip={t("badge.ownerVerifiedTip")}
                   triggerClassName="rounded-md bg-beacon/20 px-2 py-1.5 text-xs text-beacon"
                 />
+            )}
+            {/* This page shows an address where a name would be. Say why: the entity is registered
+                and submitting, and no source publishes an identity for it. */}
+            {d.onchainOnly && (
+              <InfoTip
+                label={t("badge.onchainOnly")}
+                tip={t("badge.onchainOnlyTip")}
+                triggerClassName="rounded-md bg-amber-500/15 px-2 py-1.5 text-xs text-amber-600 dark:text-amber-400"
+              />
             )}
           </div>
         </div>

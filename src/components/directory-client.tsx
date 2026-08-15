@@ -24,6 +24,8 @@ export interface CardProvider {
   registered: boolean;
   managementGroup: boolean;
   verified: boolean;
+  /** Seeded from the chain, no published identity, never claimed. Held out of the default view. */
+  onchainOnly: boolean;
   governance: { pending: boolean; underReview: boolean; suspended: boolean; caseId: string | null } | null;
   votePower: string | null;
   reward: string | null;
@@ -233,6 +235,16 @@ export function DirectoryClient({
                   tip={t("badge.ownerVerifiedTip")}
                   triggerClassName="rounded-md bg-beacon/20 px-2 py-1.5 text-xs text-beacon"
                 />
+                    )}
+                    {/* Says why this card is a bare address rather than leaving the reader to guess
+                        that the entry is broken. The entity is real and on-chain; what is missing is
+                        anyone publishing an identity for it. */}
+                    {p.onchainOnly && (
+                      <InfoTip
+                        label={t("badge.onchainOnly")}
+                        tip={t("badge.onchainOnlyTip")}
+                        triggerClassName="rounded-md bg-amber-500/15 px-2 py-1.5 text-xs text-amber-600 dark:text-amber-400"
+                      />
                     )}
                   </div>
                 </div>
