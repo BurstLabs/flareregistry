@@ -37,6 +37,8 @@ export interface CardProvider {
   singleEntity: boolean;
   algorithm: string | null;
   detailAddress: string;
+  /** All five on-chain role addresses, labelled, so search can match whichever one a reader holds. */
+  roles: { label: string; address: string }[];
 }
 
 export function DirectoryClient({
@@ -65,11 +67,18 @@ export function DirectoryClient({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return providers;
+    // Match ALL five on-chain role addresses, not just the one this listing happens to be filed
+    // under. Which address a reader arrives with is arbitrary: Flare's explorer publishes identity,
+    // this registry lists under delegation, a block explorer shows whichever signed the transaction
+    // they were looking at. Matching only the listing address meant a provider that is present,
+    // scored and reachable at /provider/<that address> returned nothing when searched for by any of
+    // its other four.
     return providers.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.description.toLowerCase().includes(q) ||
-        p.detailAddress.toLowerCase().includes(q)
+        p.detailAddress.toLowerCase().includes(q) ||
+        p.roles.some((r) => r.address.toLowerCase().includes(q))
     );
   }, [query, providers]);
 

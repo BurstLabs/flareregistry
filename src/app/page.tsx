@@ -121,6 +121,7 @@ export default async function Home({
       managementGroup: mgByProvider.get(p.id) ?? false,
       verified: p.source === "submitted",
       onchainOnly: isOnchainOnly(p),
+      roles: m?.roles ?? [],
       governance: govByProvider.get(p.id)
         ? {
             pending: govByProvider.get(p.id)!.pending,
