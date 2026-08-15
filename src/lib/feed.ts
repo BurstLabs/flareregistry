@@ -111,7 +111,7 @@ export async function buildProviderList(): Promise<ProviderList> {
     // read-only at /api/feed/archived.json. archivedAt:null AND (verified OR imported).
     where: {
       provider: { is: { archivedAt: null } },
-      OR: [{ verified: true }, { provider: { is: { source: "imported" } } }],
+      OR: [{ verified: true }, { provider: { is: { source: { in: ["imported", "onchain"] } } } }],
     },
     include: { provider: true },
     orderBy: [{ chainId: "asc" }, { provider: { name: "asc" } }],
@@ -122,7 +122,7 @@ export async function buildProviderList(): Promise<ProviderList> {
   const provForQual = await prisma.provider.findMany({
     where: {
       archivedAt: null,
-      OR: [{ addresses: { some: { verified: true } } }, { source: "imported" }],
+      OR: [{ addresses: { some: { verified: true } } }, { source: { in: ["imported", "onchain"] } }],
     },
     select: { id: true, addresses: { select: { address: true } } },
   });
@@ -291,7 +291,14 @@ export async function buildProviderList(): Promise<ProviderList> {
       logoURI: resolveLogo(a.provider.logoPath, a.provider.logoURI),
       // listed reflects automatic qualification, minus any provider still inside its 30-day
       // new-provider hold, so wallets that filter on listed get the Qualified-and-settled set.
-      listed: qualified && !held,
+      //
+      // An "onchain" entry is NEVER listed, however qualified it is. It was seeded from the chain
+      // because it is registered and submitting, but nothing anywhere publishes a name, a site or a
+      // logo for it, and it has never been claimed. The feed carries it so the record of who is
+      // actually on the chain is complete; a wallet filtering on listed=true keeps exactly the set it
+      // had before this tier existed, which is the point. It starts listing the moment its owner
+      // claims it and the source flips to "submitted".
+      listed: a.provider.source === "onchain" ? false : qualified && !held,
       ...(extras ? { flareregistry: extras } : {}),
     };
   });

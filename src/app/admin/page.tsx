@@ -1236,7 +1236,9 @@ function ImportsTab() {
         setMsg(
           s.error
             ? `Scan error: ${s.error}`
-            : `Scanned ${s.fetched} entries · ${s.staged} new staged · ${s.refreshed} refreshed · ${s.absorbed} absorbed.`
+            : `Upstream list: ${s.fetched} entries · ${s.staged} staged · ${s.refreshed} refreshed · ${s.absorbed} absorbed. ` +
+              `Chain sweep: ${s.chainScanned ?? 0} entities · ${s.chainNewToUs ?? 0} not covered · ` +
+              `${s.chainStaged ?? 0} staged · ${s.chainSkippedStale ?? 0} skipped as inactive.`
         );
         load();
       } else {

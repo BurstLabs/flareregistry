@@ -10,7 +10,7 @@
 // - A dismissed candidate is kept as a tombstone so it is not re-surfaced on the next scan.
 // - Candidates whose address later appears in our registry are auto-marked "absorbed".
 import { prisma } from "./db";
-import { isSupportedChain } from "./chains";
+import { isSupportedChain, getChainByKey } from "./chains";
 import { isClean } from "./content-filter";
 
 const TOWOLABS_LIST_URL =
@@ -32,7 +32,45 @@ export interface ScanResult {
   staged: number; // pending candidates created this run
   refreshed: number; // existing pending candidates whose snapshot was updated
   absorbed: number; // pending/dismissed candidates whose address now exists in our DB
+  // Chain sweep (see scanOnchainEntities): entities registered on-chain that no upstream list
+  // carries, staged from the chain itself.
+  chainScanned?: number;
+  chainNewToUs?: number;
+  chainStaged?: number;
+  chainSkippedStale?: number;
   error?: string;
+}
+
+/**
+ * Every role address of every on-chain entity we already cover, plus a resolver from any single
+ * address to its entity's full role set.
+ *
+ * A provider registers ONE of five role addresses (identity/voter, submit, submitSignatures,
+ * signingPolicy, delegation) and different sources pick different ones, so an exact address match is
+ * never sufficient to decide "do we have this".
+ */
+async function coverageIndex() {
+  const ours = await prisma.providerAddress.findMany({ select: { address: true } });
+  const ourAddrs = new Set(ours.map((a) => a.address.toLowerCase()));
+
+  const entities = await prisma.providerOnchain.findMany();
+  const rolesOf = (e: (typeof entities)[number]) =>
+    [
+      e.voter,
+      e.delegationAddress,
+      e.submitAddress,
+      e.submitSignaturesAddress,
+      e.signingPolicyAddress,
+    ]
+      .filter((r): r is string => !!r)
+      .map((r) => r.toLowerCase());
+
+  // If we list an entity by ANY of its role addresses, every role address counts as ours.
+  for (const e of entities) {
+    const roles = rolesOf(e);
+    if (roles.some((r) => ourAddrs.has(r))) for (const r of roles) ourAddrs.add(r);
+  }
+  return { ourAddrs, entities, rolesOf };
 }
 
 // Clamp overly long upstream strings to our column limits so a candidate can always be approved.
@@ -59,41 +97,9 @@ export async function scanTowolabsImports(): Promise<ScanResult> {
   const providers = Array.isArray(list.providers) ? list.providers : [];
   result.fetched = providers.length;
 
-  // Our known addresses. A provider registers ONE of its five on-chain role addresses (identity,
-  // submit, submitSignatures, signingPolicy, delegation), but an upstream list may list the SAME
-  // provider under a DIFFERENT role address - so an exact ProviderAddress match is not enough to say
-  // "we have this". We must also treat as ours any role address of an on-chain entity we already list.
-  // (Example: we list Quicknode by its identity address; TowoLabs lists it by its delegation address.)
-  //
   // Match is by address alone (not chain-scoped): the five role addresses identify one operator, and
   // an upstream entry we'd import on network X is the same operator we already cover on network Y.
-  const ours = await prisma.providerAddress.findMany({ select: { address: true } });
-  const ourAddrs = new Set(ours.map((a) => a.address.toLowerCase()));
-
-  // Every on-chain entity whose voter (or any role address) is one we already list; collect ALL of
-  // that entity's role addresses so an upstream entry under any of them is recognised as ours.
-  const entities = await prisma.providerOnchain.findMany({
-    select: {
-      voter: true,
-      delegationAddress: true,
-      submitAddress: true,
-      submitSignaturesAddress: true,
-      signingPolicyAddress: true,
-    },
-  });
-  for (const e of entities) {
-    const roles = [
-      e.voter,
-      e.delegationAddress,
-      e.submitAddress,
-      e.submitSignaturesAddress,
-      e.signingPolicyAddress,
-    ].filter((r): r is string => !!r);
-    // If we already list this entity by ANY of its role addresses, mark every role address as ours.
-    if (roles.some((r) => ourAddrs.has(r.toLowerCase()))) {
-      for (const r of roles) ourAddrs.add(r.toLowerCase());
-    }
-  }
+  const { ourAddrs } = await coverageIndex();
 
   // Existing candidates, keyed the same way, so we update snapshots / auto-absorb rather than dupe.
   const existing = await prisma.importCandidate.findMany();
@@ -153,4 +159,117 @@ export async function scanTowolabsImports(): Promise<ScanResult> {
   }
 
   return result;
+}
+
+/**
+ * SWEEP THE CHAIN, not a list.
+ *
+ * scanTowolabsImports above can only ever surface providers that some other project already chose to
+ * write down. That made the registry's real boundary "whoever is in the TowoLabs list", which is a
+ * narrower and less defensible set than "whoever is registered on Flare": at the time this was
+ * written, thirteen currently-registered, actively-submitting, Qualified entities were invisible
+ * here purely because no upstream list carried them. This site is run by an operator who also
+ * competes as a signal provider, so a membership boundary drawn by an undisclosed third-party list
+ * is exactly the kind of thing that should not be deciding which competitors appear.
+ *
+ * So the chain is the seed and the upstream list is only enrichment. An entity we do not cover under
+ * ANY of its five role addresses is staged as a candidate; if an upstream entry happens to describe
+ * it, that name/logo/url rides along, and if not the candidate carries its address as its identity
+ * and nothing is invented for it.
+ *
+ * ONLY LIVE ENTITIES. An entity that deregistered, or that has not been seen for more than
+ * STALE_EPOCHS behind its network's head, is skipped: the registry archives departed providers
+ * rather than listing them, and back-filling the long dead would undo that.
+ */
+const STALE_EPOCHS = 2;
+
+export async function scanOnchainEntities(
+  enrich: Map<string, { name: string; description: string; url: string; logoURI: string | null }> = new Map()
+): Promise<Pick<ScanResult, "chainScanned" | "chainNewToUs" | "chainStaged" | "chainSkippedStale">> {
+  const { ourAddrs, entities, rolesOf } = await coverageIndex();
+
+  // Per-network head, taken from the data itself so this needs no clock or RPC.
+  const head = new Map<string, number>();
+  for (const e of entities) {
+    head.set(e.network, Math.max(head.get(e.network) ?? 0, e.lastEpochSeen ?? 0));
+  }
+
+  const existing = await prisma.importCandidate.findMany();
+  const candByKey = new Map(existing.map((c) => [`${c.chainId}:${c.address.toLowerCase()}`, c]));
+
+  let chainNewToUs = 0;
+  let chainStaged = 0;
+  let chainSkippedStale = 0;
+
+  for (const e of entities) {
+    const roles = rolesOf(e);
+    if (roles.some((r) => ourAddrs.has(r))) continue; // already covered
+    chainNewToUs++;
+
+    const behind = (head.get(e.network) ?? 0) - (e.lastEpochSeen ?? 0);
+    if (!e.registered || behind > STALE_EPOCHS) {
+      chainSkippedStale++;
+      continue;
+    }
+
+    const chain = getChainByKey(e.network);
+    if (!chain) continue;
+
+    // Seed under the DELEGATION address when there is one. That is the address the feed's consumers
+    // and the reward data key on, and it is the one an owner is most likely to sign with when they
+    // come to claim; falling back to the voter keeps an entity with no delegation address listable.
+    const addr = (e.delegationAddress ?? e.voter).toLowerCase();
+    const key = `${chain.chainId}:${addr}`;
+    if (candByKey.has(key)) continue; // already staged/actioned under this address
+
+    // Enrichment if some upstream list happens to describe any of this entity's role addresses.
+    // Otherwise the candidate carries the address as its name. Nothing is invented: an entity with
+    // no published identity is shown as an address, which is exactly what is known about it.
+    const meta = roles.map((r) => enrich.get(r)).find(Boolean);
+    await prisma.importCandidate.create({
+      data: {
+        source: meta ? "onchain+towolabs" : "onchain",
+        chainId: chain.chainId,
+        address: addr,
+        name: meta?.name ?? addr,
+        description: meta?.description ?? "",
+        url: meta?.url ?? "",
+        logoURI: meta?.logoURI ?? null,
+      },
+    });
+    chainStaged++;
+  }
+
+  return {
+    chainScanned: entities.length,
+    chainNewToUs,
+    chainStaged,
+    chainSkippedStale,
+  };
+}
+
+/**
+ * The scan the admin surface and cron actually call: upstream first (so its metadata is available as
+ * enrichment), then the chain sweep that decides coverage.
+ */
+export async function scanImports(): Promise<ScanResult> {
+  const upstream = await scanTowolabsImports();
+
+  // Re-read the upstream list from the candidates it just refreshed, keyed by address, so the chain
+  // sweep can attach a name to an entity an upstream list describes under a different role address.
+  const enrich = new Map<
+    string,
+    { name: string; description: string; url: string; logoURI: string | null }
+  >();
+  for (const c of await prisma.importCandidate.findMany({ where: { source: "towolabs" } })) {
+    enrich.set(c.address.toLowerCase(), {
+      name: c.name,
+      description: c.description,
+      url: c.url,
+      logoURI: c.logoURI,
+    });
+  }
+
+  const chain = await scanOnchainEntities(enrich);
+  return { ...upstream, ...chain };
 }

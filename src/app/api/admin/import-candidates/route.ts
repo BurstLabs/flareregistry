@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import { publishFeedToRepo } from "@/lib/feed";
-import { scanTowolabsImports } from "@/lib/import-scan";
+import { scanImports } from "@/lib/import-scan";
 import { getAdminAddress } from "@/lib/admin";
 import { normalizeName } from "@/lib/validation";
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const who = (await getAdminAddress())?.toLowerCase() ?? "admin";
 
   if (action === "scan") {
-    const result = await scanTowolabsImports();
+    const result = await scanImports();
     return NextResponse.json({ ok: true, result });
   }
 
@@ -110,11 +110,22 @@ export async function POST(req: NextRequest) {
     // than two separate cards - matching the native submit/link merge behaviour. We only merge into
     // another IMPORTED provider: never attach an unverified imported address to a claimed listing (that
     // would be listing contamination), and the name check uses the same normaliser as the native flow.
+    // A chain-seeded candidate that no upstream list describes carries its ADDRESS as its name. It has
+    // no published identity, so it becomes source="onchain" rather than "imported": the two are both
+    // unclaimed, but "imported" means some list vouched for a name and "onchain" means nothing did.
+    const chainOnly = c.source.startsWith("onchain") && normalizeName(c.name) === c.address.toLowerCase();
+    const providerSource = c.source.startsWith("onchain") ? "onchain" : "imported";
+
+    // Merge under an existing same-name provider (dual-network operators). Skipped for an
+    // address-named entry: two different entities would never share a name, and merging on one would
+    // silently fuse unrelated operators into one listing.
     const wantName = normalizeName(c.name);
-    const sameName = await prisma.provider.findMany({
-      where: { source: "imported" },
-      select: { id: true, name: true },
-    });
+    const sameName = chainOnly
+      ? []
+      : await prisma.provider.findMany({
+          where: { source: { in: ["imported", "onchain"] } },
+          select: { id: true, name: true },
+        });
     const mergeTarget = sameName.find((p) => normalizeName(p.name) === wantName);
 
     // Create the unclaimed imported provider (or attach to the merge target). verified/listed=false:
@@ -131,7 +142,7 @@ export async function POST(req: NextRequest) {
               description: c.description,
               url: c.url,
               logoURI: c.logoURI,
-              source: "imported",
+              source: providerSource,
             },
           })
         ).id;
