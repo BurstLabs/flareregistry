@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-15T03:47:02.874Z",
+  "timestamp": "2026-08-15T04:18:37.997Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -9,10 +9,10 @@
   "providers": [
     {
       "chainId": 14,
-      "name": "0x26e135efd09b6756f5a847be991c8305611a05f1",
+      "name": "0x0d4fec75a769fb0cc6095fdffade62f55b86f51b",
       "description": "",
       "url": "",
-      "address": "0x26E135eFD09b6756F5A847be991c8305611A05f1",
+      "address": "0xb14A87aB66ed0e560ed442840E364deceC3cd3eC",
       "logoURI": "https://flareregistry.com/logo-placeholder.png",
       "listed": false,
       "flareregistry": {
@@ -22,38 +22,27 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "200000000000000000000",
-        "votePowerCapped": "200000000000000000000",
+        "votePower": "400251325804888069331",
+        "votePowerCapped": "400251325804888069331",
         "feedCount": 63,
         "lastEpoch": 423,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
-          "identity": "0x7b7CEA81627B1fd3ae008b865FF28Af382660950",
-          "submit": "0xa28C24c921A86761ef4FfDb2cea5C8a8dA57Db6C",
-          "submitSignatures": "0x28503B12622f92891266AD7D40a6D5590E8e3bA9",
-          "signingPolicy": "0x5e93bCCEeE1722c7E9A358619c5106aCD840579C",
-          "delegation": "0x26E135eFD09b6756F5A847be991c8305611A05f1"
+          "identity": "0x0D4fEc75A769FB0Cc6095FdffaDe62f55B86F51B",
+          "submit": "0x98eeE2CF1371a7157309c182B1E9090032CEb21D",
+          "submitSignatures": "0x1DEF351b3e38edb592E2D03743b414C78793b203",
+          "signingPolicy": "0x1D4Cc05f8E9a951cF9a48e4d70b22548b26669C3",
+          "delegation": "0xb14A87aB66ed0e560ed442840E364deceC3cd3eC"
         },
-        "validators": [
-          {
-            "nodeId": "NodeID-DsauN2ztCZWaVwcnf3REjj2Uqas7Gfdz6",
-            "feePercent": 20,
-            "uptimePercent": 66.731,
-            "connected": true,
-            "weight": "1000000000000000",
-            "selfBond": "1000000000000000",
-            "delegatedWeight": "0",
-            "delegatorCount": 0
-          }
-        ],
+        "validators": [],
         "selfDeclared": {
           "privateNode": null,
           "algorithm": null,
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-08-10T16:18:24.348Z",
+          "qualifiedSince": "2026-07-13T16:18:09.642Z",
           "lastSubmittedEpoch": 423,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -63,61 +52,7 @@
     },
     {
       "chainId": 14,
-      "name": "0x3aa0fa77f07398ade354edc1df00fb4a6469a081",
-      "description": "",
-      "url": "",
-      "address": "0x3aA0Fa77F07398ADe354eDC1df00fb4a6469A081",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "44444524697368489678478894",
-        "votePowerCapped": "262396873322381497597952",
-        "feedCount": 63,
-        "lastEpoch": 423,
-        "delegatorRewardLastEpoch": "13301652699416064897130",
-        "feeRewardLastEpoch": "3886575634824745219067",
-        "entity": {
-          "identity": "0xC4019E18D89D94bcAaCa46B601793316876D84c1",
-          "submit": "0xf92D7307e69e02AC8db5c5D395C440C547bbD4fa",
-          "submitSignatures": "0x18695Cf8D176F14aabEaA32B7f756cf3e0787EBf",
-          "signingPolicy": "0x83C44ff68b821aEaA3Bd2CBD1Ac6a203D55A27b3",
-          "delegation": "0x3aA0Fa77F07398ADe354eDC1df00fb4a6469A081"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-9Np7kEQYzPmuUSbfhDk3P56WSmWXBfGRX",
-            "feePercent": 10,
-            "uptimePercent": 99.7799,
-            "connected": true,
-            "weight": "1500000000000000",
-            "selfBond": "1500000000000000",
-            "delegatedWeight": "0",
-            "delegatorCount": 0
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.575Z",
-          "lastSubmittedEpoch": 423,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0x457464f9390ebc5217cfefcbced3f1562a0379b2",
+      "name": "0x3fcb0b871a82ba8d329b2f1d6e35b3535bd019ef",
       "description": "",
       "url": "",
       "address": "0x457464F9390Ebc5217cfeFcBCEd3f1562A0379B2",
@@ -171,61 +106,7 @@
     },
     {
       "chainId": 14,
-      "name": "0x46f75ac75a9e389809b965a876303681d32bcf2e",
-      "description": "",
-      "url": "",
-      "address": "0x46F75Ac75a9E389809b965A876303681D32bCf2e",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "10300000000000000000000",
-        "votePowerCapped": "10300000000000001048576",
-        "feedCount": 63,
-        "lastEpoch": 423,
-        "delegatorRewardLastEpoch": "4293836664673969906",
-        "feeRewardLastEpoch": "1590418341114661588419",
-        "entity": {
-          "identity": "0xDDe5D41C0B79c25Da05EE4E02AECECf6eB7E67De",
-          "submit": "0xf4c512F2871Af4C8dcd11cD255f1e2B1B51801b1",
-          "submitSignatures": "0x45CF4a2673B8A97dc6667f8B928F9D1E2Ac34754",
-          "signingPolicy": "0xe7810aA15fca3ffb00278AA17AcdBE6EEFff38eF",
-          "delegation": "0x46F75Ac75a9E389809b965A876303681D32bCf2e"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-8Tp4GLFefnrLzzD7YU6qvEzDRRT1L6Zec",
-            "feePercent": 20,
-            "uptimePercent": 99.9964,
-            "connected": true,
-            "weight": "3050000000000000",
-            "selfBond": "3000000000000000",
-            "delegatedWeight": "50000000000000",
-            "delegatorCount": 1
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-08-10T16:18:24.391Z",
-          "lastSubmittedEpoch": 423,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0x59187c1f521fbacc0236e74db052ecfb17d9a845",
+      "name": "0x5df7d653ab5f80560b1494d17f6daef7dee5f7be",
       "description": "",
       "url": "",
       "address": "0x59187c1f521FbaCc0236e74Db052EcFb17d9A845",
@@ -279,7 +160,61 @@
     },
     {
       "chainId": 14,
-      "name": "0x7e9bc5c2d12711bab79e93eb5a6e6c6d9a084f8c",
+      "name": "0x7b7cea81627b1fd3ae008b865ff28af382660950",
+      "description": "",
+      "url": "",
+      "address": "0x26E135eFD09b6756F5A847be991c8305611A05f1",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "200000000000000000000",
+        "votePowerCapped": "200000000000000000000",
+        "feedCount": 63,
+        "lastEpoch": 423,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x7b7CEA81627B1fd3ae008b865FF28Af382660950",
+          "submit": "0xa28C24c921A86761ef4FfDb2cea5C8a8dA57Db6C",
+          "submitSignatures": "0x28503B12622f92891266AD7D40a6D5590E8e3bA9",
+          "signingPolicy": "0x5e93bCCEeE1722c7E9A358619c5106aCD840579C",
+          "delegation": "0x26E135eFD09b6756F5A847be991c8305611A05f1"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-DsauN2ztCZWaVwcnf3REjj2Uqas7Gfdz6",
+            "feePercent": 20,
+            "uptimePercent": 66.731,
+            "connected": true,
+            "weight": "1000000000000000",
+            "selfBond": "1000000000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-08-10T16:18:24.348Z",
+          "lastSubmittedEpoch": 423,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "0x7e74d30ef4dd811830118645633a9471f6cc63d3",
       "description": "",
       "url": "",
       "address": "0x7e9bc5C2d12711bAB79e93eb5a6e6c6D9A084f8C",
@@ -363,147 +298,7 @@
     },
     {
       "chainId": 14,
-      "name": "0x973d62094e8d6fd4654a2f7a3c559396544330e5",
-      "description": "",
-      "url": "",
-      "address": "0x973D62094e8D6FD4654A2F7A3C559396544330E5",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "118063066056540971112744",
-        "votePowerCapped": "118063066056540971112744",
-        "feedCount": 63,
-        "lastEpoch": 423,
-        "delegatorRewardLastEpoch": "0",
-        "feeRewardLastEpoch": "0",
-        "entity": {
-          "identity": "0xa4194444f3008Be13783cC9D9942f23b8492dF38",
-          "submit": "0x8B74A3262Fa4c66475Bd7b95C6DA7f894C854aE8",
-          "submitSignatures": "0x5C0733dCd17D435C297387495CB3532a5DD3D04d",
-          "signingPolicy": "0x049DC113F5DE78769EA113963bd3e63b8dd9d173",
-          "delegation": "0x973D62094e8D6FD4654A2F7A3C559396544330E5"
-        },
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.876Z",
-          "lastSubmittedEpoch": 423,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0x99307a8f46cbcc9238a80be8ed955f3e8b491ed4",
-      "description": "",
-      "url": "",
-      "address": "0x99307a8F46cbCC9238A80bE8ED955F3E8b491ed4",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "10120936999715889876034382",
-        "votePowerCapped": "9567715329674542787330048",
-        "feedCount": 63,
-        "lastEpoch": 423,
-        "delegatorRewardLastEpoch": "3686550153246537536067",
-        "feeRewardLastEpoch": "2287574612622302674142",
-        "entity": {
-          "identity": "0x882EE9cebe3d7B38eEbD640b89DE01B326351679",
-          "submit": "0xb0A1797E150EE76F5F2D2dE951544C4d592594b7",
-          "submitSignatures": "0xbDfdff3f451f6c08cfe8d1502025bB65e6eBbe5C",
-          "signingPolicy": "0xad8918D794329A549E33Bf2ea6234D73c6eBE274",
-          "delegation": "0x99307a8F46cbCC9238A80bE8ED955F3E8b491ed4"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-NCfvDEdDv8tuVDxWLB1ShJToQ7qAcca2B",
-            "feePercent": 20,
-            "uptimePercent": 99.9988,
-            "connected": true,
-            "weight": "3000000000000000",
-            "selfBond": "3000000000000000",
-            "delegatedWeight": "0",
-            "delegatorCount": 0
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-07-10T10:18:14.019Z",
-          "lastSubmittedEpoch": 422,
-          "epochsSinceSubmit": 1,
-          "epochsUntilRevoke": 16,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0xb14a87ab66ed0e560ed442840e364decec3cd3ec",
-      "description": "",
-      "url": "",
-      "address": "0xb14A87aB66ed0e560ed442840E364deceC3cd3eC",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "400251325804888069331",
-        "votePowerCapped": "400251325804888069331",
-        "feedCount": 63,
-        "lastEpoch": 423,
-        "delegatorRewardLastEpoch": "0",
-        "feeRewardLastEpoch": "0",
-        "entity": {
-          "identity": "0x0D4fEc75A769FB0Cc6095FdffaDe62f55B86F51B",
-          "submit": "0x98eeE2CF1371a7157309c182B1E9090032CEb21D",
-          "submitSignatures": "0x1DEF351b3e38edb592E2D03743b414C78793b203",
-          "signingPolicy": "0x1D4Cc05f8E9a951cF9a48e4d70b22548b26669C3",
-          "delegation": "0xb14A87aB66ed0e560ed442840E364deceC3cd3eC"
-        },
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-07-13T16:18:09.642Z",
-          "lastSubmittedEpoch": 423,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0xe35800fe5785f60c216bd9e667f106a42dc2c042",
+      "name": "0x802c64fcd19d8dba98ae96302c0c9faa16952cd5",
       "description": "",
       "url": "",
       "address": "0xe35800fe5785F60C216Bd9E667f106a42dC2C042",
@@ -587,7 +382,212 @@
     },
     {
       "chainId": 14,
-      "name": "0xf1a4edec0cf16a5e8d0402f3addb8d62d4c90409",
+      "name": "0x882ee9cebe3d7b38eebd640b89de01b326351679",
+      "description": "",
+      "url": "",
+      "address": "0x99307a8F46cbCC9238A80bE8ED955F3E8b491ed4",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "10120936999715889876034382",
+        "votePowerCapped": "9567715329674542787330048",
+        "feedCount": 63,
+        "lastEpoch": 423,
+        "delegatorRewardLastEpoch": "3686550153246537536067",
+        "feeRewardLastEpoch": "2287574612622302674142",
+        "entity": {
+          "identity": "0x882EE9cebe3d7B38eEbD640b89DE01B326351679",
+          "submit": "0xb0A1797E150EE76F5F2D2dE951544C4d592594b7",
+          "submitSignatures": "0xbDfdff3f451f6c08cfe8d1502025bB65e6eBbe5C",
+          "signingPolicy": "0xad8918D794329A549E33Bf2ea6234D73c6eBE274",
+          "delegation": "0x99307a8F46cbCC9238A80bE8ED955F3E8b491ed4"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-NCfvDEdDv8tuVDxWLB1ShJToQ7qAcca2B",
+            "feePercent": 20,
+            "uptimePercent": 99.9988,
+            "connected": true,
+            "weight": "3000000000000000",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-07-10T10:18:14.019Z",
+          "lastSubmittedEpoch": 422,
+          "epochsSinceSubmit": 1,
+          "epochsUntilRevoke": 16,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "0xa4194444f3008be13783cc9d9942f23b8492df38",
+      "description": "",
+      "url": "",
+      "address": "0x973D62094e8D6FD4654A2F7A3C559396544330E5",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "118063066056540971112744",
+        "votePowerCapped": "118063066056540971112744",
+        "feedCount": 63,
+        "lastEpoch": 423,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xa4194444f3008Be13783cC9D9942f23b8492dF38",
+          "submit": "0x8B74A3262Fa4c66475Bd7b95C6DA7f894C854aE8",
+          "submitSignatures": "0x5C0733dCd17D435C297387495CB3532a5DD3D04d",
+          "signingPolicy": "0x049DC113F5DE78769EA113963bd3e63b8dd9d173",
+          "delegation": "0x973D62094e8D6FD4654A2F7A3C559396544330E5"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:18.876Z",
+          "lastSubmittedEpoch": 423,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "0xc4019e18d89d94bcaaca46b601793316876d84c1",
+      "description": "",
+      "url": "",
+      "address": "0x3aA0Fa77F07398ADe354eDC1df00fb4a6469A081",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "44444524697368489678478894",
+        "votePowerCapped": "262396873322381497597952",
+        "feedCount": 63,
+        "lastEpoch": 423,
+        "delegatorRewardLastEpoch": "13301652699416064897130",
+        "feeRewardLastEpoch": "3886575634824745219067",
+        "entity": {
+          "identity": "0xC4019E18D89D94bcAaCa46B601793316876D84c1",
+          "submit": "0xf92D7307e69e02AC8db5c5D395C440C547bbD4fa",
+          "submitSignatures": "0x18695Cf8D176F14aabEaA32B7f756cf3e0787EBf",
+          "signingPolicy": "0x83C44ff68b821aEaA3Bd2CBD1Ac6a203D55A27b3",
+          "delegation": "0x3aA0Fa77F07398ADe354eDC1df00fb4a6469A081"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-9Np7kEQYzPmuUSbfhDk3P56WSmWXBfGRX",
+            "feePercent": 10,
+            "uptimePercent": 99.7799,
+            "connected": true,
+            "weight": "1500000000000000",
+            "selfBond": "1500000000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:18.575Z",
+          "lastSubmittedEpoch": 423,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "0xdde5d41c0b79c25da05ee4e02aececf6eb7e67de",
+      "description": "",
+      "url": "",
+      "address": "0x46F75Ac75a9E389809b965A876303681D32bCf2e",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "10300000000000000000000",
+        "votePowerCapped": "10300000000000001048576",
+        "feedCount": 63,
+        "lastEpoch": 423,
+        "delegatorRewardLastEpoch": "4293836664673969906",
+        "feeRewardLastEpoch": "1590418341114661588419",
+        "entity": {
+          "identity": "0xDDe5D41C0B79c25Da05EE4E02AECECf6eB7E67De",
+          "submit": "0xf4c512F2871Af4C8dcd11cD255f1e2B1B51801b1",
+          "submitSignatures": "0x45CF4a2673B8A97dc6667f8B928F9D1E2Ac34754",
+          "signingPolicy": "0xe7810aA15fca3ffb00278AA17AcdBE6EEFff38eF",
+          "delegation": "0x46F75Ac75a9E389809b965A876303681D32bCf2e"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-8Tp4GLFefnrLzzD7YU6qvEzDRRT1L6Zec",
+            "feePercent": 20,
+            "uptimePercent": 99.9964,
+            "connected": true,
+            "weight": "3050000000000000",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "50000000000000",
+            "delegatorCount": 1
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-08-10T16:18:24.391Z",
+          "lastSubmittedEpoch": 423,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "0xf1a4e1dbb022e5b8ad6838f5331b1959b07561cc",
       "description": "",
       "url": "",
       "address": "0xF1A4EDEc0cf16a5E8D0402f3ADDB8D62D4C90409",
@@ -6329,50 +6329,7 @@
     },
     {
       "chainId": 19,
-      "name": "0x7aeadd818077129f7143c3a1865bb339f0967aec",
-      "description": "",
-      "url": "",
-      "address": "0x7aeaDd818077129f7143C3A1865bb339f0967AEC",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "songbird",
-        "feePercent": 20,
-        "votePower": "19929114421806971199245362",
-        "votePowerCapped": "19929121026918475802607616",
-        "feedCount": 63,
-        "lastEpoch": 423,
-        "delegatorRewardLastEpoch": "24834038525533990172267",
-        "feeRewardLastEpoch": "6208509631383497536194",
-        "entity": {
-          "identity": "0x6976b491CF6043Bbc11214633f7A51467760a967",
-          "submit": "0x30A4Ae4E8C78fC087d166e90f8F564fF2fb55698",
-          "submitSignatures": "0x87FFFAE4eC0E9dacf349ca83F2E841fAeB54911E",
-          "signingPolicy": "0xd1b117c30689979FCbe97f9C53d670f050cFCAbc",
-          "delegation": "0x7aeaDd818077129f7143C3A1865bb339f0967AEC"
-        },
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.253Z",
-          "lastSubmittedEpoch": 423,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 19,
-      "name": "0xb9e0bdcaed270a2e1a6f83bea718c51e6a43b9a5",
+      "name": "0x45d2bdd25568328d7da900838327338b86ffbde0",
       "description": "",
       "url": "",
       "address": "0xB9e0bdcAED270A2e1A6F83beA718c51E6a43b9A5",
@@ -6406,6 +6363,49 @@
         },
         "qualification": {
           "qualifiedSince": "2026-08-03T16:18:36.243Z",
+          "lastSubmittedEpoch": 423,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "0x6976b491cf6043bbc11214633f7a51467760a967",
+      "description": "",
+      "url": "",
+      "address": "0x7aeaDd818077129f7143C3A1865bb339f0967AEC",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "19929114421806971199245362",
+        "votePowerCapped": "19929121026918475802607616",
+        "feedCount": 63,
+        "lastEpoch": 423,
+        "delegatorRewardLastEpoch": "24834038525533990172267",
+        "feeRewardLastEpoch": "6208509631383497536194",
+        "entity": {
+          "identity": "0x6976b491CF6043Bbc11214633f7A51467760a967",
+          "submit": "0x30A4Ae4E8C78fC087d166e90f8F564fF2fb55698",
+          "submitSignatures": "0x87FFFAE4eC0E9dacf349ca83F2E841fAeB54911E",
+          "signingPolicy": "0xd1b117c30689979FCbe97f9C53d670f050cFCAbc",
+          "delegation": "0x7aeaDd818077129f7143C3A1865bb339f0967AEC"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:20.253Z",
           "lastSubmittedEpoch": 423,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
