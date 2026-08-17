@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-17T05:24:15.920Z",
+  "timestamp": "2026-08-17T05:27:06.720Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -524,60 +524,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.575Z",
-          "lastSubmittedEpoch": 423,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0xdde5d41c0b79c25da05ee4e02aececf6eb7e67de",
-      "description": "",
-      "url": "",
-      "address": "0x46F75Ac75a9E389809b965A876303681D32bCf2e",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": true,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "10300000000000000000000",
-        "votePowerCapped": "10300000000000001048576",
-        "feedCount": 63,
-        "lastEpoch": 423,
-        "delegatorRewardLastEpoch": "4293836664673969906",
-        "feeRewardLastEpoch": "1590418341114661588419",
-        "entity": {
-          "identity": "0xDDe5D41C0B79c25Da05EE4E02AECECf6eB7E67De",
-          "submit": "0xf4c512F2871Af4C8dcd11cD255f1e2B1B51801b1",
-          "submitSignatures": "0x45CF4a2673B8A97dc6667f8B928F9D1E2Ac34754",
-          "signingPolicy": "0xe7810aA15fca3ffb00278AA17AcdBE6EEFff38eF",
-          "delegation": "0x46F75Ac75a9E389809b965A876303681D32bCf2e"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-8Tp4GLFefnrLzzD7YU6qvEzDRRT1L6Zec",
-            "feePercent": 20,
-            "uptimePercent": 99.997,
-            "connected": true,
-            "weight": "17288000000000000",
-            "selfBond": "3000000000000000",
-            "delegatedWeight": "14288000000000000",
-            "delegatorCount": 5
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-08-10T16:18:24.391Z",
           "lastSubmittedEpoch": 423,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -1612,6 +1558,60 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.502Z",
+          "lastSubmittedEpoch": 423,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "CashLab",
+      "description": "Independent, solo-operated Flare infrastructure: FTSO price feeds, Fast Updates and FDC attestations on dedicated hardware, plus our own validator. Transparency-first — every claim we publish is verifiable on-chain at cashlab.network.",
+      "url": "https://cashlab.network",
+      "address": "0x46F75Ac75a9E389809b965A876303681D32bCf2e",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "10300000000000000000000",
+        "votePowerCapped": "10300000000000001048576",
+        "feedCount": 63,
+        "lastEpoch": 423,
+        "delegatorRewardLastEpoch": "4293836664673969906",
+        "feeRewardLastEpoch": "1590418341114661588419",
+        "entity": {
+          "identity": "0xDDe5D41C0B79c25Da05EE4E02AECECf6eB7E67De",
+          "submit": "0xf4c512F2871Af4C8dcd11cD255f1e2B1B51801b1",
+          "submitSignatures": "0x45CF4a2673B8A97dc6667f8B928F9D1E2Ac34754",
+          "signingPolicy": "0xe7810aA15fca3ffb00278AA17AcdBE6EEFff38eF",
+          "delegation": "0x46F75Ac75a9E389809b965A876303681D32bCf2e"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-8Tp4GLFefnrLzzD7YU6qvEzDRRT1L6Zec",
+            "feePercent": 20,
+            "uptimePercent": 99.997,
+            "connected": true,
+            "weight": "17288000000000000",
+            "selfBond": "3000000000000000",
+            "delegatedWeight": "14288000000000000",
+            "delegatorCount": 5
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": null,
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-08-10T16:18:24.391Z",
           "lastSubmittedEpoch": 423,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
