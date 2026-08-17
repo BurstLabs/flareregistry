@@ -41,6 +41,21 @@ export async function promoteDueLogos(): Promise<{ promoted: number }> {
           logoPendingSigner: null,
         },
       });
+      // Record it. This is the DEFAULT path: a logo nobody reviewed goes live on a timer, so it is
+      // the one that most needs a record. Without this the history would show only the images an
+      // admin happened to look at, and read as though every other logo arrived from nowhere.
+      await prisma.logoDecision.create({
+        data: {
+          providerId: p.id,
+          providerName: p.name,
+          action: "AUTO_PROMOTED",
+          actor: "system",
+          logoURI: liveURL ?? p.logoPendingURI,
+          previousURI: p.logoURI,
+          uploadedAt: p.logoPendingAt,
+          uploadedBy: p.logoPendingSigner,
+        },
+      });
       promoted++;
     } catch {
       // Leave it pending; the next run will retry.
