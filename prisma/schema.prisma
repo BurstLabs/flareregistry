@@ -1251,6 +1251,40 @@ model ProviderFlagEvidence {
 /// The append-only grounds, defence and vote tables exist so the record cannot be rewritten. An
 /// admin surface that can edit or delete them is the hole in that guarantee. Operator actions are
 /// therefore constrained to the operational, and every one of them lands here.
+/// A LOGO DECISION, kept permanently.
+///
+/// Approving or rejecting a pending logo clears every logoPending* column on the Provider, so before
+/// this model existed the act left no trace at all: no record of who published an image to a public
+/// feed, when, or what it replaced. That is the one moderation decision on this site with an
+/// externally visible artefact attached, and it was the only one with no history.
+///
+/// providerName and logoURI are SNAPSHOTS, not relations. A provider can be renamed, archived or
+/// deleted afterwards, and a decision record that changes its own account of what happened is worse
+/// than none. Same reasoning as ProviderCaseAudit.caseId being a plain string: the trail has to
+/// outlive its subject.
+model LogoDecision {
+  id           String   @id @default(cuid())
+  providerId   String
+  /// Snapshot of the provider's name at decision time.
+  providerName String
+  /// APPROVED (published early by an admin) | REJECTED (discarded) | AUTO_PROMOTED (review window
+  /// elapsed and the cron published it, which is the default path and the one nobody signs off).
+  action       String
+  /// Admin address, or "system" for the cron.
+  actor        String
+  /// The pending image the decision was about.
+  logoURI      String?
+  /// The live logo it replaced, so a decision can be read against what was there before.
+  previousURI  String?
+  /// When the provider uploaded it, and which address signed that upload.
+  uploadedAt   DateTime?
+  uploadedBy   String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([providerId])
+}
+
 model ProviderCaseAudit {
   id        String   @id @default(cuid())
   caseId    String

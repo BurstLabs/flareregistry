@@ -203,7 +203,7 @@ export default function AdminPage() {
         {tab === "qualification" && <QualificationTab />}
         {tab === "governance" && <GovernanceTab />}
         {tab === "conduct" && <ConductTab />}
-        {tab === "reports" && <ReportsTab />}
+        {tab === "reports" && <ReportsTab onChanged={loadCounts} />}
         {tab === "consumers" && <ConsumersTab />}
         {tab === "telegram" && <TelegramTab />}
         {tab === "system" && <SystemTab />}
@@ -1540,7 +1540,110 @@ function Row({ k, val }: { k: string; val: React.ReactNode }) {
   );
 }
 
-function PendingLogosPanel() {
+// ---------- Logo decision history ----------
+//
+// Every approve, reject and timer-promotion, newest first. The pending panel above shows only what is
+// still undecided, so without this the moment a logo was published it vanished from the admin surface
+// entirely and there was no way to answer "who approved that image, and when".
+//
+// AUTO_PROMOTED is the majority and that is expected: a logo nobody reviews goes live when the review
+// window elapses. Listing those beside the manual decisions is what stops the history from implying
+// every unreviewed logo was actually looked at.
+function LogoDecisionHistory() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [counts, setCounts] = useState<{ approved: number; rejected: number; autoPromoted: number } | null>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/admin/logo-decisions")
+      .then((r) => r.json())
+      .then((b) => {
+        setRows(b.decisions ?? []);
+        setCounts(b.counts ?? null);
+      })
+      .catch(() => setRows([]));
+  }, [open]);
+
+  const tone = (a: string) =>
+    a === "APPROVED"
+      ? "text-emerald-500"
+      : a === "REJECTED"
+        ? "text-red-400"
+        : "text-muted";
+
+  return (
+    <div className="mt-6">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="text-xs font-semibold text-fg hover:text-beacon"
+      >
+        Logo decision history {open ? "\u25be" : "\u25b8"}
+        {counts && (
+          <span className="ml-2 font-normal text-faint">
+            {counts.approved} approved · {counts.rejected} rejected · {counts.autoPromoted} auto
+          </span>
+        )}
+      </button>
+      {open && (
+        <Card>
+          <table className="w-full text-sm">
+            <thead className="text-xs text-faint">
+              <tr>
+                <th className="text-left font-normal">When</th>
+                <th className="text-left font-normal">Provider</th>
+                <th className="text-left font-normal">Decision</th>
+                <th className="text-left font-normal">By</th>
+                <th className="text-left font-normal">Uploaded by</th>
+                <th className="text-right font-normal">Image</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((d) => (
+                <tr key={d.id} className="border-t border-themed/60 align-top">
+                  <td className="py-1 text-xs text-faint whitespace-nowrap">
+                    {new Date(d.at).toISOString().slice(0, 16).replace("T", " ")}
+                  </td>
+                  <td className="py-1">
+                    <a href={`/provider/${d.providerId}`} className="text-beacon hover:underline">
+                      {d.provider}
+                    </a>
+                  </td>
+                  <td className={`py-1 text-xs ${tone(d.action)}`}>
+                    {d.action === "AUTO_PROMOTED" ? "auto (window elapsed)" : d.action.toLowerCase()}
+                  </td>
+                  <td className="py-1 font-mono text-xs text-muted">
+                    {d.actor === "system" ? "system" : `${String(d.actor).slice(0, 10)}\u2026`}
+                  </td>
+                  <td className="py-1 font-mono text-xs text-faint">
+                    {d.uploadedBy ? `${String(d.uploadedBy).slice(0, 10)}\u2026` : "\u2014"}
+                  </td>
+                  <td className="py-1 text-right text-xs">
+                    {d.logoURI ? (
+                      <a href={d.logoURI} target="_blank" rel="noreferrer" className="text-beacon hover:underline">
+                        view
+                      </a>
+                    ) : (
+                      <span className="text-faint">{"\u2014"}</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-2 text-muted">
+                    No logo decisions recorded yet. Decisions are recorded from this release onward.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function PendingLogosPanel({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<any[]>([]);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState("");
@@ -1565,7 +1668,12 @@ function PendingLogosPanel() {
       });
       const b = await r.json();
       setMsg(r.ok ? (action === "approve" ? "Published." : "Discarded.") : b.error ?? "Failed.");
-      if (r.ok) load();
+      if (r.ok) {
+        load();
+        // The panel refreshed its own list before; the tab badge is owned by the parent and did not,
+        // which is why the count stayed at 2 after an approve left one item.
+        onChanged();
+      }
     } finally {
       setBusy("");
     }
@@ -1633,7 +1741,10 @@ function PendingLogosPanel() {
 }
 
 // ---------- Logo reports ----------
-function ReportsTab() {
+// `onChanged` re-pulls the parent's tab badges. Without it the badge only refreshed on tab
+// NAVIGATION, so clearing a queue from inside the tab you were already on left the count stale: an
+// admin who approved the last pending logo still saw a badge telling them work was waiting.
+function ReportsTab({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<any[]>([]);
   const [msg, setMsg] = useState("");
   const [showAll, setShowAll] = useState(false);
@@ -1654,11 +1765,14 @@ function ReportsTab() {
       body: JSON.stringify({ id, action }),
     });
     setMsg(r.ok ? "Done." : "Failed.");
-    if (r.ok) load();
+    if (r.ok) {
+      load();
+      onChanged();
+    }
   }
   return (
     <div>
-      <PendingLogosPanel />
+      <PendingLogosPanel onChanged={onChanged} />
       <div className="mb-2 mt-6 flex items-center justify-between text-xs text-muted">
         <span>{msg}</span>
         <label className="flex items-center gap-1">
@@ -1724,6 +1838,7 @@ function ReportsTab() {
           </tbody>
         </table>
       </Card>
+      <LogoDecisionHistory />
     </div>
   );
 }

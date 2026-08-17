@@ -66,6 +66,18 @@ export async function PATCH(req: NextRequest) {
 
   const key = provider.logoPendingSigner ?? provider.addresses[0]?.address ?? null;
 
+  // Snapshot what the decision was ABOUT before the update clears it. Every logoPending* column is
+  // wiped by both branches below, so anything not captured here is unrecoverable afterwards.
+  const decided = {
+    providerId: provider.id,
+    providerName: provider.name,
+    actor: admin ?? "admin",
+    logoURI: provider.logoPendingURI,
+    previousURI: provider.logoURI,
+    uploadedAt: provider.logoPendingAt,
+    uploadedBy: provider.logoPendingSigner,
+  };
+
   if (action === "approve") {
     if (!key) return NextResponse.json({ error: "no address to key the logo file" }, { status: 409 });
     const liveURL = await promotePendingLogo(key);
@@ -79,6 +91,9 @@ export async function PATCH(req: NextRequest) {
         logoPendingSigner: null,
       },
     });
+    await prisma.logoDecision.create({
+      data: { ...decided, action: "APPROVED", logoURI: liveURL ?? provider.logoPendingURI },
+    });
     await publishFeedToRepo().catch(() => {});
     return NextResponse.json({ ok: true, action, logoURI: liveURL ?? provider.logoPendingURI, by: admin });
   }
@@ -88,6 +103,7 @@ export async function PATCH(req: NextRequest) {
     where: { id: provider.id },
     data: { logoPendingURI: null, logoPendingAt: null, logoPendingSigner: null },
   });
+  await prisma.logoDecision.create({ data: { ...decided, action: "REJECTED" } });
   if (key) {
     await deleteFile(pendingLogoRepoPath(key), `reject pending logo: ${key}`).catch(() => {});
   }
