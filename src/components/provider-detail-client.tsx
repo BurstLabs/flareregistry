@@ -845,9 +845,47 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   // the model rather than this provider's arithmetic should be looking.
                   const total = d.reputation!.components.reduce((a, c) => a + c.weight, 0);
                   const scale = total ? 100 / total : 0;
+                  // ROUND SO THE PARTS SUM TO THE WHOLE.
+                  //
+                  // Rounding each cell independently with toFixed(1) does not preserve the sum. The
+                  // weights rescale by 100/90, and three of the five land on .5556 or .7778, so all
+                  // three round up: the maxima printed 50.0 + 27.8 + 5.6 + 11.1 + 5.6 = 100.1 beside
+                  // a heading that says "out of 100", and the earned column showed five numbers
+                  // adding to 79.7 above a total of 79.6.
+                  //
+                  // The total was right and the parts were right to a tenth; only their sum was
+                  // wrong. That still matters more here than a tenth of a point usually would,
+                  // because this panel's claim is that the figure is recomputable, and it invites the
+                  // reader to check the arithmetic. Someone who adds the column and gets a different
+                  // answer has been handed a reason to distrust the number, and they would be right
+                  // to, since they did exactly what the page asked.
+                  //
+                  // Largest remainder: floor every cell to a tenth, then hand the leftover tenths to
+                  // the cells with the largest discarded fractions. The column now sums exactly to
+                  // the printed total, no cell moves by more than 0.1 from its true value, and the
+                  // underlying score is untouched.
+                  const apportion = (values: number[], target: number): number[] => {
+                    const tenths = values.map((v) => v * 10);
+                    const out = tenths.map((t2) => Math.floor(t2 + 1e-9));
+                    let left = Math.round(target * 10) - out.reduce((a, b) => a + b, 0);
+                    const byFrac = tenths
+                      .map((t2, i) => ({ i, frac: t2 - Math.floor(t2 + 1e-9) }))
+                      .sort((a, b) => b.frac - a.frac);
+                    for (let k = 0; k < byFrac.length && left > 0; k++, left--) out[byFrac[k].i]++;
+                    // Defensive: floating-point noise could in principle overshoot. Take tenths back
+                    // from the cells that gained least by rounding, so no cell is ever off by >0.1.
+                    for (let k = byFrac.length - 1; k >= 0 && left < 0; k--, left++) out[byFrac[k].i]--;
+                    return out.map((x) => x / 10);
+                  };
+                  const comps = d.reputation!.components;
+                  const shownPoints = apportion(
+                    comps.map((c) => c.points * scale),
+                    Number(d.reputation!.baseScore.toFixed(1))
+                  );
+                  const shownMax = apportion(comps.map((c) => c.weight * scale), 100);
                   return (
                     <ul className="mt-4 space-y-3">
-                      {d.reputation!.components.map((c) => (
+                      {d.reputation!.components.map((c, ci) => (
                         <li key={c.key}>
                           <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs">
                             <span>
@@ -880,7 +918,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                               </span>
                             </span>
                             <span className="tabular-nums text-faint">
-                              {(c.points * scale).toFixed(1)} / {(c.weight * scale).toFixed(1)}{" "}
+                              {shownPoints[ci].toFixed(1)} / {shownMax[ci].toFixed(1)}{" "}
                               {t("rep.pts")}
                             </span>
                           </div>
