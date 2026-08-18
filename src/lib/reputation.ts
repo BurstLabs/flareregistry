@@ -39,7 +39,7 @@ import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/
 import { prisma } from "@/lib/db";
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "2.9";
+export const REPUTATION_VERSION = "3.0";
 
 /**
  * Points deducted from the final score for a chill still in force, decaying to nothing as the
@@ -583,8 +583,19 @@ export async function reputationFor(
   // a condition Flare did not publish that epoch. Fast updates is capped at 1: it is measured against
   // an expected count and routinely exceeds it (one provider ran 122% of expected), and letting
   // overshoot bank credit would pay for spamming rather than for doing the job.
-  const condRows = await prisma.providerMetricEpoch.findMany({
-    where: { network, voter: voter.toLowerCase() },
+  //
+  // WINDOWED BY EPOCH, NOT BY ROW, for the reason set out in eligibilityRecord: an unregistered epoch
+  // writes no row, so taking the newest 30 rows slid the window back to whenever the provider last
+  // worked and scored them on it as though it were current. Absent epochs after the provider's first
+  // appearance are inserted below as failed on every condition, because that is what they were: no
+  // prices submitted, no rewards earned, nothing delivered.
+  const condFrom = latest != null ? latest - RECORD_WINDOW + 1 : null;
+  const condRowsRaw = await prisma.providerMetricEpoch.findMany({
+    where: {
+      network,
+      voter: voter.toLowerCase(),
+      ...(condFrom != null ? { epochId: { gte: condFrom, lte: latest! } } : {}),
+    },
     orderBy: { epochId: "desc" },
     take: RECORD_WINDOW,
     select: {
@@ -597,6 +608,41 @@ export async function reputationFor(
       ftsoMet: true, fdcMet: true, fastMet: true,
     },
   });
+
+  // Only from the provider's own first epoch onward: epochs before an entity existed are not
+  // failures, and counting them would score every new entrant near zero on arrival.
+  const condFirst = await prisma.providerMetricEpoch.findFirst({
+    where: { network, voter: voter.toLowerCase() },
+    orderBy: { epochId: "asc" },
+    select: { epochId: true },
+  });
+  type CondRow = (typeof condRowsRaw)[number];
+  /**
+   * An absent epoch: nothing submitted, so every minimal condition is a miss.
+   *
+   * `strikes` stays NULL rather than being set to the floor. The strikes component already handles
+   * absence correctly and independently, by decaying on row index so that silence stalls recovery
+   * instead of buying it (see weightedWorstStrike). Injecting a synthetic maximal strike here would
+   * penalise the same absence twice, and would zero that component for any provider bumped from a
+   * seat for a single epoch, which this file elsewhere calls routine now that Flare's 100 are full.
+   * Absence belongs to reliability and conditions; the strike series stays Flare's own record.
+   */
+  const absentRow = (epochId: number): CondRow => ({
+    epochId,
+    ftsoHits: 0, ftsoPossible: 1,
+    fdcRounds: 0, fdcTotal: 1,
+    fastUpdates: 0, fastExpected: 1,
+    stakingOk: false,
+    strikes: null,
+    ftsoMet: false, fdcMet: false, fastMet: false,
+  });
+  let condRows = condRowsRaw;
+  if (latest != null && condFrom != null && condFirst) {
+    const byEpoch = new Map(condRowsRaw.map((r) => [r.epochId, r]));
+    const from = Math.max(condFrom, condFirst.epochId);
+    condRows = [];
+    for (let e = latest; e >= from; e--) condRows.push(byEpoch.get(e) ?? absentRow(e));
+  }
   const ratio = (n: number | null, d: number | null) =>
     n != null && d != null && d > 0 ? Math.min(1, n / d) : null;
 
