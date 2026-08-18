@@ -62,19 +62,63 @@ export async function eligibilityRecord(
   network: string,
   voter: string
 ): Promise<EligibilityRecord | null> {
+  // THE WINDOW IS 30 EPOCHS, NOT 30 ROWS, and that distinction is the whole point of this block.
+  //
+  // Taking the newest 30 ROWS silently slides the window back to wherever the provider last turned
+  // up. A provider who deregisters writes no rows at all, so their absence was not scored as a
+  // failure; it simply did not appear, and every component averaged over the epochs they DID work.
+  // Measured on Swyke: eight epochs absent, newest row at 416 against a network head of 424, scored
+  // 50.6 out of a window that ended a month earlier and read as current.
+  //
+  // Flare pays nothing for an epoch you are not registered for, so an absence is a miss, not a
+  // neutral gap. Anchoring the window to the network head makes it count as one.
+  const st = await prisma.ingestState.findUnique({ where: { network } });
+  const head = st?.lastEpochIngested ?? null;
+
   const rows = await prisma.providerMetricEpoch.findMany({
-    where: { network, voter: voter.toLowerCase() },
+    where: {
+      network,
+      voter: voter.toLowerCase(),
+      ...(head != null ? { epochId: { gte: head - RECORD_WINDOW + 1, lte: head } } : {}),
+    },
     orderBy: { epochId: "desc" },
     take: RECORD_WINDOW,
     select: { epochId: true, goodStanding: true, failures: true },
   });
   if (!rows.length) return null;
 
-  // Only rows carrying a verdict count. goodStanding is nullable precisely so that "Flare has not
+  // ABSENCE COUNTS ONLY FROM THE PROVIDER'S OWN FIRST EPOCH ONWARD.
+  //
+  // Two different things look identical in this table: a provider who stopped, and one who had not
+  // started. Epochs before an entity's first appearance are not failures, they are epochs in which
+  // it did not exist, and treating them as misses would score every new entrant near zero on arrival
+  // and hand incumbents a permanent structural advantage. The maturity gate below already refuses to
+  // publish a figure for thin history; this keeps that promise honest rather than undercutting it.
+  const firstEver = await prisma.providerMetricEpoch.findFirst({
+    where: { network, voter: voter.toLowerCase() },
+    orderBy: { epochId: "asc" },
+    select: { epochId: true },
+  });
+
+  // Rebuild the series epoch by epoch, newest first, inserting a miss for every epoch in the window
+  // that the provider should have been present for and has no row for.
+  type Slot = { epochId: number; goodStanding: boolean | null; failures: string[] | null };
+  let series: Slot[] = rows as Slot[];
+  if (head != null && firstEver) {
+    const byEpoch = new Map(rows.map((r) => [r.epochId, r as Slot]));
+    const from = Math.max(head - RECORD_WINDOW + 1, firstEver.epochId);
+    series = [];
+    for (let e = head; e >= from; e--) {
+      series.push(byEpoch.get(e) ?? { epochId: e, goodStanding: false, failures: ["NOT_REGISTERED"] });
+    }
+  }
+
+  // Only slots carrying a verdict count. goodStanding is nullable precisely so that "Flare has not
   // published this epoch yet" is distinguishable from "the provider passed", and averaging the two
-  // together would quietly reward absence.
-  const scoredRows = rows.filter((r) => r.goodStanding !== null);
-  const recentRows = rows.slice(0, RECORD_RECENT).filter((r) => r.goodStanding !== null);
+  // together would quietly reward absence. A synthesised absence above is a definite false, not a
+  // null, because we know the provider was not there rather than not knowing.
+  const scoredRows = series.filter((r) => r.goodStanding !== null);
+  const recentRows = series.slice(0, RECORD_RECENT).filter((r) => r.goodStanding !== null);
 
   const causes = [
     ...new Set(scoredRows.filter((r) => r.goodStanding === false).flatMap((r) => r.failures ?? [])),
@@ -87,6 +131,9 @@ export async function eligibilityRecord(
     recentScored: recentRows.length,
     recentEligible: recentRows.filter((r) => r.goodStanding === true).length,
     mature: scoredRows.length >= RECORD_MIN_EPOCHS,
+    // The newest epoch with a REAL row. Deliberately not series[0], which may be a synthesised
+    // absence: this field is what the page uses to say how current a verdict is, and answering it
+    // with an epoch we made up would defeat the purpose.
     latestEpoch: rows[0]?.epochId ?? null,
     causes,
     verdicts: scoredRows.map((r) => r.goodStanding === true),
