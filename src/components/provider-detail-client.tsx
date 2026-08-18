@@ -7,6 +7,7 @@ import { FlagAction, ConductAction, ReportLogoAction } from "./governance-action
 import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
+import { apportionTenths, show1 } from "@/lib/display-rounding";
 import { ManageListingButton } from "./manage-listing-button";
 import { OwnerNotices } from "./owner-notices";
 import { MgJoinButton } from "./mg-join-button";
@@ -210,18 +211,6 @@ function Sparkline({ values, color }: { values: (string | null)[]; color: string
     </svg>
   );
 }
-
-/**
- * A score to one decimal, TRUNCATED rather than rounded.
- *
- * Every band floor is an integer (Strong 95, Solid 85, Mixed 80). toFixed(1) rounds, so a provider on
- * 94.95 would read "95.0 out of 100" while labelled Solid, and the headline would contradict the band
- * it sits beside. Truncating cannot cross a floor it has not actually reached: 94.95 shows 94.9.
- *
- * It costs at most 0.09 of understatement and is applied to the headline, the subtotal and the total
- * alike, so all three agree and the panel never claims a figure the score has not earned.
- */
-const show1 = (x: number) => (Math.floor(x * 10 + 1e-9) / 10).toFixed(1);
 
 export function ProviderDetailClient({ data: d }: { data: DetailData }) {
   const { t } = useApp();
@@ -882,25 +871,12 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   // the cells with the largest discarded fractions. The column now sums exactly to
                   // the printed total, no cell moves by more than 0.1 from its true value, and the
                   // underlying score is untouched.
-                  const apportion = (values: number[], target: number): number[] => {
-                    const tenths = values.map((v) => v * 10);
-                    const out = tenths.map((t2) => Math.floor(t2 + 1e-9));
-                    let left = Math.round(target * 10) - out.reduce((a, b) => a + b, 0);
-                    const byFrac = tenths
-                      .map((t2, i) => ({ i, frac: t2 - Math.floor(t2 + 1e-9) }))
-                      .sort((a, b) => b.frac - a.frac);
-                    for (let k = 0; k < byFrac.length && left > 0; k++, left--) out[byFrac[k].i]++;
-                    // Defensive: floating-point noise could in principle overshoot. Take tenths back
-                    // from the cells that gained least by rounding, so no cell is ever off by >0.1.
-                    for (let k = byFrac.length - 1; k >= 0 && left < 0; k--, left++) out[byFrac[k].i]--;
-                    return out.map((x) => x / 10);
-                  };
                   const comps = d.reputation!.components;
-                  const shownPoints = apportion(
+                  const shownPoints = apportionTenths(
                     comps.map((c) => c.points * scale),
                     Number(show1(d.reputation!.baseScore))
                   );
-                  const shownMax = apportion(comps.map((c) => c.weight * scale), 100);
+                  const shownMax = apportionTenths(comps.map((c) => c.weight * scale), 100);
                   return (
                     <ul className="mt-4 space-y-3">
                       {d.reputation!.components.map((c, ci) => (
