@@ -100,7 +100,7 @@ export const ABSENCE_PENALTY_MAX = 25;
 export const ABSENCE_GRACE_EPOCHS = 2;
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "3.2";
+export const REPUTATION_VERSION = "3.3";
 
 /**
  * Points deducted from the final score for a chill still in force, decaying to nothing as the
@@ -463,6 +463,9 @@ export interface Reputation {
   /** Deduction for not being registered right now, and how many epochs that has been true. */
   absencePenalty: number;
   epochsAbsent: number;
+  /** Length of the most recent absence run, and epochs served since it ended (0 while still away). */
+  absenceRun: number;
+  absenceServed: number;
   /** Substantiated Management Group findings still costing points, newest first. */
   findings: { caseId: string; decidedAt: string | null; penalty: number }[];
   findingPenalty: number;
@@ -1095,15 +1098,65 @@ export async function reputationFor(
   // having stopped. epochsAbsent is recomputed here rather than reused from the departed check above,
   // which returns early and never reaches this point.
   const absentNow = latest != null ? Math.max(0, latest - entity.lastEpochSeen) : 0;
-  const absencePenalty =
-    absentNow <= ABSENCE_GRACE_EPOCHS
+
+  // HOW THE ABSENCE DEDUCTION CLEARS.
+  //
+  // The first version of this did not clear at all, it VANISHED: the penalty was computed from
+  // `latest - lastEpochSeen`, so the instant a provider re-registered that became zero and 25 points
+  // came back in one epoch. A sanction that can be erased by returning for a single epoch is not a
+  // sanction, it is a toll, and it would have made deregistering strictly cheaper than operating
+  // badly, which is the same exploit the strike component's row-index decay exists to close.
+  //
+  // So the deduction now decays on epochs the provider has ACTUALLY SERVED since coming back, on the
+  // same half-life the strike and reliability components use. Serving is what clears it; time alone
+  // does not, and going dark again stalls recovery instead of granting it.
+  const absenceRamp = (run: number) =>
+    run <= ABSENCE_GRACE_EPOCHS
       ? 0
       : ABSENCE_PENALTY_MAX *
         Math.min(
           1,
-          (absentNow - ABSENCE_GRACE_EPOCHS) /
+          (run - ABSENCE_GRACE_EPOCHS) /
             Math.max(1, DEPARTED_AFTER_EPOCHS - ABSENCE_GRACE_EPOCHS)
         );
+
+  let absencePenalty = 0;
+  let absenceServed = 0;
+  let absenceRun = absentNow;
+  if (latest != null) {
+    // Walk the window newest first: count the epochs served since the most recent gap, then the
+    // length of that gap. While the provider is still away, servedSince is 0 and the deduction sits
+    // at full ramped strength.
+    const from = latest - RECORD_WINDOW + 1;
+    const present = new Set(
+      (
+        await prisma.providerMetricEpoch.findMany({
+          where: { network, voter: voter.toLowerCase(), epochId: { gte: from, lte: latest } },
+          select: { epochId: true },
+        })
+      ).map((r) => r.epochId)
+    );
+    const firstEver = await prisma.providerMetricEpoch.findFirst({
+      where: { network, voter: voter.toLowerCase() },
+      orderBy: { epochId: "asc" },
+      select: { epochId: true },
+    });
+    // Epochs before the entity existed are not gaps, per the v3.0 rule.
+    const floorEpoch = Math.max(from, firstEver?.epochId ?? from);
+    let e = latest;
+    while (e >= floorEpoch && present.has(e)) {
+      absenceServed++;
+      e--;
+    }
+    let run = 0;
+    while (e >= floorEpoch && !present.has(e)) {
+      run++;
+      e--;
+    }
+    absenceRun = run;
+    const decay = Math.pow(0.5, absenceServed / RELIABILITY_HALF_LIFE);
+    absencePenalty = absenceRamp(run) * decay;
+  }
 
   const score = Math.max(0, base - chillPenalty - findingPenalty - absencePenalty);
 
@@ -1135,6 +1188,8 @@ export async function reputationFor(
     chillPenalty,
     absencePenalty,
     epochsAbsent: absentNow,
+    absenceRun,
+    absenceServed,
     findings,
     findingPenalty,
     context: {

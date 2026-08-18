@@ -273,6 +273,9 @@ weight      = ${p.weights.validators} x min(1, epochs recorded / ${p.validatorRa
           k="repdoc.absence.ramp"
           v={{ grace: p.absenceGrace, max: p.absenceMax, departed: p.departedAfter }}
         />
+        <Formula>{`while away        = the figure above
+after returning   = that figure x 0.5 ^ (epochs served since return / ${p.halfLife})`}</Formula>
+        <P k="repdoc.absence.clears" v={{ h: p.halfLife }} />
       </Section>
 
       <Section id="independence" title={t("rep.comp.independence")} weight={weightLabel(shownWeights[5])}>
