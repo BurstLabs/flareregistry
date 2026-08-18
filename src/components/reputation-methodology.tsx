@@ -37,6 +37,8 @@ export interface MethodologyProps {
   halfLifeDays: number;
   strikesFloor: number;
   longevityFull: number;
+  /** Epochs at which the validator component reaches its full weight. */
+  validatorRamp: number;
   longevityFullDays: number;
 }
 
@@ -89,6 +91,7 @@ export function ReputationMethodology(p: MethodologyProps) {
     ["conditions", "minimal-conditions.json"],
     ["strikes", "minimal-conditions.json"],
     ["longevity", "reward-epoch-info.json"],
+    ["validators", "platform.getCurrentValidators"],
     ["independence", "oracleindependence.com"],
   ] as const;
   // Rescaled to sum to 100 and apportioned so the printed column adds up exactly, via the same
@@ -245,7 +248,17 @@ ratio = 1 - min(1, x / ${p.strikesFloor})`}</Formula>
         <P k="repdoc.longevity.cap" v={{ n: p.longevityFull, days: p.longevityFullDays }} />
       </Section>
 
-      <Section id="independence" title={t("rep.comp.independence")} weight={weightLabel(shownWeights[4])}>
+      <Section id="validators" title={t("rep.comp.validators")} weight={weightLabel(shownWeights[4])}>
+        <P k="repdoc.validators.what" />
+        <Formula>{`epoch value = mean over the entity's nodes of (lowest uptime seen that epoch)
+ratio       = recency-weighted mean of those epoch values
+
+weight      = ${p.weights.validators} x min(1, epochs recorded / ${p.validatorRamp})`}</Formula>
+        <P k="repdoc.validators.ramp" v={{ n: p.validatorRamp }} />
+        <P k="repdoc.validators.none" />
+      </Section>
+
+      <Section id="independence" title={t("rep.comp.independence")} weight={weightLabel(shownWeights[5])}>
         <P k="repdoc.independence.what" />
         <Formula>{`${t("rep.raw.excluded")}
     -> 1.00      (never overridden)

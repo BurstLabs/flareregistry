@@ -88,6 +88,17 @@ export async function ingestValidators(): Promise<{ flare: number; songbird: num
     } catch {
       continue; // network hiccup: leave existing rows in place, try again next run
     }
+
+    // The reward epoch this run's readings belong to. Taken from the entity table rather than a
+    // clock, so the bucket agrees with the epoch every other component is windowed by. Null means we
+    // have no epoch to file against yet and the per-epoch sample is skipped; the snapshot below still
+    // updates, so nothing is lost from the display.
+    const headRow = await prisma.providerOnchain.aggregate({
+      where: { network },
+      _max: { lastEpochSeen: true },
+    });
+    const epochId = headRow._max.lastEpochSeen ?? null;
+
     for (const v of validators) {
       if (!v.nodeID) continue;
       const fee = v.delegationFee != null ? Number(v.delegationFee) : null;
@@ -124,6 +135,49 @@ export async function ingestValidators(): Promise<{ flare: number; songbird: num
         create: data,
         update: data,
       });
+
+      // APPEND THIS READING TO THE EPOCH'S RECORD, so validator uptime accumulates into a windowed
+      // series instead of remaining a snapshot that can only ever describe right now.
+      //
+      // uptimeMin keeps the LOWEST reading seen in the epoch: Flare's uptime figure is cumulative
+      // over the staking period, so a validator that drops and recovers within one epoch would show
+      // no trace by the end of it if we only kept the last value.
+      if (epochId != null) {
+        const u = Number.isFinite(uptime) ? (uptime as number) : null;
+        const offline = v.connected === true ? 0 : 1;
+        const existing = await prisma.validatorUptimeEpoch.findUnique({
+          where: { network_epochId_nodeId: { network, epochId, nodeId: v.nodeID } },
+        });
+        if (!existing) {
+          await prisma.validatorUptimeEpoch.create({
+            data: {
+              network,
+              epochId,
+              nodeId: v.nodeID,
+              uptimePercent: u,
+              uptimeMin: u,
+              samples: 1,
+              offlineSamples: offline,
+            },
+          });
+        } else {
+          await prisma.validatorUptimeEpoch.update({
+            where: { id: existing.id },
+            data: {
+              uptimePercent: u ?? existing.uptimePercent,
+              uptimeMin:
+                u == null
+                  ? existing.uptimeMin
+                  : existing.uptimeMin == null
+                    ? u
+                    : Math.min(existing.uptimeMin, u),
+              samples: existing.samples + 1,
+              offlineSamples: existing.offlineSamples + offline,
+            },
+          });
+        }
+      }
+
       counts[network]++;
     }
   }

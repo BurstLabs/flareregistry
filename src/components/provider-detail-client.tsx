@@ -112,6 +112,10 @@ export interface DetailData {
       /** Strikes only: Flare's recorded worst, its age in this provider's own rows, and the
        *  age-discounted value the score actually uses. Both, because they can differ. */
       strike?: { worst: number; ageRows: number; weighted: number };
+      /** Validators only: epochs of uptime history behind this component, and the number at which it
+       *  reaches full weight, so the page can explain a small weight instead of just showing one. */
+      validatorEpochs?: number;
+      validatorRamp?: number;
     }[];
     version: string;
     mature: boolean;
@@ -918,6 +922,22 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                             <span className="tabular-nums text-faint">
                               {shownPoints[ci]} / {shownMax[ci]} {t("rep.pts")}
                             </span>
+                          </div>
+                          {/* Say WHY the validator weight is small while it is still ramping. A small
+                              number with no explanation reads as a low score on that component rather
+                              than as a component that has not gathered its history yet. */}
+                          {c.key === "validators" &&
+                            c.validatorEpochs != null &&
+                            c.validatorRamp != null &&
+                            c.validatorEpochs < c.validatorRamp && (
+                              <div className="mt-0.5 text-[11px] text-faint">
+                                {t("rep.validators.ramping", {
+                                  n: c.validatorEpochs,
+                                  full: c.validatorRamp,
+                                })}
+                              </div>
+                            )}
+                          <div className="hidden">
                           </div>
                           {/* ONE track length for every row, filled by how much of that component was
                               earned.
