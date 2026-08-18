@@ -81,8 +81,8 @@ export function ReputationMethodology(p: MethodologyProps) {
   const P = ({ k, v }: { k: string; v?: Record<string, string | number> }) => (
     <p className="mt-2 text-sm text-muted">{t(k, v)}</p>
   );
-  // One decimal always, so this page prints "50.0 pts" where the provider panel prints "50.0".
-  const weightLabel = (n: number) => t("rep.weight", { weight: n.toFixed(1) });
+  // Whole numbers, matching the provider panel exactly.
+  const weightLabel = (n: number) => t("rep.weight", { weight: n });
 
   const ROWS = [
     ["reliability", "passes.json"],
