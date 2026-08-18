@@ -72,8 +72,35 @@ export const VALIDATOR_RAMP_EPOCHS = 30;
  */
 export const VALIDATOR_MIN_EPOCHS = 3;
 
+/**
+ * Points deducted for a provider that is currently not registered on-chain.
+ *
+ * WHY A DEDUCTION AND NOT JUST A LOW AVERAGE. Absence already lowers reliability and conditions,
+ * because an unregistered epoch is scored as a miss. But those are averages over 30 epochs, so a
+ * provider with a long good record decays towards a bad score slowly: Swyke stopped submitting for
+ * eight epochs, about a month, and still read 33.8 purely on the strength of the epochs it worked.
+ * An average is a statement about a record. Whether a provider is delivering the service RIGHT NOW
+ * is a different fact, and a delegator choosing where to put their stake needs the second one
+ * answered plainly rather than diluted into the first.
+ *
+ * So this is the same shape as a chill or a finding: a present-tense deduction off the composite,
+ * shown as its own subtraction rather than folded silently into a component.
+ */
+export const ABSENCE_PENALTY_MAX = 25;
+
+/**
+ * Epochs a provider may be absent before the deduction starts.
+ *
+ * Flare's 100 seats are full and displacement is routine, so a provider bumped for an epoch or two is
+ * having a bad week rather than gone, and those epochs are already counted as misses in reliability
+ * and conditions. Charging the full deduction on top would punish a bad week as if it were an exit.
+ * Past the grace the deduction ramps, reaching its maximum exactly where DEPARTED_AFTER_EPOCHS marks
+ * the provider departed and scoring stops.
+ */
+export const ABSENCE_GRACE_EPOCHS = 2;
+
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "3.1";
+export const REPUTATION_VERSION = "3.2";
 
 /**
  * Points deducted from the final score for a chill still in force, decaying to nothing as the
@@ -433,6 +460,9 @@ export interface Reputation {
   }[];
   baseScore: number;
   chillPenalty: number;
+  /** Deduction for not being registered right now, and how many epochs that has been true. */
+  absencePenalty: number;
+  epochsAbsent: number;
   /** Substantiated Management Group findings still costing points, newest first. */
   findings: { caseId: string; decidedAt: string | null; penalty: number }[];
   findingPenalty: number;
@@ -1060,7 +1090,22 @@ export async function reputationFor(
   const totalWeight = components.reduce((a, c) => a + c.weight, 0);
   const base = totalWeight ? (components.reduce((a, c) => a + c.points, 0) / totalWeight) * 100 : 0;
   // Floored at 0 so a deduction can never produce a negative published figure.
-  const score = Math.max(0, base - chillPenalty - findingPenalty);
+  // NOT CURRENTLY REGISTERED. Ramps from the grace period to the departed threshold, so a provider
+  // bumped for an epoch keeps its record and one that has stopped entirely carries the full weight of
+  // having stopped. epochsAbsent is recomputed here rather than reused from the departed check above,
+  // which returns early and never reaches this point.
+  const absentNow = latest != null ? Math.max(0, latest - entity.lastEpochSeen) : 0;
+  const absencePenalty =
+    absentNow <= ABSENCE_GRACE_EPOCHS
+      ? 0
+      : ABSENCE_PENALTY_MAX *
+        Math.min(
+          1,
+          (absentNow - ABSENCE_GRACE_EPOCHS) /
+            Math.max(1, DEPARTED_AFTER_EPOCHS - ABSENCE_GRACE_EPOCHS)
+        );
+
+  const score = Math.max(0, base - chillPenalty - findingPenalty - absencePenalty);
 
   const validators = (entity.nodeIds as string[] | null) ?? [];
   let validatorUptime: number | null = null;
@@ -1076,7 +1121,7 @@ export async function reputationFor(
   return {
     network,
     score,
-    band: band(score, components, chillPenalty + findingPenalty),
+    band: band(score, components, chillPenalty + findingPenalty + absencePenalty),
     components,
     version: REPUTATION_VERSION,
     // The eligibility record carries the maturity gate, and it gates the whole figure: without enough
@@ -1088,6 +1133,8 @@ export async function reputationFor(
     /** The score before the chill deduction, so the page can show the subtraction rather than assert it. */
     baseScore: base,
     chillPenalty,
+    absencePenalty,
+    epochsAbsent: absentNow,
     findings,
     findingPenalty,
     context: {

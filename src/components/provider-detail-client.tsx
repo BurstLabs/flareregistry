@@ -131,6 +131,8 @@ export interface DetailData {
     }[];
     baseScore: number;
     chillPenalty: number;
+    absencePenalty: number;
+    epochsAbsent: number;
     findings: { caseId: string; decidedAt: string | null; penalty: number }[];
     findingPenalty: number;
     context: {
@@ -1038,7 +1040,8 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                           into the total. A provider is entitled to see which number was theirs and
                           which was taken off, and by how much. */}
                       {(d.reputation!.chillPenalty > 0 ||
-                        d.reputation!.findingPenalty > 0) && (
+                        d.reputation!.findingPenalty > 0 ||
+                        d.reputation!.absencePenalty > 0) && (
                         <>
                           <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                             <span className="text-muted">{t("rep.subtotal")}</span>
@@ -1046,6 +1049,19 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                               {displayScore(d.reputation!.baseScore)} / 100 {t("rep.pts")}
                             </span>
                           </li>
+                          {/* Not registered right now. Its own line for the same reason as the other
+                              two: the reader must be able to see which figure was the provider's
+                              record and what was taken off for the state they are in today. */}
+                          {d.reputation!.absencePenalty > 0 && (
+                            <li className="flex items-baseline justify-between text-xs">
+                              <span className="text-flare">
+                                {t("rep.absence.deduction", { n: d.reputation!.epochsAbsent })}
+                              </span>
+                              <span className="tabular-nums text-flare">
+                                -{d.reputation!.absencePenalty.toFixed(1)} {t("rep.pts")}
+                              </span>
+                            </li>
+                          )}
                           {d.reputation!.chillPenalty > 0 && (
                             <li className="flex items-baseline justify-between text-xs">
                               <span className="text-flare">{t("rep.chill.deduction")}</span>
