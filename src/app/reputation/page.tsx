@@ -26,6 +26,9 @@ import {
   RELIABILITY_HALF_LIFE,
   REPUTATION_VERSION,
   VALIDATOR_RAMP_EPOCHS,
+  ABSENCE_PENALTY_MAX,
+  ABSENCE_GRACE_EPOCHS,
+  DEPARTED_AFTER_EPOCHS,
 } from "@/lib/reputation";
 import { RECORD_WINDOW, RECORD_MIN_EPOCHS } from "@/lib/eligibility-record";
 import { ReputationMethodology } from "@/components/reputation-methodology";
@@ -62,6 +65,10 @@ export default function ReputationMethodologyPage() {
       strikesFloor={STRIKES_FLOOR}
       longevityFull={LONGEVITY_FULL_EPOCHS}
       validatorRamp={VALIDATOR_RAMP_EPOCHS}
+      absenceMax={ABSENCE_PENALTY_MAX}
+      absenceGrace={ABSENCE_GRACE_EPOCHS}
+      departedAfter={DEPARTED_AFTER_EPOCHS}
+      recordWindow={RECORD_WINDOW}
       longevityFullDays={days(LONGEVITY_FULL_EPOCHS)}
     />
   );

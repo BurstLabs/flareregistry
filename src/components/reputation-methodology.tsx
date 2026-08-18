@@ -39,6 +39,10 @@ export interface MethodologyProps {
   longevityFull: number;
   /** Epochs at which the validator component reaches its full weight. */
   validatorRamp: number;
+  absenceMax: number;
+  absenceGrace: number;
+  departedAfter: number;
+  recordWindow: number;
   longevityFullDays: number;
 }
 
@@ -256,6 +260,19 @@ ratio       = recency-weighted mean of those epoch values
 weight      = ${p.weights.validators} x min(1, epochs recorded / ${p.validatorRamp})`}</Formula>
         <P k="repdoc.validators.ramp" v={{ n: p.validatorRamp }} />
         <P k="repdoc.validators.none" />
+      </Section>
+
+      {/* Deductions are not components: they come off the composite rather than carrying weight, so
+          this section states no weight badge. Placed after the components so a reader meets the
+          record first and then what is taken off it. */}
+      <Section id="absence" title={t("repdoc.absence.h")}>
+        <P k="repdoc.absence.what" v={{ window: p.recordWindow }} />
+        <Formula>{`deduction = ${p.absenceMax} x min(1, (epochs absent - ${p.absenceGrace}) / (${p.departedAfter} - ${p.absenceGrace}))
+            = 0 while epochs absent <= ${p.absenceGrace}`}</Formula>
+        <P
+          k="repdoc.absence.ramp"
+          v={{ grace: p.absenceGrace, max: p.absenceMax, departed: p.departedAfter }}
+        />
       </Section>
 
       <Section id="independence" title={t("rep.comp.independence")} weight={weightLabel(shownWeights[5])}>
