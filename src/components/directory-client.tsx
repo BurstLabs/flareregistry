@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
 import { InfoTip } from "./info-tip";
+import { displayScore } from "@/lib/display-rounding";
 
 export interface CardCheck {
   key: string;
@@ -39,6 +40,8 @@ export interface CardProvider {
   detailAddress: string;
   /** All five on-chain role addresses, labelled, so search can match whichever one a reader holds. */
   roles: { label: string; address: string }[];
+  /** Precomputed reputation, or null when none is stored under the current scoring version. */
+  reputation: { score: number; band: string } | null;
 }
 
 export function DirectoryClient({
@@ -257,6 +260,40 @@ export function DirectoryClient({
                     )}
                   </div>
                 </div>
+
+                {/* REPUTATION, the same figure the provider page prints, read from the precomputed
+                    table. Given its own row under the header rather than squeezed into the badge
+                    column: it is a number plus a band label, and the badge stack is already several
+                    items tall on a qualified provider.
+
+                    Absent when no score is stored under the CURRENT scoring version, which is the
+                    honest state for a departed provider or immediately after a rules change, rather
+                    than printing a figure computed under rules that no longer apply. */}
+                {p.reputation && (
+                  <Link
+                    href={`/provider/${p.detailAddress}#reputation`}
+                    className="mt-3 flex items-baseline gap-2 hover:opacity-80"
+                  >
+                    <span
+                      className={`rounded-md px-2 py-1 text-xs font-semibold tabular-nums ${
+                        p.reputation.band === "clean" || p.reputation.band === "strong"
+                          ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300"
+                          : p.reputation.band === "solid"
+                            ? "bg-beacon/20 text-beacon"
+                            : p.reputation.band === "mixed"
+                              ? "bg-amber-500/20 text-amber-600 dark:text-amber-300"
+                              : "bg-flare/20 text-flare"
+                      }`}
+                    >
+                      {displayScore(p.reputation.score)}
+                    </span>
+                    <span className="text-xs text-muted">
+                      {t("card.reputation")}
+                      {" \u00b7 "}
+                      {t(`rep.band.${p.reputation.band}`)}
+                    </span>
+                  </Link>
+                )}
 
                 <p className="mt-3 line-clamp-3 text-sm text-muted">{p.description}</p>
 

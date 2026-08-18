@@ -413,6 +413,36 @@ model ProviderOnchain {
 ///                            than a figure Flare publishes, so it is not what moves the score. The
 ///                            model's defence is that every scored input is recomputable from
 ///                            Flare's data by anyone, and a poll count we alone hold is not.
+/// PRECOMPUTED REPUTATION, so the directory can show a score per card.
+///
+/// reputationFor() issues about 14 queries per provider. The directory renders every listing, so
+/// computing it inline would have meant roughly 1,500 queries on a page that is force-dynamic and
+/// has no cache. This table is written by the ingest cron, which is also the only thing that changes
+/// the inputs, so a stored figure is never more stale than the data it was derived from.
+///
+/// `version` is stored and CHECKED on read. The scoring rules have moved three times in a day; a row
+/// computed under older rules is a different number under the same name, so a stale-version row is
+/// treated as absent rather than displayed. The provider page still computes live and remains
+/// authoritative.
+model ProviderScore {
+  id      String @id @default(cuid())
+  network String
+  /// Entity identity address, matching ProviderOnchain.voter.
+  voter   String
+
+  score     Float
+  baseScore Float
+  band      String
+  /// REPUTATION_VERSION at the time of computation.
+  version   String
+
+  computedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([network, voter])
+  @@index([version])
+}
+
 model ValidatorUptimeEpoch {
   id      String @id @default(cuid())
   network String

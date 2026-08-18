@@ -95,6 +95,28 @@ export default async function Home({
     : listable.filter((p) => isQualified(p.id) && !isSuspended(p.id) && !isOnchainOnly(p));
 
   const metrics = await metricsForProviders(shown);
+
+  // REPUTATION, read from the precomputed table rather than scored inline. Running the scorer here
+  // would be ~14 queries per provider against every listing on the page. See compute-scores.
+  //
+  // The stored version is checked against the running one: the rules have moved several times, and a
+  // row written under older rules is a different number wearing the same name. A mismatched row is
+  // treated as absent, so a card shows no score rather than a misleading one.
+  const { REPUTATION_VERSION } = await import("@/lib/reputation");
+  const scoreRows = await prisma.providerScore.findMany({
+    where: { version: REPUTATION_VERSION },
+    select: { network: true, voter: true, score: true, band: true },
+  });
+  const scoreByVoter = new Map(
+    scoreRows.map((r) => [`${r.network}:${r.voter.toLowerCase()}`, r])
+  );
+  // A provider is matched through its entity, which is what the score is keyed by. metricsForProviders
+  // already resolved that entity, so reuse it rather than repeating the five-role join.
+  const scoreFor = (id: string) => {
+    const m = metrics.get(id);
+    if (!m) return null;
+    return scoreByVoter.get(`${m.network}:${m.voter.toLowerCase()}`) ?? null;
+  };
   const { managementGroupByProvider } = await import("@/lib/management-group");
   const mgByProvider = await managementGroupByProvider();
 
@@ -122,6 +144,10 @@ export default async function Home({
       verified: p.source === "submitted",
       onchainOnly: isOnchainOnly(p),
       roles: m?.roles ?? [],
+      reputation: (() => {
+        const r = scoreFor(p.id);
+        return r ? { score: r.score, band: r.band } : null;
+      })(),
       governance: govByProvider.get(p.id)
         ? {
             pending: govByProvider.get(p.id)!.pending,
