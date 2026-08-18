@@ -211,6 +211,18 @@ function Sparkline({ values, color }: { values: (string | null)[]; color: string
   );
 }
 
+/**
+ * A score to one decimal, TRUNCATED rather than rounded.
+ *
+ * Every band floor is an integer (Strong 95, Solid 85, Mixed 80). toFixed(1) rounds, so a provider on
+ * 94.95 would read "95.0 out of 100" while labelled Solid, and the headline would contradict the band
+ * it sits beside. Truncating cannot cross a floor it has not actually reached: 94.95 shows 94.9.
+ *
+ * It costs at most 0.09 of understatement and is applied to the headline, the subtotal and the total
+ * alike, so all three agree and the panel never claims a figure the score has not earned.
+ */
+const show1 = (x: number) => (Math.floor(x * 10 + 1e-9) / 10).toFixed(1);
+
 export function ProviderDetailClient({ data: d }: { data: DetailData }) {
   const { t } = useApp();
 
@@ -810,12 +822,18 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   >
                     {t(`rep.band.${d.reputation.band}`)}
                   </span>
-                  {/* FLOOR, not round. Math.round showed "95 out of 100" for a provider at 94.6
-                      while labelling them Solid, so the number and the label contradicted each
-                      other. Every band floor is an integer, so floor(score) >= 95 is exactly
-                      equivalent to score >= 95 and the two can no longer disagree. */}
+                  {/* THE ACTUAL FIGURE, to one decimal, matching the total row below it.
+                      This used to floor. Flooring was there to stop the headline contradicting the
+                      band: Math.round printed "95 out of 100" for a provider at 94.6 labelled Solid,
+                      when the Strong floor is 95. But it fixed that by understating everyone, and it
+                      put a different number at the top of the panel than the total at the bottom,
+                      which on a panel whose claim is that the figure is recomputable is the wrong
+                      trade.
+                      Showing the decimal solves the original problem outright rather than papering
+                      over it: 94.6 reads as 94.6, which cannot be mistaken for the 95 the band needs,
+                      so the number and the label can no longer disagree in either direction. */}
                   <InfoTip
-                    label={t("rep.of100", { score: Math.floor(d.reputation.score) })}
+                    label={t("rep.of100", { score: show1(d.reputation.score) })}
                     tip={t("rep.tip.score")}
                     triggerClassName="text-muted"
                   />
@@ -880,7 +898,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   const comps = d.reputation!.components;
                   const shownPoints = apportion(
                     comps.map((c) => c.points * scale),
-                    Number(d.reputation!.baseScore.toFixed(1))
+                    Number(show1(d.reputation!.baseScore))
                   );
                   const shownMax = apportion(comps.map((c) => c.weight * scale), 100);
                   return (
@@ -1013,7 +1031,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                           <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                             <span className="text-muted">{t("rep.subtotal")}</span>
                             <span className="tabular-nums text-fg">
-                              {d.reputation!.baseScore.toFixed(1)} / 100 {t("rep.pts")}
+                              {show1(d.reputation!.baseScore)} / 100 {t("rep.pts")}
                             </span>
                           </li>
                           {d.reputation!.chillPenalty > 0 && (
@@ -1039,7 +1057,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                         <span className="text-muted">{t("rep.total")}</span>
                         <span className="tabular-nums text-fg">
-                          {d.reputation!.score.toFixed(1)} / 100 {t("rep.pts")}
+                          {show1(d.reputation!.score)} / 100 {t("rep.pts")}
                         </span>
                       </li>
                     </ul>
