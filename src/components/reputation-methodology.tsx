@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useApp } from "@/components/providers";
+import { weightsOutOf100 } from "@/lib/display-rounding";
 
 // The reader-facing half of /reputation. Every number it prints arrives as a prop from the scorer's
 // own constants, so nothing here can drift from the code that produces the figure.
@@ -82,6 +83,17 @@ export function ReputationMethodology(p: MethodologyProps) {
   );
   const weightLabel = (n: number) => t("rep.weight", { weight: n });
 
+  const ROWS = [
+    ["reliability", "passes.json"],
+    ["conditions", "minimal-conditions.json"],
+    ["strikes", "minimal-conditions.json"],
+    ["longevity", "reward-epoch-info.json"],
+    ["independence", "oracleindependence.com"],
+  ] as const;
+  // Rescaled to sum to 100 and apportioned so the printed column adds up exactly, via the same
+  // helper the provider breakdown uses.
+  const shownWeights = weightsOutOf100(ROWS.map(([k]) => p.weights[k]));
+
   return (
     /* No <main> and no mx-auto here: layout.tsx already wraps every page in
        `mx-auto w-full max-w-5xl px-4 py-8`. Nesting a second <main> inside it was invalid markup,
@@ -102,7 +114,7 @@ points(component) = ratio(component) x weight(component)
     where ratio is always 0..1
 
 score = max(0, components - chill deduction)`}</Formula>
-        <P k="repdoc.headline.normalise" v={{ total: p.totalWeight }} />
+        <P k="repdoc.headline.normalise" />
         <Formula>{`shown on a provider page =
     weight x 100 / (sum of that provider's available weights)`}</Formula>
 
@@ -116,26 +128,23 @@ score = max(0, components - chill deduction)`}</Formula>
               </tr>
             </thead>
             <tbody className="align-top">
-              {(
-                [
-                  ["reliability", "passes.json"],
-                  ["conditions", "minimal-conditions.json"],
-                  ["strikes", "minimal-conditions.json"],
-                  ["longevity", "reward-epoch-info.json"],
-                  ["independence", "oracleindependence.com"],
-                ] as const
-              ).map(([key, src]) => (
+              {/* WEIGHTS OUT OF 100, the same figures a provider page prints.
+                  The raw model weights sum to 90, and this table used to show them that way while the
+                  provider panel showed them rescaled, so the two pages disagreed about the same five
+                  numbers and this page's prose had to explain the discrepancy away. Rescaling here
+                  through the SAME helper the panel uses means they cannot drift apart. The constants
+                  are still imported from the scorer; only their presentation is scaled, so the page
+                  still cannot go stale against the code. */}
+              {ROWS.map(([key, src], i) => (
                 <tr key={key} className="border-t border-themed/40">
                   <td className="py-2 pr-4 text-fg">{t(`rep.comp.${key}`)}</td>
-                  <td className="py-2 pr-4 tabular-nums text-muted">{weightLabel(p.weights[key])}</td>
+                  <td className="py-2 pr-4 tabular-nums text-muted">{weightLabel(shownWeights[i])}</td>
                   <td className="py-2 font-mono text-xs text-faint">{src}</td>
                 </tr>
               ))}
               <tr className="border-t border-themed">
                 <td className="py-2 pr-4 font-medium text-fg">{t("rep.total")}</td>
-                <td className="py-2 pr-4 font-medium tabular-nums text-fg">
-                  {weightLabel(p.totalWeight)}
-                </td>
+                <td className="py-2 pr-4 font-medium tabular-nums text-fg">{weightLabel(100)}</td>
                 <td />
               </tr>
             </tbody>
