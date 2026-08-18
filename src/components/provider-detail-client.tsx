@@ -7,7 +7,7 @@ import { FlagAction, ConductAction, ReportLogoAction } from "./governance-action
 import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
-import { apportionTenths, show1 } from "@/lib/display-rounding";
+import { apportionWhole, displayScore } from "@/lib/display-rounding";
 import { ManageListingButton } from "./manage-listing-button";
 import { OwnerNotices } from "./owner-notices";
 import { MgJoinButton } from "./mg-join-button";
@@ -822,7 +822,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       over it: 94.6 reads as 94.6, which cannot be mistaken for the 95 the band needs,
                       so the number and the label can no longer disagree in either direction. */}
                   <InfoTip
-                    label={t("rep.of100", { score: show1(d.reputation.score) })}
+                    label={t("rep.of100", { score: displayScore(d.reputation.score) })}
                     tip={t("rep.tip.score")}
                     triggerClassName="text-muted"
                   />
@@ -872,11 +872,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   // the printed total, no cell moves by more than 0.1 from its true value, and the
                   // underlying score is untouched.
                   const comps = d.reputation!.components;
-                  const shownPoints = apportionTenths(
+                  // Whole numbers, summing exactly to the figures printed below and in the heading.
+                  // The earned column targets the displayed BASE score (before any deduction), which
+                  // is the subtotal the column is actually a breakdown of; the deductions are shown
+                  // as their own subtractions underneath.
+                  const shownPoints = apportionWhole(
                     comps.map((c) => c.points * scale),
-                    Number(show1(d.reputation!.baseScore))
+                    displayScore(d.reputation!.baseScore)
                   );
-                  const shownMax = apportionTenths(comps.map((c) => c.weight * scale), 100);
+                  const shownMax = apportionWhole(comps.map((c) => c.weight * scale), 100);
                   return (
                     <ul className="mt-4 space-y-3">
                       {d.reputation!.components.map((c, ci) => (
@@ -912,8 +916,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                               </span>
                             </span>
                             <span className="tabular-nums text-faint">
-                              {shownPoints[ci].toFixed(1)} / {shownMax[ci].toFixed(1)}{" "}
-                              {t("rep.pts")}
+                              {shownPoints[ci]} / {shownMax[ci]} {t("rep.pts")}
                             </span>
                           </div>
                           {/* ONE track length for every row, filled by how much of that component was
@@ -1007,7 +1010,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                           <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                             <span className="text-muted">{t("rep.subtotal")}</span>
                             <span className="tabular-nums text-fg">
-                              {show1(d.reputation!.baseScore)} / 100 {t("rep.pts")}
+                              {displayScore(d.reputation!.baseScore)} / 100 {t("rep.pts")}
                             </span>
                           </li>
                           {d.reputation!.chillPenalty > 0 && (
@@ -1033,7 +1036,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       <li className="flex items-baseline justify-between border-t border-themed/40 pt-2 text-xs">
                         <span className="text-muted">{t("rep.total")}</span>
                         <span className="tabular-nums text-fg">
-                          {show1(d.reputation!.score)} / 100 {t("rep.pts")}
+                          {displayScore(d.reputation!.score)} / 100 {t("rep.pts")}
                         </span>
                       </li>
                     </ul>
