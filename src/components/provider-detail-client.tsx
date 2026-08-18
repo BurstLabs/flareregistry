@@ -931,14 +931,21 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                             c.validatorRamp != null &&
                             c.validatorEpochs < c.validatorRamp && (
                               <div className="mt-0.5 text-[11px] text-faint">
-                                {t("rep.validators.ramping", {
-                                  n: c.validatorEpochs,
-                                  full: c.validatorRamp,
-                                })}
+                                {/* Two different states, and a reader must not have to infer which
+                                    from a zero. Keyed off the weight actually PRINTED: if the row
+                                    shows 0 as its maximum it is being measured but not counted, and
+                                    if it shows a number it counts, just not yet at full weight. */}
+                                {shownMax[ci] === 0
+                                  ? t("rep.validators.notYet", {
+                                      n: c.validatorEpochs,
+                                      full: c.validatorRamp,
+                                    })
+                                  : t("rep.validators.ramping", {
+                                      n: c.validatorEpochs,
+                                      full: c.validatorRamp,
+                                    })}
                               </div>
                             )}
-                          <div className="hidden">
-                          </div>
                           {/* ONE track length for every row, filled by how much of that component was
                               earned.
 
@@ -952,15 +959,21 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                               The weight is stated numerically right beside it, so nothing is lost by
                               letting the bar answer one question consistently. */}
                           <div className="mt-1 h-2 w-full rounded-full bg-black/10 ring-1 ring-inset ring-themed dark:bg-white/10">
+                            {/* A row carrying no weight is drawn muted. It still shows the measured
+                                figure, because that is real and worth seeing, but a full green bar
+                                beside "0 / 0 pts" would read as points earned rather than as a
+                                measurement that is not being counted yet. */}
                             <div
                               className={`h-2 rounded-full ${
-                                c.ratio >= 0.9
-                                  ? "bg-emerald-500"
-                                  : c.ratio >= 0.6
-                                    ? "bg-beacon"
-                                    : c.ratio > 0
-                                      ? "bg-amber-500"
-                                      : "bg-flare"
+                                shownMax[ci] === 0
+                                  ? "bg-muted/30"
+                                  : c.ratio >= 0.9
+                                    ? "bg-emerald-500"
+                                    : c.ratio >= 0.6
+                                      ? "bg-beacon"
+                                      : c.ratio > 0
+                                        ? "bg-amber-500"
+                                        : "bg-flare"
                               }`}
                               style={{ width: `${Math.max(0, Math.min(1, c.ratio)) * 100}%` }}
                             />

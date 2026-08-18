@@ -56,16 +56,19 @@ import { toNodeId } from "@/lib/validators";
 export const VALIDATOR_RAMP_EPOCHS = 30;
 
 /**
- * Epochs of validator history required before the component is scored at all.
+ * Epochs of validator history required before the component carries any WEIGHT.
  *
- * Below this the ramped weight rounds to nothing: at one epoch it is 0.17 of 90, which renders as
- * "0 / 0 pts" on a provider page. A row that contributes zero out of zero does not inform anyone, it
- * just looks broken, and it invites the reading that the provider scored zero on uptime when in fact
- * nothing has been measured yet.
+ * Below this it is shown but scored at zero: the measured uptime appears on the page, and the row
+ * contributes nothing to the score and nothing to the denominator, so no provider gains or loses a
+ * point from a component that has not gathered its history yet.
  *
- * So the component is ABSENT until there is enough history for it to mean something, exactly as
- * implementation independence is absent for an entity the screen cannot see. Three epochs is the
- * first point at which it carries a whole point of the hundred.
+ * Shown rather than hidden on purpose. A component that silently appears one day, already carrying
+ * weight, is harder to trust than one a provider can watch fill up: they can see it is being
+ * measured, see what it currently reads, and see that it is not yet counted. The row states which of
+ * the two it is rather than leaving a reader to infer it from a zero.
+ *
+ * Three epochs is the first point at which the ramped weight is worth a whole point of the hundred;
+ * below that it would round to zero on the page anyway.
  */
 export const VALIDATOR_MIN_EPOCHS = 3;
 
@@ -864,14 +867,21 @@ export async function reputationFor(
       byEpoch.set(r.epochId, list);
     }
     const epochsWithData = [...byEpoch.keys()].sort((a, b) => b - a);
-    if (epochsWithData.length >= VALIDATOR_MIN_EPOCHS) {
+    if (epochsWithData.length) {
       const series = epochsWithData.map((e) => {
         const l = byEpoch.get(e)!;
         return l.reduce((a, b) => a + b, 0) / l.length;
       });
       const ratio = recencyWeightedMean(series);
       if (ratio != null) {
-        const maturity = Math.min(1, epochsWithData.length / VALIDATOR_RAMP_EPOCHS);
+        // Below the minimum the weight is exactly ZERO, not merely small. The row still shows the
+        // uptime actually measured, but it neither earns points nor enters the denominator, so a
+        // provider is not scored on a component that has not yet gathered enough history to mean
+        // anything. Above it, the weight ramps with the history behind it.
+        const maturity =
+          epochsWithData.length < VALIDATOR_MIN_EPOCHS
+            ? 0
+            : Math.min(1, epochsWithData.length / VALIDATOR_RAMP_EPOCHS);
         const weight = WEIGHTS.validators * maturity;
         components.push({
           key: "validators",
