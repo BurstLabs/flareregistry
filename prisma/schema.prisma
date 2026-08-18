@@ -397,6 +397,45 @@ model ProviderOnchain {
 
 // A validator (P-chain node) and its current stats, from platform.getCurrentValidators. One row per
 // (network, nodeId). Joined to providers by nodeId (which appears in ProviderOnchain.nodeIds).
+/// PER-EPOCH VALIDATOR UPTIME, so the validator component can be a windowed series like every other
+/// input rather than a single instantaneous reading.
+///
+/// ProviderValidator holds only a current snapshot, which is why validator uptime was displayed but
+/// never scored: scoring a snapshot would mean one bad afternoon hit as hard as a month of downtime
+/// and recovery was instant, which is exactly the "a single epoch is noise" objection the eligibility
+/// record was built to avoid.
+///
+/// Two different measurements are kept, and only the first is scored:
+///   uptimePercent/uptimeMin  Flare's OWN cumulative uptime for the staking period, read from
+///                            platform.getCurrentValidators. Keeping the minimum seen in the epoch
+///                            means a dip is not erased by a later recovery.
+///   samples/offlineSamples   our own polling record. Informative, but it is OUR observation rather
+///                            than a figure Flare publishes, so it is not what moves the score. The
+///                            model's defence is that every scored input is recomputable from
+///                            Flare's data by anyone, and a poll count we alone hold is not.
+model ValidatorUptimeEpoch {
+  id      String @id @default(cuid())
+  network String
+  epochId Int
+  /// Canonical NodeID- form, matching ProviderValidator.
+  nodeId  String
+
+  /// Last reading taken during the epoch.
+  uptimePercent Float?
+  /// Lowest reading during the epoch.
+  uptimeMin     Float?
+
+  samples        Int @default(0)
+  offlineSamples Int @default(0)
+
+  firstSeenAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([network, epochId, nodeId])
+  @@index([network, epochId])
+  @@index([nodeId])
+}
+
 model ProviderValidator {
   id      String @id @default(cuid())
   network String // "flare" | "songbird"

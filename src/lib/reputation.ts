@@ -37,9 +37,40 @@
 
 import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/eligibility-record";
 import { prisma } from "@/lib/db";
+import { toNodeId } from "@/lib/validators";
+
+/**
+ * Epochs of validator history at which the validator component reaches its full weight.
+ *
+ * PROGRESSIVE ON PURPOSE. Per-epoch validator uptime only began being recorded in v3.1, so on the
+ * day it shipped every provider had exactly one epoch of it. Giving a one-sample component its full
+ * weight would let a single reading move a published score by five points, which is precisely the
+ * "a single epoch is noise" objection that the 30-epoch eligibility window exists to answer.
+ *
+ * So the weight is scaled by how much history actually backs it, reaching full at the same 30 epochs
+ * every other window uses. A provider with 3 epochs of validator data carries a tenth of the weight,
+ * and the component says so on the page rather than presenting a thin figure as a settled one. The
+ * score is normalised over available weight, so a small validator weight dilutes rather than
+ * distorts: the other components simply carry more of the 100 until the history is there.
+ */
+export const VALIDATOR_RAMP_EPOCHS = 30;
+
+/**
+ * Epochs of validator history required before the component is scored at all.
+ *
+ * Below this the ramped weight rounds to nothing: at one epoch it is 0.17 of 90, which renders as
+ * "0 / 0 pts" on a provider page. A row that contributes zero out of zero does not inform anyone, it
+ * just looks broken, and it invites the reading that the provider scored zero on uptime when in fact
+ * nothing has been measured yet.
+ *
+ * So the component is ABSENT until there is enough history for it to mean something, exactly as
+ * implementation independence is absent for an entity the screen cannot see. Three epochs is the
+ * first point at which it carries a whole point of the hundred.
+ */
+export const VALIDATOR_MIN_EPOCHS = 3;
 
 /** Bump when any weight or input changes, so a figure can always be traced to the rule that made it. */
-export const REPUTATION_VERSION = "3.0";
+export const REPUTATION_VERSION = "3.1";
 
 /**
  * Points deducted from the final score for a chill still in force, decaying to nothing as the
@@ -148,6 +179,11 @@ export const WEIGHTS = {
   strikes: 5,
   /** Epochs seen registered, saturating at LONGEVITY_FULL_EPOCHS. */
   longevity: 10,
+  /**
+   * Validator uptime, from Flare's own P-chain figure. RAMPS IN: see VALIDATOR_RAMP_EPOCHS. The
+   * weight below is the target it grows to, not what it carries today.
+   */
+  validators: 5,
   /**
    * Implementation independence, mirrored from oracleindependence.com. The SMALLEST weight in the
    * model, deliberately: the source describes itself as a suspicion score holding zero confirmed
@@ -321,7 +357,14 @@ export interface ComponentDetail {
 }
 
 export interface ReputationComponent {
-  key: "reliability" | "conditions" | "strikes" | "longevity" | "independence";
+  key: "reliability" | "conditions" | "strikes" | "longevity" | "validators" | "independence";
+  /**
+   * Validators only. How many epochs of uptime history back this component, and the number at which
+   * it reaches full weight. Carried so the page can say the component is still ramping instead of
+   * showing a small weight with no explanation for why it is small.
+   */
+  validatorEpochs?: number;
+  validatorRamp?: number;
   /**
    * Strikes only. `worst` is the figure Flare actually recorded and `weighted` is the aged value the
    * score uses; they can come from different epochs, so both are carried rather than letting the
@@ -777,6 +820,70 @@ export async function reputationFor(
       weight: WEIGHTS.longevity,
       points: ratio * WEIGHTS.longevity,
     });
+  }
+
+  // VALIDATOR UPTIME, from Flare's own P-chain figure, WITH THE WEIGHT RAMPED BY AVAILABLE HISTORY.
+  //
+  // Uptime was ingested and displayed for a long time before it was ever scored, and the reason it
+  // was not scored is worth keeping written down: ProviderValidator holds a single current reading.
+  // Scoring a snapshot would mean one bad afternoon counted as heavily as a month of downtime, and
+  // recovery was instantaneous. ValidatorUptimeEpoch now accumulates a per-epoch series so this can
+  // be windowed and recency-weighted like every other component.
+  //
+  // Because that series starts from nothing, the WEIGHT scales with the number of epochs actually
+  // behind it, reaching full at VALIDATOR_RAMP_EPOCHS. On the day this shipped every provider had one
+  // epoch, worth a thirtieth of the weight. The score normalises over available weight, so a partial
+  // validator weight dilutes rather than distorts.
+  //
+  // uptimeMin is scored rather than the last reading: Flare's uptime is cumulative over the staking
+  // period, so a validator that drops and recovers inside one epoch shows no trace in the closing
+  // value. The minimum is the only field that remembers the dip.
+  //
+  // Entities with no validators are skipped entirely rather than scored zero. Running a validator is
+  // a separate undertaking from providing a signal, and charging a provider for not doing a second
+  // job would make the component a penalty for scope rather than a measure of reliability.
+  const nodeIdsForUptime = ((entity.nodeIds as string[] | null) ?? []).map((n) => toNodeId(n));
+  if (nodeIdsForUptime.length && latest != null) {
+    const upRows = await prisma.validatorUptimeEpoch.findMany({
+      where: {
+        network,
+        nodeId: { in: nodeIdsForUptime },
+        epochId: { gte: latest - RECORD_WINDOW + 1, lte: latest },
+      },
+      orderBy: { epochId: "desc" },
+      select: { epochId: true, uptimeMin: true, uptimePercent: true },
+    });
+    // One value per epoch: the mean across this entity's nodes, so an operator running four nodes is
+    // judged on all of them rather than on whichever happens to sort first.
+    const byEpoch = new Map<number, number[]>();
+    for (const r of upRows) {
+      const v = r.uptimeMin ?? r.uptimePercent;
+      if (v == null) continue;
+      const list = byEpoch.get(r.epochId) ?? [];
+      list.push(Math.max(0, Math.min(100, v)) / 100);
+      byEpoch.set(r.epochId, list);
+    }
+    const epochsWithData = [...byEpoch.keys()].sort((a, b) => b - a);
+    if (epochsWithData.length >= VALIDATOR_MIN_EPOCHS) {
+      const series = epochsWithData.map((e) => {
+        const l = byEpoch.get(e)!;
+        return l.reduce((a, b) => a + b, 0) / l.length;
+      });
+      const ratio = recencyWeightedMean(series);
+      if (ratio != null) {
+        const maturity = Math.min(1, epochsWithData.length / VALIDATOR_RAMP_EPOCHS);
+        const weight = WEIGHTS.validators * maturity;
+        components.push({
+          key: "validators",
+          raw: `${(ratio * 100).toFixed(2)}%`,
+          ratio,
+          weight,
+          points: ratio * weight,
+          validatorEpochs: epochsWithData.length,
+          validatorRamp: VALIDATOR_RAMP_EPOCHS,
+        });
+      }
+    }
   }
 
   // GOVERNANCE CHILLS. Flare's most serious sanction and, unlike everything else here, an explicit

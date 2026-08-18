@@ -25,6 +25,7 @@ import {
   LONGEVITY_FULL_EPOCHS,
   RELIABILITY_HALF_LIFE,
   REPUTATION_VERSION,
+  VALIDATOR_RAMP_EPOCHS,
 } from "@/lib/reputation";
 import { RECORD_WINDOW, RECORD_MIN_EPOCHS } from "@/lib/eligibility-record";
 import { ReputationMethodology } from "@/components/reputation-methodology";
@@ -60,6 +61,7 @@ export default function ReputationMethodologyPage() {
       halfLifeDays={days(RELIABILITY_HALF_LIFE)}
       strikesFloor={STRIKES_FLOOR}
       longevityFull={LONGEVITY_FULL_EPOCHS}
+      validatorRamp={VALIDATOR_RAMP_EPOCHS}
       longevityFullDays={days(LONGEVITY_FULL_EPOCHS)}
     />
   );
