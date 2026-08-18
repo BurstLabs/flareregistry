@@ -81,7 +81,8 @@ export function ReputationMethodology(p: MethodologyProps) {
   const P = ({ k, v }: { k: string; v?: Record<string, string | number> }) => (
     <p className="mt-2 text-sm text-muted">{t(k, v)}</p>
   );
-  const weightLabel = (n: number) => t("rep.weight", { weight: n });
+  // One decimal always, so this page prints "50.0 pts" where the provider panel prints "50.0".
+  const weightLabel = (n: number) => t("rep.weight", { weight: n.toFixed(1) });
 
   const ROWS = [
     ["reliability", "passes.json"],
@@ -176,7 +177,7 @@ score = max(0, components - chill deduction)`}</Formula>
 
       {/* ---- the five components, heaviest first, same order as the provider page ---- */}
 
-      <Section id="reliability" title={t("rep.comp.reliability")} weight={weightLabel(p.weights.reliability)}>
+      <Section id="reliability" title={t("rep.comp.reliability")} weight={weightLabel(shownWeights[0])}>
         <P k="repdoc.reliability.what" />
         <P k="repdoc.reliability.decay" v={{ h: p.halfLife, days: p.halfLifeDays }} />
         <Formula>{`d = 0.5 ^ (1 / ${p.halfLife})          # per-epoch decay factor
@@ -187,7 +188,7 @@ ratio = sum( v * d^i ) / sum( d^i )     over the last ${p.window} scored epochs`
         <P k="repdoc.reliability.absence" v={{ window: p.window, days: p.windowDays }} />
       </Section>
 
-      <Section id="conditions" title={t("rep.comp.conditions")} weight={weightLabel(p.weights.conditions)}>
+      <Section id="conditions" title={t("rep.comp.conditions")} weight={weightLabel(shownWeights[1])}>
         <P k="repdoc.conditions.what" />
         {/* Field names only, no translated labels. Interpolating a localised name into a monospace
             block destroys the column alignment in every locale but the one it was laid out for.
@@ -226,7 +227,7 @@ ratio = sum( epochMean * d^i ) / sum( d^i )`}</Formula>
         <P k="repdoc.conditions.flat" />
       </Section>
 
-      <Section id="strikes" title={t("rep.comp.strikes")} weight={weightLabel(p.weights.strikes)}>
+      <Section id="strikes" title={t("rep.comp.strikes")} weight={weightLabel(shownWeights[2])}>
         <P k="repdoc.strikes.what" v={{ floor: p.strikesFloor }} />
         <Formula>{`d = 0.5 ^ (1 / ${p.halfLife})          # same decay as reward eligibility
 i = the row's position in this provider's own
@@ -238,13 +239,13 @@ ratio = 1 - min(1, x / ${p.strikesFloor})`}</Formula>
         <P k="repdoc.strikes.why" v={{ floor: p.strikesFloor }} />
       </Section>
 
-      <Section id="longevity" title={t("rep.comp.longevity")} weight={weightLabel(p.weights.longevity)}>
+      <Section id="longevity" title={t("rep.comp.longevity")} weight={weightLabel(shownWeights[3])}>
         <P k="repdoc.longevity.what" />
         <Formula>{`ratio = min(1, epochs seen registered / ${p.longevityFull})`}</Formula>
         <P k="repdoc.longevity.cap" v={{ n: p.longevityFull, days: p.longevityFullDays }} />
       </Section>
 
-      <Section id="independence" title={t("rep.comp.independence")} weight={weightLabel(p.weights.independence)}>
+      <Section id="independence" title={t("rep.comp.independence")} weight={weightLabel(shownWeights[4])}>
         <P k="repdoc.independence.what" />
         <Formula>{`${t("rep.raw.excluded")}
     -> 1.00      (never overridden)
