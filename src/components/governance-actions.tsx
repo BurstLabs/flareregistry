@@ -166,6 +166,13 @@ export function ConductAction({
   // Pending co-initiation count, hoisted so the collapsed header can show it. Null until the member
   // has actually signed for it; see the note on the badge.
   const [pendingCount, setPendingCount] = useState<number | null>(initialPendingSignatures);
+  // Re-sync when the server's answer changes; see the note in the directory. Without this a
+  // sign-out would leave the header badge behind.
+  useEffect(() => {
+    setIsMember(viewerIsMember);
+    setPendingCount(initialPendingSignatures);
+  }, [viewerIsMember, initialPendingSignatures]);
+
   useEffect(() => {
     if (!isConnected || !address) {
       // Never clear what the server established; see the same note in the directory.
