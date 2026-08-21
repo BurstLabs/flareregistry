@@ -554,6 +554,104 @@ function QualificationTab() {
  * Those rows are keyed by a plain caseId string rather than a foreign key, so they outlive the case:
  * a deleted case still leaves the record that it existed and was deleted.
  */
+/** One input style, so every control on the conduct tab lines up instead of each picking its own. */
+const inputCls =
+  "w-full rounded border border-themed bg-elev px-2 py-1 text-sm text-fg placeholder:text-faint focus:border-beacon focus:outline-none";
+
+/** A small status pill. Tone carries meaning: red is a decided finding, amber needs attention. */
+function Chip({ tone, children }: { tone: "green" | "amber" | "red" | "grey"; children: React.ReactNode }) {
+  const cls =
+    tone === "green"
+      ? "bg-emerald-500/15 text-emerald-500 dark:text-emerald-300"
+      : tone === "amber"
+        ? "bg-amber-500/15 text-amber-600 dark:text-amber-300"
+        : tone === "red"
+          ? "bg-red-500/15 text-red-400"
+          : "bg-black/10 text-muted dark:bg-white/10";
+  return <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${cls}`}>{children}</span>;
+}
+
+/** A titled block. The panel was one undivided run of fields; these give it somewhere to breathe. */
+function Section2({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-4 border-t border-themed/60 pt-3">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-faint">{title}</p>
+      {children}
+    </div>
+  );
+}
+
+/** Label above input, with an optional hint. Several fields here do something non-obvious and a
+ *  bare label like "Published" does not say that it makes an accusation public. */
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-0.5 block text-[11px] text-faint">{label}</span>
+      {children}
+      {hint ? <span className="mt-0.5 block text-[10px] text-faint">{hint}</span> : null}
+    </label>
+  );
+}
+
+/**
+ * One audit entry, rendered readably.
+ *
+ * `detail` is JSON written by the API, and dumping it raw put unwrapped before/after blobs across
+ * the panel. The common shape is {before, after}, so that is summarised as changed fields and the
+ * raw text is kept behind a toggle rather than thrown away: the record is the point of this list,
+ * and a summary that cannot be checked against the original is not much of a record.
+ */
+function AuditRow({ entry }: { entry: { action: string; actor: string; detail?: string | null; at: string } }) {
+  const [open, setOpen] = useState(false);
+  let summary: string | null = null;
+  if (entry.detail) {
+    try {
+      const d = JSON.parse(entry.detail);
+      if (d && typeof d === "object" && d.after && typeof d.after === "object") {
+        const keys = Object.keys(d.after);
+        summary = keys.length ? `changed ${keys.join(", ")}` : null;
+      } else if (d && typeof d === "object") {
+        const keys = Object.keys(d).filter((k) => d[k] != null);
+        summary = keys.length ? keys.join(", ") : null;
+      }
+    } catch {
+      summary = null;
+    }
+  }
+  return (
+    <li className="text-[11px] text-muted">
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <span className="font-mono text-faint">
+          {new Date(entry.at).toISOString().slice(0, 16).replace("T", " ")}
+        </span>
+        <span className="font-medium text-fg">{entry.action}</span>
+        <span className="font-mono text-faint" title={entry.actor}>
+          {entry.actor === "system" ? "system" : `${entry.actor.slice(0, 10)}\u2026`}
+        </span>
+        {summary && <span className="text-muted">{summary}</span>}
+        {entry.detail && (
+          <button onClick={() => setOpen((o) => !o)} className="text-beacon hover:underline">
+            {open ? "hide" : "raw"}
+          </button>
+        )}
+      </div>
+      {open && entry.detail && (
+        <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-elev/60 p-2 text-[10px] text-faint">
+          {entry.detail}
+        </pre>
+      )}
+    </li>
+  );
+}
+
 function ConductTab() {
   const [rows, setRows] = useState<any[]>([]);
   const [trail, setTrail] = useState<any[]>([]);
@@ -710,254 +808,256 @@ function ConductTab() {
         .filter((c) => c.id === openId)
         .map((c) => (
           <Card key={c.id}>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-faint">
-                {c.provider} · {c.network} · case {c.id}
-              </p>
+            {/* HEADER: identity and state first, destructive action last and set apart. */}
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-themed/60 pb-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-fg">{c.provider}</span>
+                  <Chip tone={c.state === "SUBSTANTIATED" ? "red" : c.state === "PENDING" ? "grey" : "amber"}>
+                    {c.state}
+                  </Chip>
+                  <Chip tone={c.published ? "green" : "grey"}>{c.published ? "published" : "sealed"}</Chip>
+                  <Chip tone={c.claimed ? "grey" : "amber"}>{c.claimed ? "claimed" : "unclaimed"}</Chip>
+                  <Chip tone={c.signatures >= 4 ? "green" : "grey"}>{c.signatures} of 4 signatures</Chip>
+                </div>
+                <p className="mt-1 font-mono text-[11px] text-faint">
+                  {c.network} · {c.id}
+                </p>
+              </div>
               <button
                 onClick={() => delCase(c.id, c.provider)}
                 disabled={busy}
-                className="rounded bg-red-500/15 px-2 py-0.5 text-xs text-red-400 disabled:opacity-50"
+                className="shrink-0 rounded border border-red-500/40 px-2.5 py-1 text-xs text-red-400 hover:bg-red-500/10 disabled:opacity-50"
               >
-                delete case
+                Delete case
               </button>
             </div>
 
-            {/* ---- case fields ---- */}
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-themed/60 pt-3 md:grid-cols-3">
-              <label className="text-xs text-faint">
-                state
-                <select
-                  defaultValue={c.state}
-                  onChange={(e) => send({ op: "case", id: c.id, state: e.target.value })}
-                  className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
-                >
-                  {STATES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-xs text-faint">
-                service status
-                <select
-                  defaultValue={c.serviceStatus ?? ""}
-                  onChange={(e) =>
-                    send({ op: "case", id: c.id, serviceStatus: e.target.value || null })
-                  }
-                  className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
-                >
-                  <option value="">(not recorded)</option>
-                  {SERVICE.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-xs text-faint">
-                published (public + scored)
-                <input
-                  type="date"
-                  defaultValue={c.publishedAt ? String(c.publishedAt).slice(0, 10) : ""}
-                  onBlur={(e) =>
-                    send({ op: "case", id: c.id, publishedAt: e.target.value || null })
-                  }
-                  className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
-                />
-              </label>
-              {(
-                [
-                  ["noticeEndsAt", "notice ends"],
-                  ["discussionEndsAt", "discussion ends"],
-                  ["votingEndsAt", "voting ends"],
-                  ["decidedAt", "decided at"],
-                  ["lateReplyAt", "late reply at"],
-                  ["openedAt", "opened at"],
-                ] as const
-              ).map(([k, label]) => (
-                <label key={k} className="text-xs text-faint">
-                  {label}
+            {/* CASE FIELDS, grouped by what they answer rather than by column order in the table.
+                Publication is separated and labelled with its effect, because it is the one control
+                here that makes a sealed accusation public and moves a provider's score. */}
+            <Section2 title="Status">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Field label="State">
+                  <select
+                    defaultValue={c.state}
+                    onChange={(e) => send({ op: "case", id: c.id, state: e.target.value })}
+                    className={inputCls}
+                  >
+                    {STATES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Service status" hint="What the published finding says about notice">
+                  <select
+                    defaultValue={c.serviceStatus ?? ""}
+                    onChange={(e) => send({ op: "case", id: c.id, serviceStatus: e.target.value || null })}
+                    className={inputCls}
+                  >
+                    <option value="">(not recorded)</option>
+                    {SERVICE.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Published" hint="Makes it public and deducts score">
                   <input
                     type="date"
-                    defaultValue={c[k] ? String(c[k]).slice(0, 10) : ""}
-                    onBlur={(e) => send({ op: "case", id: c.id, [k]: e.target.value || null })}
-                    className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
+                    defaultValue={c.publishedAt ? String(c.publishedAt).slice(0, 10) : ""}
+                    onBlur={(e) => send({ op: "case", id: c.id, publishedAt: e.target.value || null })}
+                    className={inputCls}
                   />
-                </label>
-              ))}
-              {(
-                [
-                  ["decidedEpoch", "decided epoch"],
-                  ["memberCountAtOpen", "members at open"],
-                  ["outcomeTurnout", "turnout"],
-                  ["outcomeDeny", "deny count"],
-                ] as const
-              ).map(([k, label]) => (
-                <label key={k} className="text-xs text-faint">
-                  {label}
-                  <input
-                    type="number"
-                    defaultValue={c[k] ?? ""}
-                    onBlur={(e) => send({ op: "case", id: c.id, [k]: e.target.value || null })}
-                    className="mt-0.5 w-full rounded bg-elev px-2 py-1 text-sm text-fg"
-                  />
-                </label>
-              ))}
-            </div>
+                </Field>
+              </div>
+            </Section2>
 
-            {/* ---- points and evidence ---- */}
-            {c.points.map((p: any) => (
-              <div key={p.id} className="mt-3 border-t border-themed/60 pt-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted">
-                    {p.member}
-                    {p.withdrawn ? " (withdrawn)" : ""}
-                  </p>
-                  <div className="flex gap-1">
+            <Section2 title="Timeline">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {(
+                  [
+                    ["openedAt", "Opened"],
+                    ["noticeEndsAt", "Notice ends"],
+                    ["discussionEndsAt", "Discussion ends"],
+                    ["votingEndsAt", "Voting ends"],
+                    ["decidedAt", "Decided"],
+                    ["lateReplyAt", "Late reply"],
+                  ] as const
+                ).map(([k, label]) => (
+                  <Field key={k} label={label}>
+                    <input
+                      type="date"
+                      defaultValue={c[k] ? String(c[k]).slice(0, 10) : ""}
+                      onBlur={(e) => send({ op: "case", id: c.id, [k]: e.target.value || null })}
+                      className={inputCls}
+                    />
+                  </Field>
+                ))}
+              </div>
+            </Section2>
+
+            <Section2 title="Outcome">
+              <div className="grid gap-3 sm:grid-cols-4">
+                {(
+                  [
+                    ["decidedEpoch", "Decided epoch", "epoch the score ages from"],
+                    ["memberCountAtOpen", "Members at open", ""],
+                    ["outcomeTurnout", "Turnout", ""],
+                    ["outcomeDeny", "Deny count", ""],
+                  ] as const
+                ).map(([k, label, hint]) => (
+                  <Field key={k} label={label} hint={hint}>
+                    <input
+                      type="number"
+                      placeholder="not set"
+                      defaultValue={c[k] ?? ""}
+                      onBlur={(e) => send({ op: "case", id: c.id, [k]: e.target.value || null })}
+                      className={inputCls}
+                    />
+                  </Field>
+                ))}
+              </div>
+            </Section2>
+
+            {/* POINTS. Each is one member's accusation plus its evidence, so each gets its own box
+                rather than running together in a single column. */}
+            <Section2 title={`Points and evidence (${c.points.length})`}>
+              <div className="space-y-3">
+                {c.points.map((p: any) => (
+                  <div key={p.id} className="rounded-lg border border-themed/60 bg-elev/30 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-mono text-[11px] text-faint" title={p.member}>
+                        {p.member}
+                        {p.withdrawn && <span className="ml-2 text-amber-500">withdrawn</span>}
+                      </span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() =>
+                            send({ op: "initiation", id: c.id, initiationId: p.id, withdrawn: !p.withdrawn })
+                          }
+                          disabled={busy}
+                          className="rounded border border-themed px-2 py-0.5 text-[11px] text-muted hover:text-beacon disabled:opacity-50"
+                        >
+                          {p.withdrawn ? "Restore" : "Withdraw"}
+                        </button>
+                        <button
+                          onClick={() =>
+                            confirm("Delete this point and its evidence?") &&
+                            send({ op: "deleteInitiation", id: c.id, initiationId: p.id }, "Point deleted.")
+                          }
+                          disabled={busy}
+                          className="rounded border border-red-500/40 px-2 py-0.5 text-[11px] text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    <input
+                      defaultValue={p.title ?? ""}
+                      placeholder="Subject (optional)"
+                      onBlur={(e) =>
+                        e.target.value !== (p.title ?? "") &&
+                        send({ op: "initiation", id: c.id, initiationId: p.id, title: e.target.value })
+                      }
+                      className={`${inputCls} mt-2 font-medium`}
+                    />
+                    <textarea
+                      defaultValue={p.grounds}
+                      rows={3}
+                      placeholder="Grounds"
+                      onBlur={(e) =>
+                        e.target.value !== p.grounds &&
+                        send({ op: "initiation", id: c.id, initiationId: p.id, grounds: e.target.value })
+                      }
+                      className={`${inputCls} mt-2 resize-y`}
+                    />
+                    <p className="mt-3 text-[11px] uppercase tracking-wide text-faint">Evidence</p>
+                    <div className="mt-1 space-y-1">
+                      {p.evidence.map((e: any) => (
+                        <div key={e.id} className="grid grid-cols-12 items-center gap-1">
+                          <input
+                            defaultValue={e.kind}
+                            onBlur={(ev) =>
+                              ev.target.value !== e.kind &&
+                              send({ op: "evidence", id: c.id, evidenceId: e.id, kind: ev.target.value })
+                            }
+                            className={`${inputCls} col-span-2 font-mono`}
+                          />
+                          <input
+                            defaultValue={e.chain ?? ""}
+                            placeholder="chain"
+                            onBlur={(ev) =>
+                              ev.target.value !== (e.chain ?? "") &&
+                              send({ op: "evidence", id: c.id, evidenceId: e.id, chain: ev.target.value || null })
+                            }
+                            className={`${inputCls} col-span-2`}
+                          />
+                          <input
+                            defaultValue={e.ref}
+                            title={e.ref}
+                            onBlur={(ev) =>
+                              ev.target.value !== e.ref &&
+                              send({ op: "evidence", id: c.id, evidenceId: e.id, ref: ev.target.value })
+                            }
+                            className={`${inputCls} col-span-4 font-mono`}
+                          />
+                          <input
+                            defaultValue={e.claim}
+                            placeholder="what it shows"
+                            onBlur={(ev) =>
+                              ev.target.value !== e.claim &&
+                              send({ op: "evidence", id: c.id, evidenceId: e.id, claim: ev.target.value })
+                            }
+                            className={`${inputCls} col-span-3`}
+                          />
+                          <button
+                            onClick={() => send({ op: "deleteEvidence", id: c.id, evidenceId: e.id }, "Evidence deleted.")}
+                            disabled={busy}
+                            className="col-span-1 rounded border border-red-500/40 py-1 text-[11px] text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                          >
+                            x
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                     <button
                       onClick={() =>
-                        send({
-                          op: "initiation",
-                          id: c.id,
-                          initiationId: p.id,
-                          withdrawn: !p.withdrawn,
-                        })
+                        send(
+                          { op: "addEvidence", id: c.id, initiationId: p.id, kind: "TX", chain: c.network, ref: "", claim: "" },
+                          "Evidence row added."
+                        )
                       }
                       disabled={busy}
-                      className="rounded bg-elev px-2 py-0.5 text-xs text-muted disabled:opacity-50"
+                      className="mt-2 rounded border border-themed px-2 py-0.5 text-[11px] text-muted hover:text-beacon disabled:opacity-50"
                     >
-                      {p.withdrawn ? "restore" : "withdraw"}
-                    </button>
-                    <button
-                      onClick={() =>
-                        confirm("Delete this point and its evidence?") &&
-                        send({ op: "deleteInitiation", id: c.id, initiationId: p.id }, "Point deleted.")
-                      }
-                      disabled={busy}
-                      className="rounded bg-red-500/15 px-2 py-0.5 text-xs text-red-400 disabled:opacity-50"
-                    >
-                      delete
+                      + Evidence
                     </button>
                   </div>
-                </div>
-                <input
-                  defaultValue={p.title ?? ""}
-                  placeholder="title"
-                  onBlur={(e) =>
-                    e.target.value !== (p.title ?? "") &&
-                    send({ op: "initiation", id: c.id, initiationId: p.id, title: e.target.value })
-                  }
-                  className="mt-1 w-full rounded bg-elev px-2 py-1 text-sm font-medium text-fg"
-                />
-                <textarea
-                  defaultValue={p.grounds}
-                  rows={4}
-                  onBlur={(e) =>
-                    e.target.value !== p.grounds &&
-                    send({ op: "initiation", id: c.id, initiationId: p.id, grounds: e.target.value })
-                  }
-                  className="mt-1 w-full rounded bg-elev px-2 py-1 text-sm text-muted"
-                />
-                <ul className="mt-1 space-y-1 text-xs">
-                  {p.evidence.map((e: any) => (
-                    <li key={e.id} className="flex items-center gap-1">
-                      <input
-                        defaultValue={e.kind}
-                        onBlur={(ev) =>
-                          ev.target.value !== e.kind &&
-                          send({ op: "evidence", id: c.id, evidenceId: e.id, kind: ev.target.value })
-                        }
-                        className="w-24 rounded bg-elev px-1 py-0.5 font-mono text-fg"
-                      />
-                      <input
-                        defaultValue={e.chain ?? ""}
-                        placeholder="chain"
-                        onBlur={(ev) =>
-                          ev.target.value !== (e.chain ?? "") &&
-                          send({
-                            op: "evidence",
-                            id: c.id,
-                            evidenceId: e.id,
-                            chain: ev.target.value || null,
-                          })
-                        }
-                        className="w-20 rounded bg-elev px-1 py-0.5 text-fg"
-                      />
-                      <input
-                        defaultValue={e.ref}
-                        onBlur={(ev) =>
-                          ev.target.value !== e.ref &&
-                          send({ op: "evidence", id: c.id, evidenceId: e.id, ref: ev.target.value })
-                        }
-                        className="flex-1 rounded bg-elev px-1 py-0.5 font-mono text-fg"
-                      />
-                      <input
-                        defaultValue={e.claim}
-                        onBlur={(ev) =>
-                          ev.target.value !== e.claim &&
-                          send({ op: "evidence", id: c.id, evidenceId: e.id, claim: ev.target.value })
-                        }
-                        className="flex-1 rounded bg-elev px-1 py-0.5 text-muted"
-                      />
-                      <button
-                        onClick={() =>
-                          send({ op: "deleteEvidence", id: c.id, evidenceId: e.id }, "Evidence deleted.")
-                        }
-                        disabled={busy}
-                        className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-400 disabled:opacity-50"
-                      >
-                        x
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={() =>
-                    send(
-                      {
-                        op: "addEvidence",
-                        id: c.id,
-                        initiationId: p.id,
-                        kind: "TX",
-                        chain: c.network,
-                        ref: "",
-                        claim: "",
-                      },
-                      "Evidence row added."
-                    )
-                  }
-                  disabled={busy}
-                  className="mt-1 rounded bg-elev px-2 py-0.5 text-xs text-muted disabled:opacity-50"
-                >
-                  + evidence
-                </button>
+                ))}
+                <AddPoint caseId={c.id} onDone={send} busy={busy} />
               </div>
-            ))}
+            </Section2>
 
-            <AddPoint caseId={c.id} onDone={send} busy={busy} />
-
-            {/* ---- votes ---- */}
-            <div className="mt-3 border-t border-themed/60 pt-2">
-              <p className="text-xs text-faint">Votes</p>
-              <ul className="mt-1 space-y-1 text-xs">
+            <Section2 title={`Votes (${c.votes.rows.length})`}>
+              <div className="space-y-1">
                 {c.votes.rows.map((v: any) => (
-                  <li key={v.id} className="flex items-center gap-1">
+                  <div key={v.id} className="flex items-center gap-1">
                     <input
                       defaultValue={v.memberEntityVoter}
                       onBlur={(ev) =>
                         ev.target.value !== v.memberEntityVoter &&
                         send({ op: "vote", id: c.id, voteId: v.id, member: ev.target.value })
                       }
-                      className="flex-1 rounded bg-elev px-1 py-0.5 font-mono text-fg"
+                      className={`${inputCls} flex-1 font-mono`}
                     />
                     <select
                       defaultValue={v.vote}
-                      onChange={(ev) =>
-                        send({ op: "vote", id: c.id, voteId: v.id, vote: ev.target.value })
-                      }
-                      className="rounded bg-elev px-1 py-0.5 text-fg"
+                      onChange={(ev) => send({ op: "vote", id: c.id, voteId: v.id, vote: ev.target.value })}
+                      className={`${inputCls} w-28`}
                     >
                       {["DENY", "KEEP", "ABSTAIN"].map((x) => (
                         <option key={x} value={x}>
@@ -968,30 +1068,27 @@ function ConductTab() {
                     <button
                       onClick={() => send({ op: "deleteVote", id: c.id, voteId: v.id }, "Vote deleted.")}
                       disabled={busy}
-                      className="rounded bg-red-500/15 px-1.5 py-0.5 text-red-400 disabled:opacity-50"
+                      className="rounded border border-red-500/40 px-2 py-1 text-[11px] text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                     >
                       x
                     </button>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-              <AddVote caseId={c.id} onDone={send} busy={busy} />
-            </div>
+                {c.votes.rows.length === 0 && <p className="text-xs text-faint">No votes cast.</p>}
+                <AddVote caseId={c.id} onDone={send} busy={busy} />
+              </div>
+            </Section2>
 
-            {/* ---- defence ---- */}
-            <div className="mt-3 border-t border-themed/60 pt-2">
-              <p className="text-xs text-faint">
-                Defence {c.defence ? "" : "(none on record)"}
-              </p>
+            <Section2 title={c.defence ? "Provider response" : "Provider response (none on record)"}>
               <textarea
                 defaultValue={c.defence?.body ?? ""}
                 rows={3}
-                placeholder="response body"
+                placeholder="No response has been submitted. Text entered here is recorded as the provider's."
                 onBlur={(e) =>
                   e.target.value !== (c.defence?.body ?? "") &&
                   send({ op: "defence", id: c.id, title: c.defence?.title ?? null, body: e.target.value })
                 }
-                className="mt-1 w-full rounded bg-elev px-2 py-1 text-sm text-muted"
+                className={`${inputCls} resize-y`}
               />
               {c.defence && (
                 <button
@@ -1000,25 +1097,21 @@ function ConductTab() {
                     send({ op: "deleteDefence", id: c.id }, "Defence deleted.")
                   }
                   disabled={busy}
-                  className="mt-1 rounded bg-red-500/15 px-2 py-0.5 text-xs text-red-400 disabled:opacity-50"
+                  className="mt-2 rounded border border-red-500/40 px-2 py-0.5 text-[11px] text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                 >
-                  delete defence
+                  Delete response
                 </button>
               )}
-            </div>
+            </Section2>
 
             {c.audit.length > 0 && (
-              <div className="mt-3 border-t border-themed/60 pt-2">
-                <p className="text-xs text-faint">Audit</p>
-                <ul className="max-h-64 overflow-y-auto text-xs text-muted">
+              <Section2 title={`Audit (${c.audit.length})`}>
+                <ul className="max-h-72 space-y-1 overflow-y-auto">
                   {c.audit.map((a: any, i: number) => (
-                    <li key={i} className="break-all">
-                      {new Date(a.at).toISOString().slice(0, 16)} · {a.action} · {a.actor}
-                      {a.detail ? ` · ${a.detail}` : ""}
-                    </li>
+                    <AuditRow key={i} entry={a} />
                   ))}
                 </ul>
-              </div>
+              </Section2>
             )}
           </Card>
         ))}
@@ -1029,12 +1122,11 @@ function ConductTab() {
             Audit rows for cases that no longer exist. These survive deletion because the trail is
             keyed by case id rather than by a foreign key.
           </p>
-          <ul className="mt-1 max-h-64 overflow-y-auto text-xs text-muted">
+          <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto">
             {trail.map((a: any, i: number) => (
-              <li key={i} className="break-all">
-                {new Date(a.at).toISOString().slice(0, 16)} · {a.caseId} · {a.action} ·{" "}
-                {a.actor}
-                {a.detail ? ` · ${a.detail}` : ""}
+              <li key={i}>
+                <span className="mr-2 font-mono text-[10px] text-faint">{a.caseId}</span>
+                <AuditRow entry={a} />
               </li>
             ))}
           </ul>
@@ -1061,14 +1153,14 @@ function AddPoint({
       <input
         value={member}
         onChange={(e) => setMember(e.target.value)}
-        placeholder="member voter address"
-        className="w-64 rounded bg-elev px-2 py-1 text-xs font-mono text-fg"
+        placeholder="Member voter address"
+        className={`${inputCls} w-64 font-mono`}
       />
       <input
         value={grounds}
         onChange={(e) => setGrounds(e.target.value)}
-        placeholder="grounds"
-        className="flex-1 rounded bg-elev px-2 py-1 text-xs text-fg"
+        placeholder="Grounds"
+        className={`${inputCls} flex-1`}
       />
       <button
         onClick={async () => {
@@ -1078,9 +1170,9 @@ function AddPoint({
           setGrounds("");
         }}
         disabled={busy}
-        className="rounded bg-elev px-2 py-1 text-xs text-muted disabled:opacity-50"
+        className="shrink-0 rounded border border-themed px-2 py-1 text-xs text-muted hover:text-beacon disabled:opacity-50"
       >
-        + point
+        + Point
       </button>
     </div>
   );
@@ -1103,13 +1195,13 @@ function AddVote({
       <input
         value={member}
         onChange={(e) => setMember(e.target.value)}
-        placeholder="member voter address"
-        className="flex-1 rounded bg-elev px-2 py-1 text-xs font-mono text-fg"
+        placeholder="Member voter address"
+        className={`${inputCls} flex-1 font-mono`}
       />
       <select
         value={vote}
         onChange={(e) => setVote(e.target.value)}
-        className="rounded bg-elev px-2 py-1 text-xs text-fg"
+        className={`${inputCls} w-28`}
       >
         {["DENY", "KEEP", "ABSTAIN"].map((x) => (
           <option key={x} value={x}>
@@ -1124,9 +1216,9 @@ function AddVote({
           setMember("");
         }}
         disabled={busy}
-        className="rounded bg-elev px-2 py-1 text-xs text-muted disabled:opacity-50"
+        className="shrink-0 rounded border border-themed px-2 py-1 text-xs text-muted hover:text-beacon disabled:opacity-50"
       >
-        + vote
+        + Vote
       </button>
     </div>
   );
