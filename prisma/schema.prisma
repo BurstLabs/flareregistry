@@ -566,6 +566,13 @@ model ProviderMetricEpoch {
 model IngestState {
   network           String   @id
   lastEpochIngested Int      @default(0)
+  /// When the ingest last RAN, whether or not it found a new epoch.
+  ///
+  /// updatedAt below only moves when lastEpochIngested changes, which is every 3.5 days, so it
+  /// answers "when did the data last change" and cannot answer "when did we last look". A page that
+  /// wants to say how current a figure is needs the second question, and deriving the next check
+  /// from the first would anchor it up to three days in the past.
+  checkedAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
 

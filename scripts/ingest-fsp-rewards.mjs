@@ -196,6 +196,14 @@ async function ingestNetwork(network) {
   }
   const state = await prisma.ingestState.findUnique({ where: { network } });
   const last = state?.lastEpochIngested ?? 0;
+  // Stamp EVERY run, before doing any work. updatedAt below moves only when an epoch is actually
+  // ingested, so without this there is no record of when the data was last checked as opposed to
+  // when it last changed, and a page cannot say how current its figure is.
+  await prisma.ingestState.upsert({
+    where: { network },
+    create: { network, lastEpochIngested: last, checkedAt: new Date() },
+    update: { checkedAt: new Date() },
+  });
   const start = last > 0 ? last + 1 : Math.max(1, latest - MAX_BACKFILL + 1);
   let n = 0;
   let lastPersisted = null;

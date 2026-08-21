@@ -73,7 +73,12 @@ export const VALIDATOR_RAMP_EPOCHS = 30;
 export const VALIDATOR_MIN_EPOCHS = 3;
 
 /**
- * Hours between ingest runs, matching the cron that refreshes every input this score reads.
+ * Hours between checks for new epoch data, matching the cron that refreshes this score's inputs.
+ *
+ * Hourly, matching the Management Group sync. The six-hourly full ingest still runs and does the
+ * heavy work; this is the light path that looks for a new reward epoch and rescores if it finds one.
+ * Costs about five seconds and usually finds nothing, which is the point: when Flare does publish an
+ * epoch the figure follows within the hour rather than within six.
  *
  * Stated here so a page can compute the next refresh from the LAST one rather than encoding a cron
  * expression in the UI. Anchoring on the last run also means a missed run does not produce a "next
@@ -82,7 +87,7 @@ export const VALIDATOR_MIN_EPOCHS = 3;
  * Worth keeping straight: this is how often the data is CHECKED, not how often the score moves. A
  * reward epoch is 3.5 days, so most refreshes find nothing new and the figure holds.
  */
-export const INGEST_INTERVAL_HOURS = 6;
+export const INGEST_INTERVAL_HOURS = 1;
 
 /**
  * Points deducted for a provider that is currently not registered on-chain.
@@ -1200,8 +1205,10 @@ export async function reputationFor(
 
   return {
     network,
-    /** When the inputs behind this score were last refreshed, and the epoch they run through. */
-    lastRefreshedAt: freshness?.updatedAt ?? null,
+    // checkedAt, NOT updatedAt. updatedAt moves only when a new epoch is ingested, which is every
+    // 3.5 days, so anchoring the next check on it would place that estimate up to three days in the
+    // past. checkedAt is stamped on every run and is what answers "how current is this figure".
+    lastRefreshedAt: freshness?.checkedAt ?? null,
     dataThroughEpoch: latest,
     score,
     band: band(score, components, chillPenalty + findingPenalty + absencePenalty),
