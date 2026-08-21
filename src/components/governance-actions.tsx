@@ -306,7 +306,7 @@ export function ConductAction({
             </span>
           )}
         </button>
-        <Link href="/governance/conduct" className="text-xs text-beacon hover:underline">
+        <Link href="/governance#conduct" className="text-xs text-beacon hover:underline">
           {t("gov.conduct.howItWorks")}
         </Link>
       </div>

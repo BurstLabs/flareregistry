@@ -872,11 +872,8 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               ? t("gov.case.titleAppeal")
               : t("gov.case.title")}
         </h1>
-        {/* "How governance works" must land on the process that decided THIS case. Sending a
-            reader of a conduct finding to the new-provider flag document would answer a question
-            they did not ask, with rules that do not apply to them. */}
         <Link
-          href={isConduct ? "/governance/conduct" : "/governance"}
+          href="/governance"
           className="shrink-0 text-xs text-muted hover:text-beacon hover:underline"
         >
           {t("gov.case.aboutLink")}
