@@ -685,6 +685,15 @@ function ConductTab() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  // Fetched once for the tab rather than per point: 48 members, and every point on every case picks
+  // from the same list.
+  const [mgMembers, setMgMembers] = useState<{ voter: string; name: string | null }[]>([]);
+  useEffect(() => {
+    fetch("/api/admin/mg-members")
+      .then((r) => r.json())
+      .then((b) => setMgMembers(b.members ?? []))
+      .catch(() => setMgMembers([]));
+  }, []);
 
   const load = useCallback(async () => {
     const r = await fetch("/api/admin/conduct");
@@ -985,18 +994,37 @@ function ConductTab() {
                         <span className="shrink-0 text-[10px] uppercase tracking-wide text-faint">
                           Co-initiator
                         </span>
-                        <input
-                          defaultValue={p.member}
+                        {/* A LIST, not a text box. This field decides whose signature the point
+                            counts as, so a mistyped address does not fail loudly, it silently
+                            attributes an accusation to a provider who never made it. Member
+                            addresses differ in the middle and a transposition looks like nothing.
+
+                            The current value is kept as an option even when it is not a current
+                            member, so opening a point raised by someone who has since left the
+                            group does not silently reassign it on the next save. */}
+                        <select
+                          defaultValue={p.member.toLowerCase()}
                           title={p.member}
-                          onBlur={(e) =>
-                            e.target.value.trim().toLowerCase() !== p.member.toLowerCase() &&
+                          onChange={(e) =>
+                            e.target.value !== p.member.toLowerCase() &&
                             send(
-                              { op: "initiation", id: c.id, initiationId: p.id, member: e.target.value.trim() },
+                              { op: "initiation", id: c.id, initiationId: p.id, member: e.target.value },
                               "Co-initiator reassigned."
                             )
                           }
                           className={`${inputCls} font-mono text-[11px]`}
-                        />
+                        >
+                          {!mgMembers.some((m) => m.voter === p.member.toLowerCase()) && (
+                            <option value={p.member.toLowerCase()}>
+                              {p.member} (not a current member)
+                            </option>
+                          )}
+                          {mgMembers.map((m) => (
+                            <option key={m.voter} value={m.voter}>
+                              {m.name ? `${m.name} · ${m.voter.slice(0, 10)}…` : m.voter}
+                            </option>
+                          ))}
+                        </select>
                         {p.withdrawn && <span className="shrink-0 text-[11px] text-amber-500">withdrawn</span>}
                       </label>
                       <div className="flex gap-1">
