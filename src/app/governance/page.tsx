@@ -29,6 +29,49 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/**
+ * One of the page's three top-level regions: new-provider review, conduct, and the decided-case
+ * record.
+ *
+ * They were a flat run of same-sized headings, so the boundary between two processes looked exactly
+ * like the boundary between two paragraphs of one. That is not a cosmetic problem here: a flag can
+ * suspend a provider and a conduct finding cannot, and a reader who does not notice they have
+ * crossed from one into the other carries the wrong rule with them.
+ *
+ * The rule, the accent bar and the eyebrow are all doing the same job at different strengths, so
+ * the break survives skim-reading, a narrow screen, and a reader who arrived at an anchor partway
+ * down.
+ */
+function Part({
+  id,
+  eyebrow,
+  title,
+  intro,
+  divider = true,
+  children,
+}: {
+  id: string;
+  eyebrow: string;
+  title: string;
+  intro?: string;
+  /** The first part sits directly under the page title, where a rule would separate it from nothing. */
+  divider?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className={`scroll-mt-24 ${divider ? "mt-14 border-t border-themed pt-10" : "mt-8"}`}
+    >
+      <div className="mb-3 h-0.5 w-10 rounded-full bg-beacon/70" />
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-beacon">{eyebrow}</p>
+      <h2 className="mt-1.5 text-2xl font-bold tracking-tight">{title}</h2>
+      {intro && <p className="mt-3 leading-relaxed text-muted">{intro}</p>}
+      {children}
+    </section>
+  );
+}
+
 interface CaseRecord {
   caseId: string;
   /** "FLAG" or "CONDUCT". Absent on older cached responses, treated as a flag. */
@@ -134,8 +177,14 @@ export default function GovernancePage() {
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight">{t("gov.docs.title")}</h1>
-      <p className="mt-3 leading-relaxed text-muted">{t("gov.docs.intro")}</p>
 
+      <Part
+        id="new-providers"
+        divider={false}
+        eyebrow={t("gov.docs.part1.eyebrow")}
+        title={t("gov.docs.part1.title")}
+        intro={t("gov.docs.intro")}
+      >
       <Section title={t("gov.docs.s1.title")}>
         <p>{t("gov.docs.s1.body", { window: NEW_PROVIDER_WINDOW_DAYS })}</p>
       </Section>
@@ -182,17 +231,22 @@ export default function GovernancePage() {
       <Section title={t("gov.docs.s6.title")}>
         <p>{t("gov.docs.s6.body")}</p>
       </Section>
+      </Part>
 
       {/* CONDUCT. Documented as a SECOND, separate process rather than folded into the sections
           above, because conflating the two would be the most damaging thing this page could do: one
           is public from the moment it is raised and can suspend a listing, the other is private
           until a vote and can never suspend anything. Every constant is read from lib/governance so
-          the page cannot drift from the rules that run. */}
-      <h2 id="conduct" className="mt-10 scroll-mt-24 text-2xl font-bold tracking-tight">
-        {t("gov.docs.c.title")}
-      </h2>
-      <p className="mt-3 leading-relaxed text-muted">{t("gov.docs.c.intro")}</p>
+          the page cannot drift from the rules that run.
 
+          The id stays "conduct": links to /governance#conduct are already in circulation, including
+          from the raise-a-case panel on every provider page. */}
+      <Part
+        id="conduct"
+        eyebrow={t("gov.docs.part2.eyebrow")}
+        title={t("gov.docs.c.title")}
+        intro={t("gov.docs.c.intro")}
+      >
       <Section title={t("gov.docs.c1.title")}>
         <p>{t("gov.docs.c1.body")}</p>
       </Section>
@@ -238,8 +292,18 @@ export default function GovernancePage() {
       <Section title={t("gov.docs.c8.title")}>
         <p>{t("gov.docs.c8.body")}</p>
       </Section>
+      </Part>
 
-      <CaseRecords />
+      {/* THE RECORD, as its own region rather than two more headings at the foot of the conduct
+          process. Both lists cover both processes, so leaving them inside the conduct part would
+          have read as "conduct's records" and buried the flag list under the wrong mechanism. */}
+      <Part
+        id="records"
+        eyebrow={t("gov.docs.part3.eyebrow")}
+        title={t("gov.docs.part3.title")}
+      >
+        <CaseRecords />
+      </Part>
     </div>
   );
 }
