@@ -185,9 +185,16 @@ export async function POST(req: NextRequest) {
   const result = await prisma.$transaction(async (tx) => {
     let theCase = live;
     if (!theCase) {
-      // Deadlines are provisional until the case actually opens; they are recomputed from the
-      // moment the final signature lands so the notice period starts when the subject can be told,
-      // not when the first member happened to sign.
+      // Deadlines are recomputed from the moment the final signature lands, so the notice period
+      // starts when the subject can actually be told rather than when the first member happened to
+      // sign. See the co-initiation block below.
+      //
+      // noticeEndsAt is therefore NULL while the case is PENDING. A PENDING case may never open at
+      // all, and storing a date that reads like a served deadline invites someone to act on it: the
+      // admin surface is editable now, and an operator seeing a real-looking date on a case nobody
+      // has been served for is being told something untrue. discussionEndsAt and votingEndsAt are
+      // non-null in the schema (FLAG cases are public from creation and always have them), so those
+      // keep provisional values and are overwritten on open.
       const d = conductDeadlines(now);
       theCase = (await tx.providerFlagCase.create({
         data: {
@@ -195,7 +202,7 @@ export async function POST(req: NextRequest) {
           network: entity.network,
           kind: "CONDUCT",
           state: "PENDING",
-          noticeEndsAt: d.noticeEndsAt,
+          noticeEndsAt: null,
           discussionEndsAt: d.discussionEndsAt,
           votingEndsAt: d.votingEndsAt,
           memberCountAtOpen: members.memberCount,
