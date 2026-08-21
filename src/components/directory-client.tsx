@@ -74,34 +74,26 @@ export function DirectoryClient({
   const [isMember, setIsMember] = useState(false);
   const [pending, setPending] = useState<Map<string, { remaining: number; alreadySigned: boolean }> | null>(null);
   const [pendingBusy, setPendingBusy] = useState(false);
-  useEffect(() => {
-    if (!isConnected || !address) {
-      setIsMember(false);
-      setPending(null);
-      return;
-    }
-    let cancelled = false;
-    fetch(`/api/mg/is-member?address=${address.toLowerCase()}`)
-      .then((r) => r.json())
-      .then((b) => !cancelled && setIsMember(b?.member === true))
-      .catch(() => !cancelled && setIsMember(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [address, isConnected]);
+  // Only true when the session attempt failed, i.e. the member is a member but not signed in. That
+  // is the sole case where a button is still needed, because the alternative would be a signature
+  // popup firing on page load.
+  const [needsSignature, setNeedsSignature] = useState(false);
 
-  async function loadPending() {
+  /** Read the counts. `allowSign` is false on the automatic path so nothing ever prompts unasked. */
+  const fetchPending = async (allowSign: boolean) => {
     setPendingBusy(true);
     try {
-      // SESSION FIRST, signature only if there is none. A member who has signed in already proved
-      // control of their address, and the cookie carrying that proof is HMAC-signed by the server,
-      // so asking them to sign again would add a popup and no security.
       let res = await fetch("/api/governance/conduct/pending-all", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: "{}",
       });
       if (res.status === 401) {
+        if (!allowSign) {
+          // A member with no session. Offer the button rather than interrupting them with a popup.
+          setNeedsSignature(true);
+          return;
+        }
         const sig = await signChallenge();
         res = await fetch("/api/governance/conduct/pending-all", {
           method: "POST",
@@ -111,11 +103,12 @@ export function DirectoryClient({
       }
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(b.error ?? "failed");
+      setNeedsSignature(false);
       setPending(
         new Map(
-          (b.pending ?? []).map((p: { providerId: string; remaining: number; alreadySigned: boolean }) => [
-            p.providerId,
-            { remaining: p.remaining, alreadySigned: p.alreadySigned },
+          (b.pending ?? []).map((x: { providerId: string; remaining: number; alreadySigned: boolean }) => [
+            x.providerId,
+            { remaining: x.remaining, alreadySigned: x.alreadySigned },
           ])
         )
       );
@@ -124,7 +117,33 @@ export function DirectoryClient({
     } finally {
       setPendingBusy(false);
     }
-  }
+  };
+
+  useEffect(() => {
+    if (!isConnected || !address) {
+      setIsMember(false);
+      setPending(null);
+      setNeedsSignature(false);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/mg/is-member?address=${address.toLowerCase()}`)
+      .then((r) => r.json())
+      .then((b) => {
+        if (cancelled) return;
+        const member = b?.member === true;
+        setIsMember(member);
+        // LOAD IMMEDIATELY. The session already proves control, so this costs the member nothing:
+        // no popup, no click. The button only existed because the counts used to require a fresh
+        // signature, and a member should not have to ask the site where their signature is wanted.
+        if (member) void fetchPending(false);
+      })
+      .catch(() => !cancelled && setIsMember(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [address, isConnected]);
+
 
   const [query, setQuery] = useState("");
   const [perPage, setPerPage] = useState(24);
@@ -224,9 +243,9 @@ export function DirectoryClient({
           {/* MEMBER-ONLY. Shown to every Management Group member on every load, whether or not any
               case exists, so it is an affordance and not a signal. The counts it fetches are the
               disclosure, and they require a signature. */}
-          {isMember && pending === null && (
+          {isMember && needsSignature && (
             <button
-              onClick={loadPending}
+              onClick={() => fetchPending(true)}
               disabled={pendingBusy}
               className="shrink-0 rounded-lg border border-amber-500/50 px-3 py-2.5 text-sm text-amber-600 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-300"
             >
