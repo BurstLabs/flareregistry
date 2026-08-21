@@ -36,6 +36,49 @@ heads.forEach((h, i) => {
 });
 
 const problems = [];
+
+// 3. AN AUDIT ACTION WITH NO SENTENCE.
+//
+// The case history renders t(`gov.conduct.audit.${action}`). translate() returns the KEY when a
+// string is missing, not "", so the intended `|| generic` fallback never fired and members were
+// shown "gov.conduct.audit.ADMIN_EDIT_POINT" verbatim. The fallback is fixed, but the real defence
+// is that every action a route can write has a sentence, and only a sweep can keep that true as
+// actions are added.
+{
+  const { readdirSync, statSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const SRC_DIR = new URL("../src", import.meta.url).pathname;
+  const files = [];
+  (function walk(dir) {
+    for (const e of readdirSync(dir)) {
+      const f = join(dir, e);
+      if (statSync(f).isDirectory()) walk(f);
+      else if (/\.tsx?$/.test(f)) files.push(f);
+    }
+  })(SRC_DIR);
+  const actions = new Set();
+  for (const f of files) {
+    const body = readFileSync(f, "utf8");
+    // ONLY rows written to providerCaseAudit. A plain `action: "..."` sweep also caught
+    // logoDecision rows (APPROVED, REJECTED, AUTO_PROMOTED), which never reach a case history, so
+    // the action is read from the text following each providerCaseAudit write.
+    for (const m of body.matchAll(/providerCaseAudit\.create\(/g)) {
+      const near = body.slice(m.index, m.index + 600);
+      const a = near.match(/\baction:\s*"([A-Z][A-Z0-9_]*)"/);
+      if (a) actions.add(a[1]);
+    }
+  }
+  const enKeysNow = new Set(Object.keys(dicts.en));
+  for (const a of [...actions].sort()) {
+    if (!enKeysNow.has(`gov.conduct.audit.${a}`)) {
+      problems.push(
+        `AUDIT ACTION WITH NO SENTENCE: a route writes action "${a}" but there is no ` +
+          `gov.conduct.audit.${a} string, so the case history would show the constant to members.`
+      );
+    }
+  }
+}
+
 const en = dicts.en;
 const enKeys = Object.keys(en);
 
