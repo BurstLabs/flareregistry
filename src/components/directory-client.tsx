@@ -131,6 +131,24 @@ export function DirectoryClient({
     }
   };
 
+  // RE-SYNC WHEN THE SERVER'S ANSWER CHANGES. useState captures only its first value, so after a
+  // sign-out and router.refresh() the props would say "not a member" while the state still said
+  // otherwise, and the badges would survive the very sign-out meant to remove them. Keyed on a
+  // serialised form of the props because initialPending is a fresh array on every render.
+  const pendingKey = viewerIsMember ? JSON.stringify(initialPending) : "";
+  useEffect(() => {
+    setIsMember(viewerIsMember);
+    setPending(
+      viewerIsMember
+        ? new Map(
+            initialPending.map((p) => [p.providerId, { remaining: p.remaining, alreadySigned: p.alreadySigned }])
+          )
+        : null
+    );
+    setNeedsSignature(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewerIsMember, pendingKey]);
+
   useEffect(() => {
     if (!isConnected || !address) {
       // Never clear what the server established. A member whose wallet is not connected in THIS tab
