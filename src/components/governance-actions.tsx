@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useApp } from "@/components/providers";
 import { useSignChallenge, useWalletSign } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
-import { CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
+import { CONDUCT_CO_INITIATORS_REQUIRED, CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -354,7 +354,15 @@ export function ConductAction({
               more, which is what makes it discoverable without making it a disclosure. */}
           {isMember && pendingCount != null && pendingCount > 0 && (
             <span className="powered-glow ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300">
-              {t("gov.conduct.pending.badge", { n: pendingCount })}
+              {/* THE NUMBER IS SIGNATURES, NOT CASES. It was labelled "{n} pending", so a case
+                  that had collected a second signature announced itself as "2 pending", which reads
+                  as two pending cases. There is only ever one live conduct case per provider (the
+                  route joins a later co-initiator to it rather than opening a second), so a case
+                  count would always be 1 and tells a member nothing. The progress does. */}
+              {t("gov.conduct.pending.badge", {
+                n: pendingCount,
+                required: CONDUCT_CO_INITIATORS_REQUIRED,
+              })}
             </span>
           )}
         </button>
