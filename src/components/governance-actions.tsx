@@ -8,6 +8,7 @@ import { useApp } from "@/components/providers";
 import { useSignChallenge, useWalletSign } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
 import { CONDUCT_CO_INITIATORS_REQUIRED, CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
+import { validateEvidence } from "@/lib/conduct-evidence";
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -1842,6 +1843,17 @@ function PendingConductCase({
       return;
     }
 
+    // CHECKED BEFORE THE WALLET OPENS. A malformed reference used to cost a signature prompt and
+    // then fail, and the failure was invisible because this panel never rendered its error at all:
+    // the click did nothing, said nothing, and left the case unchanged.
+    const bad = editEv
+      .map((r, j) => ({ j, v: validateEvidence({ ...r, chain: r.kind === "DOCUMENT" ? undefined : r.chain }) }))
+      .find((x) => !x.v.ok);
+    if (bad && !bad.v.ok) {
+      setErr(t(`apiErr.${bad.v.code.toLowerCase().replace(/_(.)/g, (_, c) => c.toUpperCase())}`) || bad.v.message);
+      return;
+    }
+
     setBusy(true);
     try {
       if (textChanged) {
@@ -2132,13 +2144,15 @@ function PendingConductCase({
                     />
                   </div>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => setEditEv((x) => [...x, { kind: "TX", chain: "flare", ref: "", claim: "" }])}
-                  className="mt-1.5 text-[11px] text-beacon hover:underline"
-                >
-                  {t("gov.conduct.addRow")}
-                </button>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setEditEv((x) => [...x, { kind: "TX", chain: "flare", ref: "", claim: "" }])}
+                    className="mt-1.5 text-[11px] text-beacon hover:underline"
+                  >
+                    {t("gov.conduct.addRow")}
+                  </button>
+                </div>
 
                 {/* WHAT SAVING COSTS. Members who signed the case as it stood endorsed what they
                     read; a change to it drops their signatures and they are asked again. Said
@@ -2148,18 +2162,23 @@ function PendingConductCase({
                     {t("gov.conduct.editClearsEndorsements")}
                   </p>
                 )}
-                <button
-                  type="button"
-                  onClick={() => saveEdit(pt.member, pt)}
-                  disabled={busy || editText.trim().length < 10}
-                  className="mt-2 rounded border border-beacon px-3 py-1 text-[11px] text-beacon hover:bg-beacon/10 disabled:opacity-50"
-                >
-                  {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
-                </button>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => saveEdit(pt.member, pt)}
+                    disabled={busy || editText.trim().length < 10}
+                    className="mt-2 rounded border border-beacon px-3 py-1 text-[11px] text-beacon hover:bg-beacon/10 disabled:opacity-50"
+                  >
+                    {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
+                  </button>
+                </div>
+                {/* The panel rendered `err` only in its signed-out state, so every failure from
+                    saving, editing or withdrawing was set and never shown. */}
+                {editing === i && err && <p className="mt-2 text-[11px] text-flare">{err}</p>}
               </div>
             )}
 
-            {pt.evidence.length > 0 && (
+            {pt.evidence.length > 0 && editing !== i && (
               <div className="mt-3">
                 <p className="text-[10px] uppercase tracking-wide text-faint">
                   {t("gov.conduct.pending.evidence", { n: pt.evidence.length })}
@@ -2210,6 +2229,8 @@ function PendingConductCase({
           CONDUCT_ENDORSEMENTS_INVALIDATED are operator-facing constants and never reach a reader:
           an action this build does not have a sentence for falls back to naming the actor and the
           time, which is still true, rather than printing the constant. */}
+      {editing === null && err && <p className="mt-2 text-xs text-flare">{err}</p>}
+
       {p.audit && p.audit.length > 0 && (
         <div className="mt-4 border-t border-themed/60 pt-3">
           <p className="text-[10px] uppercase tracking-wide text-faint">

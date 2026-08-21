@@ -499,6 +499,51 @@ export async function targetBelongsToCase(
 
 
 /**
+ * A member changed the substance of a pending conduct case. Drop the endorsements it had collected.
+ *
+ * AN ENDORSEMENT IS OF A SPECIFIC ACCUSATION. Members who signed "as it stands" put their names to
+ * the grounds and evidence they read; if the author then rewrites the grounds or swaps a
+ * transaction hash, those signatures now sit under something nobody agreed to. Left alone, a case
+ * could reach four signatures where three endorsed a version that no longer exists, and the subject
+ * would be served with an accusation three of its four accusers had never seen.
+ *
+ * So a material edit costs the author their borrowed signatures. It cannot be used to gain one, only
+ * to lose the ones already given, which is why this is safe to let any co-initiator trigger: the
+ * only person slowed down is the person doing the editing.
+ *
+ * Authored points are untouched. Each of those members wrote their own grounds, and another
+ * member's edit does not change what they said.
+ *
+ * Returns how many endorsements were removed.
+ */
+export async function invalidateEndorsements(
+  tx: Pick<typeof prisma, "providerFlagInitiation" | "providerCaseAudit">,
+  caseId: string,
+  editorVoter: string,
+  what: string
+): Promise<number> {
+  const stale = await tx.providerFlagInitiation.findMany({
+    where: { caseId, endorsement: true, withdrawnAt: null },
+    select: { id: true, memberEntityVoter: true },
+  });
+  if (!stale.length) return 0;
+  await tx.providerFlagInitiation.deleteMany({ where: { id: { in: stale.map((s) => s.id) } } });
+  await tx.providerCaseAudit.create({
+    data: {
+      caseId,
+      action: "CONDUCT_ENDORSEMENTS_INVALIDATED",
+      actor: editorVoter,
+      detail: JSON.stringify({
+        what,
+        cleared: stale.map((s) => s.memberEntityVoter),
+        reason: "the case was edited after these members endorsed it; they must sign again",
+      }),
+    },
+  });
+  return stale.length;
+}
+
+/**
  * What a Management Group member sees of a PENDING conduct case before deciding to sign it.
  *
  * ONE BUILDER, used by both the API route and the provider page, because this payload is produced
