@@ -49,6 +49,8 @@ export function OwnerNotices({
         points: {
           title: string | null;
           grounds: string;
+          /** Signed the case as it stood rather than authoring a ground. `grounds` is empty. */
+          endorsement: boolean;
           evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
         }[];
       }[]
@@ -113,8 +115,18 @@ export function OwnerNotices({
                 {t(`owner.notices.state.${c.state}`)}
                 {next ? ` · ${t("owner.notices.until", { date: next.slice(0, 10) })}` : ""}
               </p>
+              {/* How many of the signatures against you actually stated something, versus signed
+                  what someone else stated. You are the person who has to answer this. */}
+              {c.points.some((p) => p.endorsement) && (
+                <p className="mt-2 text-xs text-faint">
+                  {t("conduct.endorsedCount", {
+                    endorsed: c.points.filter((p) => p.endorsement).length,
+                    total: c.points.length,
+                  })}
+                </p>
+              )}
               <ul className="mt-3 space-y-3">
-                {c.points.map((p, i) => (
+                {c.points.filter((p) => !p.endorsement).map((p, i) => (
                   <li key={i}>
                     {p.title && <p className="font-medium text-fg">{p.title}</p>}
                     <p className="mt-1 whitespace-pre-wrap text-muted">{p.grounds}</p>

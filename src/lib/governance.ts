@@ -504,7 +504,13 @@ export interface ConductFinding {
   decidedAt: string | null;
   serviceStatus: string | null;
   lateReplyAt: string | null;
-  points: { title: string | null; grounds: string; evidence: { kind: string; chain: string | null; ref: string; claim: string }[] }[];
+  points: {
+    title: string | null;
+    grounds: string;
+    /** Signed the case as it stood, adding no ground of their own. `grounds` is empty. */
+    endorsement: boolean;
+    evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+  }[];
   hasDefence: boolean;
 }
 
@@ -532,6 +538,7 @@ export async function conductFindingsByProvider(): Promise<Map<string, ConductFi
         select: {
           title: true,
           grounds: true,
+          endorsement: true,
           evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
         },
       },
@@ -549,6 +556,7 @@ export async function conductFindingsByProvider(): Promise<Map<string, ConductFi
       points: c.initiations.map((i) => ({
         title: i.title,
         grounds: i.grounds,
+        endorsement: i.endorsement,
         evidence: i.evidence,
       })),
     });

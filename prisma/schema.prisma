@@ -685,6 +685,14 @@ model ProviderFlagInitiation {
   // The CURRENT grounds text. The member can edit this while the case is still pre-vote; every
   // version (including the first) is preserved as a ProviderFlagGroundsRevision for the record.
   grounds           String
+  /// CONDUCT co-initiation only: this member signed the case AS IT STOOD, adding no grounds or
+  /// evidence of their own. `grounds` is empty for these rows and no revision is written.
+  ///
+  /// Recorded rather than inferred from an empty string, and PUBLISHED rather than hidden, because
+  /// four independent grounds and one ground endorsed by three others are different things. The
+  /// signature counts the same either way (an endorsement is a real endorsement), but a reader
+  /// weighing a finding against a named business is entitled to see which of the two they have.
+  endorsement       Boolean          @default(false)
   createdAt         DateTime         @default(now())
   // Set when the grounds were last edited (null = never edited, still the original text).
   editedAt          DateTime?
@@ -1339,7 +1347,7 @@ model ProviderFlagEvidence {
 /// than none. Same reasoning as ProviderCaseAudit.caseId being a plain string: the trail has to
 /// outlive its subject.
 model LogoDecision {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   providerId   String
   /// Snapshot of the provider's name at decision time.
   providerName String
@@ -1355,7 +1363,7 @@ model LogoDecision {
   /// When the provider uploaded it, and which address signed that upload.
   uploadedAt   DateTime?
   uploadedBy   String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
   @@index([createdAt])
   @@index([providerId])

@@ -251,6 +251,9 @@ export default async function GovernanceCasePage({
       memberLink: memberLink(i.memberEntityVoter),
       grounds: i.grounds,
       title: i.title,
+      // A co-initiator who signed the case as it stood. Published rather than hidden: one ground
+      // endorsed by three members is not four members who each found something.
+      endorsement: i.endorsement,
       at: i.createdAt.toISOString(),
       editedAt: i.editedAt?.toISOString() ?? null,
       // The primary grounds point is owned by the initiation row itself (ownerType "initiation").

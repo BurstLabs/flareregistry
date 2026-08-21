@@ -41,6 +41,7 @@ export async function GET() {
           memberEntityVoter: true,
           title: true,
           grounds: true,
+          endorsement: true,
           withdrawnAt: true,
           evidence: {
             select: { id: true, kind: true, chain: true, ref: true, claim: true, resolvedAt: true },
@@ -108,6 +109,8 @@ export async function GET() {
         member: i.memberEntityVoter,
         title: i.title,
         grounds: i.grounds,
+        /** Signed the case as it stood. `grounds` is empty by design, not by omission. */
+        endorsement: i.endorsement,
         withdrawn: !!i.withdrawnAt,
         evidence: i.evidence,
       })),
@@ -615,6 +618,7 @@ export async function PATCH(req: NextRequest) {
                 data: {
                   id: i.id, caseId: d.id, memberEntityVoter: i.memberEntityVoter,
                   signerAddress: i.signerAddress, title: i.title, grounds: i.grounds,
+                  endorsement: !!i.endorsement,
                   createdAt: D(i.createdAt)!, editedAt: D(i.editedAt), withdrawnAt: D(i.withdrawnAt),
                 },
               });

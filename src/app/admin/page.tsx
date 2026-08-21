@@ -1025,6 +1025,14 @@ function ConductTab() {
                             </option>
                           ))}
                         </select>
+                        {/* An endorsement's grounds box is empty BY DESIGN: this member signed the
+                            case as it stood. Typing into it silently converts the row into an
+                            authored point, so the operator is told which kind they are looking at. */}
+                        {p.endorsement && (
+                          <span className="shrink-0 rounded bg-beacon/15 px-1.5 text-[11px] text-beacon">
+                            endorsement
+                          </span>
+                        )}
                         {p.withdrawn && <span className="shrink-0 text-[11px] text-amber-500">withdrawn</span>}
                       </label>
                       <div className="flex gap-1">

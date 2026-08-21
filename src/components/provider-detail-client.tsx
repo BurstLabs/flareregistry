@@ -56,6 +56,8 @@ export interface DetailData {
     points: {
       title: string | null;
       grounds: string;
+      /** Signed the case as it stood rather than authoring a ground. `grounds` is empty. */
+      endorsement: boolean;
       evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
     }[];
   }[];
@@ -735,8 +737,20 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 <p className="mt-2 rounded-lg bg-black/5 p-2 text-xs text-muted dark:bg-white/5">
                   {t(`conduct.service.${c.serviceStatus ?? "UNKNOWN"}`)}
                 </p>
+                {/* HOW MANY MEMBERS ACTUALLY FOUND SOMETHING. A finding can be one stated ground
+                    endorsed by three others, or four members who each brought their own. Both are
+                    valid four-signature findings and they carry different weight, so the count is
+                    printed rather than left to be inferred from how many paragraphs follow. */}
+                {c.points.some((pt) => pt.endorsement) && (
+                  <p className="mt-2 text-xs text-faint">
+                    {t("conduct.endorsedCount", {
+                      endorsed: c.points.filter((pt) => pt.endorsement).length,
+                      total: c.points.length,
+                    })}
+                  </p>
+                )}
                 <ul className="mt-3 space-y-3">
-                  {c.points.map((pt, i) => (
+                  {c.points.filter((pt) => !pt.endorsement).map((pt, i) => (
                     <li key={i}>
                       {pt.title && <p className="font-medium text-fg">{pt.title}</p>}
                       <p className="mt-1 whitespace-pre-wrap text-muted">{pt.grounds}</p>
