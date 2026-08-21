@@ -376,7 +376,11 @@ export function DirectoryClient({
                 {isMember && pending?.get(p.id) && (
                   <Link
                     href={`/provider/${p.detailAddress}`}
-                    className="mt-3 inline-block rounded bg-amber-500/20 px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-500/30 dark:text-amber-300"
+                    // Reuses .powered-glow rather than defining a second animation. Its colour is
+                    // already rgba(245,166,35), the same amber this badge uses, and the class
+                    // carries a prefers-reduced-motion fallback that a copy would have to repeat.
+                    // One definition also means tuning the glow tunes both.
+                    className="powered-glow mt-3 inline-block rounded bg-amber-500/20 px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-500/30 dark:text-amber-300"
                   >
                     {pending.get(p.id)!.alreadySigned
                       ? t("home.conduct.signed")
