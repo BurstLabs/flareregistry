@@ -28,6 +28,7 @@ const KNOWN_PATHS = new Set([
   "/",
   "/submit",
   "/governance",
+  "/governance/conduct",
   "/api",
   "/about",
   "/faq",
