@@ -3,8 +3,8 @@ import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-error";
-import { loadMembers, memberVoterFor } from "@/lib/governance";
-import { validateEvidence, invalidateEndorsements, type CleanEvidence } from "@/lib/conduct-evidence";
+import { loadMembers, memberVoterFor, invalidateEndorsements } from "@/lib/governance";
+import { validateEvidence, type CleanEvidence } from "@/lib/conduct-evidence";
 
 // POST /api/governance/conduct/evidence
 //   { providerId, message, signature, add?: {kind, chain?, ref, claim}[],

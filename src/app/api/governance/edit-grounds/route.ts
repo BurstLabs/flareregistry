@@ -3,8 +3,8 @@ import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
-import { loadMembers, memberVoterFor } from "@/lib/governance";
-import { invalidateEndorsements } from "@/lib/conduct-evidence";
+import { loadMembers, memberVoterFor, invalidateEndorsements } from "@/lib/governance";
+
 import { apiError } from "@/lib/api-error";
 import {
   imageBuffersFromForm,
