@@ -44,6 +44,10 @@ const CLASSIFIED = {
   "app/api/provider/delete/route.ts": "ACTION",
 
   // SIWE-authenticated, act on a single case the caller is party to.
+  // MEMBER-ONLY. Reads a PENDING conduct case so a Management Group member can see what they would
+  // be co-signing. Gated on a signed challenge AND current membership, and scoped to state PENDING,
+  // so it can never show a case that has opened, been decided, or belongs to the public surface.
+  "app/api/governance/conduct/pending/route.ts": "ACTION",
   "app/api/governance/flag/route.ts": "ACTION",
   "app/api/governance/vote/route.ts": "ACTION",
   "app/api/governance/defend/route.ts": "ACTION",

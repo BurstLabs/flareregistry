@@ -239,6 +239,12 @@ export function ConductAction({ providerId }: { providerId: string }) {
             {t("gov.conduct.sealed")}
           </p>
 
+          {/* WHAT YOU WOULD BE CO-SIGNING.
+              A pending case is sealed, so without this a member saw only the blank form and, on
+              submitting, silently joined a case whose grounds and evidence they had never read.
+              Four signatures is what makes a case real; an endorsement given unseen is not one. */}
+          <PendingConductCase providerId={providerId} />
+
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -1481,6 +1487,115 @@ export function ReplyAction({
         </button>
       </div>
       {err && <Note kind="err" text={err} />}
+    </div>
+  );
+}
+
+/**
+ * The pending conduct case a Management Group member would be joining, if one exists.
+ *
+ * Behind a signature, like everything else a member does here, and deliberately NOT auto-loaded: a
+ * request fires only when the member asks, so simply opening the form on a provider's page does not
+ * probe for a sealed case. The button is shown whether or not one exists, so its presence discloses
+ * nothing, the same rule the owner notice panel follows.
+ *
+ * Co-initiators are named. A member deciding whether to add the fourth signature is entitled to know
+ * whether the first three are independent judgements or one member who persuaded two colleagues, and
+ * this is the only place that can be seen before the case is decided.
+ */
+function PendingConductCase({ providerId }: { providerId: string }) {
+  const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [data, setData] = useState<
+    | null
+    | {
+        pending: null | {
+          caseId: string;
+          signatures: number;
+          required: number;
+          remaining: number;
+          alreadySigned: boolean;
+          points: {
+            member: string;
+            title: string | null;
+            grounds: string;
+            evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+          }[];
+        };
+      }
+  >(null);
+
+  async function check() {
+    setErr("");
+    setBusy(true);
+    try {
+      const s = await signChallenge();
+      const res = await fetch("/api/governance/conduct/pending", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ providerId, message: s.message, signature: s.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(b.error ?? t("gov.conduct.pending.err"));
+      setData(b);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.conduct.pending.err"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (data === null) {
+    return (
+      <div className="mt-3">
+        <button
+          onClick={check}
+          disabled={busy}
+          className="rounded border border-themed px-3 py-1.5 text-xs text-muted hover:text-beacon disabled:opacity-50"
+        >
+          {busy ? t("gov.act.signing") : t("gov.conduct.pending.check")}
+        </button>
+        {err && <p className="mt-1 text-xs text-flare">{err}</p>}
+      </div>
+    );
+  }
+
+  if (!data.pending) {
+    return <p className="mt-3 text-xs text-faint">{t("gov.conduct.pending.none")}</p>;
+  }
+
+  const p = data.pending;
+  return (
+    <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+      <p className="text-xs font-medium text-amber-600 dark:text-amber-300">
+        {t("gov.conduct.pending.h", { n: p.signatures, required: p.required })}
+      </p>
+      <p className="mt-1 text-xs text-faint">
+        {p.alreadySigned
+          ? t("gov.conduct.pending.yours")
+          : t("gov.conduct.pending.join", { remaining: p.remaining })}
+      </p>
+      <ul className="mt-3 space-y-3">
+        {p.points.map((pt, i) => (
+          <li key={i}>
+            <p className="font-mono text-[11px] text-faint">{pt.member}</p>
+            {pt.title && <p className="mt-0.5 text-sm font-medium text-fg">{pt.title}</p>}
+            <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted">{pt.grounds}</p>
+            {pt.evidence.length > 0 && (
+              <ul className="mt-1 space-y-0.5 text-[11px]">
+                {pt.evidence.map((e, j) => (
+                  <li key={j}>
+                    <span className="text-faint">{e.claim}</span>{" "}
+                    <span className="font-mono text-muted">{e.ref.slice(0, 18)}…</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
