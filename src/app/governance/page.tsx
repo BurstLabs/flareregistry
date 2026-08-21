@@ -105,21 +105,22 @@ function CaseRecords() {
     </Section>
   );
 
-  // Flags first, then findings: the same order as the two halves of the documentation above them,
-  // so the records a reader reaches are in the order they just read about.
+  // Findings first. They concern established, listed providers, which is who a reader arriving here
+  // is most likely to be checking on; flag records concern new providers inside a 30-day window and
+  // are the narrower case.
   return (
     <>
-      {list(
-        records.filter((c) => c.kind !== "CONDUCT"),
-        "gov.docs.records.title",
-        "gov.docs.records.intro",
-        "gov.docs.records.empty"
-      )}
       {list(
         records.filter((c) => c.kind === "CONDUCT"),
         "gov.docs.findings.title",
         "gov.docs.findings.intro",
         "gov.docs.findings.empty"
+      )}
+      {list(
+        records.filter((c) => c.kind !== "CONDUCT"),
+        "gov.docs.records.title",
+        "gov.docs.records.intro",
+        "gov.docs.records.empty"
       )}
     </>
   );
