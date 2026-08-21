@@ -1706,6 +1706,11 @@ export function ReplyAction({
  * whether the first three are independent judgements or one member who persuaded two colleagues, and
  * this is the only place that can be seen before the case is decided.
  */
+/** Date and time to the minute, UTC, matching the stamps elsewhere on a case. */
+function stamp(iso: string): string {
+  return `${String(iso).slice(0, 16).replace("T", " ")} UTC`;
+}
+
 /** An address in the shape the rest of this page uses, for a member with no listed name. */
 function shortAddr(a: string): string {
   return `${a.slice(0, 6)}...${a.slice(-4)}`;
@@ -1988,7 +1993,7 @@ function PendingConductCase({
               </span>
               {pt.at && (
                 <span className="text-[11px] text-faint">
-                  {t("gov.conduct.pending.raised", { date: String(pt.at).slice(0, 10) })}
+                  {t("gov.conduct.pending.raised", { date: stamp(pt.at) })}
                 </span>
               )}
             </div>
@@ -2238,16 +2243,21 @@ function PendingConductCase({
           </p>
           <ul className="mt-1.5 space-y-1">
             {p.audit.map((a, i) => {
-              const who = a.actorName ?? shortAddr(a.actor);
-              const line = t(`gov.conduct.audit.${a.action}`, {
-                who,
-                required: p.required,
-                ...a.meta,
-              });
+              // The actor is a member voter address for member actions, but the literal "admin" or
+              // "system" for the rest. shortAddr("admin") produced "admin...dmin", so the two
+              // non-address actors get named rather than mangled.
+              const isAddr = /^0x[0-9a-f]{40}$/i.test(a.actor);
+              const who = isAddr
+                ? (a.actorName ?? shortAddr(a.actor))
+                : a.actor === "admin"
+                  ? t("gov.conduct.audit.actorAdmin")
+                  : t("gov.conduct.audit.actorSystem");
+              const key = `gov.conduct.audit.${a.action}`;
+              const line = t(key, { who, required: p.required, ...a.meta });
               return (
                 <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-muted">
-                  <span className="tabular-nums text-faint">{a.at.slice(0, 16).replace("T", " ")}</span>
-                  <span>{line || t("gov.conduct.audit.generic", { who })}</span>
+                  <span className="tabular-nums text-faint">{stamp(a.at)}</span>
+                  <span>{line === key ? t("gov.conduct.audit.generic", { who }) : line}</span>
                 </li>
               );
             })}
