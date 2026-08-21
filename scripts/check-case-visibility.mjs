@@ -48,6 +48,10 @@ const CLASSIFIED = {
   // be co-signing. Gated on a signed challenge AND current membership, and scoped to state PENDING,
   // so it can never show a case that has opened, been decided, or belongs to the public surface.
   "app/api/governance/conduct/pending/route.ts": "ACTION",
+  // MEMBER-ONLY, same gate as the per-provider route, scoped to state PENDING. Returns counts and
+  // identity only: no grounds and no evidence, so a directory response never carries the text of an
+  // unvoted accusation.
+  "app/api/governance/conduct/pending-all/route.ts": "ACTION",
   "app/api/governance/flag/route.ts": "ACTION",
   "app/api/governance/vote/route.ts": "ACTION",
   "app/api/governance/defend/route.ts": "ACTION",

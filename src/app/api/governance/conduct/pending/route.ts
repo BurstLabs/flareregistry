@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
+import { getSessionAddress } from "@/lib/session";
 import { rateLimit } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-error";
 import { CONDUCT_CO_INITIATORS_REQUIRED, loadMembers, memberVoterFor } from "@/lib/governance";
@@ -31,6 +32,18 @@ import { CONDUCT_CO_INITIATORS_REQUIRED, loadMembers, memberVoterFor } from "@/l
 // entitled to know who else already has: it is the difference between four independent judgements
 // and one member persuading three others, and it is the only place that distinction can be seen
 // before the case is decided.
+// AUTHENTICATION: an existing session, or a fresh signature.
+//
+// The connected wallet address alone is NOT enough, and the distinction is the whole security of
+// this endpoint. An address in a request body is CLAIMED, not proven: anyone can send one with
+// curl, no wallet involved, and Management Group membership is public on-chain state so an attacker
+// knows exactly which addresses to claim. Gating a sealed case on a client-supplied address would
+// be no gate at all.
+//
+// What is enough is proof of CONTROL of a member address. The session cookie is that proof: it is
+// HMAC-signed by this server and was issued only after a real wallet signature. So a member who has
+// already signed in is served without another prompt, and only someone with no session is asked to
+// sign a challenge. Same guarantee either way, one fewer popup in the common case.
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 20, 60_000);
   if (limited) return limited;
@@ -39,16 +52,20 @@ export async function POST(req: NextRequest) {
   const providerId = typeof b?.providerId === "string" ? b.providerId : null;
   const message = typeof b?.message === "string" ? b.message : null;
   const signature = typeof b?.signature === "string" ? b.signature : null;
-  if (!providerId || !message || !signature) {
-    return NextResponse.json(
-      { error: "providerId, message, and signature are required" },
-      { status: 400 }
-    );
+  if (!providerId) {
+    return NextResponse.json({ error: "providerId is required" }, { status: 400 });
   }
 
-  const verified = await verifyChallenge(message, signature, "governance");
-  if (!verified.ok || !verified.address) {
-    return NextResponse.json({ error: verified.error ?? "bad signature" }, { status: 401 });
+  let actor = await getSessionAddress();
+  if (!actor) {
+    if (!message || !signature) {
+      return apiError("NOT_AUTHENTICATED", "sign in, or send a signed challenge", 401);
+    }
+    const verified = await verifyChallenge(message, signature, "governance");
+    if (!verified.ok || !verified.address) {
+      return NextResponse.json({ error: verified.error ?? "bad signature" }, { status: 401 });
+    }
+    actor = verified.address;
   }
 
   let members;
@@ -57,7 +74,7 @@ export async function POST(req: NextRequest) {
   } catch {
     return apiError("MEMBERSHIP_UNVERIFIED", "could not verify Management Group membership", 503);
   }
-  const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
+  const memberVoter = memberVoterFor(actor, members.voterByAddress);
   if (!memberVoter) {
     return apiError("NOT_A_MEMBER", "the signing address is not a current Management Group member", 403);
   }

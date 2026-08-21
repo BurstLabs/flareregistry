@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useAccount } from "wagmi";
+import { useSignChallenge } from "@/lib/useWalletSign";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
 import { InfoTip } from "./info-tip";
@@ -56,6 +58,74 @@ export function DirectoryClient({
   showAll: boolean;
 }) {
   const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
+  const { address, isConnected } = useAccount();
+
+  // PENDING CONDUCT CASES, for Management Group members only.
+  //
+  // These cards render for everyone, including the subject of a sealed case looking at their own
+  // listing, so a badge cannot be drawn from anything the page already knows. Membership is
+  // established first (public on-chain state, so asking discloses nothing), and the counts
+  // themselves arrive only after the member signs.
+  //
+  // ONE signature covers the whole directory rather than one per card. Asking a member to sign
+  // twenty-four times to find where their signature is wanted would mean nobody ever looks, which is
+  // the failure this is fixing rather than a version of it.
+  const [isMember, setIsMember] = useState(false);
+  const [pending, setPending] = useState<Map<string, { remaining: number; alreadySigned: boolean }> | null>(null);
+  const [pendingBusy, setPendingBusy] = useState(false);
+  useEffect(() => {
+    if (!isConnected || !address) {
+      setIsMember(false);
+      setPending(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/mg/is-member?address=${address.toLowerCase()}`)
+      .then((r) => r.json())
+      .then((b) => !cancelled && setIsMember(b?.member === true))
+      .catch(() => !cancelled && setIsMember(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [address, isConnected]);
+
+  async function loadPending() {
+    setPendingBusy(true);
+    try {
+      // SESSION FIRST, signature only if there is none. A member who has signed in already proved
+      // control of their address, and the cookie carrying that proof is HMAC-signed by the server,
+      // so asking them to sign again would add a popup and no security.
+      let res = await fetch("/api/governance/conduct/pending-all", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      });
+      if (res.status === 401) {
+        const sig = await signChallenge();
+        res = await fetch("/api/governance/conduct/pending-all", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ message: sig.message, signature: sig.signature }),
+        });
+      }
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(b.error ?? "failed");
+      setPending(
+        new Map(
+          (b.pending ?? []).map((p: { providerId: string; remaining: number; alreadySigned: boolean }) => [
+            p.providerId,
+            { remaining: p.remaining, alreadySigned: p.alreadySigned },
+          ])
+        )
+      );
+    } catch {
+      setPending(new Map());
+    } finally {
+      setPendingBusy(false);
+    }
+  }
+
   const [query, setQuery] = useState("");
   const [perPage, setPerPage] = useState(24);
   const [page, setPage] = useState(1);
@@ -151,6 +221,18 @@ export function DirectoryClient({
             aria-label={t("home.searchPlaceholder")}
             className="w-full rounded-lg border border-themed bg-elev px-4 py-2.5 text-sm outline-none transition placeholder:text-faint focus:border-beacon/60"
           />
+          {/* MEMBER-ONLY. Shown to every Management Group member on every load, whether or not any
+              case exists, so it is an affordance and not a signal. The counts it fetches are the
+              disclosure, and they require a signature. */}
+          {isMember && pending === null && (
+            <button
+              onClick={loadPending}
+              disabled={pendingBusy}
+              className="shrink-0 rounded-lg border border-amber-500/50 px-3 py-2.5 text-sm text-amber-600 hover:bg-amber-500/10 disabled:opacity-50 dark:text-amber-300"
+            >
+              {pendingBusy ? t("gov.act.signing") : t("home.conduct.check")}
+            </button>
+          )}
           <label className="flex shrink-0 items-center gap-2 text-sm text-muted">
             {t("home.perPage")}
             <select
@@ -269,6 +351,20 @@ export function DirectoryClient({
                     Absent when no score is stored under the CURRENT scoring version, which is the
                     honest state for a departed provider or immediately after a rules change, rather
                     than printing a figure computed under rules that no longer apply. */}
+                {/* Pending conduct case. Members only, and only after they have signed for the
+                    counts: this card is on a public directory and the subject of a sealed case can
+                    read their own. Mirrors the provider page badge. */}
+                {isMember && pending?.get(p.id) && (
+                  <Link
+                    href={`/provider/${p.detailAddress}`}
+                    className="mt-3 inline-block rounded bg-amber-500/20 px-2 py-1 text-xs font-medium text-amber-600 hover:bg-amber-500/30 dark:text-amber-300"
+                  >
+                    {pending.get(p.id)!.alreadySigned
+                      ? t("home.conduct.signed")
+                      : t("home.conduct.needs", { n: pending.get(p.id)!.remaining })}
+                  </Link>
+                )}
+
                 {p.reputation && (
                   <Link
                     href={`/provider/${p.detailAddress}#reputation`}
