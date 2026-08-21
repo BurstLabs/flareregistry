@@ -145,7 +145,16 @@ export function FlagAction({ providerId }: { providerId: string }) {
  */
 type EvidenceRow = { kind: string; chain: string; ref: string; claim: string };
 
-export function ConductAction({ providerId }: { providerId: string }) {
+export function ConductAction({
+  providerId,
+  viewerIsMember = false,
+  initialPendingSignatures = null,
+}: {
+  providerId: string;
+  /** Server-resolved from the session, so the badge paints with the page. */
+  viewerIsMember?: boolean;
+  initialPendingSignatures?: number | null;
+}) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
   const router = useRouter();
@@ -153,14 +162,17 @@ export function ConductAction({ providerId }: { providerId: string }) {
   // Whether the CONNECTED WALLET is a current Management Group member. Public on-chain state, so
   // asking about it discloses nothing, and it decides only whether a member-only affordance is
   // drawn. Everything that reveals a sealed case still demands a signature server-side.
-  const [isMember, setIsMember] = useState(false);
+  const [isMember, setIsMember] = useState(viewerIsMember);
   // Pending co-initiation count, hoisted so the collapsed header can show it. Null until the member
   // has actually signed for it; see the note on the badge.
-  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [pendingCount, setPendingCount] = useState<number | null>(initialPendingSignatures);
   useEffect(() => {
     if (!isConnected || !address) {
-      setIsMember(false);
-      setPendingCount(null);
+      // Never clear what the server established; see the same note in the directory.
+      if (!viewerIsMember) {
+        setIsMember(false);
+        setPendingCount(null);
+      }
       return;
     }
     let cancelled = false;
@@ -281,7 +293,12 @@ export function ConductAction({ providerId }: { providerId: string }) {
               A pending case is sealed, so without this a member saw only the blank form and, on
               submitting, silently joined a case whose grounds and evidence they had never read.
               Four signatures is what makes a case real; an endorsement given unseen is not one. */}
-          <PendingConductCase providerId={providerId} onCount={setPendingCount} isMember={isMember} />
+          <PendingConductCase
+            providerId={providerId}
+            onCount={setPendingCount}
+            isMember={isMember}
+            initialPendingSignatures={initialPendingSignatures}
+          />
 
           <input
             value={title}
@@ -1545,10 +1562,12 @@ function PendingConductCase({
   providerId,
   onCount,
   isMember,
+  initialPendingSignatures,
 }: {
   providerId: string;
   onCount: (n: number | null) => void;
   isMember: boolean;
+  initialPendingSignatures: number | null;
 }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
@@ -1580,7 +1599,8 @@ function PendingConductCase({
   // LOAD IMMEDIATELY for a member with a session. Costs no popup and no click, so requiring either
   // was only ever an artefact of the counts having needed a fresh signature.
   useEffect(() => {
-    if (!isMember) return;
+    // Only when the server did not already answer, i.e. a wallet connected after paint.
+    if (!isMember || initialPendingSignatures != null) return;
     void check(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMember, providerId]);

@@ -27,6 +27,9 @@ export interface DetailData {
   registered: boolean;
   managementGroup: boolean;
   conductEligible: boolean;
+  /** Resolved on the server from the session, so a member's badge is in the first paint. */
+  viewerIsMember: boolean;
+  viewerPendingSignatures: number | null;
   conduct: {
     caseId: string;
     decidedAt: string | null;
@@ -403,7 +406,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       {/* Conduct is for ESTABLISHED providers, so it appears exactly where the new-provider flag
           does not: past the 30-day window, on a listed provider. Membership is enforced on the
           signature server-side, as it is for the flag. */}
-      {d.conductEligible && <ConductAction providerId={d.providerId} />}
+      {d.conductEligible && (
+        <ConductAction
+          providerId={d.providerId}
+          viewerIsMember={d.viewerIsMember}
+          initialPendingSignatures={d.viewerPendingSignatures}
+        />
+      )}
 
       {/* Self-service watch: anyone can be emailed if this new provider is flagged, during review. */}
       {d.watchable && (
