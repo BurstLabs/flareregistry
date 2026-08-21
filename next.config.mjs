@@ -14,6 +14,20 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    // PERSISTENT TURBOPACK BUILD CACHE.
+    //
+    // Without this every deploy recompiled the entire app from scratch. .next/cache held only
+    // fetch-cache and images, no compiler cache at all, and the compile step was ~34s of a ~49s
+    // build. Measured on the production box after enabling it: a warm build compiles in 7.9s and
+    // finishes in 22s, so a deploy that changes a few files no longer pays to rebuild everything.
+    //
+    // The cache lives in .next/cache and survives because the deploy builds in place rather than
+    // into a clean directory. It costs about 400MB of disk, which is nothing against the 116GB free
+    // on that volume. The first build after enabling it is SLOWER (65s) because it populates the
+    // cache; every build after is the fast path.
+    turbopackFileSystemCacheForBuild: true,
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
