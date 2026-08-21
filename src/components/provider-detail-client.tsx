@@ -30,6 +30,20 @@ export interface DetailData {
   /** Resolved on the server from the session, so a member's badge is in the first paint. */
   viewerIsMember: boolean;
   viewerPendingSignatures: number | null;
+  /** The whole pending case, so a member can read it the moment they open the panel. */
+  viewerPendingCase: {
+    caseId: string;
+    signatures: number;
+    required: number;
+    remaining: number;
+    alreadySigned: boolean;
+    points: {
+      member: string;
+      title: string | null;
+      grounds: string;
+      evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+    }[];
+  } | null;
   conduct: {
     caseId: string;
     decidedAt: string | null;
@@ -411,6 +425,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           providerId={d.providerId}
           viewerIsMember={d.viewerIsMember}
           initialPendingSignatures={d.viewerPendingSignatures}
+          initialPendingCase={d.viewerPendingCase}
         />
       )}
 

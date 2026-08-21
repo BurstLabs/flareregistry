@@ -173,20 +173,65 @@ export default async function ProviderDetail({
   // member's pending-case badge can be in the first paint instead of two round trips after it.
   // Depends on this route being force-dynamic, declared at the top of the file.
   const { getSessionAddress: getSess } = await import("@/lib/session");
-  const { loadMembers: loadMg, memberVoterFor: mgVoterFor } = await import("@/lib/governance");
+  const { loadMembers: loadMg, memberVoterFor: mgVoterFor, CONDUCT_CO_INITIATORS_REQUIRED: MG_REQUIRED } =
+    await import("@/lib/governance");
   let viewerIsMember = false;
   let viewerPendingSignatures: number | null = null;
+  let viewerPendingCase: {
+    caseId: string;
+    signatures: number;
+    required: number;
+    remaining: number;
+    alreadySigned: boolean;
+    points: {
+      member: string;
+      title: string | null;
+      grounds: string;
+      evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+    }[];
+  } | null = null;
   try {
     const sess = await getSess();
     if (sess) {
       const mg = await loadMg();
       if (mgVoterFor(sess, mg.voterByAddress)) {
         viewerIsMember = true;
+        // THE WHOLE CASE, not just the count. A member opening the panel needs to read what they
+        // would be co-signing, and fetching it after mount meant the details only appeared once the
+        // panel was expanded and a round trip had completed. The count alone was enough for the
+        // badge and not enough for the panel, which is why the panel rendered empty.
         const live = await prisma.providerFlagCase.findFirst({
           where: { providerId: p.id, kind: "CONDUCT", state: "PENDING" },
-          select: { initiations: { where: { withdrawnAt: null }, select: { id: true } } },
+          include: {
+            initiations: {
+              where: { withdrawnAt: null },
+              orderBy: { createdAt: "asc" },
+              select: {
+                memberEntityVoter: true,
+                title: true,
+                grounds: true,
+                evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
+              },
+            },
+          },
         });
         viewerPendingSignatures = live ? live.initiations.length : 0;
+        if (live) {
+          const memberVoter = mgVoterFor(sess, mg.voterByAddress);
+          viewerPendingCase = {
+            caseId: live.id,
+            signatures: live.initiations.length,
+            required: MG_REQUIRED,
+            remaining: Math.max(0, MG_REQUIRED - live.initiations.length),
+            alreadySigned: live.initiations.some((i) => i.memberEntityVoter === memberVoter),
+            points: live.initiations.map((i) => ({
+              member: i.memberEntityVoter,
+              title: i.title,
+              grounds: i.grounds,
+              evidence: i.evidence,
+            })),
+          };
+        }
       }
     }
   } catch {
@@ -210,6 +255,7 @@ export default async function ProviderDetail({
     // form is worth showing at all.
     viewerIsMember,
     viewerPendingSignatures,
+    viewerPendingCase,
     conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(p.createdAt, nowDate),
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,

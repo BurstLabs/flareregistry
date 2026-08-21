@@ -145,15 +145,32 @@ export function FlagAction({ providerId }: { providerId: string }) {
  */
 type EvidenceRow = { kind: string; chain: string; ref: string; claim: string };
 
+/** A pending conduct case as both the server render and the member-only endpoint describe it. */
+type PendingCase = {
+  caseId: string;
+  signatures: number;
+  required: number;
+  remaining: number;
+  alreadySigned: boolean;
+  points: {
+    member: string;
+    title: string | null;
+    grounds: string;
+    evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+  }[];
+};
+
 export function ConductAction({
   providerId,
   viewerIsMember = false,
   initialPendingSignatures = null,
+  initialPendingCase = null,
 }: {
   providerId: string;
   /** Server-resolved from the session, so the badge paints with the page. */
   viewerIsMember?: boolean;
   initialPendingSignatures?: number | null;
+  initialPendingCase?: PendingCase | null;
 }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
@@ -305,6 +322,7 @@ export function ConductAction({
             onCount={setPendingCount}
             isMember={isMember}
             initialPendingSignatures={initialPendingSignatures}
+            initialPendingCase={initialPendingCase}
           />
 
           <input
@@ -1570,39 +1588,34 @@ function PendingConductCase({
   onCount,
   isMember,
   initialPendingSignatures,
+  initialPendingCase,
 }: {
   providerId: string;
   onCount: (n: number | null) => void;
   isMember: boolean;
   initialPendingSignatures: number | null;
+  initialPendingCase: PendingCase | null;
 }) {
   const { t } = useApp();
   const connectAndSign = useWalletSign(t);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [data, setData] = useState<
-    | null
-    | {
-        pending: null | {
-          caseId: string;
-          signatures: number;
-          required: number;
-          remaining: number;
-          alreadySigned: boolean;
-          points: {
-            member: string;
-            title: string | null;
-            grounds: string;
-            evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
-          }[];
-        };
-      }
-  >(null);
+  // Seeded from the server for a member, so the case is readable the instant the panel opens with
+  // no request at all. The fetch below remains for a wallet connected after the page rendered.
+  const [data, setData] = useState<{ pending: PendingCase | null } | null>(
+    initialPendingCase ? { pending: initialPendingCase } : null
+  );
 
   // Only when the session attempt failed: a member who is not signed in. Everyone else never sees a
   // button, because there is nothing for them to authorise.
   const [needsSignature, setNeedsSignature] = useState(false);
+
+  // Follow the server. Without this a sign-in or sign-out would leave the previous answer on screen,
+  // since useState keeps only its first value.
+  useEffect(() => {
+    setData(initialPendingCase ? { pending: initialPendingCase } : null);
+  }, [initialPendingCase]);
 
   // LOAD IMMEDIATELY for a member with a session. Costs no popup and no click, so requiring either
   // was only ever an artefact of the counts having needed a fresh signature.
