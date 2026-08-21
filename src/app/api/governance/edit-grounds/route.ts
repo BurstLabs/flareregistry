@@ -4,6 +4,7 @@ import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
 import { loadMembers, memberVoterFor } from "@/lib/governance";
+import { invalidateEndorsements } from "@/lib/conduct-evidence";
 import { apiError } from "@/lib/api-error";
 import {
   imageBuffersFromForm,
@@ -242,5 +243,30 @@ export async function POST(req: NextRequest) {
   if (!textChanged && removed === 0 && added === 0) {
     return NextResponse.json({ ok: true, unchanged: true });
   }
-  return NextResponse.json({ ok: true, added, removed });
+
+  // A REWRITE COSTS THE ENDORSEMENTS IT HAD COLLECTED.
+  //
+  // Members who signed a conduct case "as it stands" put their names to the text they read. Rewrite
+  // it and those signatures sit under something nobody agreed to, and the case could reach four
+  // signatures where three endorsed a version that no longer exists. The subject would then be
+  // served with an accusation most of its accusers had never seen.
+  //
+  // Conduct only. A flag has no endorsement path, and its grounds are public as they change, so its
+  // co-initiators watch the edits happen.
+  let endorsementsCleared = 0;
+  if (theCase.kind === "CONDUCT" && textChanged) {
+    await prisma.providerCaseAudit.create({
+      data: {
+        caseId: theCase.id,
+        action: "CONDUCT_GROUNDS_EDITED",
+        actor: memberVoter,
+        // The versions themselves live in the revision tables. What the trail records is that an
+        // edit happened, by whom and when, which is what a member scanning the case needs to see
+        // without opening every point's history.
+        detail: JSON.stringify({ supplemental: !!entryId }),
+      },
+    });
+    endorsementsCleared = await invalidateEndorsements(prisma, theCase.id, memberVoter, "grounds");
+  }
+  return NextResponse.json({ ok: true, added, removed, endorsementsCleared });
 }

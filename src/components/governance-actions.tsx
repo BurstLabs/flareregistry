@@ -164,7 +164,14 @@ type PendingCase = {
     endorsement?: boolean;
     /** Server-resolved: this point is the asking member's own. */
     mine?: boolean;
-    evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+    evidence: { id?: string; kind: string; chain: string | null; ref: string; claim: string }[];
+  }[];
+  audit?: {
+    at: string;
+    action: string;
+    actor: string;
+    actorName: string | null;
+    meta: Record<string, string | number | boolean>;
   }[];
 };
 
@@ -1698,6 +1705,11 @@ export function ReplyAction({
  * whether the first three are independent judgements or one member who persuaded two colleagues, and
  * this is the only place that can be seen before the case is decided.
  */
+/** An address in the shape the rest of this page uses, for a member with no listed name. */
+function shortAddr(a: string): string {
+  return `${a.slice(0, 6)}...${a.slice(-4)}`;
+}
+
 function PendingConductCase({
   providerId,
   onCount,
@@ -1791,6 +1803,13 @@ function PendingConductCase({
   const [editing, setEditing] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const [editTitle, setEditTitle] = useState("");
+  // The member's evidence as they are editing it. Rows carrying an id exist on the server and are
+  // updated or removed by it; rows without one are new. Kept as one list so the form is the same
+  // shape as the filing form rather than three separate controls for add, change and remove.
+  const [editEv, setEditEv] = useState<
+    { id?: string; kind: string; chain: string; ref: string; claim: string }[]
+  >([]);
+  const [removedEv, setRemovedEv] = useState<string[]>([]);
 
   /**
    * Rewrite this member's own grounds while the case is still PENDING.
@@ -1800,28 +1819,65 @@ function PendingConductCase({
    * than only where it ended up, and the server locks this at service: once four signatures land,
    * the grounds the subject was served with stop being rewritable.
    */
-  async function saveEdit(ownerVoter: string) {
+  async function saveEdit(ownerVoter: string, original: PendingCase["points"][number]) {
     setErr("");
     const caseId = data?.pending?.caseId;
     if (!caseId || editText.trim().length < 10) return;
+
+    // WHAT ACTUALLY CHANGED. Text and references live behind different routes, so sending both
+    // unconditionally would mean two signature prompts for a member who touched one of them.
+    const textChanged =
+      editText.trim() !== original.grounds || editTitle.trim() !== (original.title ?? "");
+    const byId = new Map((original.evidence ?? []).map((e) => [e.id, e]));
+    const add = editEv.filter((r) => !r.id).map((r) => ({ ...r, chain: r.kind === "DOCUMENT" ? undefined : r.chain }));
+    const update = editEv
+      .filter((r) => {
+        const o = r.id ? byId.get(r.id) : null;
+        return !!o && (o.kind !== r.kind || (o.chain ?? "flare") !== r.chain || o.ref !== r.ref || o.claim !== r.claim);
+      })
+      .map((r) => ({ id: r.id!, kind: r.kind, chain: r.kind === "DOCUMENT" ? undefined : r.chain, ref: r.ref, claim: r.claim }));
+    const evidenceChanged = add.length > 0 || update.length > 0 || removedEv.length > 0;
+    if (!textChanged && !evidenceChanged) {
+      setEditing(null);
+      return;
+    }
+
     setBusy(true);
     try {
-      const res = await fetch("/api/governance/edit-grounds", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          caseId,
-          ownerVoter,
-          grounds: editText.trim(),
-          title: editTitle.trim(),
-          // A governance-action signature, not a session one: edit-grounds verifies the challenge
-          // itself and requires the "governance" action, so a sign-in signature would be refused.
-          ...(await connectAndSign({ chainId: 14, action: "governance" })),
-        }),
-      });
-      const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.editFailed"));
+      if (textChanged) {
+        const res = await fetch("/api/governance/edit-grounds", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            caseId,
+            ownerVoter,
+            grounds: editText.trim(),
+            title: editTitle.trim(),
+            // A governance-action signature, not a session one: edit-grounds verifies the challenge
+            // itself and requires the "governance" action, so a sign-in signature would be refused.
+            ...(await connectAndSign({ chainId: 14, action: "governance" })),
+          }),
+        });
+        const b = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.editFailed"));
+      }
+      if (evidenceChanged) {
+        const res = await fetch("/api/governance/conduct/evidence", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            providerId,
+            add,
+            update,
+            removeIds: removedEv,
+            ...(await connectAndSign({ chainId: 14, action: "governance" })),
+          }),
+        });
+        const b = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.editFailed"));
+      }
       setEditing(null);
+      setRemovedEv([]);
       setData(null);
       await check(false);
       router.refresh();
@@ -1956,6 +2012,16 @@ function PendingConductCase({
                       } else {
                         setEditText(pt.grounds);
                         setEditTitle(pt.title ?? "");
+                        setEditEv(
+                          pt.evidence.map((e) => ({
+                            id: e.id,
+                            kind: e.kind,
+                            chain: e.chain ?? "flare",
+                            ref: e.ref,
+                            claim: e.claim,
+                          }))
+                        );
+                        setRemovedEv([]);
                         setEditing(i);
                       }
                     }}
@@ -1998,9 +2064,93 @@ function PendingConductCase({
                 {/* Every version is kept, so the record shows what changed rather than only where
                     it ended up. Said here so nobody edits believing the first text is gone. */}
                 <p className="mt-1 text-[10px] text-faint">{t("gov.conduct.editKept")}</p>
+
+                {/* THE REFERENCES, editable in place. A conduct finding rests entirely on these
+                    being right, and until this existed correcting one mistyped character meant
+                    withdrawing the whole point and filing it again. */}
+                <p className="mt-3 text-[10px] uppercase tracking-wide text-faint">
+                  {t("gov.conduct.evidenceH")}
+                </p>
+                {editEv.map((r, j) => (
+                  <div key={r.id ?? `new-${j}`} className="mt-1.5 rounded border border-themed/60 p-2">
+                    <div className="flex flex-wrap gap-2">
+                      <select
+                        value={r.kind}
+                        onChange={(e) => setEditEv((x) => x.map((y, k) => (k === j ? { ...y, kind: e.target.value } : y)))}
+                        className="rounded border border-themed bg-elev px-2 py-1 text-[11px]"
+                      >
+                        {["TX", "ADDRESS", "CONTRACT", "DOCUMENT"].map((k) => (
+                          <option key={k} value={k}>
+                            {t(`gov.conduct.kind.${k}`)}
+                          </option>
+                        ))}
+                      </select>
+                      {r.kind !== "DOCUMENT" && (
+                        <select
+                          value={r.chain}
+                          onChange={(e) => setEditEv((x) => x.map((y, k) => (k === j ? { ...y, chain: e.target.value } : y)))}
+                          className="rounded border border-themed bg-elev px-2 py-1 text-[11px]"
+                        >
+                          <option value="flare">Flare</option>
+                          <option value="songbird">Songbird</option>
+                        </select>
+                      )}
+                      {/* The last reference cannot be removed: a ground asserted with nothing to
+                          check is what the evidence requirement exists to refuse. The server says
+                          the same, so this only saves the member a round trip. */}
+                      {editEv.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (r.id) setRemovedEv((x) => [...x, r.id!]);
+                            setEditEv((x) => x.filter((_, k) => k !== j));
+                          }}
+                          className="ml-auto text-[11px] text-faint hover:text-flare"
+                        >
+                          {t("gov.conduct.removeRow")}
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      value={r.ref}
+                      onChange={(e) => setEditEv((x) => x.map((y, k) => (k === j ? { ...y, ref: e.target.value } : y)))}
+                      placeholder={
+                        r.kind === "DOCUMENT"
+                          ? t("gov.conduct.refUrl")
+                          : r.kind === "TX"
+                            ? t("gov.conduct.refTx")
+                            : t("gov.conduct.refAddr")
+                      }
+                      className="mt-2 block w-full rounded border border-themed bg-elev px-2 py-1 font-mono text-[11px]"
+                    />
+                    <input
+                      value={r.claim}
+                      onChange={(e) => setEditEv((x) => x.map((y, k) => (k === j ? { ...y, claim: e.target.value } : y)))}
+                      maxLength={500}
+                      placeholder={t("gov.conduct.claimPlaceholder")}
+                      className="mt-2 block w-full rounded border border-themed bg-elev px-2 py-1 text-[11px]"
+                    />
+                  </div>
+                ))}
                 <button
                   type="button"
-                  onClick={() => saveEdit(pt.member)}
+                  onClick={() => setEditEv((x) => [...x, { kind: "TX", chain: "flare", ref: "", claim: "" }])}
+                  className="mt-1.5 text-[11px] text-beacon hover:underline"
+                >
+                  {t("gov.conduct.addRow")}
+                </button>
+
+                {/* WHAT SAVING COSTS. Members who signed the case as it stood endorsed what they
+                    read; a change to it drops their signatures and they are asked again. Said
+                    before the click, not discovered after the count falls. */}
+                {p.points.some((x) => x.endorsement) && (
+                  <p className="mt-2 text-[10px] text-amber-600 dark:text-amber-300">
+                    {t("gov.conduct.editClearsEndorsements")}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => saveEdit(pt.member, pt)}
                   disabled={busy || editText.trim().length < 10}
                   className="mt-2 rounded border border-beacon px-3 py-1 text-[11px] text-beacon hover:bg-beacon/10 disabled:opacity-50"
                 >
@@ -2050,6 +2200,40 @@ function PendingConductCase({
           </li>
         ))}
       </ul>
+
+      {/* THE TRAIL. What the panel shows above is the case as it stands; this is how it got there.
+          A case at three signatures reads the same whether nothing has changed since it was filed or
+          whether the grounds were rewritten and two endorsements were cleared on the way, and only
+          one of those is a thing to put your name to without asking why.
+
+          Every line is a localized sentence built from whitelisted fields. Action names like
+          CONDUCT_ENDORSEMENTS_INVALIDATED are operator-facing constants and never reach a reader:
+          an action this build does not have a sentence for falls back to naming the actor and the
+          time, which is still true, rather than printing the constant. */}
+      {p.audit && p.audit.length > 0 && (
+        <div className="mt-4 border-t border-themed/60 pt-3">
+          <p className="text-[10px] uppercase tracking-wide text-faint">
+            {t("gov.conduct.audit.h")}
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {p.audit.map((a, i) => {
+              const who = a.actorName ?? shortAddr(a.actor);
+              const line = t(`gov.conduct.audit.${a.action}`, {
+                who,
+                required: p.required,
+                ...a.meta,
+              });
+              return (
+                <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-muted">
+                  <span className="tabular-nums text-faint">{a.at.slice(0, 16).replace("T", " ")}</span>
+                  <span>{line || t("gov.conduct.audit.generic", { who })}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
+
