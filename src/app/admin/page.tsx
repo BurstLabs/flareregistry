@@ -609,7 +609,22 @@ function Field({
  * raw text is kept behind a toggle rather than thrown away: the record is the point of this list,
  * and a summary that cannot be checked against the original is not much of a record.
  */
-function AuditRow({ entry }: { entry: { action: string; actor: string; detail?: string | null; at: string } }) {
+function AuditRow({
+  entry,
+  onRestore,
+  busy,
+}: {
+  entry: {
+    id?: string;
+    action: string;
+    actor: string;
+    detail?: string | null;
+    at: string;
+    restorable?: boolean;
+  };
+  onRestore?: (auditId: string) => void;
+  busy?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   let summary: string | null = null;
   if (entry.detail) {
@@ -640,6 +655,18 @@ function AuditRow({ entry }: { entry: { action: string; actor: string; detail?: 
         {entry.detail && (
           <button onClick={() => setOpen((o) => !o)} className="text-beacon hover:underline">
             {open ? "hide" : "raw"}
+          </button>
+        )}
+        {/* Only on rows that actually carry a snapshot. A deletion recorded before snapshots were
+            widened has the same action name and cannot be undone, and offering a button that would
+            fail is worse than offering none. */}
+        {entry.restorable && entry.id && onRestore && (
+          <button
+            onClick={() => onRestore(entry.id!)}
+            disabled={busy}
+            className="rounded border border-emerald-500/40 px-1.5 py-0.5 text-[10px] text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-300"
+          >
+            restore
           </button>
         )}
       </div>
@@ -679,6 +706,25 @@ function ConductTab() {
       });
       const b = await r.json().catch(() => ({}));
       setMsg(r.ok ? ok : `Failed: ${b.error ?? r.status}`);
+      if (r.ok) await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function restore(auditId: string) {
+    if (!confirm("Restore what this deletion removed? Ids and timestamps are put back as they were.")) return;
+    setBusy(true);
+    try {
+      const r = await fetch("/api/admin/conduct", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        // `id` is required by the route's dispatcher; the case id on the audit row is the right one
+        // even when the case itself was what got deleted.
+        body: JSON.stringify({ op: "restore", id: openId ?? "", auditId }),
+      });
+      const b = await r.json().catch(() => ({}));
+      setMsg(r.ok ? `Restored ${b.restored}.` : `Failed: ${b.error ?? r.status}`);
       if (r.ok) await load();
     } finally {
       setBusy(false);
@@ -1108,7 +1154,7 @@ function ConductTab() {
               <Section2 title={`Audit (${c.audit.length})`}>
                 <ul className="max-h-72 space-y-1 overflow-y-auto">
                   {c.audit.map((a: any, i: number) => (
-                    <AuditRow key={i} entry={a} />
+                    <AuditRow key={i} entry={a} onRestore={restore} busy={busy} />
                   ))}
                 </ul>
               </Section2>
@@ -1126,7 +1172,7 @@ function ConductTab() {
             {trail.map((a: any, i: number) => (
               <li key={i}>
                 <span className="mr-2 font-mono text-[10px] text-faint">{a.caseId}</span>
-                <AuditRow entry={a} />
+                <AuditRow entry={a} onRestore={restore} busy={busy} />
               </li>
             ))}
           </ul>

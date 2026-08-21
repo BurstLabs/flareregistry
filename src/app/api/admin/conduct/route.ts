@@ -112,18 +112,25 @@ export async function GET() {
         evidence: i.evidence,
       })),
       audit: (auditByCase.get(c.id) ?? []).map((a) => ({
+        id: a.id,
         action: a.action,
         actor: a.actor,
         detail: a.detail,
         at: a.createdAt,
+        // Whether this row can actually be undone. Computed here rather than guessed in the UI from
+        // the action name, because deletions recorded before snapshots were widened carry the same
+        // action and cannot be restored.
+        restorable: !!a.detail && a.detail.includes('"restore"'),
       })),
     })),
     deletedTrail: deleted.map((a) => ({
+      id: a.id,
       caseId: a.caseId,
       action: a.action,
       actor: a.actor,
       detail: a.detail,
       at: a.createdAt,
+      restorable: !!a.detail && a.detail.includes('"restore"'),
     })),
   });
 }
@@ -154,6 +161,38 @@ async function audit(caseId: string, action: string, actor: string, detail?: str
   });
 }
 
+/**
+ * Record a DELETION so it can be undone.
+ *
+ * The snapshots here used to be summaries: enough to say what was removed, not enough to put it
+ * back. Deleting a point takes its evidence with it by cascade, and the record kept the member and
+ * a slice of the grounds while keeping nothing at all about the transaction hash that was the whole
+ * basis of the accusation. Tested by deleting a real point: the surviving row named the point and
+ * proved nothing had ever been attached to it.
+ *
+ * That was defensible while deletion was refused. It is not now that it is permitted, so the full
+ * subtree is stored under a `restore` envelope the undo path reads back.
+ *
+ * NOT TRUNCATED. The 4000-character cap silently made long grounds unrestorable, which is the exact
+ * failure this is meant to remove; `detail` is an unbounded text column, so the cap bought nothing.
+ */
+async function auditRestorable(
+  caseId: string,
+  action: string,
+  actor: string,
+  restore: { kind: "case" | "point" | "evidence" | "vote" | "defence"; data: unknown },
+  summary?: Record<string, unknown>
+) {
+  await prisma.providerCaseAudit.create({
+    data: {
+      caseId,
+      action,
+      actor,
+      detail: JSON.stringify({ ...(summary ?? {}), restore }),
+    },
+  });
+}
+
 // PATCH /api/admin/conduct
 //
 // One route, several ops, no field withheld. Every op records what it changed.
@@ -178,10 +217,21 @@ export async function PATCH(req: NextRequest) {
   const b = await req.json().catch(() => null);
   const op = typeof b?.op === "string" ? b.op : null;
   const id = typeof b?.id === "string" ? b.id : null;
-  if (!op || !id) return NextResponse.json({ error: "op and id are required" }, { status: 400 });
+  if (!op) return NextResponse.json({ error: "op is required" }, { status: 400 });
 
-  const existing = await prisma.providerFlagCase.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  // RESTORE IS EXEMPT FROM BOTH CHECKS, and has to be.
+  //
+  // Every other op edits a case that exists, so requiring an id and confirming it is correct. A
+  // restore may be putting that very case BACK, in which case the id names something deleted and
+  // this check would 404 on exactly the thing being recovered. The case id also cannot be required
+  // at all, since the admin list has no open case when the case itself is what was removed. Restore
+  // identifies its target by AUDIT ROW instead, and reads the case id from that row.
+  if (op !== "restore") {
+    if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+    const exists = await prisma.providerFlagCase.findUnique({ where: { id } });
+    if (!exists) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  }
+  const existing = id ? await prisma.providerFlagCase.findUnique({ where: { id } }) : null;
 
   switch (op) {
     case "case": {
@@ -290,20 +340,23 @@ export async function PATCH(req: NextRequest) {
 
     case "deleteInitiation": {
       const initiationId = String(b.initiationId ?? "");
-      const row = await prisma.providerFlagInitiation.findUnique({ where: { id: initiationId } });
+      // Evidence and grounds revisions cascade from this row, so they are read BEFORE the delete or
+      // they are gone with no record. That was the actual hole: the trail named the point and kept
+      // nothing about what was attached to prove it.
+      const row = await prisma.providerFlagInitiation.findUnique({
+        where: { id: initiationId },
+        include: { evidence: true, revisions: true },
+      });
       if (!row || row.caseId !== id) {
         return NextResponse.json({ error: "initiation not found on this case" }, { status: 404 });
       }
       await prisma.providerFlagInitiation.delete({ where: { id: initiationId } });
-      await audit(
+      await auditRestorable(
         id,
         "ADMIN_DELETE_POINT",
         actor,
-        JSON.stringify({
-          initiationId,
-          member: row.memberEntityVoter,
-          grounds: row.grounds.slice(0, 1000),
-        }).slice(0, 4000)
+        { kind: "point", data: row },
+        { initiationId, member: row.memberEntityVoter, evidence: row.evidence.length }
       );
       return NextResponse.json({ ok: true });
     }
@@ -374,11 +427,12 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "evidence not found on this case" }, { status: 404 });
       }
       await prisma.providerFlagEvidence.delete({ where: { id: evidenceId } });
-      await audit(
+      await auditRestorable(
         id,
         "ADMIN_DELETE_EVIDENCE",
         actor,
-        JSON.stringify({ evidenceId, kind: row.kind, ref: row.ref, claim: row.claim }).slice(0, 4000)
+        { kind: "evidence", data: row },
+        { evidenceId, ref: row.ref }
       );
       return NextResponse.json({ ok: true });
     }
@@ -437,11 +491,12 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "vote not found on this case" }, { status: 404 });
       }
       await prisma.providerFlagVote.delete({ where: { id: voteId } });
-      await audit(
+      await auditRestorable(
         id,
         "ADMIN_DELETE_VOTE",
         actor,
-        JSON.stringify({ voteId, member: row.memberEntityVoter, vote: row.vote }).slice(0, 4000)
+        { kind: "vote", data: row },
+        { voteId, member: row.memberEntityVoter, vote: row.vote }
       );
       return NextResponse.json({ ok: true });
     }
@@ -468,16 +523,196 @@ export async function PATCH(req: NextRequest) {
     }
 
     case "deleteDefence": {
-      const row = await prisma.providerFlagDefense.findUnique({ where: { caseId: id } });
+      // Revisions and entries cascade from the defence, so they are captured with it. This is the
+      // provider's own answer to an accusation; losing it irrecoverably would be the worst of these
+      // to get wrong.
+      const row = await prisma.providerFlagDefense.findUnique({
+        where: { caseId: id },
+        include: { revisions: true, entries: true },
+      });
       if (!row) return NextResponse.json({ error: "no defence on this case" }, { status: 404 });
       await prisma.providerFlagDefense.delete({ where: { caseId: id } });
-      await audit(
+      await auditRestorable(
         id,
         "ADMIN_DELETE_DEFENCE",
         actor,
-        JSON.stringify({ body: row.body.slice(0, 1000) }).slice(0, 4000)
+        { kind: "defence", data: row },
+        { chars: row.body.length }
       );
       return NextResponse.json({ ok: true });
+    }
+
+    case "restore": {
+      // UNDO A DELETION, from the snapshot the deletion itself wrote.
+      //
+      // Everything is recreated with its ORIGINAL ids and timestamps. Reusing the id is the point:
+      // the audit rows that describe this case are keyed by caseId as a plain string, so a restore
+      // under a new id would leave the history pointing at nothing and the restored case looking
+      // like it had appeared from nowhere.
+      const auditId = String(b.auditId ?? "");
+      const row = await prisma.providerCaseAudit.findUnique({ where: { id: auditId } });
+      if (!row?.detail) {
+        return NextResponse.json({ error: "no such audit entry" }, { status: 404 });
+      }
+      let parsed: { restore?: { kind: string; data: Record<string, unknown> } };
+      try {
+        parsed = JSON.parse(row.detail);
+      } catch {
+        return NextResponse.json({ error: "audit entry is not parseable" }, { status: 409 });
+      }
+      const r = parsed.restore;
+      if (!r) {
+        // Deletions recorded before snapshots were widened kept a summary only. Say so plainly
+        // rather than restoring something incomplete and reporting success.
+        return NextResponse.json(
+          { error: "this deletion predates restorable snapshots and cannot be undone from the trail" },
+          { status: 409 }
+        );
+      }
+      const D = (v: unknown) => (v == null ? null : new Date(String(v)));
+      const d = r.data as any;
+
+      try {
+        if (r.kind === "case") {
+          if (await prisma.providerFlagCase.count({ where: { id: d.id } })) {
+            return NextResponse.json({ error: "case already exists" }, { status: 409 });
+          }
+          await prisma.$transaction(async (tx) => {
+            await tx.providerFlagCase.create({
+              data: {
+                id: d.id, providerId: d.providerId, network: d.network, kind: d.kind,
+                state: d.state, publishedAt: D(d.publishedAt), openedAt: D(d.openedAt)!,
+                noticeEndsAt: D(d.noticeEndsAt), serviceStatus: d.serviceStatus,
+                decidedEpoch: d.decidedEpoch, lateReplyAt: D(d.lateReplyAt),
+                discussionEndsAt: D(d.discussionEndsAt)!, votingEndsAt: D(d.votingEndsAt)!,
+                decidedAt: D(d.decidedAt), isReVote: !!d.isReVote,
+                memberCountAtOpen: d.memberCountAtOpen,
+                outcomeTurnout: d.outcomeTurnout, outcomeDeny: d.outcomeDeny,
+                createdAt: D(d.createdAt)!,
+              },
+            });
+            for (const i of d.initiations ?? []) {
+              await tx.providerFlagInitiation.create({
+                data: {
+                  id: i.id, caseId: d.id, memberEntityVoter: i.memberEntityVoter,
+                  signerAddress: i.signerAddress, title: i.title, grounds: i.grounds,
+                  createdAt: D(i.createdAt)!, editedAt: D(i.editedAt), withdrawnAt: D(i.withdrawnAt),
+                },
+              });
+              for (const e of i.evidence ?? []) {
+                await tx.providerFlagEvidence.create({
+                  data: {
+                    id: e.id, initiationId: i.id, kind: e.kind, chain: e.chain, ref: e.ref,
+                    claim: e.claim, resolvedAt: D(e.resolvedAt), createdAt: D(e.createdAt)!,
+                  },
+                });
+              }
+              for (const rv of i.revisions ?? []) {
+                await tx.providerFlagGroundsRevision.create({
+                  data: {
+                    id: rv.id, initiationId: i.id, grounds: rv.grounds, title: rv.title,
+                    signerAddress: rv.signerAddress, createdAt: D(rv.createdAt)!,
+                  },
+                });
+              }
+            }
+            for (const v of d.votes ?? []) {
+              await tx.providerFlagVote.create({
+                data: {
+                  id: v.id, caseId: d.id, memberEntityVoter: v.memberEntityVoter,
+                  signerAddress: v.signerAddress, vote: v.vote, comment: v.comment,
+                  createdAt: D(v.createdAt)!, updatedAt: D(v.updatedAt)!,
+                },
+              });
+            }
+            if (d.defense) {
+              await tx.providerFlagDefense.create({
+                data: {
+                  id: d.defense.id, caseId: d.id, title: d.defense.title, body: d.defense.body,
+                  createdAt: D(d.defense.createdAt)!, editedAt: D(d.defense.editedAt),
+                },
+              });
+            }
+          });
+        } else if (r.kind === "point") {
+          if (await prisma.providerFlagInitiation.count({ where: { id: d.id } })) {
+            return NextResponse.json({ error: "point already exists" }, { status: 409 });
+          }
+          await prisma.$transaction(async (tx) => {
+            await tx.providerFlagInitiation.create({
+              data: {
+                id: d.id, caseId: d.caseId, memberEntityVoter: d.memberEntityVoter,
+                signerAddress: d.signerAddress, title: d.title, grounds: d.grounds,
+                createdAt: D(d.createdAt)!, editedAt: D(d.editedAt), withdrawnAt: D(d.withdrawnAt),
+              },
+            });
+            for (const e of d.evidence ?? []) {
+              await tx.providerFlagEvidence.create({
+                data: {
+                  id: e.id, initiationId: d.id, kind: e.kind, chain: e.chain, ref: e.ref,
+                  claim: e.claim, resolvedAt: D(e.resolvedAt), createdAt: D(e.createdAt)!,
+                },
+              });
+            }
+            for (const rv of d.revisions ?? []) {
+              await tx.providerFlagGroundsRevision.create({
+                data: {
+                  id: rv.id, initiationId: d.id, grounds: rv.grounds, title: rv.title,
+                  signerAddress: rv.signerAddress, createdAt: D(rv.createdAt)!,
+                },
+              });
+            }
+          });
+        } else if (r.kind === "evidence") {
+          if (await prisma.providerFlagEvidence.count({ where: { id: d.id } })) {
+            return NextResponse.json({ error: "evidence already exists" }, { status: 409 });
+          }
+          await prisma.providerFlagEvidence.create({
+            data: {
+              id: d.id, initiationId: d.initiationId, kind: d.kind, chain: d.chain, ref: d.ref,
+              claim: d.claim, resolvedAt: D(d.resolvedAt), createdAt: D(d.createdAt)!,
+            },
+          });
+        } else if (r.kind === "vote") {
+          if (await prisma.providerFlagVote.count({ where: { id: d.id } })) {
+            return NextResponse.json({ error: "vote already exists" }, { status: 409 });
+          }
+          await prisma.providerFlagVote.create({
+            data: {
+              id: d.id, caseId: d.caseId, memberEntityVoter: d.memberEntityVoter,
+              signerAddress: d.signerAddress, vote: d.vote, comment: d.comment,
+              createdAt: D(d.createdAt)!, updatedAt: D(d.updatedAt)!,
+            },
+          });
+        } else if (r.kind === "defence") {
+          if (await prisma.providerFlagDefense.count({ where: { caseId: d.caseId } })) {
+            return NextResponse.json({ error: "a response already exists on this case" }, { status: 409 });
+          }
+          await prisma.providerFlagDefense.create({
+            data: {
+              id: d.id, caseId: d.caseId, title: d.title, body: d.body,
+              createdAt: D(d.createdAt)!, editedAt: D(d.editedAt),
+            },
+          });
+        } else {
+          return NextResponse.json({ error: `cannot restore kind "${r.kind}"` }, { status: 400 });
+        }
+      } catch (e) {
+        // A restore that half-succeeds is worse than one that fails, so report rather than swallow.
+        return NextResponse.json(
+          { error: `restore failed: ${e instanceof Error ? e.message : "unknown"}` },
+          { status: 500 }
+        );
+      }
+
+      await audit(
+        row.caseId,
+        "ADMIN_RESTORE",
+        actor,
+        JSON.stringify({ restoredKind: r.kind, fromAuditId: auditId })
+      );
+      if (r.kind === "case") await publishFeedToRepo().catch(() => {});
+      return NextResponse.json({ ok: true, restored: r.kind });
     }
 
     default:
@@ -500,32 +735,35 @@ export async function DELETE(req: NextRequest) {
   const id = typeof b?.id === "string" ? b.id : null;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
+  // THE WHOLE SUBTREE, read before anything is removed. Everything below cascades from the case, so
+  // a summary taken here is all that would survive, and a summary cannot put a case back.
   const target = await prisma.providerFlagCase.findUnique({
     where: { id },
     include: {
       provider: { select: { name: true } },
-      initiations: { select: { memberEntityVoter: true, grounds: true } },
+      initiations: { include: { evidence: true, revisions: true, entries: true } },
+      votes: true,
+      voteRevisions: true,
+      defense: { include: { revisions: true, entries: true } },
+      pointImages: true,
     },
   });
   if (!target) return NextResponse.json({ error: "case not found" }, { status: 404 });
 
-  // Snapshot before the row is gone, so the surviving trail says what was destroyed rather than
-  // merely that something was.
-  const snapshot = {
-    provider: target.provider.name,
-    kind: target.kind,
-    state: target.state,
-    published: target.publishedAt !== null,
-    openedAt: target.openedAt,
-    points: target.initiations.map((i) => ({
-      member: i.memberEntityVoter,
-      grounds: i.grounds.slice(0, 600),
-    })),
-  };
-
   await prisma.providerFlagPointImage.deleteMany({ where: { caseId: id } });
   await prisma.providerFlagCase.delete({ where: { id } });
-  await audit(id, "ADMIN_DELETE_CASE", actor, JSON.stringify(snapshot).slice(0, 4000));
+  await auditRestorable(
+    id,
+    "ADMIN_DELETE_CASE",
+    actor,
+    { kind: "case", data: target },
+    {
+      provider: target.provider.name,
+      state: target.state,
+      points: target.initiations.length,
+      evidence: target.initiations.reduce((n, i) => n + i.evidence.length, 0),
+    }
+  );
   await publishFeedToRepo().catch(() => {});
 
   return NextResponse.json({ ok: true });
