@@ -261,7 +261,7 @@ export function ConductAction({ providerId }: { providerId: string }) {
               member has signed for it. Until then the header offers the affordance and nothing
               more, which is what makes it discoverable without making it a disclosure. */}
           {isMember && pendingCount != null && pendingCount > 0 && (
-            <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300">
+            <span className="powered-glow ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300">
               {t("gov.conduct.pending.badge", { n: pendingCount })}
             </span>
           )}
