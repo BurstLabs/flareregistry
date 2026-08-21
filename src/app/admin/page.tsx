@@ -86,6 +86,10 @@ export default function AdminPage() {
       setCounts({
         imports: b.imports ?? 0,
         governance: b.governance ?? 0,
+        // Conduct has its own badge. It used to have none while its cases were counted under
+        // Governance, so the one tab that could show a sealed case was the one with no indicator
+        // that anything was waiting in it.
+        conduct: b.conduct ?? 0,
         reports: b.reports ?? 0,
         consumers: b.consumers ?? 0,
       });
