@@ -173,8 +173,12 @@ export default async function ProviderDetail({
   // member's pending-case badge can be in the first paint instead of two round trips after it.
   // Depends on this route being force-dynamic, declared at the top of the file.
   const { getSessionAddress: getSess } = await import("@/lib/session");
-  const { loadMembers: loadMg, memberVoterFor: mgVoterFor, CONDUCT_CO_INITIATORS_REQUIRED: MG_REQUIRED } =
-    await import("@/lib/governance");
+  const {
+    loadMembers: loadMg,
+    memberVoterFor: mgVoterFor,
+    CONDUCT_CO_INITIATORS_REQUIRED: MG_REQUIRED,
+    namesForMemberVoters: mgNames,
+  } = await import("@/lib/governance");
   let viewerIsMember = false;
   let viewerPendingSignatures: number | null = null;
   let viewerPendingCase: {
@@ -183,8 +187,11 @@ export default async function ProviderDetail({
     required: number;
     remaining: number;
     alreadySigned: boolean;
+    openedAt: string;
     points: {
       member: string;
+      memberName: string | null;
+      at: string;
       title: string | null;
       grounds: string;
       evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
@@ -208,6 +215,7 @@ export default async function ProviderDetail({
               orderBy: { createdAt: "asc" },
               select: {
                 memberEntityVoter: true,
+                createdAt: true,
                 title: true,
                 grounds: true,
                 evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
@@ -218,14 +226,18 @@ export default async function ProviderDetail({
         viewerPendingSignatures = live ? live.initiations.length : 0;
         if (live) {
           const memberVoter = mgVoterFor(sess, mg.voterByAddress);
+          const nameMap = await mgNames(live.initiations.map((i) => i.memberEntityVoter));
           viewerPendingCase = {
             caseId: live.id,
             signatures: live.initiations.length,
             required: MG_REQUIRED,
             remaining: Math.max(0, MG_REQUIRED - live.initiations.length),
             alreadySigned: live.initiations.some((i) => i.memberEntityVoter === memberVoter),
+            openedAt: live.openedAt.toISOString(),
             points: live.initiations.map((i) => ({
               member: i.memberEntityVoter,
+              memberName: nameMap.get(i.memberEntityVoter.toLowerCase()) ?? null,
+              at: i.createdAt.toISOString(),
               title: i.title,
               grounds: i.grounds,
               evidence: i.evidence,

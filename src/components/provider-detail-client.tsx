@@ -37,8 +37,11 @@ export interface DetailData {
     required: number;
     remaining: number;
     alreadySigned: boolean;
+    openedAt: string;
     points: {
       member: string;
+      memberName: string | null;
+      at: string;
       title: string | null;
       grounds: string;
       evidence: { kind: string; chain: string | null; ref: string; claim: string }[];

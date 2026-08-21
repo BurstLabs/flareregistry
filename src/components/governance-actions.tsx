@@ -152,8 +152,11 @@ type PendingCase = {
   required: number;
   remaining: number;
   alreadySigned: boolean;
+  openedAt?: string;
   points: {
     member: string;
+    memberName?: string | null;
+    at?: string;
     title: string | null;
     grounds: string;
     evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
@@ -1704,19 +1707,62 @@ function PendingConductCase({
       </p>
       <ul className="mt-3 space-y-3">
         {p.points.map((pt, i) => (
-          <li key={i}>
-            <p className="font-mono text-[11px] text-faint">{pt.member}</p>
-            {pt.title && <p className="mt-0.5 text-sm font-medium text-fg">{pt.title}</p>}
-            <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted">{pt.grounds}</p>
+          <li key={i} className="rounded-lg border border-themed/60 bg-elev/40 p-3">
+            {/* WHO IS ACCUSING, in words. A voter address alone does not answer that without a
+                separate lookup, and the reader is deciding whether to put their own name beside it.
+                The address stays, because the name is a convenience and the address is the fact. */}
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+              <span className="text-xs font-medium text-fg">
+                {pt.memberName ?? t("gov.conduct.pending.unnamedMember")}
+              </span>
+              {pt.at && (
+                <span className="text-[11px] text-faint">
+                  {t("gov.conduct.pending.raised", { date: String(pt.at).slice(0, 10) })}
+                </span>
+              )}
+            </div>
+            <p className="font-mono text-[10px] break-all text-faint">{pt.member}</p>
+
+            {pt.title && <p className="mt-2 text-sm font-medium text-fg">{pt.title}</p>}
+            <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{pt.grounds}</p>
+
             {pt.evidence.length > 0 && (
-              <ul className="mt-1 space-y-0.5 text-[11px]">
-                {pt.evidence.map((e, j) => (
-                  <li key={j}>
-                    <span className="text-faint">{e.claim}</span>{" "}
-                    <span className="font-mono text-muted">{e.ref.slice(0, 18)}…</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-3">
+                <p className="text-[10px] uppercase tracking-wide text-faint">
+                  {t("gov.conduct.pending.evidence", { n: pt.evidence.length })}
+                </p>
+                <ul className="mt-1 space-y-1.5">
+                  {pt.evidence.map((e, j) => (
+                    <li key={j} className="rounded border border-themed/50 p-2">
+                      {/* The CLAIM first and the reference second, because the claim is what the
+                          group votes on. A hash on its own only proves a transaction happened. */}
+                      <p className="text-xs text-fg">{e.claim}</p>
+                      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 text-[10px]">
+                        <span className="rounded bg-black/10 px-1 text-faint dark:bg-white/10">
+                          {e.kind}
+                          {e.chain ? ` · ${e.chain}` : ""}
+                        </span>
+                        {/* Linked out, so a member can CHECK it rather than take it on trust, which
+                            is the entire basis on which this evidence is meant to be judged. */}
+                        {e.chain && /^0x[0-9a-fA-F]+$/.test(e.ref) ? (
+                          <a
+                            href={`https://${e.chain === "songbird" ? "songbird" : "flare"}-explorer.flare.network/${
+                              e.kind === "TX" ? "tx" : "address"
+                            }/${e.ref}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono break-all text-beacon hover:underline"
+                          >
+                            {e.ref}
+                          </a>
+                        ) : (
+                          <span className="font-mono break-all text-muted">{e.ref}</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </li>
         ))}
