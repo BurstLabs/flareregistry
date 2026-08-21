@@ -366,14 +366,19 @@ function AppealPanel({
 }
 
 // DENY/KEEP/ABSTAIN pill, shared by the current-votes list and the vote-history trail.
-function VoteBadge({ vote, t }: { vote: string; t: T }) {
+function VoteBadge({ vote, t, isConduct }: { vote: string; t: T; isConduct: boolean }) {
   const cls =
     vote === "DENY"
       ? "bg-flare/20 text-flare"
       : vote === "KEEP"
         ? "bg-emerald-500/20 text-emerald-400"
         : "bg-amber-500/20 text-amber-400";
-  const label = vote === "DENY" ? t("gov.case.deny") : vote === "KEEP" ? t("gov.case.keep") : t("gov.case.abstain");
+  const label =
+    vote === "DENY"
+      ? t(isConduct ? "gov.case.conduct.voteSubstantiated" : "gov.case.deny")
+      : vote === "KEEP"
+        ? t(isConduct ? "gov.case.conduct.voteNotSubstantiated" : "gov.case.keep")
+        : t("gov.case.abstain");
   return <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs ${cls}`}>{label}</span>;
 }
 
@@ -1234,7 +1239,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                     <p className="mt-0.5 whitespace-pre-wrap break-words text-muted">{vote.comment}</p>
                   )}
                 </div>
-                <VoteBadge vote={vote.vote} t={t} />
+                <VoteBadge vote={vote.vote} t={t} isConduct={isConduct} />
               </li>
             ))}
           </ul>
@@ -1257,7 +1262,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                       </div>
                       {r.comment && <p className="mt-0.5 whitespace-pre-wrap break-words text-muted">{r.comment}</p>}
                     </div>
-                    <VoteBadge vote={r.vote} t={t} />
+                    <VoteBadge vote={r.vote} t={t} isConduct={isConduct} />
                   </li>
                 ))}
               </ul>
@@ -1560,8 +1565,12 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                 flaggers); their member discussion shows under the Discussion section below instead. */}
             {!v.isReVote && (
               <div className="mt-6 surface rounded-xl border p-5">
-                <h2 className="text-lg font-semibold">{t("gov.case.flaggersTitle")}</h2>
-                <p className="mt-1 mb-4 text-xs text-muted">{t("gov.case.flaggersHelp")}</p>
+                <h2 className="text-lg font-semibold">
+                  {t(isConduct ? "gov.case.conduct.initiatorsTitle" : "gov.case.flaggersTitle")}
+                </h2>
+                <p className="mt-1 mb-4 text-xs text-muted">
+                  {t(isConduct ? "gov.case.conduct.initiatorsHelp" : "gov.case.flaggersHelp")}
+                </p>
                 {v.initiations.length === 0 ? (
                   <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
                 ) : (
