@@ -16,6 +16,11 @@ export async function GET() {
     orderBy: [{ decidedAt: "desc" }, { openedAt: "desc" }],
     select: {
       id: true,
+      // KIND IS EXPOSED so the reader can be told which mechanism decided this. The two share this
+      // table and nothing else: a flag can suspend a new provider, a conduct finding cannot suspend
+      // anyone and has no appeal. Listing them under one heading would describe a finding as a flag,
+      // which is not a labelling nicety when the subject is a named business.
+      kind: true,
       state: true,
       openedAt: true,
       decidedAt: true,
@@ -25,6 +30,7 @@ export async function GET() {
 
   const records = cases.map((c) => ({
     caseId: c.id,
+    kind: c.kind,
     state: c.state,
     providerName: c.provider.name,
     detailAddress: c.provider.addresses[0]?.address ?? "",

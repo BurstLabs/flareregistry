@@ -31,6 +31,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 interface CaseRecord {
   caseId: string;
+  /** "FLAG" or "CONDUCT". Absent on older cached responses, treated as a flag. */
+  kind?: string;
   state: string;
   providerName: string;
   detailAddress: string;
@@ -59,14 +61,46 @@ function FlagRecords() {
   }, []);
 
   if (records === null) return null; // loading: render nothing
+  // SPLIT BY MECHANISM. Both kinds live in one table and are public by different rules, but they are
+  // different instruments with different consequences, and a substantiated conduct finding filed
+  // under "Flag records" would tell a reader the wrong thing about a named provider.
+  const flags = records.filter((c) => c.kind !== "CONDUCT");
+  const findings = records.filter((c) => c.kind === "CONDUCT");
   return (
+    <>
+      {findings.length > 0 && (
+        <Section title={t("gov.docs.findings.title")}>
+          <p>{t("gov.docs.findings.intro")}</p>
+          <ul className="mt-2 divide-y divide-themed rounded-lg border border-themed">
+            {findings.map((c) => (
+              <li key={c.caseId} className="flex items-center justify-between gap-3 px-3 py-2">
+                <span className="min-w-0 truncate">
+                  <Link href={`/provider/${c.detailAddress}`} className="text-beacon hover:underline">
+                    {c.providerName}
+                  </Link>{" "}
+                  <span className="text-faint">
+                    &middot; {t(`gov.caseState.${c.state}`) || c.state} &middot;{" "}
+                    {new Date(c.at).toISOString().slice(0, 10)}
+                  </span>
+                </span>
+                <Link
+                  href={`/governance/${c.caseId}`}
+                  className="shrink-0 text-sm text-beacon hover:underline"
+                >
+                  {t("gov.viewRecord")} &rarr;
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
     <Section title={t("gov.docs.records.title")}>
       <p>{t("gov.docs.records.intro")}</p>
-      {records.length === 0 ? (
+      {flags.length === 0 ? (
         <p className="text-faint">{t("gov.docs.records.empty")}</p>
       ) : (
         <ul className="mt-2 divide-y divide-themed rounded-lg border border-themed">
-          {records.map((c) => (
+          {flags.map((c) => (
             <li key={c.caseId} className="flex items-center justify-between gap-3 px-3 py-2">
               <span className="min-w-0 truncate">
                 <Link href={`/provider/${c.detailAddress}`} className="text-beacon hover:underline">
@@ -88,6 +122,7 @@ function FlagRecords() {
         </ul>
       )}
     </Section>
+    </>
   );
 }
 

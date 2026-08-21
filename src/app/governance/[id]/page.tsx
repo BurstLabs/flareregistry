@@ -27,6 +27,9 @@ export default async function GovernanceCasePage({
       initiations: {
         orderBy: { createdAt: "asc" },
         include: {
+          // Evidence is what a conduct finding rests on, and the public record of a substantiated
+          // one is worth nothing if the reader cannot see what it was decided on.
+          evidence: true,
           revisions: { orderBy: { createdAt: "asc" } },
           entries: {
             orderBy: { createdAt: "asc" },
@@ -206,6 +209,15 @@ export default async function GovernanceCasePage({
 
   const view: CaseView = {
     id: c.id,
+    // WHICH MECHANISM DECIDED THIS. The two share this table and nothing else: a flag can suspend a
+    // new provider, a conduct finding can suspend nobody and has no appeal. Without this the page
+    // describes every case in the flag vocabulary, which for a finding is simply untrue.
+    kind: c.kind === "CONDUCT" ? "CONDUCT" : "FLAG",
+    serviceStatus: c.serviceStatus ?? null,
+    lateReplyAt: c.lateReplyAt ? c.lateReplyAt.toISOString() : null,
+    evidence: c.initiations.map((i) =>
+      i.evidence.map((e) => ({ kind: e.kind, chain: e.chain, ref: e.ref, claim: e.claim }))
+    ),
     providerId: c.provider.id,
     providerName: c.provider.name,
     detailAddress,
@@ -214,6 +226,10 @@ export default async function GovernanceCasePage({
     isReVote: c.isReVote,
     appealOfCaseId,
     raisedAt: c.createdAt.toISOString(),
+    // The end of the subject's notice window. Conduct only: a flag case has no notice stage. It is
+    // the date the provider's opportunity to answer closed, which is the fact a reader needs to
+    // judge a "no response" line against.
+    noticeEndsAt: c.noticeEndsAt ? c.noticeEndsAt.toISOString() : null,
     openedAt: c.openedAt.toISOString(),
     discussionEndsAt: c.discussionEndsAt.toISOString(),
     votingEndsAt: c.votingEndsAt.toISOString(),
