@@ -88,6 +88,7 @@ export function DirectoryClient({
       : null
   );
   const [pendingBusy, setPendingBusy] = useState(false);
+  const [pendingErr, setPendingErr] = useState("");
   // Only true when the session attempt failed, i.e. the member is a member but not signed in. That
   // is the sole case where a button is still needed, because the alternative would be a signature
   // popup firing on page load.
@@ -125,7 +126,10 @@ export function DirectoryClient({
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ message: sig.message, signature: sig.signature }),
         });
-        if (!verified.ok) throw new Error("sign-in failed");
+        if (!verified.ok) {
+          const vb = await verified.json().catch(() => ({}));
+          throw new Error(`sign-in rejected (${verified.status}): ${vb.error ?? "no reason given"}`);
+        }
         res = await fetch("/api/governance/conduct/pending-all", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -138,6 +142,7 @@ export function DirectoryClient({
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(b.error ?? "failed");
       setNeedsSignature(false);
+      setPendingErr("");
       setPending(
         new Map(
           (b.pending ?? []).map((x: { providerId: string; remaining: number; alreadySigned: boolean }) => [
@@ -146,8 +151,12 @@ export function DirectoryClient({
           ])
         )
       );
-    } catch {
-      setPending(new Map());
+    } catch (e) {
+      // SHOW THE FAILURE. This used to swallow it and leave the button sitting there, so a member
+      // who clicked, signed, and hit any error saw exactly what a member who did nothing saw. The
+      // button persisting IS the symptom, and without the reason neither they nor I can tell a
+      // declined signature from a rejected one.
+      setPendingErr(e instanceof Error ? e.message : "could not load pending cases");
     } finally {
       setPendingBusy(false);
     }
@@ -307,6 +316,11 @@ export function DirectoryClient({
             >
               {pendingBusy ? t("gov.act.signing") : t("home.conduct.check")}
             </button>
+          )}
+          {pendingErr && (
+            <span className="self-center text-xs text-flare" role="alert">
+              {pendingErr}
+            </span>
           )}
           <label className="flex shrink-0 items-center gap-2 text-sm text-muted">
             {t("home.perPage")}
