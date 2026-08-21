@@ -323,7 +323,7 @@ export function ConductAction({ providerId }: { providerId: string }) {
               disabled={busy}
               className="rounded-lg border border-flare px-4 py-2 font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
             >
-              {busy ? t("gov.act.signing") : t("gov.act.signSubmit")}
+              {busy ? t("gov.act.signing") : t("gov.conduct.signSubmit")}
             </button>
           </div>
           {err && <Note kind="err" text={err} />}
