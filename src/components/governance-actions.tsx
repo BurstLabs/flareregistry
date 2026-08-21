@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAccount } from "wagmi";
 import Link from "next/link";
 import { useApp } from "@/components/providers";
 import { useSignChallenge } from "@/lib/useWalletSign";
@@ -148,6 +149,29 @@ export function ConductAction({ providerId }: { providerId: string }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
   const router = useRouter();
+  const { address, isConnected } = useAccount();
+  // Whether the CONNECTED WALLET is a current Management Group member. Public on-chain state, so
+  // asking about it discloses nothing, and it decides only whether a member-only affordance is
+  // drawn. Everything that reveals a sealed case still demands a signature server-side.
+  const [isMember, setIsMember] = useState(false);
+  // Pending co-initiation count, hoisted so the collapsed header can show it. Null until the member
+  // has actually signed for it; see the note on the badge.
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isConnected || !address) {
+      setIsMember(false);
+      setPendingCount(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/mg/is-member?address=${address.toLowerCase()}`)
+      .then((r) => r.json())
+      .then((b) => !cancelled && setIsMember(b?.member === true))
+      .catch(() => !cancelled && setIsMember(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [address, isConnected]);
   const [open, setOpen] = useState(false);
   const [grounds, setGrounds] = useState("");
   const [title, setTitle] = useState("");
@@ -227,6 +251,29 @@ export function ConductAction({ providerId }: { providerId: string }) {
           className="font-medium text-muted hover:text-beacon"
         >
           {t("gov.conduct.toggle")} {open ? "\u2212" : "+"}
+          {/* THE COUNT IS SHOWN ONLY TO A MEMBER WHO HAS ALREADY CHECKED, and both halves matter.
+              This panel renders for everyone: it is gated on the PROVIDER being eligible for a
+              conduct case, not on the viewer being a member, so the subject of a sealed case sees it
+              on their own page. Printing "1 pending" here unconditionally would announce an unvoted
+              accusation to the public and to the accused, which is the single thing the seal exists
+              to prevent.
+              So membership is established first, and even then the number appears only after the
+              member has signed for it. Until then the header offers the affordance and nothing
+              more, which is what makes it discoverable without making it a disclosure. */}
+          {isMember && pendingCount != null && pendingCount > 0 && (
+            <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300">
+              {t("gov.conduct.pending.badge", { n: pendingCount })}
+            </span>
+          )}
+          {/* Before the member has checked, the header carries the PROMPT rather than a number.
+              It renders for every member on every eligible provider, whether or not a case exists,
+              so it is an affordance and not a signal: a member who sees it learns only that they
+              could look, which is the same thing they could have learned by opening the panel. */}
+          {isMember && pendingCount == null && (
+            <span className="ml-2 text-xs font-normal text-faint">
+              {t("gov.conduct.pending.prompt")}
+            </span>
+          )}
         </button>
         <Link href="/governance#conduct" className="text-xs text-beacon hover:underline">
           {t("gov.conduct.howItWorks")}
@@ -243,7 +290,7 @@ export function ConductAction({ providerId }: { providerId: string }) {
               A pending case is sealed, so without this a member saw only the blank form and, on
               submitting, silently joined a case whose grounds and evidence they had never read.
               Four signatures is what makes a case real; an endorsement given unseen is not one. */}
-          <PendingConductCase providerId={providerId} />
+          <PendingConductCase providerId={providerId} onCount={setPendingCount} />
 
           <input
             value={title}
@@ -1503,7 +1550,13 @@ export function ReplyAction({
  * whether the first three are independent judgements or one member who persuaded two colleagues, and
  * this is the only place that can be seen before the case is decided.
  */
-function PendingConductCase({ providerId }: { providerId: string }) {
+function PendingConductCase({
+  providerId,
+  onCount,
+}: {
+  providerId: string;
+  onCount: (n: number | null) => void;
+}) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
   const [busy, setBusy] = useState(false);
@@ -1531,15 +1584,25 @@ function PendingConductCase({ providerId }: { providerId: string }) {
     setErr("");
     setBusy(true);
     try {
-      const s = await signChallenge();
-      const res = await fetch("/api/governance/conduct/pending", {
+      // Session first; sign only if there is none. See the note in the route.
+      let res = await fetch("/api/governance/conduct/pending", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ providerId, message: s.message, signature: s.signature }),
+        body: JSON.stringify({ providerId }),
       });
+      if (res.status === 401) {
+        const sg = await signChallenge();
+        res = await fetch("/api/governance/conduct/pending", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ providerId, message: sg.message, signature: sg.signature }),
+        });
+      }
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(b.error ?? t("gov.conduct.pending.err"));
       setData(b);
+      // Tell the header, so a member who has checked sees the count without reopening the panel.
+      onCount(b?.pending ? b.pending.signatures : 0);
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.conduct.pending.err"));
     } finally {
