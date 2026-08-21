@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   NEW_PROVIDER_WINDOW_DAYS,
   FLAG_PAUSE_DAYS,
@@ -13,119 +11,14 @@ import {
   DENY_MAJORITY_BIPS,
   APPEAL_COOLDOWN_DAYS,
   APPEAL_DEADLINE_DAYS,
-  CONDUCT_CO_INITIATORS_REQUIRED,
-  CONDUCT_NOTICE_DAYS,
-  CONDUCT_DISCUSSION_DAYS,
-  CONDUCT_VOTING_DAYS,
 } from "@/lib/governance";
 import { useApp } from "@/components/providers";
+import { Section, CaseRecords, CrossLink } from "@/components/governance-records";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mt-8">
-      <h2 className="mb-2 text-xl font-semibold">{title}</h2>
-      <div className="space-y-2 text-sm text-muted">{children}</div>
-    </section>
-  );
-}
-
-interface CaseRecord {
-  caseId: string;
-  /** "FLAG" or "CONDUCT". Absent on older cached responses, treated as a flag. */
-  kind?: string;
-  state: string;
-  providerName: string;
-  detailAddress: string;
-  at: string;
-}
-
-// The complete, always-accessible index of flag cases. Records stay here even after they are hidden
-// from a (now-qualified) provider's page.
-function FlagRecords() {
-  const { t } = useApp();
-  const [records, setRecords] = useState<CaseRecord[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/governance/cases")
-      .then((r) => r.json())
-      .then((d) => {
-        if (!cancelled) setRecords(Array.isArray(d?.records) ? d.records : []);
-      })
-      .catch(() => {
-        if (!cancelled) setRecords([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (records === null) return null; // loading: render nothing
-  // SPLIT BY MECHANISM. Both kinds live in one table and are public by different rules, but they are
-  // different instruments with different consequences, and a substantiated conduct finding filed
-  // under "Flag records" would tell a reader the wrong thing about a named provider.
-  const flags = records.filter((c) => c.kind !== "CONDUCT");
-  const findings = records.filter((c) => c.kind === "CONDUCT");
-  return (
-    <>
-      {findings.length > 0 && (
-        <Section title={t("gov.docs.findings.title")}>
-          <p>{t("gov.docs.findings.intro")}</p>
-          <ul className="mt-2 divide-y divide-themed rounded-lg border border-themed">
-            {findings.map((c) => (
-              <li key={c.caseId} className="flex items-center justify-between gap-3 px-3 py-2">
-                <span className="min-w-0 truncate">
-                  <Link href={`/provider/${c.detailAddress}`} className="text-beacon hover:underline">
-                    {c.providerName}
-                  </Link>{" "}
-                  <span className="text-faint">
-                    &middot; {t(`gov.caseState.${c.state}`) || c.state} &middot;{" "}
-                    {new Date(c.at).toISOString().slice(0, 10)}
-                  </span>
-                </span>
-                <Link
-                  href={`/governance/${c.caseId}`}
-                  className="shrink-0 text-sm text-beacon hover:underline"
-                >
-                  {t("gov.viewRecord")} &rarr;
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-    <Section title={t("gov.docs.records.title")}>
-      <p>{t("gov.docs.records.intro")}</p>
-      {flags.length === 0 ? (
-        <p className="text-faint">{t("gov.docs.records.empty")}</p>
-      ) : (
-        <ul className="mt-2 divide-y divide-themed rounded-lg border border-themed">
-          {flags.map((c) => (
-            <li key={c.caseId} className="flex items-center justify-between gap-3 px-3 py-2">
-              <span className="min-w-0 truncate">
-                <Link href={`/provider/${c.detailAddress}`} className="text-beacon hover:underline">
-                  {c.providerName}
-                </Link>{" "}
-                <span className="text-faint">
-                  &middot; {t(`gov.caseState.${c.state}`) || c.state} &middot;{" "}
-                  {new Date(c.at).toISOString().slice(0, 10)}
-                </span>
-              </span>
-              <Link
-                href={`/governance/${c.caseId}`}
-                className="shrink-0 text-sm text-beacon hover:underline"
-              >
-                {t("gov.viewRecord")} &rarr;
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
-    </>
-  );
-}
-
+/**
+ * NEW-PROVIDER REVIEW (flag cases). The conduct mechanism used to live at the bottom of this page
+ * and now has its own at /governance/conduct; see the note there for why they are apart.
+ */
 export default function GovernancePage() {
   const { t } = useApp();
   const turnoutPct = Math.round(QUORUM_TURNOUT_BIPS / 100);
@@ -135,6 +28,16 @@ export default function GovernancePage() {
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight">{t("gov.docs.title")}</h1>
       <p className="mt-3 leading-relaxed text-muted">{t("gov.docs.intro")}</p>
+
+      {/* Placed HIGH, not at the foot of the page. A reader who wants conduct is on the wrong page
+          from the first paragraph, and the cost of making them read to the bottom to discover that
+          is the whole reason the two were split. */}
+      <CrossLink
+        href="/governance/conduct"
+        titleKey="gov.docs.conductLink.title"
+        bodyKey="gov.docs.conductLink.body"
+        ctaKey="gov.docs.conductLink.cta"
+      />
 
       <Section title={t("gov.docs.s1.title")}>
         <p>{t("gov.docs.s1.body", { window: NEW_PROVIDER_WINDOW_DAYS })}</p>
@@ -183,63 +86,12 @@ export default function GovernancePage() {
         <p>{t("gov.docs.s6.body")}</p>
       </Section>
 
-      {/* CONDUCT. Documented as a SECOND, separate process rather than folded into the sections
-          above, because conflating the two would be the most damaging thing this page could do: one
-          is public from the moment it is raised and can suspend a listing, the other is private
-          until a vote and can never suspend anything. Every constant is read from lib/governance so
-          the page cannot drift from the rules that run. */}
-      <h2 id="conduct" className="mt-10 scroll-mt-24 text-2xl font-bold tracking-tight">
-        {t("gov.docs.c.title")}
-      </h2>
-      <p className="mt-3 leading-relaxed text-muted">{t("gov.docs.c.intro")}</p>
-
-      <Section title={t("gov.docs.c1.title")}>
-        <p>{t("gov.docs.c1.body")}</p>
-      </Section>
-
-      <Section title={t("gov.docs.c2.title")}>
-        <p>{t("gov.docs.c2.body1", { coInitiators: CONDUCT_CO_INITIATORS_REQUIRED })}</p>
-        <p>{t("gov.docs.c2.body2")}</p>
-      </Section>
-
-      <Section title={t("gov.docs.c3.title")}>
-        <p>{t("gov.docs.c3.body")}</p>
-      </Section>
-
-      <Section title={t("gov.docs.c4.title")}>
-        <p>
-          {t("gov.docs.c4.body1", {
-            notice: CONDUCT_NOTICE_DAYS,
-            discussion: CONDUCT_DISCUSSION_DAYS,
-            voting: CONDUCT_VOTING_DAYS,
-          })}
-        </p>
-        <p>{t("gov.docs.c4.body2")}</p>
-      </Section>
-
-      <Section title={t("gov.docs.c5.title")}>
-        <p>{t("gov.docs.c5.body1")}</p>
-        <p>{t("gov.docs.c5.body2")}</p>
-      </Section>
-
-      <Section title={t("gov.docs.c6.title")}>
-        <p>{t("gov.docs.c6.body")}</p>
-      </Section>
-
-      {/* How the subject actually learns a case exists. The timeline above claims the provider "is
-          notified"; these two sections are what makes that claim checkable rather than aspirational,
-          and they explain why a published finding distinguishes "did not answer" from "was never
-          reachable". */}
-      <Section title={t("gov.docs.c7.title")}>
-        <p>{t("gov.docs.c7.body1")}</p>
-        <p>{t("gov.docs.c7.body2")}</p>
-      </Section>
-
-      <Section title={t("gov.docs.c8.title")}>
-        <p>{t("gov.docs.c8.body")}</p>
-      </Section>
-
-      <FlagRecords />
+      <CaseRecords
+        kind="FLAG"
+        titleKey="gov.docs.records.title"
+        introKey="gov.docs.records.intro"
+        emptyKey="gov.docs.records.empty"
+      />
     </div>
   );
 }
