@@ -12,6 +12,14 @@
 //   ACTION  paths are SIWE-authenticated and act on one case by id; a member must be able to work on
 //           their own sealed case and a subject must be able to answer one, so they do not filter.
 //   CRON    is internal.
+//   MEMBER  is a PUBLIC PAGE that performs a session-gated read, and it is the sharpest shape here.
+//           The route serves everyone, but for a signed-in Management Group member it also reads
+//           PENDING conduct cases so their badge is in the first paint instead of two round trips
+//           after it. Two conditions make that safe and both must hold:
+//             1. the read is gated on a session address that loadMembers() confirms is a member, and
+//             2. the route is force-dynamic, so a member's render is never served to anyone else.
+//           If either is removed, a sealed case reaches the public. A MEMBER entry is therefore a
+//           standing reminder that the page's caching behaviour is load-bearing, not incidental.
 //
 // Run: node scripts/check-case-visibility.mjs
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -22,6 +30,11 @@ const SRC = join(ROOT, "src");
 
 // Every known call site, classified. A path may appear once.
 const CLASSIFIED = {
+  // PUBLIC PAGES WITH A SESSION-GATED MEMBER READ. See MEMBER above: both of these depend on
+  // force-dynamic staying on the route. They read PENDING conduct cases only for a signed-in member
+  // whose membership is verified server-side, and render nothing about them for anyone else.
+  "app/page.tsx": "MEMBER",
+  "app/provider/[address]/page.tsx": "MEMBER",
   // Public, unauthenticated. MUST filter.
   "app/api/governance/cases/route.ts": "PUBLIC",
   "app/api/governance/case/[id]/route.ts": "PUBLIC",
@@ -107,6 +120,25 @@ for (const file of walk(SRC)) {
       `UNFILTERED PUBLIC PATH: ${rel} is classified PUBLIC but contains none of ` +
         `${FILTERS.join(", ")}. A sealed conduct case could leak from here.`
     );
+  }
+  // A MEMBER page renders a sealed case for a signed-in member, so its output is per-session. That
+  // is only safe while the route is force-dynamic: under static or shared caching one member's
+  // render would be handed to whoever asked next. Assert it here rather than trusting a comment,
+  // because the failure is silent and the fix is one deleted line away.
+  if (kind === "MEMBER") {
+    if (!/export const dynamic\s*=\s*["']force-dynamic["']/.test(body)) {
+      problems.push(
+        `MEMBER PAGE WITHOUT force-dynamic: ${rel} reads conduct cases for a signed-in member, so ` +
+          `its HTML is session-specific. Without force-dynamic that render can be cached and served ` +
+          `to another visitor, which would publish a sealed case.`
+      );
+    }
+    if (!/getSessionAddress|loadMembers/.test(body)) {
+      problems.push(
+        `MEMBER PAGE WITHOUT A MEMBERSHIP GATE: ${rel} is classified MEMBER but does not resolve a ` +
+          `session or check membership, so the read is not gated on anything.`
+      );
+    }
   }
 }
 

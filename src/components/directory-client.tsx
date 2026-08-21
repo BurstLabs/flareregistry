@@ -51,11 +51,16 @@ export function DirectoryClient({
   total,
   qualifiedCount,
   showAll,
+  viewerIsMember,
+  initialPending,
 }: {
   providers: CardProvider[];
   total: number;
   qualifiedCount: number;
   showAll: boolean;
+  /** Resolved on the server from the session, so a member's badges are in the first paint. */
+  viewerIsMember: boolean;
+  initialPending: { providerId: string; remaining: number; alreadySigned: boolean }[];
 }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
@@ -71,8 +76,15 @@ export function DirectoryClient({
   // ONE signature covers the whole directory rather than one per card. Asking a member to sign
   // twenty-four times to find where their signature is wanted would mean nobody ever looks, which is
   // the failure this is fixing rather than a version of it.
-  const [isMember, setIsMember] = useState(false);
-  const [pending, setPending] = useState<Map<string, { remaining: number; alreadySigned: boolean }> | null>(null);
+  // Seeded from the server. The client work below now exists only for the case the server cannot
+  // cover: a wallet connected AFTER the page rendered, which produces no new request and therefore
+  // no new session-derived props.
+  const [isMember, setIsMember] = useState(viewerIsMember);
+  const [pending, setPending] = useState<Map<string, { remaining: number; alreadySigned: boolean }> | null>(
+    viewerIsMember
+      ? new Map(initialPending.map((p) => [p.providerId, { remaining: p.remaining, alreadySigned: p.alreadySigned }]))
+      : null
+  );
   const [pendingBusy, setPendingBusy] = useState(false);
   // Only true when the session attempt failed, i.e. the member is a member but not signed in. That
   // is the sole case where a button is still needed, because the alternative would be a signature
@@ -121,8 +133,13 @@ export function DirectoryClient({
 
   useEffect(() => {
     if (!isConnected || !address) {
-      setIsMember(false);
-      setPending(null);
+      // Never clear what the server established. A member whose wallet is not connected in THIS tab
+      // is still the member the session was issued to, and blanking the badges would make the page
+      // contradict itself on a reload.
+      if (!viewerIsMember) {
+        setIsMember(false);
+        setPending(null);
+      }
       setNeedsSignature(false);
       return;
     }
@@ -133,10 +150,9 @@ export function DirectoryClient({
         if (cancelled) return;
         const member = b?.member === true;
         setIsMember(member);
-        // LOAD IMMEDIATELY. The session already proves control, so this costs the member nothing:
-        // no popup, no click. The button only existed because the counts used to require a fresh
-        // signature, and a member should not have to ask the site where their signature is wanted.
-        if (member) void fetchPending(false);
+        // Only if the server did not already answer. It does whenever a session was present on the
+        // request, which is the common case; this covers a wallet connected after paint.
+        if (member && !viewerIsMember) void fetchPending(false);
       })
       .catch(() => !cancelled && setIsMember(false));
     return () => {

@@ -102,6 +102,46 @@ export default async function Home({
   // The stored version is checked against the running one: the rules have moved several times, and a
   // row written under older rules is a different number wearing the same name. A mismatched row is
   // treated as absent, so a card shows no score rather than a misleading one.
+  // PENDING CONDUCT CASES, resolved on the SERVER for a signed-in Management Group member.
+  //
+  // The client used to do this in two round trips after paint, confirm membership then fetch counts,
+  // so a member watched the badges appear a beat after the cards. The session cookie is already on
+  // this request and is proof of control, so both answers are available here and the badges can be
+  // in the first byte of HTML.
+  //
+  // SAFE ONLY BECAUSE THIS ROUTE IS force-dynamic. Rendering per session means one member's view is
+  // never handed to anyone else. If this page is ever made static or shared-cached, this block must
+  // move back to the client, or a sealed case would be served to whoever got the cached copy.
+  const { getSessionAddress } = await import("@/lib/session");
+  const { loadMembers, memberVoterFor, CONDUCT_CO_INITIATORS_REQUIRED } = await import("@/lib/governance");
+  const session = await getSessionAddress();
+  let viewerIsMember = false;
+  let initialPending: { providerId: string; remaining: number; alreadySigned: boolean }[] = [];
+  if (session) {
+    try {
+      const members = await loadMembers();
+      const memberVoter = memberVoterFor(session, members.voterByAddress);
+      if (memberVoter) {
+        viewerIsMember = true;
+        const rows = await prisma.providerFlagCase.findMany({
+          where: { kind: "CONDUCT", state: "PENDING" },
+          select: {
+            providerId: true,
+            initiations: { where: { withdrawnAt: null }, select: { memberEntityVoter: true } },
+          },
+        });
+        initialPending = rows.map((c) => ({
+          providerId: c.providerId,
+          remaining: Math.max(0, CONDUCT_CO_INITIATORS_REQUIRED - c.initiations.length),
+          alreadySigned: c.initiations.some((i) => i.memberEntityVoter === memberVoter),
+        }));
+      }
+    } catch {
+      // Membership unreadable: fall through as a non-member. The client still probes after mount, so
+      // a transient failure here costs the flicker it used to have, not the feature.
+    }
+  }
+
   const { REPUTATION_VERSION } = await import("@/lib/reputation");
   const scoreRows = await prisma.providerScore.findMany({
     where: { version: REPUTATION_VERSION },
@@ -188,6 +228,8 @@ export default async function Home({
       providers={cards}
       total={listable.length}
       qualifiedCount={qualifiedCount}
+      viewerIsMember={viewerIsMember}
+      initialPending={initialPending}
       showAll={showAll}
     />
   );

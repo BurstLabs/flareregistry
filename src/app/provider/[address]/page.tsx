@@ -169,6 +169,30 @@ export default async function ProviderDetail({
       ? new Date(p.createdAt.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString()
       : null;
 
+  // Same server-side resolution as the directory: the session is already on this request, so a
+  // member's pending-case badge can be in the first paint instead of two round trips after it.
+  // Depends on this route being force-dynamic, declared at the top of the file.
+  const { getSessionAddress: getSess } = await import("@/lib/session");
+  const { loadMembers: loadMg, memberVoterFor: mgVoterFor } = await import("@/lib/governance");
+  let viewerIsMember = false;
+  let viewerPendingSignatures: number | null = null;
+  try {
+    const sess = await getSess();
+    if (sess) {
+      const mg = await loadMg();
+      if (mgVoterFor(sess, mg.voterByAddress)) {
+        viewerIsMember = true;
+        const live = await prisma.providerFlagCase.findFirst({
+          where: { providerId: p.id, kind: "CONDUCT", state: "PENDING" },
+          select: { initiations: { where: { withdrawnAt: null }, select: { id: true } } },
+        });
+        viewerPendingSignatures = live ? live.initiations.length : 0;
+      }
+    }
+  } catch {
+    // Unreadable membership falls back to the client probe, which costs the old flicker, not the
+    // feature.
+  }
   const data: DetailData = {
     name: p.name,
     description: p.description,
@@ -184,6 +208,8 @@ export default async function ProviderDetail({
     // the new-provider flag is not: matched on-chain, not archived, and past the flag window. The
     // server enforces Management Group membership on the signature; this only decides whether the
     // form is worth showing at all.
+    viewerIsMember,
+    viewerPendingSignatures,
     conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(p.createdAt, nowDate),
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
