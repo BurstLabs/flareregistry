@@ -23,6 +23,23 @@ export interface CaseView {
   providerName: string;
   detailAddress: string;
   suspended: boolean;
+  /**
+   * Which mechanism decided this case.
+   *
+   * FLAG and CONDUCT share this table and almost nothing else. A flag applies to a provider inside
+   * its 30-day review window and can end in suspension, with one permitted appeal. A conduct case
+   * applies to an established provider, can suspend nobody, has no appeal, and deducts reputation
+   * points instead. Rendering the second in the first's vocabulary would tell a reader that a named
+   * business had been suspended and could appeal, when neither is true.
+   */
+  kind: "FLAG" | "CONDUCT";
+  /** CONDUCT only: whether the subject was reachable and whether they answered. */
+  serviceStatus: string | null;
+  noticeEndsAt: string | null;
+  lateReplyAt: string | null;
+  /** CONDUCT only, parallel to initiations: who raised each point, named where a listing names them. */
+  /** CONDUCT only, parallel to initiations: the primary sources each point rests on. */
+  evidence: { kind: string; chain: string | null; ref: string; claim: string }[][];
   state: string;
   isReVote: boolean;
   // For an appeal (re-vote), the original denied review it appeals, so the page can link back to it.
@@ -129,7 +146,28 @@ export interface PointImage {
 
 type T = (key: string, vars?: Record<string, string | number>) => string;
 
-function stageIndex(state: string): number {
+function stageIndex(state: string, isConduct: boolean): number {
+  // A CONDUCT case has five stages, not four. Between raising and discussion sits NOTICE: the
+  // window in which the subject is served and can answer before the group votes. Running conduct
+  // through the flag ladder put SUBSTANTIATED in the `default` arm, so a decided finding rendered
+  // as stage 1 "Flagged, in progress", with no outcome and no vote tally, which is the opposite of
+  // what had happened to that provider.
+  if (isConduct) {
+    switch (state) {
+      case "NOTICE":
+        return 1;
+      case "OPEN_DISCUSSION":
+        return 2;
+      case "OPEN_VOTING":
+        return 3;
+      case "SUBSTANTIATED":
+      case "NOT_SUBSTANTIATED":
+      case "FAILED_QUORUM":
+        return 4;
+      default:
+        return 0;
+    }
+  }
   switch (state) {
     case "OPEN_DISCUSSION":
       return 1;
@@ -570,7 +608,28 @@ function EntryBlock({
 // things. A flag must reach a deny majority to suspend; an appeal must reach a keep majority to lift
 // an existing suspension. So for an appeal: DENIED and FAILED_QUORUM both mean the appeal FAILED
 // (suspension upheld), and only CLEARED means the appeal succeeded.
-function outcomeLabel(t: T, state: string, isReVote: boolean): { text: string; cls: string } {
+function outcomeLabel(
+  t: T,
+  state: string,
+  isReVote: boolean,
+  isConduct: boolean
+): { text: string; cls: string } {
+  // CONDUCT FIRST. "Denied, account suspended" would be false about a conduct case in two separate
+  // ways: no conduct case has ever suspended anyone, and the state that means substantiated is not
+  // even called DENIED. The reader is looking at an accusation against a named business, so the
+  // outcome line has to say what actually happened to them.
+  if (isConduct) {
+    switch (state) {
+      case "SUBSTANTIATED":
+        return { text: t("gov.case.outcome.substantiated"), cls: "text-flare" };
+      case "NOT_SUBSTANTIATED":
+        return { text: t("gov.case.outcome.notSubstantiated"), cls: "text-emerald-400" };
+      case "FAILED_QUORUM":
+        return { text: t("gov.case.outcome.conductFailedQuorum"), cls: "text-emerald-400" };
+      default:
+        return { text: t("gov.case.outcome.inProgress"), cls: "text-muted" };
+    }
+  }
   if (isReVote) {
     switch (state) {
       case "CLEARED":
@@ -759,10 +818,12 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const idx = stageIndex(v.state);
+  const isConduct = v.kind === "CONDUCT";
+  const idx = stageIndex(v.state, isConduct);
   const isWithdrawn = v.state === "WITHDRAWN";
   // A withdrawn case is archived/read-only: treat it like a finished case for edit-gating.
-  const decided = idx === 3 || isWithdrawn;
+  // Compared against the LAST stage rather than a literal 3, because conduct has five.
+  const decided = idx === (isConduct ? 4 : 3) || isWithdrawn;
   const isPending = v.state === "PENDING" && !isWithdrawn;
   // The case actually opened (a 2nd member co-initiated) only once it reached discussion or beyond.
   // Until then the discussion/voting deadlines are provisional placeholders, not real dates.
@@ -778,19 +839,33 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
   // and at least one keep, so an all-abstain or split vote does NOT lift the suspension.
   const keepMet = v.keepVotes >= v.denyNeeded && v.keepVotes > 0;
 
-  const STAGES = [
-    // An appeal is filed by the provider, not "flagged" by members.
-    v.isReVote ? t("gov.case.stage.filed") : t("gov.case.stage.flagged"),
-    t("gov.case.stage.discussion"),
-    t("gov.case.stage.voting"),
-    t("gov.case.stage.decided"),
-  ];
+  const STAGES = isConduct
+    ? [
+        // Nothing is "flagged" in a conduct case, and the notice window is a real stage the subject
+        // lives through, so it is drawn rather than folded into the one either side of it.
+        t("gov.case.stage.raised"),
+        t("gov.case.stage.notice"),
+        t("gov.case.stage.discussion"),
+        t("gov.case.stage.voting"),
+        t("gov.case.stage.decided"),
+      ]
+    : [
+        // An appeal is filed by the provider, not "flagged" by members.
+        v.isReVote ? t("gov.case.stage.filed") : t("gov.case.stage.flagged"),
+        t("gov.case.stage.discussion"),
+        t("gov.case.stage.voting"),
+        t("gov.case.stage.decided"),
+      ];
 
   return (
     <div>
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <h1 className="text-2xl font-bold">
-          {v.isReVote ? t("gov.case.titleAppeal") : t("gov.case.title")}
+          {v.kind === "CONDUCT"
+            ? t("gov.case.titleConduct")
+            : v.isReVote
+              ? t("gov.case.titleAppeal")
+              : t("gov.case.title")}
         </h1>
         <Link
           href="/governance"
@@ -805,6 +880,23 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
           {v.providerName}
         </Link>
       </p>
+      {/* WHAT A CONDUCT FINDING IS, AND IS NOT, stated where a reader meets it rather than left to
+          the documentation. A finding deducts reputation points and does not change whether the
+          provider is listed, which is the opposite of what the flag vocabulary on the rest of this
+          page would imply. */}
+      {v.kind === "CONDUCT" && (
+        <div className="mt-3 rounded-lg border border-themed bg-elev/40 p-3 text-sm">
+          <p className="text-muted">{t("gov.case.conduct.what")}</p>
+          {/* Whether the subject was reachable and whether they answered. Silence from someone who
+              declined and silence from someone never reached are different facts, and publishing
+              them as the same one would misdescribe a named business. */}
+          {v.serviceStatus && (
+            <p className="mt-2 text-xs text-faint">{t(`conduct.service.${v.serviceStatus}`)}</p>
+          )}
+          {v.lateReplyAt && <p className="mt-1 text-xs text-faint">{t("conduct.replyLate")}</p>}
+        </div>
+      )}
+
       {/* An appeal links back to the original denied review it is appealing, so the original record
           is always one click away once an appeal has started. */}
       {v.isReVote && v.appealOfCaseId && (
@@ -896,14 +988,22 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               forward dates to avoid implying a schedule that has not started. */}
           {/* An appeal is opened by the provider in one act (no co-initiators), so show a single
               "Appeal filed" line; a flag case shows the first/second flag-raised co-initiations. */}
-          {v.isReVote ? (
+          {isConduct ? (
+            <div>{t("gov.case.conduct.raisedAt")} {fmt(v.raisedAt)}</div>
+          ) : v.isReVote ? (
             <div>{t("gov.case.appealFiled")} {fmt(v.openedAt)}</div>
           ) : (
             <div>{t("gov.case.firstFlagRaised")} {fmt(v.raisedAt)}</div>
           )}
           {hasOpened && (
             <>
-              {!v.isReVote && (
+              {isConduct && (
+                <div>{t("gov.case.conduct.openedAt")} {fmt(v.openedAt)}</div>
+              )}
+              {isConduct && v.noticeEndsAt && (
+                <div>{t("gov.case.conduct.noticeEndsAt")} {fmt(v.noticeEndsAt)}</div>
+              )}
+              {!isConduct && !v.isReVote && (
                 <div>{t("gov.case.secondFlagRaised")} {fmt(v.openedAt)}</div>
               )}
               <div>
@@ -1008,7 +1108,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
           )}
           {/* Resolved: the final outcome, tinted by result. */}
           {decided && (() => {
-            const o = outcomeLabel(t, v.state, v.isReVote);
+            const o = outcomeLabel(t, v.state, v.isReVote, isConduct);
             const positive = o.cls.includes("emerald");
             return (
               <div
@@ -1031,11 +1131,15 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
               <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
                 <div>
                   <div className="text-2xl font-bold text-flare">{v.denyVotes}</div>
-                  <div className="text-xs text-faint">{t("gov.case.deny")}</div>
+                  <div className="text-xs text-faint">
+                    {t(isConduct ? "gov.case.conduct.voteSubstantiated" : "gov.case.deny")}
+                  </div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-emerald-400">{v.keepVotes}</div>
-                  <div className="text-xs text-faint">{t("gov.case.keep")}</div>
+                  <div className="text-xs text-faint">
+                    {t(isConduct ? "gov.case.conduct.voteNotSubstantiated" : "gov.case.keep")}
+                  </div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-amber-400">{v.abstainVotes}</div>
@@ -1066,7 +1170,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   </p>
                 )}
                 <p>
-                  {t(v.isReVote ? "gov.case.rejectLine" : "gov.case.denyLine", {
+                  {t(isConduct ? "gov.case.conduct.substantiateLine" : v.isReVote ? "gov.case.rejectLine" : "gov.case.denyLine", {
                     denyVotes: v.denyVotes,
                     denyNeeded: v.denyNeeded,
                     pct: Math.round(v.denyMajorityBips / 100),
@@ -1085,8 +1189,12 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
             </>
           )}
 
-          {/* What happens next for a denied provider on the ORIGINAL flag case: the appeal process. */}
-          {v.appeal && <AppealPanel providerId={v.providerId} appeal={v.appeal} now={now} t={t} />}
+          {/* What happens next for a denied provider on the ORIGINAL flag case: the appeal process.
+              FLAG ONLY. A conduct case cannot suspend anyone and has no appeal, so this panel would
+              be describing a remedy that does not exist for a finding. */}
+          {v.kind === "FLAG" && v.appeal && (
+            <AppealPanel providerId={v.providerId} appeal={v.appeal} now={now} t={t} />
+          )}
           {/* On a DENIED appeal case itself, there is no further appeal. */}
           {v.isReVote && v.state === "DENIED" && (
             <div className="mt-4 rounded-lg border border-flare/40 bg-flare/10 p-4 text-sm">
@@ -1352,15 +1460,56 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
         // `now` ticker), which would remount the subtree and reset child state - e.g. an open reply
         // box would close itself ~1s after opening. Returning elements from a plain function lets
         // React reconcile them normally and preserve that state.
-        const memberBlock = (i: CaseView["initiations"][number]) => {
+        const memberBlock = (i: CaseView["initiations"][number], idx: number) => {
           const ownRefs = [
             `initiation:${i.initiationId}`,
             ...i.entries.map((e) => `groundsEntry:${e.id}`),
           ];
+          // CONDUCT ONLY, and the substance of the thing. A conduct case is decided on primary
+          // sources: a transaction, an address, a contract, a document, each with a statement of
+          // what it shows. Publishing the finding without them would ask a reader to take the
+          // group's word for it, which is the one thing this mechanism is built not to require.
+          const ev = v.kind === "CONDUCT" ? v.evidence?.[idx] ?? [] : [];
           return (
             <li key={i.initiationId}>
               {memberHeader(i)}
               {renderPoints(topLevelFor(ownRefs), false)}
+              {ev.length > 0 && (
+                <div className="ml-3 mt-2 border-l-2 border-beacon/30 pl-3">
+                  <p className="text-[10px] uppercase tracking-wide text-faint">
+                    {t("gov.conduct.pending.evidence", { n: ev.length })}
+                  </p>
+                  <ul className="mt-1 space-y-1.5">
+                    {ev.map((e, j) => (
+                      <li key={j} className="rounded border border-themed/50 p-2">
+                        {/* Claim first: it is what the group voted on. A hash by itself only proves
+                            that a transaction happened, not what it means. */}
+                        <p className="text-xs text-fg">{e.claim}</p>
+                        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 text-[10px]">
+                          <span className="rounded bg-black/10 px-1 text-faint dark:bg-white/10">
+                            {e.kind}
+                            {e.chain ? ` \u00b7 ${e.chain}` : ""}
+                          </span>
+                          {e.chain && /^0x[0-9a-fA-F]+$/.test(e.ref) ? (
+                            <a
+                              href={`https://${e.chain === "songbird" ? "songbird" : "flare"}-explorer.flare.network/${
+                                e.kind === "TX" ? "tx" : "address"
+                              }/${e.ref}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="break-all font-mono text-beacon hover:underline"
+                            >
+                              {e.ref}
+                            </a>
+                          ) : (
+                            <span className="break-all font-mono text-muted">{e.ref}</span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {preVote && <AddGroundsAction caseId={v.id} ownerVoter={i.member} />}
             </li>
           );
@@ -1417,7 +1566,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
                 ) : (
                   <ul className="space-y-6">
-                    {v.initiations.map((i) => memberBlock(i))}
+                    {v.initiations.map((i, idx) => memberBlock(i, idx))}
                   </ul>
                 )}
                 {openGrounds}
@@ -1442,7 +1591,7 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                   <p className="text-sm text-muted">{t("gov.case.noGrounds")}</p>
                 ) : (
                   <ul className="space-y-6">
-                    {v.initiations.map((i) => memberBlock(i))}
+                    {v.initiations.map((i, idx) => memberBlock(i, idx))}
                   </ul>
                 )}
                 {openGrounds}
