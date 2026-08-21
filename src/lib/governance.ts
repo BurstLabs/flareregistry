@@ -535,8 +535,67 @@ export interface PendingConductView {
      */
     mine: boolean;
     at: string;
-    evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+    /**
+     * Evidence ids are included so the owning member can correct a reference in place.
+     *
+     * They identify a row, not a case: an id is worthless without a signature proving control of the
+     * member entity the row hangs off, which the evidence route re-checks. And this view is only
+     * ever served to a member who has already proven exactly that.
+     */
+    evidence: { id: string; kind: string; chain: string | null; ref: string; claim: string }[];
   }[];
+  /**
+   * EVERYTHING THAT HAS HAPPENED TO THIS CASE, for the members deciding whether to join it.
+   *
+   * The panel shows the case as it stands now, which is not enough to judge it. A case at three
+   * signatures reads the same whether it has sat unchanged since it was filed or whether the grounds
+   * were rewritten twice and two endorsements were cleared along the way. The second is a materially
+   * different thing to put your name to, and the trail is the only place it shows.
+   *
+   * DERIVED FIELDS ONLY, never the raw audit detail. Some rows carry a full restorable snapshot of a
+   * withdrawn point, and a blob of JSON is neither readable nor something to hand out by default.
+   * Each action is reduced here to the few facts its sentence needs, and the sentence itself is
+   * localized on the client, so nothing ships an operator-facing constant like
+   * CONDUCT_ENDORSEMENTS_INVALIDATED to a reader.
+   */
+  audit: {
+    at: string;
+    action: string;
+    actor: string;
+    actorName: string | null;
+    /** Whitelisted per action; see AUDIT_META. Interpolated into the localized sentence. */
+    meta: Record<string, string | number | boolean>;
+  }[];
+}
+
+/**
+ * What each audit action is allowed to tell a member, and nothing else.
+ *
+ * A whitelist rather than a redaction list: a new action added later shows with no meta rather than
+ * leaking whatever its author happened to put in `detail`.
+ */
+function auditMeta(action: string, detail: string | null): Record<string, string | number | boolean> {
+  let d: Record<string, unknown> = {};
+  try {
+    d = detail ? JSON.parse(detail) : {};
+  } catch {
+    return {};
+  }
+  const n = (v: unknown) => (typeof v === "number" ? v : Array.isArray(v) ? v.length : 0);
+  switch (action) {
+    case "CONDUCT_SIGNED":
+      return { endorsement: d.endorsement === true, signatures: n(d.signatures) };
+    case "CONDUCT_SIGNATURE_WITHDRAWN":
+      return { endorsement: d.endorsement === true, remaining: n(d.remaining) };
+    case "CONDUCT_GROUNDS_EDITED":
+      return { supplemental: d.supplemental === true };
+    case "CONDUCT_EVIDENCE_EDITED":
+      return { added: n(d.added), updated: n(d.updated), removed: n(d.removed) };
+    case "CONDUCT_ENDORSEMENTS_INVALIDATED":
+      return { cleared: n(d.cleared), what: typeof d.what === "string" ? d.what : "" };
+    default:
+      return {};
+  }
 }
 
 export async function pendingConductForMember(
@@ -558,16 +617,26 @@ export async function pendingConductForMember(
           grounds: true,
           endorsement: true,
           createdAt: true,
-          evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
+          evidence: { select: { id: true, kind: true, chain: true, ref: true, claim: true } },
         },
       },
     },
   });
   if (!live) return null;
 
-  // Who is accusing, in words. A voter address does not answer that without a separate lookup, and
-  // the reader is deciding whether to put their own name beside it.
-  const names = await namesForMemberVoters(live.initiations.map((i) => i.memberEntityVoter));
+  // The trail. Ordered oldest first, so it reads as the case's history rather than a feed.
+  const audit = await prisma.providerCaseAudit.findMany({
+    where: { caseId: live.id },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true, action: true, actor: true, detail: true },
+  });
+
+  // Who is accusing, in words, and who acted. A voter address does not answer either without a
+  // separate lookup, and the reader is deciding whether to put their own name beside it.
+  const names = await namesForMemberVoters([
+    ...live.initiations.map((i) => i.memberEntityVoter),
+    ...audit.map((a) => a.actor),
+  ]);
   const signatures = live.initiations.length;
   return {
     caseId: live.id,
@@ -586,6 +655,13 @@ export async function pendingConductForMember(
       mine: i.memberEntityVoter === memberVoter,
       at: i.createdAt.toISOString(),
       evidence: i.evidence,
+    })),
+    audit: audit.map((a) => ({
+      at: a.createdAt.toISOString(),
+      action: a.action,
+      actor: a.actor,
+      actorName: names.get(a.actor.toLowerCase()) ?? null,
+      meta: auditMeta(a.action, a.detail),
     })),
   };
 }

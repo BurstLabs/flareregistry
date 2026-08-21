@@ -10,6 +10,7 @@ import {
   CONDUCT_CO_INITIATORS_REQUIRED,
 } from "@/lib/governance";
 import { apiError } from "@/lib/api-error";
+import { validateEvidence, type CleanEvidence } from "@/lib/conduct-evidence";
 
 // POST /api/governance/conduct
 // A Management Group member co-initiates a CONDUCT case against an established provider, supplying
@@ -42,10 +43,6 @@ import { apiError } from "@/lib/api-error";
 // An endorsement is RECORDED AS ONE and published as one. It counts as a full signature, but a case
 // carrying one ground endorsed by three members is not the same as four members who each found
 // something, and the reader of a published finding is entitled to tell them apart.
-
-/** Evidence kinds. Primary sources only: things a third party can independently check. */
-const EVIDENCE_KINDS = new Set(["TX", "ADDRESS", "CONTRACT", "DOCUMENT"]);
-const CHAINS = new Set(["flare", "songbird"]);
 
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 10, 60_000);
@@ -95,42 +92,13 @@ export async function POST(req: NextRequest) {
       400
     );
   }
-  const cleaned: { kind: string; chain: string | null; ref: string; claim: string }[] = [];
+  // Validated by the SAME function the evidence-edit route uses, so a reference that can be filed
+  // is exactly a reference that can be edited into place later, and neither rule can drift.
+  const cleaned: CleanEvidence[] = [];
   for (const e of endorse ? [] : evidence ?? []) {
-    const kind = typeof e?.kind === "string" ? e.kind.toUpperCase() : "";
-    const ref = typeof e?.ref === "string" ? e.ref.trim() : "";
-    const claim = typeof e?.claim === "string" ? e.claim.trim() : "";
-    const chain = typeof e?.chain === "string" ? e.chain.toLowerCase() : null;
-    if (!EVIDENCE_KINDS.has(kind)) {
-      return apiError("EVIDENCE_KIND", `evidence kind must be one of ${[...EVIDENCE_KINDS].join(", ")}`, 400);
-    }
-    if (!ref) return apiError("EVIDENCE_REF", "each evidence item needs a reference", 400);
-    if (claim.length < 10 || claim.length > 500) {
-      return apiError(
-        "EVIDENCE_CLAIM",
-        "each evidence item needs a claim of 10 to 500 characters stating what it shows",
-        400
-      );
-    }
-    if (!isClean(claim)) {
-      return apiError("INAPPROPRIATE_LANGUAGE", "an evidence claim contains inappropriate language", 400);
-    }
-    if (kind === "TX" || kind === "ADDRESS" || kind === "CONTRACT") {
-      if (!chain || !CHAINS.has(chain)) {
-        return apiError("EVIDENCE_CHAIN", "on-chain evidence must state chain: flare or songbird", 400);
-      }
-      const expected = kind === "TX" ? 66 : 42;
-      if (!/^0x[0-9a-fA-F]+$/.test(ref) || ref.length !== expected) {
-        return apiError(
-          "EVIDENCE_REF",
-          kind === "TX" ? "a TX reference must be a 32-byte hash" : "an address reference must be 20 bytes",
-          400
-        );
-      }
-    } else if (!/^https:\/\//i.test(ref)) {
-      return apiError("EVIDENCE_REF", "a DOCUMENT reference must be an https URL", 400);
-    }
-    cleaned.push({ kind, chain: chain && CHAINS.has(chain) ? chain : null, ref: ref.toLowerCase(), claim });
+    const v = validateEvidence(e);
+    if (!v.ok) return apiError(v.code as Parameters<typeof apiError>[0], v.message, 400);
+    cleaned.push(v.value);
   }
 
   // Verify the signer controls a current Management Group member address.
@@ -267,6 +235,14 @@ export async function POST(req: NextRequest) {
 
     const signatures = await tx.providerFlagInitiation.count({
       where: { caseId: theCase!.id, withdrawnAt: null },
+    });
+    await tx.providerCaseAudit.create({
+      data: {
+        caseId: theCase!.id,
+        action: "CONDUCT_SIGNED",
+        actor: memberVoter,
+        detail: JSON.stringify({ endorsement: endorse, signatures }),
+      },
     });
 
     // The final signature starts the private notice period. Nothing becomes public here; the case

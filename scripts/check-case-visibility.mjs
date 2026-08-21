@@ -74,6 +74,10 @@ const CLASSIFIED = {
   // cannot touch a case that has opened. It returns counts, never grounds, so nothing about a sealed
   // case leaves through it even for the member who signed.
   "app/api/governance/conduct/withdraw/route.ts": "ACTION",
+  // MEMBER-ONLY. Corrects the primary-source references on the caller's OWN point of a pending
+  // conduct case. Same gate as the routes above, scoped to state PENDING, and it returns only counts
+  // so nothing about a sealed case leaves through it.
+  "app/api/governance/conduct/evidence/route.ts": "ACTION",
   "app/api/governance/flag/route.ts": "ACTION",
   "app/api/governance/vote/route.ts": "ACTION",
   "app/api/governance/defend/route.ts": "ACTION",
