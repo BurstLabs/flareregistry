@@ -265,15 +265,6 @@ export function ConductAction({ providerId }: { providerId: string }) {
               {t("gov.conduct.pending.badge", { n: pendingCount })}
             </span>
           )}
-          {/* Before the member has checked, the header carries the PROMPT rather than a number.
-              It renders for every member on every eligible provider, whether or not a case exists,
-              so it is an affordance and not a signal: a member who sees it learns only that they
-              could look, which is the same thing they could have learned by opening the panel. */}
-          {isMember && pendingCount == null && (
-            <span className="ml-2 text-xs font-normal text-faint">
-              {t("gov.conduct.pending.prompt")}
-            </span>
-          )}
         </button>
         <Link href="/governance#conduct" className="text-xs text-beacon hover:underline">
           {t("gov.conduct.howItWorks")}
@@ -290,7 +281,7 @@ export function ConductAction({ providerId }: { providerId: string }) {
               A pending case is sealed, so without this a member saw only the blank form and, on
               submitting, silently joined a case whose grounds and evidence they had never read.
               Four signatures is what makes a case real; an endorsement given unseen is not one. */}
-          <PendingConductCase providerId={providerId} onCount={setPendingCount} />
+          <PendingConductCase providerId={providerId} onCount={setPendingCount} isMember={isMember} />
 
           <input
             value={title}
@@ -1553,9 +1544,11 @@ export function ReplyAction({
 function PendingConductCase({
   providerId,
   onCount,
+  isMember,
 }: {
   providerId: string;
   onCount: (n: number | null) => void;
+  isMember: boolean;
 }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
@@ -1580,7 +1573,19 @@ function PendingConductCase({
       }
   >(null);
 
-  async function check() {
+  // Only when the session attempt failed: a member who is not signed in. Everyone else never sees a
+  // button, because there is nothing for them to authorise.
+  const [needsSignature, setNeedsSignature] = useState(false);
+
+  // LOAD IMMEDIATELY for a member with a session. Costs no popup and no click, so requiring either
+  // was only ever an artefact of the counts having needed a fresh signature.
+  useEffect(() => {
+    if (!isMember) return;
+    void check(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMember, providerId]);
+
+  async function check(allowSign = true) {
     setErr("");
     setBusy(true);
     try {
@@ -1591,6 +1596,10 @@ function PendingConductCase({
         body: JSON.stringify({ providerId }),
       });
       if (res.status === 401) {
+        if (!allowSign) {
+          setNeedsSignature(true);
+          return;
+        }
         const sg = await signChallenge();
         res = await fetch("/api/governance/conduct/pending", {
           method: "POST",
@@ -1598,6 +1607,7 @@ function PendingConductCase({
           body: JSON.stringify({ providerId, message: sg.message, signature: sg.signature }),
         });
       }
+      setNeedsSignature(false);
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(b.error ?? t("gov.conduct.pending.err"));
       setData(b);
@@ -1611,10 +1621,12 @@ function PendingConductCase({
   }
 
   if (data === null) {
+    // Nothing to show a member whose counts are already loading, and nothing to show a non-member.
+    if (!needsSignature) return null;
     return (
       <div className="mt-3">
         <button
-          onClick={check}
+          onClick={() => check(true)}
           disabled={busy}
           className="rounded border border-themed px-3 py-1.5 text-xs text-muted hover:text-beacon disabled:opacity-50"
         >
