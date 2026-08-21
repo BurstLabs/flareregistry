@@ -60,6 +60,9 @@ const CLASSIFIED = {
   // MEMBER-ONLY. Reads a PENDING conduct case so a Management Group member can see what they would
   // be co-signing. Gated on a signed challenge AND current membership, and scoped to state PENDING,
   // so it can never show a case that has opened, been decided, or belongs to the public surface.
+  // Delegates to pendingConductForMember in lib/governance; see the note on the helper. Gated on a
+  // session or a signed challenge AND current membership, and the helper is scoped to state PENDING,
+  // so it can never show a case that has opened, been decided, or belongs to the public surface.
   "app/api/governance/conduct/pending/route.ts": "ACTION",
   // MEMBER-ONLY, same gate as the per-provider route, scoped to state PENDING. Returns counts and
   // identity only: no grounds and no evidence, so a directory response never carries the text of an
@@ -108,7 +111,18 @@ const seen = new Set();
 
 for (const file of walk(SRC)) {
   const body = readFileSync(file, "utf8");
-  if (!/prisma\.providerFlagCase\.(findMany|findFirst|findUnique|count)/.test(body)) continue;
+  // A DIRECT QUERY, OR THE SHARED HELPER THAT MAKES ONE.
+  //
+  // pendingConductForMember() reads a PENDING conduct case for a proven member. It exists because
+  // the same payload was being built in two places that drifted, but consolidating it also moved
+  // the query out of the files this guard was watching: the provider page stopped matching, and
+  // with it went the force-dynamic and membership-gate assertions that keep a sealed case from
+  // being cached and served to the next visitor. Reaching a sealed case through a helper is still
+  // reaching it.
+  const readsCases =
+    /prisma\.providerFlagCase\.(findMany|findFirst|findUnique|count)/.test(body) ||
+    /pendingConductForMember/.test(body);
+  if (!readsCases) continue;
   const rel = relative(SRC, file);
   seen.add(rel);
 

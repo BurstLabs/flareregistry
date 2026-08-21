@@ -128,6 +128,25 @@ export async function POST(req: NextRequest) {
   });
   if (!theCase) return apiError("CASE_NOT_FOUND", "case not found", 404);
 
+  // CONDUCT LOCKS EARLIER: at service, not at the vote.
+  //
+  // A flag is public from the moment it is raised, so its subject watches the grounds take shape and
+  // every edit is visible to them with its full history. A conduct case is sealed until four
+  // signatures land, and the subject then learns of it all at once, through a notice naming specific
+  // grounds. Editing after that would change what they were served with while they were preparing an
+  // answer to it, and they have no page to watch.
+  //
+  // Members are not silenced by this: add-grounds and reply both stay open through discussion, and
+  // both APPEND rather than alter, so anything new arrives as its own dated point beside the text the
+  // subject was actually served.
+  if (theCase.kind === "CONDUCT" && theCase.state !== "PENDING") {
+    return apiError(
+      "CONDUCT_ALREADY_OPENED",
+      "this case has opened and the provider has been served; the grounds they were served with cannot be rewritten. Add a new point instead",
+      409
+    );
+  }
+
   // Grounds lock once voting opens (or the case is decided). Only pre-vote stages are editable.
   if (theCase.state !== "PENDING" && theCase.state !== "OPEN_DISCUSSION") {
     return apiError(

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { PendingConductView } from "@/lib/governance";
 import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProvider, formatWeiCompact, listingAddressesForSigner } from "@/lib/metrics";
@@ -177,26 +178,11 @@ export default async function ProviderDetail({
     loadMembers: loadMg,
     memberVoterFor: mgVoterFor,
     CONDUCT_CO_INITIATORS_REQUIRED: MG_REQUIRED,
-    namesForMemberVoters: mgNames,
+    pendingConductForMember: pendingConduct,
   } = await import("@/lib/governance");
   let viewerIsMember = false;
   let viewerPendingSignatures: number | null = null;
-  let viewerPendingCase: {
-    caseId: string;
-    signatures: number;
-    required: number;
-    remaining: number;
-    alreadySigned: boolean;
-    openedAt: string;
-    points: {
-      member: string;
-      memberName: string | null;
-      at: string;
-      title: string | null;
-      grounds: string;
-      evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
-    }[];
-  } | null = null;
+  let viewerPendingCase: PendingConductView | null = null;
   try {
     const sess = await getSess();
     if (sess) {
@@ -205,45 +191,15 @@ export default async function ProviderDetail({
         viewerIsMember = true;
         // THE WHOLE CASE, not just the count. A member opening the panel needs to read what they
         // would be co-signing, and fetching it after mount meant the details only appeared once the
-        // panel was expanded and a round trip had completed. The count alone was enough for the
-        // badge and not enough for the panel, which is why the panel rendered empty.
-        const live = await prisma.providerFlagCase.findFirst({
-          where: { providerId: p.id, kind: "CONDUCT", state: "PENDING" },
-          include: {
-            initiations: {
-              where: { withdrawnAt: null },
-              orderBy: { createdAt: "asc" },
-              select: {
-                memberEntityVoter: true,
-                createdAt: true,
-                title: true,
-                grounds: true,
-                evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
-              },
-            },
-          },
-        });
-        viewerPendingSignatures = live ? live.initiations.length : 0;
-        if (live) {
-          const memberVoter = mgVoterFor(sess, mg.voterByAddress);
-          const nameMap = await mgNames(live.initiations.map((i) => i.memberEntityVoter));
-          viewerPendingCase = {
-            caseId: live.id,
-            signatures: live.initiations.length,
-            required: MG_REQUIRED,
-            remaining: Math.max(0, MG_REQUIRED - live.initiations.length),
-            alreadySigned: live.initiations.some((i) => i.memberEntityVoter === memberVoter),
-            openedAt: live.openedAt.toISOString(),
-            points: live.initiations.map((i) => ({
-              member: i.memberEntityVoter,
-              memberName: nameMap.get(i.memberEntityVoter.toLowerCase()) ?? null,
-              at: i.createdAt.toISOString(),
-              title: i.title,
-              grounds: i.grounds,
-              evidence: i.evidence,
-            })),
-          };
-        }
+        // panel was expanded and a round trip had completed.
+        //
+        // Built by the SAME function the API route uses. This page had its own copy of the query and
+        // the mapping, and the two drifted the moment fields were added to one of them: endorsements
+        // rendered as blank grounds here and the withdraw control never appeared, because this path
+        // needs no fetch and is therefore the one every member actually hits.
+        const memberVoter = mgVoterFor(sess, mg.voterByAddress)!;
+        viewerPendingCase = await pendingConduct(p.id, memberVoter);
+        viewerPendingSignatures = viewerPendingCase?.signatures ?? 0;
       }
     }
   } catch {

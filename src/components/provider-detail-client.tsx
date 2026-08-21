@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
+import type { PendingConductView } from "@/lib/governance";
 import { FlagAction, ConductAction, ReportLogoAction } from "./governance-actions";
 import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
@@ -31,22 +32,15 @@ export interface DetailData {
   viewerIsMember: boolean;
   viewerPendingSignatures: number | null;
   /** The whole pending case, so a member can read it the moment they open the panel. */
-  viewerPendingCase: {
-    caseId: string;
-    signatures: number;
-    required: number;
-    remaining: number;
-    alreadySigned: boolean;
-    openedAt: string;
-    points: {
-      member: string;
-      memberName: string | null;
-      at: string;
-      title: string | null;
-      grounds: string;
-      evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
-    }[];
-  } | null;
+  /**
+   * The pending conduct case, server-resolved for a signed-in member.
+   *
+   * THE SHARED TYPE, not a third hand-written copy of the same shape. There were three, and they
+   * drifted: fields added to the API route were missing from the page and from here, so the panel
+   * on first paint had neither the endorsement label nor the withdraw control. A type that quietly
+   * describes less than the runtime object is how that went unnoticed.
+   */
+  viewerPendingCase: PendingConductView | null;
   conduct: {
     caseId: string;
     decidedAt: string | null;

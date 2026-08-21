@@ -1785,6 +1785,53 @@ function PendingConductCase({
     }
   }
 
+  // Which of this member's points is open for editing, and its working text. Held by index rather
+  // than by id because the pending payload deliberately carries no initiation ids: it is a reading
+  // view, and the routes it feeds identify a point by the member who owns it.
+  const [editing, setEditing] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+
+  /**
+   * Rewrite this member's own grounds while the case is still PENDING.
+   *
+   * A member who mistyped, or who has sharpened what they meant, should not have to withdraw and
+   * start over. Every version is preserved as a revision, so the record shows what changed rather
+   * than only where it ended up, and the server locks this at service: once four signatures land,
+   * the grounds the subject was served with stop being rewritable.
+   */
+  async function saveEdit(ownerVoter: string) {
+    setErr("");
+    const caseId = data?.pending?.caseId;
+    if (!caseId || editText.trim().length < 10) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/governance/edit-grounds", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          caseId,
+          ownerVoter,
+          grounds: editText.trim(),
+          title: editTitle.trim(),
+          // A governance-action signature, not a session one: edit-grounds verifies the challenge
+          // itself and requires the "governance" action, so a sign-in signature would be refused.
+          ...(await connectAndSign({ chainId: 14, action: "governance" })),
+        }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.act.err.editFailed"));
+      setEditing(null);
+      setData(null);
+      await check(false);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.act.err.editFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   /**
    * Take this member's own signature back off the case.
    *
@@ -1894,18 +1941,72 @@ function PendingConductCase({
                 back. The server re-checks ownership and the PENDING state; this only decides where
                 the button is drawn. */}
             {pt.mine && (
-              <button
-                type="button"
-                onClick={withdraw}
-                disabled={busy}
-                className="mt-2 text-[11px] text-faint underline hover:text-flare disabled:opacity-50"
-              >
-                {busy
-                  ? t("gov.act.signing")
-                  : pt.endorsement
-                    ? t("gov.conduct.withdraw.endorsement")
-                    : t("gov.conduct.withdraw.grounds")}
-              </button>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                {/* EDITABLE UNTIL THE CASE IS SERVED. A member who mistyped, or who has sharpened
+                    what they meant, should not have to withdraw and start again. An endorsement has
+                    no text of its own, so there is nothing to edit on one. */}
+                {!pt.endorsement && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Seed from the point being opened, so the member edits their text rather
+                      // than a blank box or whatever was left in the last one they opened.
+                      if (editing === i) {
+                        setEditing(null);
+                      } else {
+                        setEditText(pt.grounds);
+                        setEditTitle(pt.title ?? "");
+                        setEditing(i);
+                      }
+                    }}
+                    disabled={busy}
+                    className="text-[11px] text-faint underline hover:text-beacon disabled:opacity-50"
+                  >
+                    {editing === i ? t("gov.act.cancel") : t("gov.conduct.editGrounds")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={withdraw}
+                  disabled={busy}
+                  className="text-[11px] text-faint underline hover:text-flare disabled:opacity-50"
+                >
+                  {busy
+                    ? t("gov.act.signing")
+                    : pt.endorsement
+                      ? t("gov.conduct.withdraw.endorsement")
+                      : t("gov.conduct.withdraw.grounds")}
+                </button>
+              </div>
+            )}
+            {editing === i && !pt.endorsement && (
+              <div className="mt-2 rounded border border-beacon/40 p-2">
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  maxLength={120}
+                  placeholder={t("gov.conduct.titlePlaceholder")}
+                  className="block w-full rounded border border-themed bg-elev px-2 py-1 text-xs"
+                />
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  maxLength={2000}
+                  rows={4}
+                  className="mt-2 block w-full rounded border border-themed bg-elev px-2 py-1 text-xs"
+                />
+                {/* Every version is kept, so the record shows what changed rather than only where
+                    it ended up. Said here so nobody edits believing the first text is gone. */}
+                <p className="mt-1 text-[10px] text-faint">{t("gov.conduct.editKept")}</p>
+                <button
+                  type="button"
+                  onClick={() => saveEdit(pt.member)}
+                  disabled={busy || editText.trim().length < 10}
+                  className="mt-2 rounded border border-beacon px-3 py-1 text-[11px] text-beacon hover:bg-beacon/10 disabled:opacity-50"
+                >
+                  {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
+                </button>
+              </div>
             )}
 
             {pt.evidence.length > 0 && (

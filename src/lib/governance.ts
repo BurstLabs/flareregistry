@@ -498,6 +498,98 @@ export async function targetBelongsToCase(
 }
 
 
+/**
+ * What a Management Group member sees of a PENDING conduct case before deciding to sign it.
+ *
+ * ONE BUILDER, used by both the API route and the provider page, because this payload is produced
+ * in two places and they must agree. They did not: the page renders the panel from a server-built
+ * copy of this shape, so when `endorsement` and `mine` were added to the API route only, the panel
+ * on first paint showed endorsements as blank grounds and offered no withdraw control at all. The
+ * fetch path had the fields and the path everybody actually hits did not.
+ *
+ * Sealed either way. The caller is responsible for having PROVEN control of `memberVoter`; this
+ * function does no authentication and must never be called with an address a client merely claimed.
+ */
+export interface PendingConductView {
+  caseId: string;
+  network: string;
+  openedAt: string;
+  signatures: number;
+  required: number;
+  remaining: number;
+  /** This member has already signed, so the form can say so instead of 409ing later. */
+  alreadySigned: boolean;
+  points: {
+    member: string;
+    memberName: string | null;
+    title: string | null;
+    grounds: string;
+    /** Signed the case as it stood, adding no ground of their own. `grounds` is empty. */
+    endorsement: boolean;
+    /**
+     * This point is the asking member's own, so the withdraw control can sit on it.
+     *
+     * Resolved HERE, not compared in the browser: a member signs with any of their five on-chain
+     * role addresses, so the address a wallet holds is usually not the voter address stored on the
+     * point, and a client-side comparison would leave most members unable to find their own.
+     */
+    mine: boolean;
+    at: string;
+    evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+  }[];
+}
+
+export async function pendingConductForMember(
+  providerId: string,
+  memberVoter: string
+): Promise<PendingConductView | null> {
+  // PENDING only. A case past notice has opened and is no longer joinable, and the set of accusers
+  // the subject was served with can neither grow nor shrink behind them.
+  const live = await prisma.providerFlagCase.findFirst({
+    where: { providerId, kind: "CONDUCT", state: "PENDING" },
+    orderBy: { createdAt: "desc" },
+    include: {
+      initiations: {
+        where: { withdrawnAt: null },
+        orderBy: { createdAt: "asc" },
+        select: {
+          memberEntityVoter: true,
+          title: true,
+          grounds: true,
+          endorsement: true,
+          createdAt: true,
+          evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
+        },
+      },
+    },
+  });
+  if (!live) return null;
+
+  // Who is accusing, in words. A voter address does not answer that without a separate lookup, and
+  // the reader is deciding whether to put their own name beside it.
+  const names = await namesForMemberVoters(live.initiations.map((i) => i.memberEntityVoter));
+  const signatures = live.initiations.length;
+  return {
+    caseId: live.id,
+    network: live.network,
+    openedAt: live.openedAt.toISOString(),
+    signatures,
+    required: CONDUCT_CO_INITIATORS_REQUIRED,
+    remaining: Math.max(0, CONDUCT_CO_INITIATORS_REQUIRED - signatures),
+    alreadySigned: live.initiations.some((i) => i.memberEntityVoter === memberVoter),
+    points: live.initiations.map((i) => ({
+      member: i.memberEntityVoter,
+      memberName: names.get(i.memberEntityVoter.toLowerCase()) ?? null,
+      title: i.title,
+      grounds: i.grounds,
+      endorsement: i.endorsement,
+      mine: i.memberEntityVoter === memberVoter,
+      at: i.createdAt.toISOString(),
+      evidence: i.evidence,
+    })),
+  };
+}
+
 /** A published conduct finding, for the provider page. */
 export interface ConductFinding {
   caseId: string;
