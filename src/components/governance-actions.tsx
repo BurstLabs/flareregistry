@@ -160,6 +160,8 @@ type PendingCase = {
     at?: string;
     title: string | null;
     grounds: string;
+    /** Signed the case as it stood rather than authoring a ground. `grounds` is empty. */
+    endorsement?: boolean;
     evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
   }[];
 };
@@ -193,6 +195,22 @@ export function ConductAction({
     setIsMember(viewerIsMember);
     setPendingCount(initialPendingSignatures);
   }, [viewerIsMember, initialPendingSignatures]);
+
+  // ENDORSE, OR AUTHOR YOUR OWN POINT.
+  //
+  // Co-initiation has always been an endorsement: four members putting their names to one
+  // accusation is what makes it real. Requiring each of the four to invent a separate ground and
+  // separate evidence for the same conduct does not produce four independent findings, it produces
+  // three restatements, and a padded record is worse for the subject and for the reader than an
+  // honest one.
+  //
+  // Endorsing is the DEFAULT once a case exists, because it is the ordinary case, and authoring is
+  // one click away for the member who actually found something else. Derived rather than stored in
+  // an effect: the option only exists while there is a case to endorse, and a member who chose to
+  // author should stay there even if the count changes underneath them.
+  const [authorOwn, setAuthorOwn] = useState(false);
+  const canEndorse = isMember && pendingCount != null && pendingCount > 0;
+  const endorsing = canEndorse && !authorOwn;
 
   useEffect(() => {
     if (!isConnected || !address) {
@@ -228,6 +246,10 @@ export function ConductAction({
   async function submit() {
     setErr("");
     setOk("");
+    // An endorsement carries no text and no references, so none of the authoring checks apply. The
+    // server re-decides this: it refuses an endorsement when there is no pending case with stated
+    // grounds to endorse, which is the check that actually matters.
+    if (endorsing) return submitEndorsement();
     if (grounds.trim().length < 10) {
       setErr(t("gov.act.err.groundsTooShort"));
       return;
@@ -271,6 +293,36 @@ export function ConductAction({
       setGrounds("");
       setTitle("");
       setRows([{ kind: "TX", chain: "flare", ref: "", claim: "" }]);
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.conduct.err.failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Add this member's signature to the pending case exactly as it stands. */
+  async function submitEndorsement() {
+    setBusy(true);
+    try {
+      const sig = await signChallenge();
+      const res = await fetch("/api/governance/conduct", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          providerId,
+          endorse: true,
+          message: sig.message,
+          signature: sig.signature,
+        }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.conduct.err.failed"));
+      setOk(
+        b.state === "NOTICE"
+          ? t("gov.conduct.opened")
+          : t("gov.conduct.recorded", { n: b.signatures, required: b.required })
+      );
       router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.conduct.err.failed"));
@@ -329,6 +381,49 @@ export function ConductAction({
             initialPendingCase={initialPendingCase}
           />
 
+          {/* THE CHOICE. Endorsing means: I have read the case above and I put my name to it as it
+              stands. Authoring means I have something of my own to add. Both are full signatures
+              and both count toward the four; only the second asks for text and references. */}
+          {canEndorse && (
+            <div className="mt-3 rounded-lg border border-themed bg-elev/60 p-3">
+              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="conduct-mode"
+                  checked={endorsing}
+                  onChange={() => setAuthorOwn(false)}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="font-medium text-fg">{t("gov.conduct.mode.endorse")}</span>
+                  <span className="mt-0.5 block text-xs text-faint">
+                    {t("gov.conduct.mode.endorseHelp")}
+                  </span>
+                </span>
+              </label>
+              <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="conduct-mode"
+                  checked={!endorsing}
+                  onChange={() => setAuthorOwn(true)}
+                  className="mt-1"
+                />
+                <span>
+                  <span className="font-medium text-fg">{t("gov.conduct.mode.own")}</span>
+                  <span className="mt-0.5 block text-xs text-faint">
+                    {t("gov.conduct.mode.ownHelp")}
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
+
+          {/* The authoring fields exist only when the member is authoring. Leaving them on screen
+              greyed out beside an endorsement would keep asking for something the submission will
+              not send. */}
+          {!endorsing && (
+            <>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -406,6 +501,8 @@ export function ConductAction({
           >
             {t("gov.conduct.addRow")}
           </button>
+            </>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-2">
             <button
@@ -413,7 +510,11 @@ export function ConductAction({
               disabled={busy}
               className="rounded-lg border border-flare px-4 py-2 font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
             >
-              {busy ? t("gov.act.signing") : t("gov.conduct.signSubmit")}
+              {busy
+                ? t("gov.act.signing")
+                : endorsing
+                  ? t("gov.conduct.signEndorse")
+                  : t("gov.conduct.signSubmit")}
             </button>
           </div>
           {err && <Note kind="err" text={err} />}
@@ -1731,8 +1832,16 @@ function PendingConductCase({
             </div>
             <p className="font-mono text-[10px] break-all text-faint">{pt.member}</p>
 
-            {pt.title && <p className="mt-2 text-sm font-medium text-fg">{pt.title}</p>}
-            <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{pt.grounds}</p>
+            {pt.endorsement ? (
+              // Signed what was already there. Shown, because a member deciding whether to join is
+              // weighing how many of the signatures so far actually found something.
+              <p className="mt-2 text-xs italic text-faint">{t("gov.case.conduct.endorsed")}</p>
+            ) : (
+              <>
+                {pt.title && <p className="mt-2 text-sm font-medium text-fg">{pt.title}</p>}
+                <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{pt.grounds}</p>
+              </>
+            )}
 
             {pt.evidence.length > 0 && (
               <div className="mt-3">

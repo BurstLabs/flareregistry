@@ -27,6 +27,21 @@ import { apiError } from "@/lib/api-error";
 // opens straight into public discussion.
 //
 // Body: { providerId, message, signature, grounds, title?, evidence: [{kind, chain?, ref, claim}] }
+//    or: { providerId, message, signature, endorse: true }   (co-sign an existing case as it stands)
+//
+// ENDORSEMENT. A later co-initiator may sign the case AS IT STANDS instead of authoring a separate
+// ground. That is what co-initiation has always meant: four members putting their names to one
+// accusation is what makes it real, and the pending view exists so a member can read the grounds
+// before deciding. Forcing each of the four to invent a distinct ground and distinct evidence for
+// the same conduct does not produce four independent findings, it produces three restatements, and
+// a padded record is worse than an honest one.
+//
+// The FIRST signature can never be an endorsement: there is nothing yet to endorse. Enforced below,
+// not left to the UI.
+//
+// An endorsement is RECORDED AS ONE and published as one. It counts as a full signature, but a case
+// carrying one ground endorsed by three members is not the same as four members who each found
+// something, and the reader of a published finding is entitled to tell them apart.
 
 /** Evidence kinds. Primary sources only: things a third party can independently check. */
 const EVIDENCE_KINDS = new Set(["TX", "ADDRESS", "CONTRACT", "DOCUMENT"]);
@@ -43,20 +58,24 @@ export async function POST(req: NextRequest) {
   const grounds = typeof body?.grounds === "string" ? body.grounds.trim() : null;
   const title = typeof body?.title === "string" ? body.title.trim().slice(0, 120) || null : null;
   const evidence = Array.isArray(body?.evidence) ? body.evidence : null;
+  const endorse = body?.endorse === true;
 
-  if (!providerId || !message || !signature || !grounds) {
+  if (!providerId || !message || !signature) {
     return NextResponse.json(
-      { error: "providerId, message, signature, and grounds are required" },
+      { error: "providerId, message and signature are required" },
       { status: 400 }
     );
   }
-  if (grounds.length < 10 || grounds.length > 2000) {
+  if (!endorse && !grounds) {
+    return NextResponse.json({ error: "grounds are required" }, { status: 400 });
+  }
+  if (!endorse && grounds && (grounds.length < 10 || grounds.length > 2000)) {
     return apiError("GROUNDS_LENGTH", "grounds must be between 10 and 2000 characters", 400);
   }
-  if (!isClean(grounds)) {
+  if (!endorse && grounds && !isClean(grounds)) {
     return apiError("INAPPROPRIATE_LANGUAGE", "grounds contain inappropriate language", 400);
   }
-  if (title && !isClean(title)) {
+  if (!endorse && title && !isClean(title)) {
     return apiError("INAPPROPRIATE_LANGUAGE", "title contains inappropriate language", 400);
   }
 
@@ -69,7 +88,7 @@ export async function POST(req: NextRequest) {
   // Each item carries BOTH a reference and a `claim`: what the member asserts it shows. Confirming
   // a hash exists proves only that a transaction happened, never that it demonstrates the ground.
   // The Management Group votes on the claim; the resolver only establishes the reference is real.
-  if (!Array.isArray(evidence) || evidence.length === 0) {
+  if (!endorse && (!Array.isArray(evidence) || evidence.length === 0)) {
     return apiError(
       "EVIDENCE_REQUIRED",
       "a conduct case requires at least one primary-source reference: an on-chain transaction, address, verified contract, or published document",
@@ -77,7 +96,7 @@ export async function POST(req: NextRequest) {
     );
   }
   const cleaned: { kind: string; chain: string | null; ref: string; claim: string }[] = [];
-  for (const e of evidence) {
+  for (const e of endorse ? [] : evidence ?? []) {
     const kind = typeof e?.kind === "string" ? e.kind.toUpperCase() : "";
     const ref = typeof e?.ref === "string" ? e.ref.trim() : "";
     const claim = typeof e?.claim === "string" ? e.claim.trim() : "";
@@ -180,6 +199,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // NOTHING TO ENDORSE. An endorsement is a signature on someone else's stated grounds, so it needs
+  // a live case that already carries at least one. Without this a member could open a case against
+  // a provider that asserts nothing at all, and three more could sign it: four signatures, no
+  // accusation, and a subject served with a notice that says nothing.
+  if (endorse) {
+    const authored = live?.initiations.filter((i) => !i.withdrawnAt && !i.endorsement).length ?? 0;
+    if (!live || live.state !== "PENDING" || authored === 0) {
+      return apiError(
+        "NOTHING_TO_ENDORSE",
+        "there is no pending conduct case with stated grounds for this provider to endorse",
+        409
+      );
+    }
+  }
+
   const now = new Date();
   let notifyCaseId: string | null = null;
   const result = await prisma.$transaction(async (tx) => {
@@ -215,13 +249,18 @@ export async function POST(req: NextRequest) {
         caseId: theCase!.id,
         memberEntityVoter: memberVoter,
         signerAddress: verified.address!.toLowerCase(),
-        title,
-        grounds,
+        title: endorse ? null : title,
+        grounds: endorse ? "" : grounds!,
+        endorsement: endorse,
       },
     });
-    await tx.providerFlagGroundsRevision.create({
-      data: { initiationId: created.id, grounds, title, signerAddress: verified.address!.toLowerCase() },
-    });
+    // No revision row for an endorsement. Revisions are the edit history of a text this member
+    // wrote, and they wrote none; an empty first version would put words in their mouth.
+    if (!endorse) {
+      await tx.providerFlagGroundsRevision.create({
+        data: { initiationId: created.id, grounds: grounds!, title, signerAddress: verified.address!.toLowerCase() },
+      });
+    }
     for (const e of cleaned) {
       await tx.providerFlagEvidence.create({ data: { initiationId: created.id, ...e } });
     }

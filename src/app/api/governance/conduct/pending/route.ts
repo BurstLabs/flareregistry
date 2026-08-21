@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
           memberEntityVoter: true,
           title: true,
           grounds: true,
+          endorsement: true,
           createdAt: true,
           evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
         },
@@ -126,6 +127,8 @@ export async function POST(req: NextRequest) {
         memberName: names.get(i.memberEntityVoter.toLowerCase()) ?? null,
         title: i.title,
         grounds: i.grounds,
+        /** True when this member signed the case as it stood rather than authoring a ground. */
+        endorsement: i.endorsement,
         at: i.createdAt,
         evidence: i.evidence,
       })),

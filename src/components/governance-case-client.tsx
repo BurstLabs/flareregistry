@@ -81,6 +81,8 @@ export interface CaseView {
     memberLink: string | null;
     grounds: string;
     title: string | null;
+    /** Signed the case as it stood rather than authoring a ground. `grounds` is empty. */
+    endorsement: boolean;
     at: string;
     editedAt: string | null;
     initiationId: string;
@@ -1475,10 +1477,23 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
           // what it shows. Publishing the finding without them would ask a reader to take the
           // group's word for it, which is the one thing this mechanism is built not to require.
           const ev = v.kind === "CONDUCT" ? v.evidence?.[idx] ?? [] : [];
+          // AN ENDORSEMENT HAS NO POINT OF ITS OWN. Its initiation row carries empty grounds, and
+          // feeding that through renderPoints draws an empty bordered box under the member's name,
+          // which reads as a member who said nothing rather than one who signed what was already
+          // said. Their own later entries (replies) still render normally.
+          const primaryRef = `initiation:${i.initiationId}`;
+          const topLevel = topLevelFor(ownRefs).filter(
+            (pt) => !(i.endorsement && pt.ref === primaryRef)
+          );
           return (
             <li key={i.initiationId}>
               {memberHeader(i)}
-              {renderPoints(topLevelFor(ownRefs), false)}
+              {i.endorsement && (
+                <p className="mb-2 rounded-lg border border-themed bg-elev/40 px-3 py-2 text-xs text-muted">
+                  {t("gov.case.conduct.endorsed")}
+                </p>
+              )}
+              {renderPoints(topLevel, false)}
               {ev.length > 0 && (
                 <div className="ml-3 mt-2 border-l-2 border-beacon/30 pl-3">
                   <p className="text-[10px] uppercase tracking-wide text-faint">

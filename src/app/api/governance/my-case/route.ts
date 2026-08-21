@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
         select: {
           title: true,
           grounds: true,
+          endorsement: true,
           evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
         },
       },
@@ -97,6 +98,7 @@ export async function POST(req: NextRequest) {
       points: c.initiations.map((i) => ({
         title: i.title,
         grounds: i.grounds,
+        endorsement: i.endorsement,
         evidence: i.evidence,
       })),
     })),
