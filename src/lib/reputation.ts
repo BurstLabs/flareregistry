@@ -73,6 +73,18 @@ export const VALIDATOR_RAMP_EPOCHS = 30;
 export const VALIDATOR_MIN_EPOCHS = 3;
 
 /**
+ * Hours between ingest runs, matching the cron that refreshes every input this score reads.
+ *
+ * Stated here so a page can compute the next refresh from the LAST one rather than encoding a cron
+ * expression in the UI. Anchoring on the last run also means a missed run does not produce a "next
+ * refresh" in the past: the caller advances by this interval until it lands ahead of now.
+ *
+ * Worth keeping straight: this is how often the data is CHECKED, not how often the score moves. A
+ * reward epoch is 3.5 days, so most refreshes find nothing new and the figure holds.
+ */
+export const INGEST_INTERVAL_HOURS = 6;
+
+/**
  * Points deducted for a provider that is currently not registered on-chain.
  *
  * WHY A DEDUCTION AND NOT JUST A LOW AVERAGE. Absence already lowers reliability and conditions,
@@ -435,6 +447,15 @@ export interface Reputation {
    * reader reasonably assumes Flare, and concludes a working operation is failing.
    */
   network: string;
+  /**
+   * When the inputs behind this figure were last refreshed, and the reward epoch they run through.
+   *
+   * A score reads as a statement about now. It is a statement about the last epoch we ingested, and
+   * the panel should be able to say so rather than leaving a reader to assume currency it may not
+   * have. Null only if the network has never been ingested.
+   */
+  lastRefreshedAt: Date | null;
+  dataThroughEpoch: number | null;
   score: number;
   band: Band;
   components: ReputationComponent[];
@@ -1171,8 +1192,17 @@ export async function reputationFor(
     if (ups.length) validatorUptime = ups.reduce((a, b) => a + b, 0) / ups.length;
   }
 
+  // WHEN THIS FIGURE LAST MOVED, and what it is computed through. The ingest job stamps ingestState
+  // on every run, so `updatedAt` is when the inputs were last refreshed rather than when an epoch
+  // last changed. Carried here so the panel can state its own freshness instead of a reader having
+  // to assume a score shown at any moment is current.
+  const freshness = await prisma.ingestState.findUnique({ where: { network } });
+
   return {
     network,
+    /** When the inputs behind this score were last refreshed, and the epoch they run through. */
+    lastRefreshedAt: freshness?.updatedAt ?? null,
+    dataThroughEpoch: latest,
     score,
     band: band(score, components, chillPenalty + findingPenalty + absencePenalty),
     components,

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 import Link from "next/link";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
@@ -8,6 +10,7 @@ import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
 import { apportionWhole, displayScore } from "@/lib/display-rounding";
+import { INGEST_INTERVAL_HOURS } from "@/lib/reputation";
 import { ManageListingButton } from "./manage-listing-button";
 import { OwnerNotices } from "./owner-notices";
 import { MgJoinButton } from "./mg-join-button";
@@ -130,6 +133,8 @@ export interface DetailData {
       penalty: number;
     }[];
     baseScore: number;
+    lastRefreshedAt: string | Date | null;
+    dataThroughEpoch: number | null;
     chillPenalty: number;
     absencePenalty: number;
     epochsAbsent: number;
@@ -1166,6 +1171,14 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
               </div>
             )}
             <p className="mt-3 text-xs text-faint">{t("rep.excluded")}</p>
+            {/* FRESHNESS. A score reads as a statement about now; it is a statement about the last
+                epoch ingested. Saying which epoch it runs through, and when the inputs are next
+                checked, is the difference between a figure a reader can rely on and one they have to
+                assume things about. */}
+            <RefreshLine
+              lastRefreshedAt={d.reputation.lastRefreshedAt}
+              dataThroughEpoch={d.reputation.dataThroughEpoch}
+            />
             <p className="mt-2 text-xs text-faint">
               {t("rep.version", { version: d.reputation.version })}{" "}
               <Link href="/reputation" className="text-beacon hover:underline">
@@ -1313,5 +1326,58 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
         </section>
       )}
     </div>
+  );
+}
+
+/**
+ * When the score's inputs were last refreshed, and when they are next checked.
+ *
+ * COMPUTED ON THE CLIENT, AFTER MOUNT, on purpose. A relative time rendered on the server is wrong
+ * the moment it is cached and mismatches on hydration; rendering it only once mounted keeps it
+ * honest and keeps React quiet. Until then the absolute epoch is shown, which is true regardless of
+ * when the page is read.
+ *
+ * The next refresh is derived from the LAST one plus the ingest interval, advanced until it lands
+ * ahead of now, so a missed run shows the next real opportunity rather than a time in the past. No
+ * cron expression is encoded here.
+ */
+function RefreshLine({
+  lastRefreshedAt,
+  dataThroughEpoch,
+}: {
+  lastRefreshedAt: string | Date | null;
+  dataThroughEpoch: number | null;
+}) {
+  const { t } = useApp();
+  const [rel, setRel] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!lastRefreshedAt) return;
+    const tick = () => {
+      const last = new Date(lastRefreshedAt).getTime();
+      if (!Number.isFinite(last)) return;
+      const step = INGEST_INTERVAL_HOURS * 3_600_000;
+      let next = last + step;
+      const now = Date.now();
+      while (next <= now) next += step;
+      const mins = Math.max(0, Math.round((next - now) / 60_000));
+      setRel(
+        mins < 60
+          ? t("rep.refresh.inMinutes", { n: mins })
+          : t("rep.refresh.inHours", { n: Math.floor(mins / 60), m: mins % 60 })
+      );
+    };
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, [lastRefreshedAt, t]);
+
+  if (dataThroughEpoch == null && !rel) return null;
+  return (
+    <p className="mt-2 text-xs text-faint">
+      {dataThroughEpoch != null && t("rep.refresh.through", { epoch: dataThroughEpoch })}
+      {dataThroughEpoch != null && rel ? " " : ""}
+      {rel && t("rep.refresh.next", { when: rel })}
+    </p>
   );
 }
