@@ -701,13 +701,26 @@ export async function pendingConductForMember(
       at: i.createdAt.toISOString(),
       evidence: i.evidence,
     })),
-    audit: audit.map((a) => ({
-      at: a.createdAt.toISOString(),
-      action: a.action,
-      actor: a.actor,
-      actorName: names.get(a.actor.toLowerCase()) ?? null,
-      meta: auditMeta(a.action, a.detail),
-    })),
+    audit: audit.map((a) => {
+      // AN OPERATOR ACTION IS ATTRIBUTED TO THE OPERATOR, NOT TO A WALLET.
+      //
+      // The admin routes are inconsistent about what they store: some write the literal "admin",
+      // others the signed-in operator's own address. So the same operation read two different ways
+      // in one list, half of it as "An administrator" and half as "0x670a...c63c", and the address
+      // is the operator's personal wallet, which no member needs and nobody chose to publish.
+      //
+      // Decided by the ACTION rather than by the shape of the actor, because the action is what
+      // says where it came from. Redacted HERE rather than in the component, so the address does
+      // not travel to the browser at all and cannot be read out of the page source.
+      const operator = a.action.startsWith("ADMIN_") || a.action === "CASE_DELETED";
+      return {
+        at: a.createdAt.toISOString(),
+        action: a.action,
+        actor: operator ? "admin" : a.actor,
+        actorName: operator ? null : (names.get(a.actor.toLowerCase()) ?? null),
+        meta: auditMeta(a.action, a.detail),
+      };
+    }),
   };
 }
 
