@@ -156,3 +156,58 @@ export function useSignChallenge(t: TFn) {
   // cannot be replayed as a vote/flag/appeal (and vice-versa).
   return useCallback(() => connectAndSign({ chainId: 14, action: "governance" }), [connectAndSign]);
 }
+
+/**
+ * Sign in with an ALREADY-CONNECTED wallet: exactly one prompt, and no connect step.
+ *
+ * WHY THIS EXISTS SEPARATELY FROM useWalletSign. That hook is connect-and-sign: it calls
+ * openWallet() whenever it cannot see a connection. Called from an effect that fires the moment a
+ * wallet connects, it reads an `isConnected` that has not updated yet, opens the wallet a second
+ * time, and the user gets "Accept connection request" followed by the signature. Two prompts for one
+ * intention. That is a real bug I shipped, not a limitation of wallets.
+ *
+ * This does the minimum instead: fetch a challenge, sign it, exchange it for a session. If no wallet
+ * is connected it returns false rather than prompting, because the caller is an automatic path and
+ * an automatic path must never open a dialog nobody asked for.
+ *
+ * WHY A SIGNATURE AT ALL, since the address is right there in the browser. The server never sees the
+ * wallet, only a request, and an address in a request is claimed rather than proven. Management
+ * Group membership is public on-chain state, so anyone can send a member's address with curl and no
+ * wallet at all; the server cannot tell that apart from the real member's browser saying the same
+ * thing. The signature is the only thing that distinguishes them. It is one prompt, once per
+ * session, and it is not removable without making a sealed case readable by anyone who can type an
+ * address.
+ */
+export function useSessionSignIn(t: TFn) {
+  const { address, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  return useCallback(async (): Promise<boolean> => {
+    if (!isConnected || !address) return false;
+    const nonceRes = await fetch("/api/auth/nonce", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ address, chainId: 14, action: "session" }),
+    });
+    if (!nonceRes.ok) {
+      if (nonceRes.status === 429) throw new Error(t("submit.err.rateLimited"));
+      throw new Error(t("submit.err.noChallenge"));
+    }
+    const { message } = await nonceRes.json();
+    let signature: string;
+    try {
+      signature = await signMessageAsync({ message });
+    } catch (e) {
+      throw new Error(cleanWalletError(e, t));
+    }
+    const verified = await fetch("/api/auth/verify", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message, signature }),
+    });
+    if (!verified.ok) {
+      const b = await verified.json().catch(() => ({}));
+      throw new Error(b.error ?? t("submit.err.verifyFailed"));
+    }
+    return true;
+  }, [address, isConnected, signMessageAsync, t]);
+}
