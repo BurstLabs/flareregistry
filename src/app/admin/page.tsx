@@ -976,10 +976,29 @@ function ConductTab() {
                 {c.points.map((p: any) => (
                   <div key={p.id} className="rounded-lg border border-themed/60 bg-elev/30 p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-mono text-[11px] text-faint" title={p.member}>
-                        {p.member}
-                        {p.withdrawn && <span className="ml-2 text-amber-500">withdrawn</span>}
-                      </span>
+                      {/* The co-initiator is EDITABLE. It decides whose signature this point counts
+                          as, and therefore how close the case is to the four it needs, so an
+                          operator correcting a case needs to be able to correct it here rather than
+                          from a database prompt. Changing it moves the signer address and the
+                          revisions' signer with it, server-side: see the route. */}
+                      <label className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="shrink-0 text-[10px] uppercase tracking-wide text-faint">
+                          Co-initiator
+                        </span>
+                        <input
+                          defaultValue={p.member}
+                          title={p.member}
+                          onBlur={(e) =>
+                            e.target.value.trim().toLowerCase() !== p.member.toLowerCase() &&
+                            send(
+                              { op: "initiation", id: c.id, initiationId: p.id, member: e.target.value.trim() },
+                              "Co-initiator reassigned."
+                            )
+                          }
+                          className={`${inputCls} font-mono text-[11px]`}
+                        />
+                        {p.withdrawn && <span className="shrink-0 text-[11px] text-amber-500">withdrawn</span>}
+                      </label>
                       <div className="flex gap-1">
                         <button
                           onClick={() =>

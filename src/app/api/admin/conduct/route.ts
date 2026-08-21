@@ -292,12 +292,31 @@ export async function PATCH(req: NextRequest) {
       const data: Record<string, unknown> = {};
       if (b.title !== undefined) data.title = strField(b.title);
       if (b.grounds !== undefined) data.grounds = String(b.grounds);
-      if (b.member !== undefined) data.memberEntityVoter = String(b.member);
+      if (b.member !== undefined) {
+        // REASSIGNING A POINT MOVES THE SIGNER WITH IT.
+        //
+        // memberEntityVoter says which member entity raised the point; signerAddress says which key
+        // actually signed it. Changing the first alone leaves the second naming a different entity,
+        // so the record would assert two contradictory things about who raised the accusation, and
+        // the co-initiation count is derived from the member field while the audit reads the signer.
+        // An operator reassigning a point means the whole attribution, not half of it.
+        const m = String(b.member).toLowerCase();
+        data.memberEntityVoter = m;
+        data.signerAddress = m;
+      }
       if (b.withdrawn !== undefined) data.withdrawnAt = b.withdrawn ? new Date() : null;
       if (Object.keys(data).length === 0) {
         return NextResponse.json({ error: "no fields to update" }, { status: 400 });
       }
       await prisma.providerFlagInitiation.update({ where: { id: initiationId }, data });
+      if (b.member !== undefined) {
+        // Revisions record who signed each version. Left behind they would attribute the same text
+        // to the previous member, which is the same contradiction one level down.
+        await prisma.providerFlagGroundsRevision.updateMany({
+          where: { initiationId },
+          data: { signerAddress: String(b.member).toLowerCase() },
+        });
+      }
       await audit(
         id,
         "ADMIN_EDIT_POINT",
