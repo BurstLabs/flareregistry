@@ -4,7 +4,12 @@ import { verifyChallenge } from "@/lib/auth";
 import { getSessionAddress } from "@/lib/session";
 import { rateLimit } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-error";
-import { CONDUCT_CO_INITIATORS_REQUIRED, loadMembers, memberVoterFor } from "@/lib/governance";
+import {
+  CONDUCT_CO_INITIATORS_REQUIRED,
+  loadMembers,
+  memberVoterFor,
+  namesForMemberVoters,
+} from "@/lib/governance";
 
 // POST /api/governance/conduct/pending  { providerId, message, signature }
 //
@@ -103,6 +108,9 @@ export async function POST(req: NextRequest) {
   if (!live) return NextResponse.json({ pending: null, required: CONDUCT_CO_INITIATORS_REQUIRED });
 
   const signatures = live.initiations.length;
+  // Who is accusing, in words. A voter address alone does not answer that without a separate lookup,
+  // and the reader is deciding whether to put their own name beside it.
+  const names = await namesForMemberVoters(live.initiations.map((i) => i.memberEntityVoter));
   return NextResponse.json({
     pending: {
       caseId: live.id,
@@ -115,6 +123,7 @@ export async function POST(req: NextRequest) {
       alreadySigned: live.initiations.some((i) => i.memberEntityVoter === memberVoter),
       points: live.initiations.map((i) => ({
         member: i.memberEntityVoter,
+        memberName: names.get(i.memberEntityVoter.toLowerCase()) ?? null,
         title: i.title,
         grounds: i.grounds,
         at: i.createdAt,

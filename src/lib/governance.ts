@@ -541,3 +541,66 @@ export async function conductFindingsByProvider(): Promise<Map<string, ConductFi
   }
   return map;
 }
+
+/**
+ * Resolve member entity voter addresses to the provider names behind them.
+ *
+ * A conduct case names its co-initiators by voter address, which is correct for storage and useless
+ * to read: a member deciding whether to add the fourth signature needs to know WHO is accusing, and
+ * "0x04cfe617..." does not answer that without a separate lookup.
+ *
+ * Matched through all FIVE role addresses, not the voter alone. A listing is filed under whichever
+ * role its owner claimed with, usually delegation, so a voter-only match leaves nearly every member
+ * unnamed. A listing whose name is its own address is the on-chain tier and counts as unnamed, since
+ * repeating the hex adds nothing.
+ */
+export async function namesForMemberVoters(
+  voters: string[]
+): Promise<Map<string, string>> {
+  const lower = [...new Set(voters.map((v) => v.toLowerCase()))];
+  if (!lower.length) return new Map();
+
+  const ents = await prisma.providerOnchain.findMany({
+    where: { voter: { in: lower } },
+    select: {
+      voter: true,
+      delegationAddress: true,
+      submitAddress: true,
+      submitSignaturesAddress: true,
+      signingPolicyAddress: true,
+    },
+  });
+  const roleAddrs = new Set<string>();
+  for (const e of ents) {
+    for (const a of [
+      e.voter,
+      e.delegationAddress,
+      e.submitAddress,
+      e.submitSignaturesAddress,
+      e.signingPolicyAddress,
+    ]) {
+      if (a) roleAddrs.add(a.toLowerCase());
+    }
+  }
+  const addrs = await prisma.providerAddress.findMany({
+    where: { address: { in: [...roleAddrs] } },
+    select: { address: true, provider: { select: { name: true } } },
+  });
+  const byAddr = new Map(addrs.map((a) => [a.address.toLowerCase(), a.provider.name]));
+
+  const out = new Map<string, string>();
+  for (const e of ents) {
+    const roles = [
+      e.voter,
+      e.delegationAddress,
+      e.submitAddress,
+      e.submitSignaturesAddress,
+      e.signingPolicyAddress,
+    ]
+      .filter((r): r is string => !!r)
+      .map((r) => r.toLowerCase());
+    const name = roles.map((r) => byAddr.get(r)).find(Boolean);
+    if (name && !/^0x[0-9a-f]{40}$/i.test(name.trim())) out.set(e.voter.toLowerCase(), name);
+  }
+  return out;
+}
