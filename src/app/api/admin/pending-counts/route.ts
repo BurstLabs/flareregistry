@@ -11,7 +11,7 @@ export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const [imports, consumers, openReports, pendingLogos, governance] = await Promise.all([
+  const [imports, consumers, openReports, pendingLogos, governance, conduct] = await Promise.all([
     // Import candidates awaiting review.
     prisma.importCandidate.count({ where: { status: "pending" } }),
     // Consumer moderation queue: new pending submissions OR edit proposals against approved rows.
@@ -23,9 +23,18 @@ export async function GET() {
     // Logos still inside the review window: the "Logo reports" tab hosts BOTH the report queue and the
     // pending-logo approve/reject panel, so the badge must count both or a pending logo shows no badge.
     prisma.provider.count({ where: { logoPendingAt: { not: null } } }),
-    // Live governance cases (not yet decided): pending flag or open discussion/voting.
+    // Live FLAG cases (not yet decided). Scoped by kind: conduct cases share this table and have
+    // their own tab, and counting them here put a conduct case's badge on the Governance tab while
+    // leaving the Conduct tab showing none.
     prisma.providerFlagCase.count({
-      where: { state: { in: ["PENDING", "OPEN_DISCUSSION", "OPEN_VOTING"] } },
+      where: { kind: "FLAG", state: { in: ["PENDING", "OPEN_DISCUSSION", "OPEN_VOTING"] } },
+    }),
+    // Live conduct cases, for the Conduct tab's own badge.
+    prisma.providerFlagCase.count({
+      where: {
+        kind: "CONDUCT",
+        state: { in: ["PENDING", "NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] },
+      },
     }),
   ]);
 
@@ -37,5 +46,6 @@ export async function GET() {
     openReports,
     pendingLogos,
     governance,
+    conduct,
   });
 }

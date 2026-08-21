@@ -9,7 +9,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
+  // FLAG CASES ONLY. Conduct cases share this table but nothing else, and they have their own tab.
+  //
+  // Without this filter a conduct case appeared in BOTH tabs, and in this one it rendered as type
+  // "flag" because that column is derived from isReVote and has only two answers. It also carried a
+  // delete button, which since conduct deletion was permitted means an operator could have removed a
+  // sealed case from the tab that is not supposed to show it, believing it was a flag.
   const cases = await prisma.providerFlagCase.findMany({
+    where: { kind: "FLAG" },
     include: {
       provider: { select: { name: true } },
       _count: { select: { initiations: true, votes: true } },
@@ -47,6 +54,16 @@ export async function DELETE(req: NextRequest) {
     select: { kind: true, state: true, providerId: true },
   });
   if (!target) return NextResponse.json({ error: "case not found" }, { status: 404 });
+  // This route serves the Governance tab, which lists FLAG cases. Conduct deletion is permitted, but
+  // through /api/admin/conduct, where the surface states what a conduct case is and the snapshot
+  // written to the audit trail describes one. Refusing here is not a restriction on the operator, it
+  // is a refusal to let the wrong tab act on a case it does not show.
+  if (target.kind === "CONDUCT") {
+    return NextResponse.json(
+      { error: "this is a conduct case; delete it from the Conduct tab" },
+      { status: 409 }
+    );
+  }
   // Remove polymorphic image rows first (they reference the case by id, also cascaded, but explicit
   // is safe), then the case (cascades initiations, grounds, defense, votes, revisions).
   await prisma.providerFlagPointImage.deleteMany({ where: { caseId: id } });
