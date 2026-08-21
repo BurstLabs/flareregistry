@@ -32,6 +32,7 @@ export type ApiErrorCode =
   | "VOTING_NOT_OPEN"
   | "FLAG_ALREADY_OPENED"
   | "NOTHING_TO_ENDORSE"
+  | "CONDUCT_ALREADY_OPENED"
   // authorship / ownership
   | "NOT_PROVIDER"
   | "NOT_LISTING_OWNER"
@@ -65,6 +66,7 @@ export const API_ERROR_I18N: Record<ApiErrorCode, string> = {
   GROUNDS_LENGTH: "apiErr.groundsLength",
   EVIDENCE_REQUIRED: "apiErr.evidenceRequired",
   NOTHING_TO_ENDORSE: "apiErr.nothingToEndorse",
+  CONDUCT_ALREADY_OPENED: "apiErr.caseAlreadyOpened",
   EVIDENCE_KIND: "apiErr.evidenceKind",
   EVIDENCE_REF: "apiErr.evidenceRef",
   EVIDENCE_CLAIM: "apiErr.evidenceClaim",

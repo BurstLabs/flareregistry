@@ -125,6 +125,13 @@ export async function POST(req: NextRequest) {
       points: live.initiations.map((i) => ({
         member: i.memberEntityVoter,
         memberName: names.get(i.memberEntityVoter.toLowerCase()) ?? null,
+        /**
+         * This point belongs to the member asking. Resolved here rather than compared in the
+         * browser: a member signs with any of their five on-chain role addresses, so the address
+         * the wallet holds is often not the voter address stored on the point, and a client-side
+         * comparison would leave most members unable to find their own signature.
+         */
+        mine: i.memberEntityVoter === memberVoter,
         title: i.title,
         grounds: i.grounds,
         /** True when this member signed the case as it stood rather than authoring a ground. */
