@@ -65,6 +65,12 @@ const CLASSIFIED = {
   // identity only: no grounds and no evidence, so a directory response never carries the text of an
   // unvoted accusation.
   "app/api/governance/conduct/pending-all/route.ts": "ACTION",
+  // MEMBER-ONLY. Removes the caller's OWN signature from a pending conduct case, and takes the case
+  // with it when the last authored ground goes. Same gate as the routes above (session or signed
+  // challenge, then current membership re-checked server-side) and scoped to state PENDING, so it
+  // cannot touch a case that has opened. It returns counts, never grounds, so nothing about a sealed
+  // case leaves through it even for the member who signed.
+  "app/api/governance/conduct/withdraw/route.ts": "ACTION",
   "app/api/governance/flag/route.ts": "ACTION",
   "app/api/governance/vote/route.ts": "ACTION",
   "app/api/governance/defend/route.ts": "ACTION",

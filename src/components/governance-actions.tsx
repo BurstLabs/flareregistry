@@ -162,6 +162,8 @@ type PendingCase = {
     grounds: string;
     /** Signed the case as it stood rather than authoring a ground. `grounds` is empty. */
     endorsement?: boolean;
+    /** Server-resolved: this point is the asking member's own. */
+    mine?: boolean;
     evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
   }[];
 };
@@ -1783,6 +1785,43 @@ function PendingConductCase({
     }
   }
 
+  /**
+   * Take this member's own signature back off the case.
+   *
+   * An endorsement you cannot revoke is not an endorsement, and the same holds for grounds a member
+   * no longer stands behind. Allowed only while the case is PENDING; the server enforces that, and
+   * refuses once the subject has been served with a fixed set of accusers.
+   */
+  async function withdraw() {
+    setErr("");
+    if (!confirm(t("gov.conduct.withdraw.confirm"))) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/governance/conduct/withdraw", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ providerId }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.conduct.withdraw.err"));
+      // The case may have gone with it: the last authored ground leaving takes the case, since
+      // signatures endorsing nothing are not a case.
+      if (b.caseClosed) {
+        setData({ pending: null });
+        onCount(0);
+      } else {
+        setData(null);
+        onCount(b.signatures ?? 0);
+        await check(false);
+      }
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.conduct.withdraw.err"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (data === null) {
     // Nothing to show a member whose counts are already loading, and nothing to show a non-member.
     if (!needsSignature) return null;
@@ -1849,6 +1888,24 @@ function PendingConductCase({
                 {pt.title && <p className="mt-2 text-sm font-medium text-fg">{pt.title}</p>}
                 <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{pt.grounds}</p>
               </>
+            )}
+            {/* YOUR OWN SIGNATURE, and only your own. Sits on the point itself rather than in a
+                panel-level control, so it is unambiguous which of the signatures is being taken
+                back. The server re-checks ownership and the PENDING state; this only decides where
+                the button is drawn. */}
+            {pt.mine && (
+              <button
+                type="button"
+                onClick={withdraw}
+                disabled={busy}
+                className="mt-2 text-[11px] text-faint underline hover:text-flare disabled:opacity-50"
+              >
+                {busy
+                  ? t("gov.act.signing")
+                  : pt.endorsement
+                    ? t("gov.conduct.withdraw.endorsement")
+                    : t("gov.conduct.withdraw.grounds")}
+              </button>
             )}
 
             {pt.evidence.length > 0 && (
