@@ -8,7 +8,7 @@ import {
   CONDUCT_CO_INITIATORS_REQUIRED,
   loadMembers,
   memberVoterFor,
-  namesForMemberVoters,
+  pendingConductForMember,
 } from "@/lib/governance";
 
 // POST /api/governance/conduct/pending  { providerId, message, signature }
@@ -84,62 +84,9 @@ export async function POST(req: NextRequest) {
     return apiError("NOT_A_MEMBER", "the signing address is not a current Management Group member", 403);
   }
 
-  // PENDING only. A case past notice has already opened and is no longer joinable, and the conduct
-  // route refuses a late co-initiation for the same reason: once the subject has been served, the
-  // set of accusers they were served with cannot grow behind them.
-  const live = await prisma.providerFlagCase.findFirst({
-    where: { providerId, kind: "CONDUCT", state: "PENDING" },
-    orderBy: { createdAt: "desc" },
-    include: {
-      initiations: {
-        where: { withdrawnAt: null },
-        orderBy: { createdAt: "asc" },
-        select: {
-          memberEntityVoter: true,
-          title: true,
-          grounds: true,
-          endorsement: true,
-          createdAt: true,
-          evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
-        },
-      },
-    },
-  });
-
-  if (!live) return NextResponse.json({ pending: null, required: CONDUCT_CO_INITIATORS_REQUIRED });
-
-  const signatures = live.initiations.length;
-  // Who is accusing, in words. A voter address alone does not answer that without a separate lookup,
-  // and the reader is deciding whether to put their own name beside it.
-  const names = await namesForMemberVoters(live.initiations.map((i) => i.memberEntityVoter));
-  return NextResponse.json({
-    pending: {
-      caseId: live.id,
-      network: live.network,
-      openedAt: live.openedAt,
-      signatures,
-      required: CONDUCT_CO_INITIATORS_REQUIRED,
-      remaining: Math.max(0, CONDUCT_CO_INITIATORS_REQUIRED - signatures),
-      /** True when this member has already signed, so the form can say so instead of 409ing later. */
-      alreadySigned: live.initiations.some((i) => i.memberEntityVoter === memberVoter),
-      points: live.initiations.map((i) => ({
-        member: i.memberEntityVoter,
-        memberName: names.get(i.memberEntityVoter.toLowerCase()) ?? null,
-        /**
-         * This point belongs to the member asking. Resolved here rather than compared in the
-         * browser: a member signs with any of their five on-chain role addresses, so the address
-         * the wallet holds is often not the voter address stored on the point, and a client-side
-         * comparison would leave most members unable to find their own signature.
-         */
-        mine: i.memberEntityVoter === memberVoter,
-        title: i.title,
-        grounds: i.grounds,
-        /** True when this member signed the case as it stood rather than authoring a ground. */
-        endorsement: i.endorsement,
-        at: i.createdAt,
-        evidence: i.evidence,
-      })),
-    },
-    required: CONDUCT_CO_INITIATORS_REQUIRED,
-  });
+  // ONE BUILDER, shared with the provider page, which server-renders this same payload. Two copies
+  // drifted once already: fields added here were missing there, so the panel everybody actually
+  // sees lacked them.
+  const pending = await pendingConductForMember(providerId, memberVoter);
+  return NextResponse.json({ pending, required: CONDUCT_CO_INITIATORS_REQUIRED });
 }
