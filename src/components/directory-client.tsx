@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount } from "wagmi";
-import { useSignChallenge } from "@/lib/useWalletSign";
+import { useWalletSign } from "@/lib/useWalletSign";
+import { useRouter } from "next/navigation";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
 import { InfoTip } from "./info-tip";
@@ -63,7 +64,8 @@ export function DirectoryClient({
   initialPending: { providerId: string; remaining: number; alreadySigned: boolean }[];
 }) {
   const { t } = useApp();
-  const signChallenge = useSignChallenge(t);
+  const connectAndSign = useWalletSign(t);
+  const router = useRouter();
   const { address, isConnected } = useAccount();
 
   // PENDING CONDUCT CASES, for Management Group members only.
@@ -102,16 +104,36 @@ export function DirectoryClient({
       });
       if (res.status === 401) {
         if (!allowSign) {
-          // A member with no session. Offer the button rather than interrupting them with a popup.
+          // A member with a wallet but no session. Offer the button rather than interrupting them
+          // with a popup on load.
           setNeedsSignature(true);
           return;
         }
-        const sig = await signChallenge();
-        res = await fetch("/api/governance/conduct/pending-all", {
+        // SIGN IN, rather than signing a throwaway challenge.
+        //
+        // A governance-action signature authorises one request and leaves no session behind, so this
+        // button would have reappeared on every page load and asked for a signature every time.
+        // /api/auth/verify sets the session cookie, which is the same credential the server render
+        // reads, so signing once here makes every later load automatic on both surfaces.
+        //
+        // The action must be "session": governance signatures are bound to a coarse "governance"
+        // action precisely so a sign-in cannot be replayed as a vote or a flag, and verify rejects
+        // anything else. Using the wrong one here would fail 401 and look like a wallet problem.
+        const sig = await connectAndSign({ chainId: 14, action: "session" });
+        const verified = await fetch("/api/auth/verify", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ message: sig.message, signature: sig.signature }),
         });
+        if (!verified.ok) throw new Error("sign-in failed");
+        res = await fetch("/api/governance/conduct/pending-all", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: "{}",
+        });
+        // Re-render from the server so the session now drives the page, exactly as it does for a
+        // member who arrived already signed in.
+        router.refresh();
       }
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(b.error ?? "failed");
