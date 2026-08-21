@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import Link from "next/link";
 import { useApp } from "@/components/providers";
-import { useSignChallenge } from "@/lib/useWalletSign";
+import { useSignChallenge, useWalletSign } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
@@ -1577,7 +1577,8 @@ function PendingConductCase({
   initialPendingSignatures: number | null;
 }) {
   const { t } = useApp();
-  const signChallenge = useSignChallenge(t);
+  const connectAndSign = useWalletSign(t);
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [data, setData] = useState<
@@ -1627,12 +1628,21 @@ function PendingConductCase({
           setNeedsSignature(true);
           return;
         }
-        const sg = await signChallenge();
+        // Sign IN, not a one-off challenge: see the note in directory-client. The action must be
+        // "session", since governance signatures are deliberately not accepted by verify.
+        const sg = await connectAndSign({ chainId: 14, action: "session" });
+        const verified = await fetch("/api/auth/verify", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ message: sg.message, signature: sg.signature }),
+        });
+        if (!verified.ok) throw new Error(t("gov.conduct.pending.err"));
         res = await fetch("/api/governance/conduct/pending", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ providerId, message: sg.message, signature: sg.signature }),
+          body: JSON.stringify({ providerId }),
         });
+        router.refresh();
       }
       setNeedsSignature(false);
       const b = await res.json().catch(() => ({}));
