@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useApp } from "@/components/providers";
 import { useSignChallenge, useWalletSign } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
+import { CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -1704,6 +1705,13 @@ function PendingConductCase({
         {p.alreadySigned
           ? t("gov.conduct.pending.yours")
           : t("gov.conduct.pending.join", { remaining: p.remaining })}
+      </p>
+      {/* WHAT HAPPENS IF NOBODY ELSE SIGNS. Until this was implemented the answer was "nothing, for
+          ever": a case short of four signatures sat sealed with no route to a verdict, and the
+          subject was never told so could not clear it either. A member weighing a signature is
+          entitled to know the case lapses rather than lingering. */}
+      <p className="mt-1 text-xs text-faint">
+        {t("gov.conduct.pending.lapses", { days: CONDUCT_PENDING_EXPIRY_DAYS })}
       </p>
       <ul className="mt-3 space-y-3">
         {p.points.map((pt, i) => (

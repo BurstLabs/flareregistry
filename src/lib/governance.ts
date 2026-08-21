@@ -21,6 +21,21 @@ export const DISCUSSION_DAYS = 3; // discussion-only portion at the start
 export const VOTING_DAYS = FLAG_PAUSE_DAYS - DISCUSSION_DAYS; // 11 days of voting
 export const CO_INITIATORS_REQUIRED = 2; // distinct members needed to open a case
 export const PENDING_EXPIRY_DAYS = 7; // a single-member pending flag auto-expires after this
+
+/**
+ * Days a CONDUCT case may sit short of its four signatures before it lapses.
+ *
+ * Without this a case with one signature sat PENDING forever. Nothing published it, nothing decided
+ * it, and the subject was never told, so it could not be answered either: an accusation readable by
+ * all 48 members, against a named competitor, with no route to a verdict and no expiry. A process
+ * that can be started but never finished is not a process, it is a standing allegation, and the seal
+ * that protects the subject from publicity also denied them any way to clear it.
+ *
+ * 14 days, matching the notice period. Long enough to gather three more signatures from a group of
+ * that size, short enough that a case nobody would co-sign does not persist on the strength of one
+ * member's word.
+ */
+export const CONDUCT_PENDING_EXPIRY_DAYS = 14;
 export const APPEAL_COOLDOWN_DAYS = 30; // earliest an appeal may open after a denial
 export const APPEAL_DEADLINE_DAYS = 365; // latest an appeal may open; then suspension is final
 

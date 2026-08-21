@@ -6,6 +6,8 @@ import {
   loadMembers,
   evaluateOutcome,
   PENDING_EXPIRY_DAYS,
+  CONDUCT_PENDING_EXPIRY_DAYS,
+  CONDUCT_CO_INITIATORS_REQUIRED,
   NEW_PROVIDER_WINDOW_DAYS,
 } from "@/lib/governance";
 
@@ -33,8 +35,8 @@ export async function POST(req: NextRequest) {
   //    FLAG CASES ONLY. The new-provider window is meaningless for a CONDUCT case, and worse,
   //    `windowEnded` is unconditionally true for any provider older than 30 days, which is every
   //    conceivable CONDUCT subject. Left unscoped this loop would hard-delete every conduct case on
-  //    the first cron tick after it was raised. Conduct expiry is a separate rule and is not
-  //    implemented here yet.
+  //    the first cron tick after it was raised. Conduct expiry is a separate rule, implemented in
+  //    0a) below.
   const pending = await prisma.providerFlagCase.findMany({
     where: { state: "PENDING", kind: "FLAG" },
     select: { id: true, openedAt: true, provider: { select: { createdAt: true } } },
@@ -49,6 +51,48 @@ export async function POST(req: NextRequest) {
       expired++;
       transitions.push({ caseId: c.id, to: "EXPIRED" });
     }
+  }
+
+  // 0a) Expire stale PENDING conduct cases: four signatures were never gathered, so the case never
+  //     became real. Nothing was published and the subject was never served, so there is nothing to
+  //     retract; what would otherwise persist is a standing accusation with no route to a verdict.
+  //
+  //     Deleted rather than parked in an EXPIRED state, because a sealed case that no longer leads
+  //     anywhere is not a record of anything a member could act on. What survives is the audit row,
+  //     which carries a full restorable snapshot, so a case that lapses while members were still
+  //     considering it can be put back rather than retyped.
+  const pendingConduct = await prisma.providerFlagCase.findMany({
+    where: { state: "PENDING", kind: "CONDUCT" },
+    include: {
+      provider: { select: { name: true } },
+      initiations: { include: { evidence: true, revisions: true, entries: true } },
+      votes: true,
+      voteRevisions: true,
+      defense: { include: { revisions: true, entries: true } },
+      pointImages: true,
+    },
+  });
+  let conductExpired = 0;
+  for (const c of pendingConduct) {
+    if (now.getTime() - c.openedAt.getTime() < CONDUCT_PENDING_EXPIRY_DAYS * DAY_MS) continue;
+    await prisma.providerFlagPointImage.deleteMany({ where: { caseId: c.id } });
+    await prisma.providerFlagCase.delete({ where: { id: c.id } });
+    await prisma.providerCaseAudit.create({
+      data: {
+        caseId: c.id,
+        action: "CONDUCT_PENDING_EXPIRED",
+        actor: "system",
+        detail: JSON.stringify({
+          provider: c.provider.name,
+          signatures: c.initiations.length,
+          required: CONDUCT_CO_INITIATORS_REQUIRED,
+          daysPending: CONDUCT_PENDING_EXPIRY_DAYS,
+          restore: { kind: "case", data: c },
+        }),
+      },
+    });
+    conductExpired++;
+    transitions.push({ caseId: c.id, to: "EXPIRED" });
   }
 
   // 1) Discussion -> voting.
@@ -205,5 +249,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (transitions.length) await publishFeedToRepo();
-  return NextResponse.json({ ok: true, expired, transitions: transitions.length, detail: transitions });
+  return NextResponse.json({
+    ok: true,
+    expired,
+    conductExpired,
+    transitions: transitions.length,
+    detail: transitions,
+  });
 }
