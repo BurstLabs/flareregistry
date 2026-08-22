@@ -119,6 +119,12 @@ export async function POST(req: NextRequest) {
   });
   for (const c of toVoting) {
     await prisma.providerFlagCase.update({ where: { id: c.id }, data: { state: "OPEN_VOTING" } });
+    // RECORDED, like every other stage change. This one was silent, so a case history read
+    // "the notice period ended" and then jumped to a decision with nothing in between: the moment
+    // the record froze and the group could start voting left no trace at all.
+    await prisma.providerCaseAudit.create({
+      data: { caseId: c.id, action: "VOTING_OPENED", actor: "system" },
+    });
     transitions.push({ caseId: c.id, to: "OPEN_VOTING" });
   }
 
