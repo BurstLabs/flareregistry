@@ -20,7 +20,7 @@ export function WalletButton() {
   const { t } = useApp();
   const { address, isConnected } = useAccount();
   const router = useRouter();
-  const signIn = useSessionSignIn(t);
+  const signIn = useSessionSignIn(t, "header-auto");
 
   // wagmi reconnects to an injected wallet (MetaMask) only on the CLIENT, after mount; the server
   // render cannot know a wallet is connected. Rendering the connected view before mount would

@@ -24,6 +24,13 @@ const bodySchema = z.object({
   address: addressSchema,
   chainId: chainIdSchema,
   action: z.enum(SIGN_ACTIONS).optional(),
+  /**
+   * Which UI path asked for this challenge. Diagnostic only: never trusted, never authorising
+   * anything, and free-form because it exists to answer "who prompted?" when a user reports being
+   * asked to sign twice for one intention. Reasoning about that from the code has failed twice, and
+   * a wallet prompt carries nothing that identifies its caller.
+   */
+  source: z.string().max(40).optional(),
 });
 
 // POST /api/auth/nonce  { address, chainId, action? }  -> { message }
@@ -37,7 +44,12 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { address, chainId, action } = parsed.data;
+  const { address, chainId, action, source } = parsed.data;
   const message = await issueChallenge(toChecksum(address), chainId, action);
+  // One line per challenge, so two prompts for one sign-in show up as two lines naming their
+  // callers instead of as an unreproducible report.
+  console.log(
+    `[nonce] action=${action ?? "none"} source=${source ?? "unlabelled"} addr=${address.slice(0, 10)}`
+  );
   return NextResponse.json({ message });
 }
