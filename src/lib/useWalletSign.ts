@@ -178,6 +178,74 @@ export function useSignChallenge(t: TFn) {
  * session, and it is not removable without making a sealed case readable by anyone who can type an
  * address.
  */
+/**
+ * ONE SESSION PROMPT, however many components ask for one.
+ *
+ * A session is a single shared credential, but several independent components need it and each was
+ * establishing its own: the member panel, the directory badges, the owner notices. Connect a wallet
+ * on a page carrying two of them and both raced to sign in, so the wallet queued two identical
+ * "authorize session with this address" requests and the user was asked to prove the same thing
+ * twice for one intention.
+ *
+ * Two things fix it, and both are needed:
+ *
+ *   1. ASK THE SERVER FIRST. A session may already exist, from an earlier visit or from the other
+ *      component that just finished. Signing to obtain something you already hold is pure noise.
+ *   2. SHARE THE ATTEMPT. Callers that arrive while one is in flight await the same promise instead
+ *      of starting a second. This is module-level on purpose: the components are siblings with no
+ *      common ancestor to hold the state, and the thing being de-duplicated is a browser-wide
+ *      credential, not a per-component one.
+ *
+ * The promise is cleared once it settles, so a later sign-out can sign in again.
+ */
+let sessionAttempt: Promise<boolean> | null = null;
+
+/**
+ * The coordinator, as a plain function so it can be tested without a wallet or a browser.
+ *
+ * `hasSession` and `signIn` are injected for the same reason: the behaviour worth proving is that
+ * concurrent callers share one attempt and that an existing session skips signing entirely, and
+ * neither of those is about how the session is fetched.
+ */
+export async function ensureSessionOnce(
+  hasSession: () => Promise<boolean>,
+  signIn: () => Promise<boolean>
+): Promise<boolean> {
+  if (sessionAttempt) return sessionAttempt;
+  const attempt = (async () => {
+    if (await hasSession()) return true;
+    return await signIn();
+  })();
+  sessionAttempt = attempt;
+  // Cleared on settle, and deliberately NOT chained into the returned value: callers must see the
+  // real result, and a rejection must reach every one of them rather than being swallowed here.
+  attempt.then(
+    () => {
+      sessionAttempt = null;
+    },
+    () => {
+      sessionAttempt = null;
+    }
+  );
+  return attempt;
+}
+
+export function useEnsureSession(t: TFn) {
+  const signIn = useSessionSignIn(t);
+  return useCallback(
+    () =>
+      ensureSessionOnce(
+        () =>
+          fetch("/api/auth/session")
+            .then((r) => r.json())
+            .then((b) => !!b?.address)
+            .catch(() => false),
+        signIn
+      ),
+    [signIn]
+  );
+}
+
 export function useSessionSignIn(t: TFn) {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
