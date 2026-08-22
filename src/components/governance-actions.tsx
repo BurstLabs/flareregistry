@@ -1731,7 +1731,7 @@ function PendingConductCase({
 }) {
   const { t } = useApp();
   const connectAndSign = useWalletSign(t);
-  const ensureSession = useEnsureSession(t);
+  const ensureSession = useEnsureSession(t, "conduct-panel");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");

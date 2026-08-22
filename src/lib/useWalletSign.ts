@@ -57,7 +57,7 @@ function waitForAccount(
   });
 }
 
-export function useWalletSign(t: TFn) {
+export function useWalletSign(t: TFn, source = "wallet-sign") {
   const { address: connectedAddress, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
 
@@ -105,7 +105,7 @@ export function useWalletSign(t: TFn) {
       const nonceRes = await fetch("/api/auth/nonce", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ address, chainId: opts.chainId, action: opts.action }),
+        body: JSON.stringify({ address, chainId: opts.chainId, action: opts.action, source }),
       });
       if (!nonceRes.ok) {
         // Distinguish rate-limiting from a generic failure so the user knows to wait, not retry.
@@ -128,7 +128,7 @@ export function useWalletSign(t: TFn) {
     // client subtree and re-rendered it on the client, which is why this page's sections never
     // appeared in the served HTML. openWallet is a module import and is not a reactive value, so the
     // dependency does not belong here at all.
-    [connectedAddress, isConnected, getAddress, signMessageAsync, t]
+    [connectedAddress, isConnected, getAddress, signMessageAsync, t, source]
   );
 }
 
@@ -201,6 +201,17 @@ export function useSignChallenge(t: TFn) {
 let sessionAttempt: Promise<boolean> | null = null;
 
 /**
+ * Sign-in tracing, on in the browser console and off in the served HTML.
+ *
+ * Two prompts for one sign-in has now survived two fixes reasoned from the code, and a wallet prompt
+ * carries nothing that says which caller raised it. This makes the sequence visible: who started an
+ * attempt, who joined one, and whether an attempt settled while its prompt was still on screen.
+ */
+function trace(msg: string) {
+  if (typeof window !== "undefined") console.info(`[signin] ${msg}`);
+}
+
+/**
  * The coordinator, as a plain function so it can be tested without a wallet or a browser.
  *
  * `hasSession` and `signIn` are injected for the same reason: the behaviour worth proving is that
@@ -209,9 +220,14 @@ let sessionAttempt: Promise<boolean> | null = null;
  */
 export async function ensureSessionOnce(
   hasSession: () => Promise<boolean>,
-  signIn: () => Promise<boolean>
+  signIn: () => Promise<boolean>,
+  source = "unlabelled"
 ): Promise<boolean> {
-  if (sessionAttempt) return sessionAttempt;
+  if (sessionAttempt) {
+    trace(`${source}: joining the attempt already in flight`);
+    return sessionAttempt;
+  }
+  trace(`${source}: starting an attempt`);
   const attempt = (async () => {
     if (await hasSession()) return true;
     return await signIn();
@@ -220,10 +236,15 @@ export async function ensureSessionOnce(
   // Cleared on settle, and deliberately NOT chained into the returned value: callers must see the
   // real result, and a rejection must reach every one of them rather than being swallowed here.
   attempt.then(
-    () => {
+    (ok) => {
+      trace(`${source}: attempt settled (${ok ? "signed in" : "no wallet"}); releasing`);
       sessionAttempt = null;
     },
-    () => {
+    (e) => {
+      // THE INTERESTING CASE. A fast rejection releases the attempt while the wallet may still be
+      // showing its prompt, so the next caller starts a second one and the user sees two. If that
+      // is what is happening, this line says so.
+      trace(`${source}: attempt REJECTED (${e instanceof Error ? e.message : e}); releasing`);
       sessionAttempt = null;
     }
   );
@@ -239,8 +260,8 @@ export async function ensureSessionOnce(
  * member might click a moment later, and the wallet queued two identical requests. Making the safe
  * one the only one available is the difference between a fix and a fix that holds.
  */
-export function useSessionSignIn(t: TFn) {
-  const signIn = useRawSessionSignIn(t);
+export function useSessionSignIn(t: TFn, source = "unlabelled") {
+  const signIn = useRawSessionSignIn(t, source);
   return useCallback(
     () =>
       ensureSessionOnce(
@@ -249,21 +270,26 @@ export function useSessionSignIn(t: TFn) {
             .then((r) => r.json())
             .then((b) => !!b?.address)
             .catch(() => false),
-        signIn
+        signIn,
+        source
       ),
-    [signIn]
+    [signIn, source]
   );
 }
 
-function useRawSessionSignIn(t: TFn) {
+function useRawSessionSignIn(t: TFn, source = "unlabelled") {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   return useCallback(async (): Promise<boolean> => {
-    if (!isConnected || !address) return false;
+    if (!isConnected || !address) {
+      trace(`${source}: no wallet connected, nothing to sign`);
+      return false;
+    }
+    trace(`${source}: requesting a challenge`);
     const nonceRes = await fetch("/api/auth/nonce", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ address, chainId: 14, action: "session" }),
+      body: JSON.stringify({ address, chainId: 14, action: "session", source }),
     });
     if (!nonceRes.ok) {
       if (nonceRes.status === 429) throw new Error(t("submit.err.rateLimited"));
@@ -286,7 +312,7 @@ function useRawSessionSignIn(t: TFn) {
       throw new Error(b.error ?? t("submit.err.verifyFailed"));
     }
     return true;
-  }, [address, isConnected, signMessageAsync, t]);
+  }, [address, isConnected, signMessageAsync, t, source]);
 }
 
 /** Alias of useSessionSignIn, kept for call sites that read better as "ensure". */

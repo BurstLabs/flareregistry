@@ -68,7 +68,7 @@ export function DirectoryClient({
   initialOpen: ConductDirectoryView["open"];
 }) {
   const { t } = useApp();
-  const ensureSession = useEnsureSession(t);
+  const ensureSession = useEnsureSession(t, "directory-button");
   const router = useRouter();
   const { address, isConnected } = useAccount();
 
