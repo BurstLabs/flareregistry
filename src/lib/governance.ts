@@ -544,6 +544,97 @@ export async function invalidateEndorsements(
 }
 
 /**
+ * THE SUBJECT'S VIEW of the sealed cases they have been served with.
+ *
+ * ONE LOADER, shared by /api/governance/my-case and the provider page, for the same reason the
+ * member view has one: this payload was about to be produced in two places, and the last time that
+ * happened the copy the page actually rendered was the one missing the new fields.
+ *
+ * The caller is responsible for having PROVEN control of `signer`. This function does no
+ * authentication and must never be handed an address a client merely claimed.
+ *
+ * Returns nothing about WHO raised the case. The co-initiators become public if and when it is
+ * substantiated, and telling a subject which rivals filed while it is still private invites exactly
+ * the retaliation this process should not host.
+ */
+export interface SubjectCase {
+  caseId: string;
+  state: string;
+  openedAt: string;
+  noticeEndsAt: string | null;
+  discussionEndsAt: string | null;
+  votingEndsAt: string | null;
+  hasDefence: boolean;
+  points: {
+    title: string | null;
+    grounds: string;
+    endorsement: boolean;
+    evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
+  }[];
+}
+
+export async function subjectCasesFor(providerId: string, signer: string): Promise<SubjectCase[] | null> {
+  const provider = await prisma.provider.findUnique({
+    where: { id: providerId },
+    include: { addresses: true },
+  });
+  if (!provider) return null;
+  // The seal lifts ONLY for a signer controlling a VERIFIED address on the listing, the same bar
+  // that makes someone the owner anywhere else in this system.
+  const owns = provider.addresses.some(
+    (a) => a.verified && a.address.toLowerCase() === signer.toLowerCase()
+  );
+  if (!owns) return null;
+
+  const cases = await prisma.providerFlagCase.findMany({
+    where: { providerId, kind: "CONDUCT", state: { in: ["NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] } },
+    orderBy: { openedAt: "desc" },
+    include: {
+      defense: { select: { id: true } },
+      initiations: {
+        where: { withdrawnAt: null },
+        select: {
+          title: true,
+          grounds: true,
+          endorsement: true,
+          evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
+        },
+      },
+    },
+  });
+
+  // Record that the subject actually looked. This is what makes "served" a fact rather than an
+  // assertion: a case decided SERVED_NO_DEFENCE against a provider who never once opened it is
+  // reporting a silence that may only mean they never knew.
+  for (const c of cases) {
+    const seen = await prisma.providerCaseAudit.findFirst({
+      where: { caseId: c.id, action: "SUBJECT_VIEWED" },
+    });
+    if (!seen) {
+      await prisma.providerCaseAudit.create({
+        data: { caseId: c.id, action: "SUBJECT_VIEWED", actor: signer.toLowerCase() },
+      });
+    }
+  }
+
+  return cases.map((c) => ({
+    caseId: c.id,
+    state: c.state,
+    openedAt: c.openedAt.toISOString(),
+    noticeEndsAt: c.noticeEndsAt ? c.noticeEndsAt.toISOString() : null,
+    discussionEndsAt: c.discussionEndsAt ? c.discussionEndsAt.toISOString() : null,
+    votingEndsAt: c.votingEndsAt ? c.votingEndsAt.toISOString() : null,
+    hasDefence: !!c.defense,
+    points: c.initiations.map((i) => ({
+      title: i.title,
+      grounds: i.grounds,
+      endorsement: i.endorsement,
+      evidence: i.evidence,
+    })),
+  }));
+}
+
+/**
  * What a Management Group member sees of a PENDING conduct case before deciding to sign it.
  *
  * ONE BUILDER, used by both the API route and the provider page, because this payload is produced

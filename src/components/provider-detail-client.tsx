@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
-import type { PendingConductView } from "@/lib/governance";
+import type { PendingConductView, SubjectCase } from "@/lib/governance";
 import { FlagAction, ConductAction, ReportLogoAction } from "./governance-actions";
 import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
@@ -41,6 +41,12 @@ export interface DetailData {
    * describes less than the runtime object is how that went unnoticed.
    */
   viewerPendingCase: PendingConductView | null;
+  /**
+   * Sealed cases against THIS listing, server-resolved for a signed-in owner, null for everyone
+   * else. Present so the notices panel paints with the page rather than behind a button the subject
+   * has to know to press.
+   */
+  viewerSubjectCases: SubjectCase[] | null;
   conduct: {
     caseId: string;
     decidedAt: string | null;
@@ -387,6 +393,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
         providerId={d.providerId}
 
         ownerAddresses={d.addresses.filter((a) => a.verified).map((a) => a.address.toLowerCase())}
+        initialCases={d.viewerSubjectCases}
 
       />
 

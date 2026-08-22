@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-error";
+import { getSessionAddress } from "@/lib/session";
+import { subjectCasesFor } from "@/lib/governance";
 
 // POST /api/governance/my-case  { providerId, message, signature }
 //
@@ -31,76 +32,31 @@ export async function POST(req: NextRequest) {
   const providerId = typeof b?.providerId === "string" ? b.providerId : null;
   const message = typeof b?.message === "string" ? b.message : null;
   const signature = typeof b?.signature === "string" ? b.signature : null;
-  if (!providerId || !message || !signature) {
-    return NextResponse.json(
-      { error: "providerId, message, and signature are required" },
-      { status: 400 }
-    );
+  if (!providerId) {
+    return NextResponse.json({ error: "providerId is required" }, { status: 400 });
   }
 
-  const verified = await verifyChallenge(message, signature, "governance");
-  if (!verified.ok || !verified.address) {
-    return NextResponse.json({ error: verified.error ?? "bad signature" }, { status: 401 });
+  // A SESSION, OR A FRESH SIGNATURE. Both prove control of the address; the session cookie is
+  // HMAC-signed by this server and was issued only after a real wallet signature. Accepting it means
+  // an owner who is already signed in is served without another prompt, which is what lets the
+  // provider page render this panel with the page instead of behind a button.
+  let signer = await getSessionAddress();
+  if (!signer) {
+    if (!message || !signature) {
+      return apiError("NOT_AUTHENTICATED", "sign in, or send a signed challenge", 401);
+    }
+    const verified = await verifyChallenge(message, signature, "governance");
+    if (!verified.ok || !verified.address) {
+      return NextResponse.json({ error: verified.error ?? "bad signature" }, { status: 401 });
+    }
+    signer = verified.address;
   }
-  const signer = verified.address.toLowerCase();
 
-  const provider = await prisma.provider.findUnique({
-    where: { id: providerId },
-    include: { addresses: true },
-  });
-  if (!provider) return NextResponse.json({ error: "provider not found" }, { status: 404 });
-
-  const owns = provider.addresses.some((a) => a.verified && a.address.toLowerCase() === signer);
-  if (!owns) {
+  // One loader, shared with the provider page; see lib/governance. Returns null when the signer does
+  // not control a verified address on the listing, which is the seal.
+  const cases = await subjectCasesFor(providerId, signer.toLowerCase());
+  if (cases === null) {
     return apiError("NOT_A_MEMBER", "the signing address is not a verified address on this listing", 403);
   }
-
-  const cases = await prisma.providerFlagCase.findMany({
-    where: { providerId, kind: "CONDUCT", state: { in: ["NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] } },
-    orderBy: { openedAt: "desc" },
-    include: {
-      defense: { select: { id: true } },
-      initiations: {
-        where: { withdrawnAt: null },
-        select: {
-          title: true,
-          grounds: true,
-          endorsement: true,
-          evidence: { select: { kind: true, chain: true, ref: true, claim: true } },
-        },
-      },
-    },
-  });
-
-  // Record that the subject actually looked. This is what makes "served" a fact rather than an
-  // assertion: a case decided as SERVED_NO_DEFENCE against a provider who never once opened it is
-  // reporting silence that may only mean they never knew.
-  for (const c of cases) {
-    const seen = await prisma.providerCaseAudit.findFirst({
-      where: { caseId: c.id, action: "SUBJECT_VIEWED" },
-    });
-    if (!seen) {
-      await prisma.providerCaseAudit.create({
-        data: { caseId: c.id, action: "SUBJECT_VIEWED", actor: signer },
-      });
-    }
-  }
-
-  return NextResponse.json({
-    cases: cases.map((c) => ({
-      caseId: c.id,
-      state: c.state,
-      openedAt: c.openedAt,
-      noticeEndsAt: c.noticeEndsAt,
-      discussionEndsAt: c.discussionEndsAt,
-      votingEndsAt: c.votingEndsAt,
-      hasDefence: !!c.defense,
-      points: c.initiations.map((i) => ({
-        title: i.title,
-        grounds: i.grounds,
-        endorsement: i.endorsement,
-        evidence: i.evidence,
-      })),
-    })),
-  });
+  return NextResponse.json({ cases });
 }

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { PendingConductView } from "@/lib/governance";
+import type { PendingConductView, SubjectCase } from "@/lib/governance";
 import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProvider, formatWeiCompact, listingAddressesForSigner } from "@/lib/metrics";
@@ -179,10 +179,13 @@ export default async function ProviderDetail({
     memberVoterFor: mgVoterFor,
     CONDUCT_CO_INITIATORS_REQUIRED: MG_REQUIRED,
     pendingConductForMember: pendingConduct,
+    subjectCasesFor: subjectCases,
   } = await import("@/lib/governance");
   let viewerIsMember = false;
   let viewerPendingSignatures: number | null = null;
   let viewerPendingCase: PendingConductView | null = null;
+  /** The sealed cases against THIS listing, for a signed-in owner. Null for everyone else. */
+  let viewerSubjectCases: SubjectCase[] | null = null;
   try {
     const sess = await getSess();
     if (sess) {
@@ -201,6 +204,17 @@ export default async function ProviderDetail({
         viewerPendingCase = await pendingConduct(p.id, memberVoter);
         viewerPendingSignatures = viewerPendingCase?.signatures ?? 0;
       }
+
+      // THE SUBJECT'S OWN NOTICES, resolved the same way and for the same reason.
+      //
+      // This panel sat behind a "Check for notices" button, so a provider who had been served with a
+      // sealed case had to know to press something before the site would tell them. The session on
+      // this request already proves who they are; asking them to prove it again with a wallet popup
+      // added nothing except the chance they never found out.
+      //
+      // Independent of membership: the subject of a case is usually not a Management Group member,
+      // and the two panels answer different questions.
+      viewerSubjectCases = await subjectCases(p.id, sess.toLowerCase());
     }
   } catch {
     // Unreadable membership falls back to the client probe, which costs the old flicker, not the
@@ -224,6 +238,7 @@ export default async function ProviderDetail({
     viewerIsMember,
     viewerPendingSignatures,
     viewerPendingCase,
+    viewerSubjectCases,
     conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(p.createdAt, nowDate),
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,

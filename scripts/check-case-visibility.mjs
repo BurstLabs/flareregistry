@@ -97,6 +97,9 @@ const CLASSIFIED = {
   "app/api/governance/late-reply/route.ts": "ACTION",
   // The SUBJECT reading a sealed case against them. Authenticated to a verified owner address; the
   // seal exists to protect them from the public, not to hide the case from the person answering it.
+  // Delegates to subjectCasesFor in lib/governance. Serves the SUBJECT their own sealed case, gated
+  // on a session or a signed challenge proving control of a VERIFIED address on the listing, which
+  // the helper re-checks and refuses by returning null.
   "app/api/governance/my-case/route.ts": "ACTION",
 
   // Internal cron.
@@ -129,7 +132,8 @@ for (const file of walk(SRC)) {
   // reaching it.
   const readsCases =
     /prisma\.providerFlagCase\.(findMany|findFirst|findUnique|count)/.test(body) ||
-    /pendingConductForMember/.test(body);
+    /pendingConductForMember/.test(body) ||
+    /subjectCasesFor/.test(body);
   if (!readsCases) continue;
   const rel = relative(SRC, file);
   seen.add(rel);
