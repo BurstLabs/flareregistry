@@ -79,11 +79,11 @@ export const CONDUCT_CO_INITIATORS_REQUIRED = 4;
  * the subject learns of the case before anyone else can act on it. Nothing about a conduct case is
  * public during it, or at any point before substantiation.
  */
-export const CONDUCT_NOTICE_DAYS = 14;
+export const CONDUCT_NOTICE_DAYS = 7;
 /** Discussion, after notice. Longer than the flag's 3 days: the subject is answering a track record. */
-export const CONDUCT_DISCUSSION_DAYS = 14;
+export const CONDUCT_DISCUSSION_DAYS = 7;
 /** Voting, after discussion. */
-export const CONDUCT_VOTING_DAYS = 21;
+export const CONDUCT_VOTING_DAYS = 7;
 
 /**
  * Whether the subject could be told, and what they did about it. A PUBLISHED FIELD, not a gate.

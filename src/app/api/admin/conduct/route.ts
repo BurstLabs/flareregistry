@@ -235,6 +235,41 @@ export async function PATCH(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
     const exists = await prisma.providerFlagCase.findUnique({ where: { id } });
     if (!exists) return NextResponse.json({ error: "case not found" }, { status: 404 });
+
+    // THE ACCUSATION FREEZES AT SERVICE, FOR THE OPERATOR TOO.
+    //
+    // Four signatures is what makes a conduct case real, and the subject is served with that exact
+    // set of accusers, grounds and evidence, and told to answer it. Every member-facing route
+    // already refuses to change any of it afterwards: no late co-initiation, no withdrawal, no
+    // rewritten grounds, no swapped reference. This panel did not, so the one actor who could
+    // quietly recompose a served accusation was the operator, which is the opposite of the
+    // intended order. A lock that stops at the admin surface is not a lock.
+    //
+    // ALL THREE, not just the signatures. Freezing who is accusing while leaving what they accuse
+    // you of editable would be a strange half-rule: a provider preparing an answer would find the
+    // names fixed and the charge moving. The signatures and the case they signed are one thing.
+    //
+    // Case-level controls stay open: state, publication, service status, deletion and restore.
+    // Those are lifecycle, they are recorded, and they are sometimes necessary. Rewriting a served
+    // accusation is none of those.
+    const FROZEN_AFTER_SERVICE = new Set([
+      "initiation",
+      "addInitiation",
+      "deleteInitiation",
+      "evidence",
+      "addEvidence",
+      "deleteEvidence",
+    ]);
+    if (exists.kind === "CONDUCT" && exists.state !== "PENDING" && FROZEN_AFTER_SERVICE.has(op)) {
+      return NextResponse.json(
+        {
+          error:
+            "this case has opened and the provider has been served; the accusation they were served with cannot be changed",
+          code: "CONDUCT_ALREADY_OPENED",
+        },
+        { status: 409 }
+      );
+    }
   }
   const existing = id ? await prisma.providerFlagCase.findUnique({ where: { id } }) : null;
 
