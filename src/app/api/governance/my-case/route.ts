@@ -20,10 +20,9 @@ import { subjectCasesFor } from "@/lib/governance";
 // primary mechanism and email is the supplement, not the reverse.
 //
 // The seal is lifted ONLY for a signer controlling a VERIFIED address on the listing, which is the
-// same bar that makes someone the owner anywhere else in this system. It returns the grounds and the
-// evidence they are being asked to answer, and nothing about who raised it: the co-initiators become
-// public if and when the case is substantiated, and knowing which rivals filed while the case is
-// still private invites exactly the retaliation this process should not host.
+// same bar that makes someone the owner anywhere else in this system. It returns the grounds, the
+// evidence, and WHO SIGNED: see subjectCasesFor for why the earlier rule withholding the accusers
+// from the accused was the wrong protection.
 export async function POST(req: NextRequest) {
   const limited = rateLimit(req, "governance", 20, 60_000);
   if (limited) return limited;
