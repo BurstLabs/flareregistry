@@ -29,9 +29,8 @@ const js = src
   .replace(/hasSession: \(\) => Promise<boolean>/, "hasSession")
   .replace(/signIn: \(\) => Promise<boolean>/, "signIn")
   .replace(/\): Promise<boolean> \{/, ") {")
-  .replace(/function trace\(msg: string\)/, "function trace(msg)")
   .replace(/source = "unlabelled"\n\): Promise<boolean> \{/, 'source = "unlabelled"\n) {');
-if (/:\s*Promise<|\bhasSession:|\bsignIn:|msg:\s*string/.test(js)) {
+if (/:\s*Promise<|\bhasSession:|\bsignIn:/.test(js)) {
   console.error("session-dedup: the coordinator's signature changed; update the stripper in this guard.");
   process.exit(1);
 }
