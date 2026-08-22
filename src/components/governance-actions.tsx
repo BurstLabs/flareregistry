@@ -154,13 +154,11 @@ type PendingCase = LiveConductView;
 export function ConductAction({
   providerId,
   viewerIsMember = false,
-  initialPendingSignatures = null,
   initialLiveCase = null,
 }: {
   providerId: string;
   /** Server-resolved from the session, so the badge paints with the page. */
   viewerIsMember?: boolean;
-  initialPendingSignatures?: number | null;
   initialLiveCase?: PendingCase | null;
 }) {
   const { t } = useApp();
@@ -173,13 +171,16 @@ export function ConductAction({
   const [isMember, setIsMember] = useState(viewerIsMember);
   // Pending co-initiation count, hoisted so the collapsed header can show it. Null until the member
   // has actually signed for it; see the note on the badge.
-  const [pendingCount, setPendingCount] = useState<number | null>(initialPendingSignatures);
+  // THE WHOLE LIVE CASE, not a signature count. The count is only meaningful while a case is
+  // gathering signatures, so once one opened the header went blank: a member with a vote to cast saw
+  // a collapsed section labelled "Raise a conduct case" and no reason to open it.
+  const [live, setLive] = useState<PendingCase | null>(initialLiveCase);
   // Re-sync when the server's answer changes; see the note in the directory. Without this a
   // sign-out would leave the header badge behind.
   useEffect(() => {
     setIsMember(viewerIsMember);
-    setPendingCount(initialPendingSignatures);
-  }, [viewerIsMember, initialPendingSignatures]);
+    setLive(initialLiveCase);
+  }, [viewerIsMember, initialLiveCase]);
 
   // ENDORSE, OR AUTHOR YOUR OWN POINT.
   //
@@ -194,7 +195,8 @@ export function ConductAction({
   // an effect: the option only exists while there is a case to endorse, and a member who chose to
   // author should stay there even if the count changes underneath them.
   const [authorOwn, setAuthorOwn] = useState(false);
-  const canEndorse = isMember && pendingCount != null && pendingCount > 0;
+  // Endorsing applies only while a case is still gathering signatures.
+  const canEndorse = isMember && live?.state === "PENDING" && live.signatures > 0;
   const endorsing = canEndorse && !authorOwn;
 
   useEffect(() => {
@@ -202,7 +204,7 @@ export function ConductAction({
       // Never clear what the server established; see the same note in the directory.
       if (!viewerIsMember) {
         setIsMember(false);
-        setPendingCount(null);
+        setLive(null);
       }
       return;
     }
@@ -327,7 +329,10 @@ export function ConductAction({
           onClick={() => setOpen((o) => !o)}
           className="font-medium text-muted hover:text-beacon"
         >
-          {t("gov.conduct.toggle")} {open ? "\u2212" : "+"}
+          {isMember && live && live.state !== "PENDING"
+            ? t("gov.conduct.toggleOpen")
+            : t("gov.conduct.toggle")}{" "}
+          {open ? "\u2212" : "+"}
           {/* THE COUNT IS SHOWN ONLY TO A MEMBER WHO HAS ALREADY CHECKED, and both halves matter.
               This panel renders for everyone: it is gated on the PROVIDER being eligible for a
               conduct case, not on the viewer being a member, so the subject of a sealed case sees it
@@ -337,17 +342,18 @@ export function ConductAction({
               So membership is established first, and even then the number appears only after the
               member has signed for it. Until then the header offers the affordance and nothing
               more, which is what makes it discoverable without making it a disclosure. */}
-          {isMember && pendingCount != null && pendingCount > 0 && (
+          {isMember && live && (
             <span className="powered-glow ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-300">
-              {/* THE NUMBER IS SIGNATURES, NOT CASES. It was labelled "{n} pending", so a case
-                  that had collected a second signature announced itself as "2 pending", which reads
-                  as two pending cases. There is only ever one live conduct case per provider (the
-                  route joins a later co-initiator to it rather than opening a second), so a case
-                  count would always be 1 and tells a member nothing. The progress does. */}
-              {t("gov.conduct.pending.badge", {
-                n: pendingCount,
-                required: CONDUCT_CO_INITIATORS_REQUIRED,
-              })}
+              {live.state === "PENDING"
+                ? t("gov.conduct.pending.badge", {
+                    n: live.signatures,
+                    required: CONDUCT_CO_INITIATORS_REQUIRED,
+                  })
+                : live.votingOpen && !live.myVote
+                  ? t("gov.conduct.badge.voteNeeded")
+                  : live.votingOpen
+                    ? t("gov.conduct.badge.voted")
+                    : t(`gov.conduct.badge.${live.state}`)}
             </span>
           )}
         </button>
@@ -368,9 +374,8 @@ export function ConductAction({
               Four signatures is what makes a case real; an endorsement given unseen is not one. */}
           <PendingConductCase
             providerId={providerId}
-            onCount={setPendingCount}
+            onLive={setLive}
             isMember={isMember}
-            initialPendingSignatures={initialPendingSignatures}
             initialLiveCase={initialLiveCase}
           />
 
@@ -1693,15 +1698,13 @@ function shortAddr(a: string): string {
 
 function PendingConductCase({
   providerId,
-  onCount,
+  onLive,
   isMember,
-  initialPendingSignatures,
   initialLiveCase,
 }: {
   providerId: string;
-  onCount: (n: number | null) => void;
+  onLive: (c: PendingCase | null) => void;
   isMember: boolean;
-  initialPendingSignatures: number | null;
   initialLiveCase: PendingCase | null;
 }) {
   const { t } = useApp();
@@ -1730,7 +1733,7 @@ function PendingConductCase({
   // was only ever an artefact of the counts having needed a fresh signature.
   useEffect(() => {
     // Only when the server did not already answer, i.e. a wallet connected after paint.
-    if (!isMember || initialPendingSignatures != null) return;
+    if (!isMember || initialLiveCase) return;
     void check(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMember, providerId]);
@@ -1765,7 +1768,7 @@ function PendingConductCase({
       if (!res.ok) throw new Error(b.error ?? t("gov.conduct.pending.err"));
       setData({ pending: b?.live ?? null });
       // Tell the header, so a member who has checked sees the count without reopening the panel.
-      onCount(b?.live?.state === "PENDING" ? b.live.signatures : 0);
+      onLive(b?.live ?? null);
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.conduct.pending.err"));
     } finally {
@@ -1898,10 +1901,9 @@ function PendingConductCase({
       // signatures endorsing nothing are not a case.
       if (b.caseClosed) {
         setData({ pending: null });
-        onCount(0);
+        onLive(null);
       } else {
         setData(null);
-        onCount(b.signatures ?? 0);
         await check(false);
       }
       router.refresh();

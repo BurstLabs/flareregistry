@@ -182,7 +182,6 @@ export default async function ProviderDetail({
     subjectCasesFor: subjectCases,
   } = await import("@/lib/governance");
   let viewerIsMember = false;
-  let viewerPendingSignatures: number | null = null;
   let viewerLiveCase: LiveConductView | null = null;
   /** The sealed cases against THIS listing, for a signed-in owner. Null for everyone else. */
   let viewerSubjectCases: SubjectCase[] | null = null;
@@ -202,7 +201,6 @@ export default async function ProviderDetail({
         // needs no fetch and is therefore the one every member actually hits.
         const memberVoter = mgVoterFor(sess, mg.voterByAddress)!;
         viewerLiveCase = await liveConduct(p.id, memberVoter);
-        viewerPendingSignatures = viewerLiveCase?.state === "PENDING" ? viewerLiveCase.signatures : 0;
       }
 
       // THE SUBJECT'S OWN NOTICES, resolved the same way and for the same reason.
@@ -236,7 +234,6 @@ export default async function ProviderDetail({
     // server enforces Management Group membership on the signature; this only decides whether the
     // form is worth showing at all.
     viewerIsMember,
-    viewerPendingSignatures,
     viewerLiveCase,
     viewerSubjectCases,
     conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(p.createdAt, nowDate),
