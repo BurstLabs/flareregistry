@@ -201,17 +201,6 @@ export function useSignChallenge(t: TFn) {
 let sessionAttempt: Promise<boolean> | null = null;
 
 /**
- * Sign-in tracing, on in the browser console and off in the served HTML.
- *
- * Two prompts for one sign-in has now survived two fixes reasoned from the code, and a wallet prompt
- * carries nothing that says which caller raised it. This makes the sequence visible: who started an
- * attempt, who joined one, and whether an attempt settled while its prompt was still on screen.
- */
-function trace(msg: string) {
-  if (typeof window !== "undefined") console.info(`[signin] ${msg}`);
-}
-
-/**
  * The coordinator, as a plain function so it can be tested without a wallet or a browser.
  *
  * `hasSession` and `signIn` are injected for the same reason: the behaviour worth proving is that
@@ -223,11 +212,7 @@ export async function ensureSessionOnce(
   signIn: () => Promise<boolean>,
   source = "unlabelled"
 ): Promise<boolean> {
-  if (sessionAttempt) {
-    trace(`${source}: joining the attempt already in flight`);
-    return sessionAttempt;
-  }
-  trace(`${source}: starting an attempt`);
+  if (sessionAttempt) return sessionAttempt;
   const attempt = (async () => {
     if (await hasSession()) return true;
     // ACROSS TABS, NOT JUST WITHIN ONE.
@@ -244,10 +229,7 @@ export async function ensureSessionOnce(
     const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
     if (!locks) return await signIn();
     return await locks.request("flare-registry-signin", async () => {
-      if (await hasSession()) {
-        trace(`${source}: another tab signed in while we waited; nothing to do`);
-        return true;
-      }
+      if (await hasSession()) return true;
       return await signIn();
     });
   })();
@@ -255,15 +237,10 @@ export async function ensureSessionOnce(
   // Cleared on settle, and deliberately NOT chained into the returned value: callers must see the
   // real result, and a rejection must reach every one of them rather than being swallowed here.
   attempt.then(
-    (ok) => {
-      trace(`${source}: attempt settled (${ok ? "signed in" : "no wallet"}); releasing`);
+    () => {
       sessionAttempt = null;
     },
-    (e) => {
-      // THE INTERESTING CASE. A fast rejection releases the attempt while the wallet may still be
-      // showing its prompt, so the next caller starts a second one and the user sees two. If that
-      // is what is happening, this line says so.
-      trace(`${source}: attempt REJECTED (${e instanceof Error ? e.message : e}); releasing`);
+    () => {
       sessionAttempt = null;
     }
   );
@@ -300,11 +277,7 @@ function useRawSessionSignIn(t: TFn, source = "unlabelled") {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   return useCallback(async (): Promise<boolean> => {
-    if (!isConnected || !address) {
-      trace(`${source}: no wallet connected, nothing to sign`);
-      return false;
-    }
-    trace(`${source}: requesting a challenge`);
+    if (!isConnected || !address) return false;
     const nonceRes = await fetch("/api/auth/nonce", {
       method: "POST",
       headers: { "content-type": "application/json" },
