@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { useEnsureSession } from "@/lib/useWalletSign";
+import type { ConductDirectoryView } from "@/lib/governance";
 import { useRouter } from "next/navigation";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
@@ -54,6 +55,7 @@ export function DirectoryClient({
   showAll,
   viewerIsMember,
   initialPending,
+  initialOpen,
 }: {
   providers: CardProvider[];
   total: number;
@@ -61,7 +63,9 @@ export function DirectoryClient({
   showAll: boolean;
   /** Resolved on the server from the session, so a member's badges are in the first paint. */
   viewerIsMember: boolean;
-  initialPending: { providerId: string; remaining: number; alreadySigned: boolean }[];
+  initialPending: ConductDirectoryView["pending"];
+  /** Conduct cases past their fourth signature: served, running, heading for a vote. */
+  initialOpen: ConductDirectoryView["open"];
 }) {
   const { t } = useApp();
   const ensureSession = useEnsureSession(t);
@@ -82,6 +86,9 @@ export function DirectoryClient({
   // cover: a wallet connected AFTER the page rendered, which produces no new request and therefore
   // no new session-derived props.
   const [isMember, setIsMember] = useState(viewerIsMember);
+  const [open, setOpen] = useState<Map<string, ConductDirectoryView["open"][number]> | null>(
+    initialOpen?.length ? new Map(initialOpen.map((o) => [o.providerId, o])) : null
+  );
   const [pending, setPending] = useState<Map<string, { remaining: number; alreadySigned: boolean }> | null>(
     viewerIsMember
       ? new Map(initialPending.map((p) => [p.providerId, { remaining: p.remaining, alreadySigned: p.alreadySigned }]))
@@ -144,6 +151,11 @@ export function DirectoryClient({
           ])
         )
       );
+      setOpen(
+        new Map(
+          (b.open ?? []).map((x: ConductDirectoryView["open"][number]) => [x.providerId, x])
+        )
+      );
     } catch (e) {
       // SHOW THE FAILURE. This used to swallow it and leave the button sitting there, so a member
       // who clicked, signed, and hit any error saw exactly what a member who did nothing saw. The
@@ -159,7 +171,7 @@ export function DirectoryClient({
   // sign-out and router.refresh() the props would say "not a member" while the state still said
   // otherwise, and the badges would survive the very sign-out meant to remove them. Keyed on a
   // serialised form of the props because initialPending is a fresh array on every render.
-  const pendingKey = viewerIsMember ? JSON.stringify(initialPending) : "";
+  const pendingKey = viewerIsMember ? JSON.stringify([initialPending, initialOpen]) : "";
   useEffect(() => {
     setIsMember(viewerIsMember);
     setPending(
@@ -168,6 +180,9 @@ export function DirectoryClient({
             initialPending.map((p) => [p.providerId, { remaining: p.remaining, alreadySigned: p.alreadySigned }])
           )
         : null
+    );
+    setOpen(
+      viewerIsMember ? new Map(initialOpen.map((o) => [o.providerId, o])) : null
     );
     setNeedsSignature(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -181,6 +196,7 @@ export function DirectoryClient({
       if (!viewerIsMember) {
         setIsMember(false);
         setPending(null);
+        setOpen(null);
       }
       setNeedsSignature(false);
       return;
@@ -448,6 +464,27 @@ export function DirectoryClient({
                     {pending.get(p.id)!.alreadySigned
                       ? t("home.conduct.signed")
                       : t("home.conduct.needs", { n: pending.get(p.id)!.remaining })}
+                  </Link>
+                )}
+
+                {/* AN OPEN CASE. The pending badge disappeared the moment a case reached four
+                    signatures, which is precisely when it starts to matter: the provider has been
+                    served, the clock is running, and this member is one of the people who will vote
+                    on it. Members only, same as above, and it names the stage rather than the
+                    accusation: the case is still sealed and the grounds are on the provider's page,
+                    behind the same membership check. */}
+                {isMember && open?.get(p.id) && (
+                  <Link
+                    href={`/provider/${p.detailAddress}`}
+                    className="powered-glow mt-3 inline-block rounded bg-flare/20 px-2 py-1 text-xs font-medium text-flare hover:bg-flare/30"
+                  >
+                    {open.get(p.id)!.state === "OPEN_VOTING" && !open.get(p.id)!.hasVoted
+                      ? t("home.conduct.openVoteNeeded", {
+                          date: (open.get(p.id)!.nextDeadline ?? "").slice(0, 10),
+                        })
+                      : t(`home.conduct.open.${open.get(p.id)!.state}`, {
+                          date: (open.get(p.id)!.nextDeadline ?? "").slice(0, 10),
+                        })}
                   </Link>
                 )}
 

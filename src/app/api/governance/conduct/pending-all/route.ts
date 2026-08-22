@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { getSessionAddress } from "@/lib/session";
 import { rateLimit } from "@/lib/rate-limit";
 import { apiError } from "@/lib/api-error";
-import { CONDUCT_CO_INITIATORS_REQUIRED, loadMembers, memberVoterFor } from "@/lib/governance";
+import {
+  CONDUCT_CO_INITIATORS_REQUIRED,
+  conductDirectoryForMember,
+  loadMembers,
+  memberVoterFor,
+} from "@/lib/governance";
 
 // POST /api/governance/conduct/pending-all  { message, signature }
 //
@@ -67,25 +71,7 @@ export async function POST(req: NextRequest) {
     return apiError("NOT_A_MEMBER", "the signing address is not a current Management Group member", 403);
   }
 
-  const pending = await prisma.providerFlagCase.findMany({
-    where: { kind: "CONDUCT", state: "PENDING" },
-    select: {
-      providerId: true,
-      initiations: {
-        where: { withdrawnAt: null },
-        select: { memberEntityVoter: true },
-      },
-    },
-  });
-
-  return NextResponse.json({
-    required: CONDUCT_CO_INITIATORS_REQUIRED,
-    pending: pending.map((c) => ({
-      providerId: c.providerId,
-      signatures: c.initiations.length,
-      remaining: Math.max(0, CONDUCT_CO_INITIATORS_REQUIRED - c.initiations.length),
-      /** So a card can say "you have signed this" rather than inviting a signature that would 409. */
-      alreadySigned: c.initiations.some((i) => i.memberEntityVoter === memberVoter),
-    })),
-  });
+  // One loader, shared with the home page; see lib/governance.
+  const { pending, open } = await conductDirectoryForMember(memberVoter);
+  return NextResponse.json({ required: CONDUCT_CO_INITIATORS_REQUIRED, pending, open });
 }
