@@ -1139,7 +1139,13 @@ function ConductTab() {
                     </button>
                   </div>
                 ))}
-                <AddPoint caseId={c.id} onDone={send} busy={busy} />
+                <AddPoint
+                  caseId={c.id}
+                  onDone={send}
+                  busy={busy}
+                  mgMembers={mgMembers}
+                  taken={c.points.map((p: any) => String(p.member).toLowerCase())}
+                />
               </div>
             </Section2>
 
@@ -1176,7 +1182,13 @@ function ConductTab() {
                   </div>
                 ))}
                 {c.votes.rows.length === 0 && <p className="text-xs text-faint">No votes cast.</p>}
-                <AddVote caseId={c.id} onDone={send} busy={busy} />
+                <AddVote
+                  caseId={c.id}
+                  onDone={send}
+                  busy={busy}
+                  mgMembers={mgMembers}
+                  taken={(c.votes?.rows ?? []).map((v: any) => String(v.memberEntityVoter).toLowerCase())}
+                />
               </div>
             </Section2>
 
@@ -1242,39 +1254,79 @@ function AddPoint({
   caseId,
   onDone,
   busy,
+  mgMembers,
+  taken,
 }: {
   caseId: string;
   onDone: (body: any, ok?: string) => Promise<void>;
   busy: boolean;
+  mgMembers: { voter: string; name: string | null }[];
+  taken: string[];
 }) {
   const [member, setMember] = useState("");
   const [grounds, setGrounds] = useState("");
+  const [kind, setKind] = useState<"authored" | "endorsement">("authored");
+  // Members already on the case cannot sign twice, so they are not offered. The route refuses it
+  // too; this just stops the operator picking a name that is going to be rejected.
+  const free = mgMembers.filter((m) => !taken.includes(m.voter.toLowerCase()));
   return (
-    <div className="mt-3 flex gap-1 border-t border-themed/60 pt-2">
-      <input
-        value={member}
-        onChange={(e) => setMember(e.target.value)}
-        placeholder="Member voter address"
-        className={`${inputCls} w-64 font-mono`}
-      />
-      <input
-        value={grounds}
-        onChange={(e) => setGrounds(e.target.value)}
-        placeholder="Grounds"
-        className={`${inputCls} flex-1`}
-      />
-      <button
-        onClick={async () => {
-          if (!member || !grounds) return;
-          await onDone({ op: "addInitiation", id: caseId, member, grounds }, "Point added.");
-          setMember("");
-          setGrounds("");
-        }}
-        disabled={busy}
-        className="shrink-0 rounded border border-themed px-2 py-1 text-xs text-muted hover:text-beacon disabled:opacity-50"
-      >
-        + Point
-      </button>
+    <div className="mt-3 border-t border-themed/60 pt-2">
+      <div className="flex flex-wrap gap-1">
+        {/* A NAMED DROPDOWN, not an address box. This field decides whose signature the case counts
+            as, and therefore how close it is to the four it needs. Addresses differ in the middle
+            and a transposition looks like nothing, so typing one here silently attributes an
+            accusation to a provider who did not make it. */}
+        <select
+          value={member}
+          onChange={(e) => setMember(e.target.value)}
+          className={`${inputCls} w-72`}
+        >
+          <option value="">Select a Management Group member…</option>
+          {free.map((m) => (
+            <option key={m.voter} value={m.voter}>
+              {m.name ? `${m.name} · ${m.voter.slice(0, 10)}…` : m.voter}
+            </option>
+          ))}
+        </select>
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as "authored" | "endorsement")}
+          className={`${inputCls} w-40`}
+        >
+          <option value="authored">Own grounds</option>
+          <option value="endorsement">Endorsement</option>
+        </select>
+        {kind === "authored" && (
+          <input
+            value={grounds}
+            onChange={(e) => setGrounds(e.target.value)}
+            placeholder="Grounds"
+            className={`${inputCls} min-w-[12rem] flex-1`}
+          />
+        )}
+        <button
+          onClick={async () => {
+            if (!member || (kind === "authored" && !grounds)) return;
+            await onDone(
+              kind === "endorsement"
+                ? { op: "addInitiation", id: caseId, member, endorsement: true }
+                : { op: "addInitiation", id: caseId, member, grounds },
+              "Signature added."
+            );
+            setMember("");
+            setGrounds("");
+          }}
+          disabled={busy || !member || (kind === "authored" && !grounds)}
+          className="shrink-0 rounded border border-themed px-2 py-1 text-xs text-muted hover:text-beacon disabled:opacity-50"
+        >
+          + Signature
+        </button>
+      </div>
+      <p className="mt-1 text-[11px] text-faint">
+        An endorsement signs the case as it stands and adds no grounds of its own. It counts as a
+        full signature. The case opens into NOTICE the moment the fourth lands, and the provider is
+        served.
+      </p>
     </div>
   );
 }
@@ -1284,21 +1336,35 @@ function AddVote({
   caseId,
   onDone,
   busy,
+  mgMembers,
+  taken,
 }: {
   caseId: string;
   onDone: (body: any, ok?: string) => Promise<void>;
   busy: boolean;
+  mgMembers: { voter: string; name: string | null }[];
+  taken: string[];
 }) {
   const [member, setMember] = useState("");
   const [vote, setVote] = useState("DENY");
+  // Same reasoning as the signature control: a vote is attributed to whoever this field names, and
+  // an address typed by hand attributes it to whoever the typo lands on. One vote per member, so
+  // members who have already voted are not offered.
+  const free = mgMembers.filter((m) => !taken.includes(m.voter.toLowerCase()));
   return (
-    <div className="mt-1 flex gap-1">
-      <input
+    <div className="mt-1 flex flex-wrap gap-1">
+      <select
         value={member}
         onChange={(e) => setMember(e.target.value)}
-        placeholder="Member voter address"
-        className={`${inputCls} flex-1 font-mono`}
-      />
+        className={`${inputCls} min-w-[16rem] flex-1`}
+      >
+        <option value="">Select a Management Group member…</option>
+        {free.map((m) => (
+          <option key={m.voter} value={m.voter}>
+            {m.name ? `${m.name} · ${m.voter.slice(0, 10)}…` : m.voter}
+          </option>
+        ))}
+      </select>
       <select
         value={vote}
         onChange={(e) => setVote(e.target.value)}
@@ -1316,7 +1382,7 @@ function AddVote({
           await onDone({ op: "addVote", id: caseId, member, vote }, "Vote added.");
           setMember("");
         }}
-        disabled={busy}
+        disabled={busy || !member}
         className="shrink-0 rounded border border-themed px-2 py-1 text-xs text-muted hover:text-beacon disabled:opacity-50"
       >
         + Vote

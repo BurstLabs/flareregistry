@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin, getAdminAddress } from "@/lib/admin";
+import { CONDUCT_CO_INITIATORS_REQUIRED, conductDeadlines, loadMembers } from "@/lib/governance";
+import { serveConductNotice } from "@/lib/conduct-open";
 import { publishFeedToRepo } from "@/lib/feed";
 
 export const dynamic = "force-dynamic";
@@ -202,7 +204,7 @@ async function auditRestorable(
 //
 //   { op:"case",           id, ...fields }            edit any field on the case itself
 //   { op:"initiation",     id, initiationId, ... }    edit a point's title/grounds/withdrawn
-//   { op:"addInitiation",  id, member, grounds, ... }  add a point
+//   { op:"addInitiation",  id, member, grounds|endorsement, ... }  add a signature
 //   { op:"deleteInitiation", id, initiationId }
 //   { op:"evidence",       id, evidenceId, ... }      edit a piece of evidence
 //   { op:"addEvidence",    id, initiationId, ... }
@@ -336,16 +338,36 @@ export async function PATCH(req: NextRequest) {
     case "addInitiation": {
       const member = String(b.member ?? "").toLowerCase();
       const grounds = String(b.grounds ?? "");
-      if (!member || !grounds) {
-        return NextResponse.json({ error: "member and grounds are required" }, { status: 400 });
+      // An ENDORSEMENT carries no grounds of its own: the member signed the case as it stood. The
+      // operator surface has to be able to enter one, or a case can only ever be built out of
+      // authored points, which is not how members actually reach four signatures.
+      const endorsement = b.endorsement === true;
+      if (!member || (!endorsement && !grounds)) {
+        return NextResponse.json(
+          { error: endorsement ? "member is required" : "member and grounds are required" },
+          { status: 400 }
+        );
+      }
+      // One signature per member entity, enforced by a unique index. Caught here so the operator is
+      // told which member is already on the case rather than being shown a 500.
+      const already = await prisma.providerFlagInitiation.findUnique({
+        where: { caseId_memberEntityVoter: { caseId: id, memberEntityVoter: member } },
+        select: { id: true },
+      });
+      if (already) {
+        return NextResponse.json(
+          { error: "that member is already a signatory on this case" },
+          { status: 409 }
+        );
       }
       const created = await prisma.providerFlagInitiation.create({
         data: {
           caseId: id,
           memberEntityVoter: member,
           signerAddress: actor,
-          title: strField(b.title) ?? null,
-          grounds,
+          title: endorsement ? null : (strField(b.title) ?? null),
+          grounds: endorsement ? "" : grounds,
+          endorsement,
         },
       });
       // signerAddress records the ADMIN, not the member, because the admin signed nothing as that
@@ -355,8 +377,52 @@ export async function PATCH(req: NextRequest) {
         id,
         "ADMIN_ADD_POINT",
         actor,
-        JSON.stringify({ initiationId: created.id, member, enteredByAdmin: true }).slice(0, 4000)
+        JSON.stringify({ initiationId: created.id, member, endorsement, enteredByAdmin: true }).slice(0, 4000)
       );
+
+      // THE FOURTH SIGNATURE OPENS THE CASE, WHOEVER ENTERED IT.
+      //
+      // The transition used to live only in the member-facing route, so a case brought to four from
+      // this panel sat in PENDING for ever: at its threshold, joinable by nobody, and waiting for a
+      // sweep that only expires cases rather than opening them. The subject was never served and the
+      // clock never started.
+      //
+      // Opening SERVES the provider: the notice email goes out and the deadline begins. That is what
+      // reaching four means, and it is the same act whether a member signed for it or the operator
+      // entered it, so it must not depend on which surface was used.
+      const target = await prisma.providerFlagCase.findUnique({
+        where: { id },
+        select: { kind: true, state: true, providerId: true },
+      });
+      if (target?.kind === "CONDUCT" && target.state === "PENDING") {
+        const signatures = await prisma.providerFlagInitiation.count({
+          where: { caseId: id, withdrawnAt: null },
+        });
+        if (signatures >= CONDUCT_CO_INITIATORS_REQUIRED) {
+          const now = new Date();
+          const d = conductDeadlines(now);
+          let memberCount = 0;
+          try {
+            memberCount = (await loadMembers()).memberCount;
+          } catch {
+            // The live count is for display only; the tally reads it again at decision time.
+          }
+          await prisma.providerFlagCase.update({
+            where: { id },
+            data: {
+              state: "NOTICE",
+              openedAt: now,
+              noticeEndsAt: d.noticeEndsAt,
+              discussionEndsAt: d.discussionEndsAt,
+              votingEndsAt: d.votingEndsAt,
+              ...(memberCount ? { memberCountAtOpen: memberCount } : {}),
+            },
+          });
+          await audit(id, "NOTICE_OPENED", "system", `${signatures} co-initiators`);
+          await serveConductNotice(id, target.providerId);
+          return NextResponse.json({ ok: true, id: created.id, opened: true, signatures });
+        }
+      }
       return NextResponse.json({ ok: true, id: created.id });
     }
 
@@ -492,6 +558,14 @@ export async function PATCH(req: NextRequest) {
       const vote = String(b.vote ?? "");
       if (!member || !vote) {
         return NextResponse.json({ error: "member and vote are required" }, { status: 400 });
+      }
+      // One vote per member entity, by unique index. Told plainly rather than surfaced as a 500.
+      const voted = await prisma.providerFlagVote.findUnique({
+        where: { caseId_memberEntityVoter: { caseId: id, memberEntityVoter: member } },
+        select: { id: true },
+      });
+      if (voted) {
+        return NextResponse.json({ error: "that member has already voted on this case" }, { status: 409 });
       }
       const created = await prisma.providerFlagVote.create({
         data: { caseId: id, memberEntityVoter: member, signerAddress: actor, vote,
