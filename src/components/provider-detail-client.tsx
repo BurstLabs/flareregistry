@@ -30,7 +30,6 @@ export interface DetailData {
   conductEligible: boolean;
   /** Resolved on the server from the session, so a member's badge is in the first paint. */
   viewerIsMember: boolean;
-  viewerPendingSignatures: number | null;
   /** The whole pending case, so a member can read it the moment they open the panel. */
   /**
    * The pending conduct case, server-resolved for a signed-in member.
@@ -430,7 +429,6 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
         <ConductAction
           providerId={d.providerId}
           viewerIsMember={d.viewerIsMember}
-          initialPendingSignatures={d.viewerPendingSignatures}
           initialLiveCase={d.viewerLiveCase}
         />
       )}
