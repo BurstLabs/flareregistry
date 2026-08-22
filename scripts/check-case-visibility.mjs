@@ -78,6 +78,10 @@ const CLASSIFIED = {
   // conduct case. Same gate as the routes above, scoped to state PENDING, and it returns only counts
   // so nothing about a sealed case leaves through it.
   "app/api/governance/conduct/evidence/route.ts": "ACTION",
+  // The service step run when a case reaches its fourth signature, shared by the member route and
+  // the admin panel. Reads one case by id to find its notice deadline and emails the SUBJECT, who is
+  // entitled to know. Nothing here renders to a third party.
+  "lib/conduct-open.ts": "ACTION",
   "app/api/governance/flag/route.ts": "ACTION",
   "app/api/governance/vote/route.ts": "ACTION",
   "app/api/governance/defend/route.ts": "ACTION",
