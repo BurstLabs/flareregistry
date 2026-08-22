@@ -624,9 +624,16 @@ export async function conductDirectoryForMember(memberVoter: string): Promise<Co
  * The caller is responsible for having PROVEN control of `signer`. This function does no
  * authentication and must never be handed an address a client merely claimed.
  *
- * Returns nothing about WHO raised the case. The co-initiators become public if and when it is
- * substantiated, and telling a subject which rivals filed while it is still private invites exactly
- * the retaliation this process should not host.
+ * THE ACCUSERS ARE NAMED. This deliberately reverses an earlier rule that withheld them until a
+ * case was substantiated, on the reasoning that naming rivals to the accused before anything is
+ * decided invites retaliation.
+ *
+ * That protected the wrong party. A provider is being asked to answer an accusation and decide
+ * whether to contest it, and who is making it is frequently the substance of the answer: that a
+ * competitor filed it, that a signatory has a stake in the outcome, that two of the four are the
+ * same operator. Withholding it left them arguing with the air. The same names become public the
+ * moment the case is substantiated, so the seal was buying a few days of anonymity for the accuser
+ * at the cost of the accused being able to reply properly at all.
  */
 export interface SubjectCase {
   caseId: string;
@@ -636,7 +643,22 @@ export interface SubjectCase {
   discussionEndsAt: string | null;
   votingEndsAt: string | null;
   hasDefence: boolean;
+  /**
+   * The subject's own response, in full.
+   *
+   * Returned rather than reduced to a boolean because the panel is the only place they can see this
+   * case: a flag said one had been filed and showed nothing, so the edit form opened empty and
+   * "editing" meant retyping from memory or overwriting the reply with a blank one.
+   */
+  defence: { title: string | null; body: string; at: string } | null;
   points: {
+    /** The signatory's on-chain identity (voter) address. */
+    member: string;
+    /** Their listed provider name, where one resolves. Null for a member with no listing. */
+    memberName: string | null;
+    /** An address that resolves at /provider/<link>, so the subject can look them up. */
+    memberLink: string | null;
+    at: string;
     title: string | null;
     grounds: string;
     endorsement: boolean;
@@ -661,10 +683,13 @@ export async function subjectCasesFor(providerId: string, signer: string): Promi
     where: { providerId, kind: "CONDUCT", state: { in: ["NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] } },
     orderBy: { openedAt: "desc" },
     include: {
-      defense: { select: { id: true } },
+      defense: { select: { id: true, title: true, body: true, createdAt: true, editedAt: true } },
       initiations: {
         where: { withdrawnAt: null },
+        orderBy: { createdAt: "asc" },
         select: {
+          memberEntityVoter: true,
+          createdAt: true,
           title: true,
           grounds: true,
           endorsement: true,
@@ -688,6 +713,12 @@ export async function subjectCasesFor(providerId: string, signer: string): Promi
     }
   }
 
+  // Names and links for the signatories, through the five-role join, so the subject reads who is
+  // accusing them rather than a column of hex.
+  const voters = cases.flatMap((c) => c.initiations.map((i) => i.memberEntityVoter));
+  const names = await namesForMemberVoters(voters);
+  const links = await linksForMemberVoters(voters);
+
   return cases.map((c) => ({
     caseId: c.id,
     state: c.state,
@@ -696,7 +727,18 @@ export async function subjectCasesFor(providerId: string, signer: string): Promi
     discussionEndsAt: c.discussionEndsAt ? c.discussionEndsAt.toISOString() : null,
     votingEndsAt: c.votingEndsAt ? c.votingEndsAt.toISOString() : null,
     hasDefence: !!c.defense,
+    defence: c.defense
+      ? {
+          title: c.defense.title,
+          body: c.defense.body,
+          at: (c.defense.editedAt ?? c.defense.createdAt).toISOString(),
+        }
+      : null,
     points: c.initiations.map((i) => ({
+      member: i.memberEntityVoter,
+      memberName: names.get(i.memberEntityVoter.toLowerCase()) ?? null,
+      memberLink: links.get(i.memberEntityVoter.toLowerCase()) ?? null,
+      at: i.createdAt.toISOString(),
       title: i.title,
       grounds: i.grounds,
       endorsement: i.endorsement,
@@ -1009,6 +1051,49 @@ export async function conductFindingsByProvider(): Promise<Map<string, ConductFi
  * unnamed. A listing whose name is its own address is the on-chain tier and counts as unnamed, since
  * repeating the hex adds nothing.
  */
+/**
+ * The address each member voter resolves at under /provider/<address>, so a name can be a link.
+ *
+ * Separate from namesForMemberVoters because a member can be named without being reachable and vice
+ * versa: the name comes from a listing, the link needs the specific listed address that routes.
+ * Both walk the same five-role join, since a listing is filed under whichever role its owner
+ * claimed with, usually the delegation address rather than the voter.
+ */
+export async function linksForMemberVoters(voters: string[]): Promise<Map<string, string>> {
+  const lower = [...new Set(voters.map((v) => v.toLowerCase()))];
+  if (!lower.length) return new Map();
+
+  const ents = await prisma.providerOnchain.findMany({
+    where: { voter: { in: lower } },
+    select: {
+      voter: true,
+      delegationAddress: true,
+      submitAddress: true,
+      submitSignaturesAddress: true,
+      signingPolicyAddress: true,
+    },
+  });
+  const roleAddrs = new Set<string>();
+  const rolesOf = (e: (typeof ents)[number]) =>
+    [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]
+      .filter((r): r is string => !!r)
+      .map((r) => r.toLowerCase());
+  for (const e of ents) for (const a of rolesOf(e)) roleAddrs.add(a);
+
+  const addrs = await prisma.providerAddress.findMany({
+    where: { address: { in: [...roleAddrs] } },
+    select: { address: true },
+  });
+  const listed = new Set(addrs.map((a) => a.address.toLowerCase()));
+
+  const out = new Map<string, string>();
+  for (const e of ents) {
+    const hit = rolesOf(e).find((r) => listed.has(r));
+    if (hit) out.set(e.voter.toLowerCase(), hit);
+  }
+  return out;
+}
+
 export async function namesForMemberVoters(
   voters: string[]
 ): Promise<Map<string, string>> {

@@ -146,10 +146,41 @@ export function OwnerNotices({
                   })}
                 </p>
               )}
+              {/* EVERY SIGNATURE, NAMED. The panel used to list the grounds with no indication of who
+                  was behind them, so a provider was asked to answer four anonymous accusers. Who is
+                  accusing is often the substance of the answer: that a competitor filed it, that a
+                  signatory has a stake in the outcome, that two of the four are one operator. */}
               <ul className="mt-3 space-y-3">
-                {c.points.filter((p) => !p.endorsement).map((p, i) => (
-                  <li key={i}>
-                    {p.title && <p className="font-medium text-fg">{p.title}</p>}
+                {c.points.map((p, i) => (
+                  <li key={i} className="rounded-lg border border-themed/60 bg-elev/40 p-3">
+                    <div className="flex flex-wrap items-baseline gap-x-2 text-xs">
+                      <span className="rounded bg-elev px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-faint">
+                        {p.endorsement
+                          ? t("owner.notices.signerEndorsed")
+                          : t("owner.notices.signerAuthored")}
+                      </span>
+                      {p.memberLink ? (
+                        <a
+                          href={`/provider/${p.memberLink}`}
+                          className="font-medium text-beacon hover:underline"
+                        >
+                          {p.memberName ?? p.member}
+                        </a>
+                      ) : (
+                        <span className="font-medium text-fg">{p.memberName ?? p.member}</span>
+                      )}
+                      <span className="text-faint">
+                        {t("owner.notices.signerAt", { date: p.at.slice(0, 16).replace("T", " ") })}
+                      </span>
+                    </div>
+                    <p className="mt-1 break-all font-mono text-[10px] text-faint">{p.member}</p>
+                    {p.endorsement ? (
+                      <p className="mt-2 text-xs italic text-faint">
+                        {t("gov.case.conduct.endorsed")}
+                      </p>
+                    ) : (
+                      <>
+                    {p.title && <p className="mt-2 font-medium text-fg">{p.title}</p>}
                     <p className="mt-1 whitespace-pre-wrap text-muted">{p.grounds}</p>
                     {p.evidence.length > 0 && (
                       <ul className="mt-2 space-y-1 text-xs">
@@ -172,23 +203,54 @@ export function OwnerNotices({
                         ))}
                       </ul>
                     )}
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>
-              {/* Who raised it is deliberately absent. Co-initiators become public if and when the
-                  case is substantiated; naming them while it is still private, to the party they
-                  have accused, invites exactly the retaliation this process should not host. */}
               {/* THE RESPONSE FORM, here because here is the only place the subject can see the
                   case at all. A sealed case 404s on its own page, so the panel's old instruction to
                   "use the response form on the case" pointed at nothing reachable: the provider was
                   served, told it had time to prepare a reply, and given nowhere to write one. A
                   finding could then be published recording that it did not answer. */}
+              {/* WHAT YOU ALREADY SAID. The panel used to report only that a response existed, so the
+                  one party who has to answer this case could not read their own answer back. */}
+              {c.defence && (
+                <div className="mt-3 rounded-lg border border-beacon/40 bg-beacon/5 p-3">
+                  <p className="text-[10px] uppercase tracking-wide text-beacon">
+                    {t("owner.notices.yourResponse")}
+                  </p>
+                  {c.defence.title && (
+                    <p className="mt-1 text-sm font-medium text-fg">{c.defence.title}</p>
+                  )}
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{c.defence.body}</p>
+                  <p className="mt-1 text-[11px] text-faint">
+                    {t("owner.notices.responseFiled", { date: c.defence.at.slice(0, 16).replace("T", " ") })}
+                  </p>
+                </div>
+              )}
+
               <ResponseForm
                 caseId={c.caseId}
                 locked={c.state === "OPEN_VOTING"}
-                hasDefence={c.hasDefence}
+                defence={c.defence}
                 onSaved={() => void check()}
               />
+
+              {/* WHAT HAPPENS NEXT, with the dates. The panel gave one deadline and no sense of what
+                  it led to, so a provider could see "until 29 August" without knowing whether that
+                  was when they lost, when they could speak, or when anyone would decide. */}
+              <div className="mt-3 rounded-lg border border-themed/60 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-faint">
+                  {t("owner.notices.whatNextH")}
+                </p>
+                <ol className="mt-1 space-y-1 text-xs text-muted">
+                  <li>{t("owner.notices.stepNotice", { date: (c.noticeEndsAt ?? "").slice(0, 10) })}</li>
+                  <li>{t("owner.notices.stepDiscussion", { date: (c.discussionEndsAt ?? "").slice(0, 10) })}</li>
+                  <li>{t("owner.notices.stepVoting", { date: (c.votingEndsAt ?? "").slice(0, 10) })}</li>
+                </ol>
+                <p className="mt-2 text-xs text-faint">{t("owner.notices.outcomes")}</p>
+              </div>
             </div>
           );
         })}
@@ -210,19 +272,25 @@ export function OwnerNotices({
 function ResponseForm({
   caseId,
   locked,
-  hasDefence,
+  defence,
   onSaved,
 }: {
   caseId: string;
   locked: boolean;
-  hasDefence: boolean;
+  defence: { title: string | null; body: string; at: string } | null;
   onSaved: () => void;
 }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [text, setText] = useState("");
+  // SEEDED FROM WHAT WAS FILED. "Edit your response" opened an empty box, so editing meant retyping
+  // from memory, and a careless save would have replaced a considered reply with a blank one.
+  const [title, setTitle] = useState(defence?.title ?? "");
+  const [text, setText] = useState(defence?.body ?? "");
+  useEffect(() => {
+    setTitle(defence?.title ?? "");
+    setText(defence?.body ?? "");
+  }, [defence?.title, defence?.body]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
@@ -272,7 +340,7 @@ function ResponseForm({
         onClick={() => setOpen((o) => !o)}
         className="rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10"
       >
-        {hasDefence ? t("owner.notices.responseEdit") : t("owner.notices.responseWrite")}
+        {defence ? t("owner.notices.responseEdit") : t("owner.notices.responseWrite")}
       </button>
       <p className="mt-1 text-xs text-faint">{t("owner.notices.responseHint")}</p>
       {open && (
