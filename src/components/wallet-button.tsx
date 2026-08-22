@@ -27,6 +27,8 @@ export function WalletButton() {
   // disagree with the server HTML and cause a hydration mismatch (and a flicker). Until mounted we
   // render the disconnected view (matching the server), then switch once the client state settles.
   const [mounted, setMounted] = useState(false);
+  /** Bumped when a hidden tab is brought forward, so its skipped sign-in is reconsidered. */
+  const [retry, setRetry] = useState(0);
   useEffect(() => setMounted(true), []);
 
   // A MEMBER IS SIGNED IN AUTOMATICALLY, with exactly one prompt.
@@ -49,6 +51,24 @@ export function WalletButton() {
   useEffect(() => {
     if (!mounted || !isConnected || !address) return;
     if (triedSignIn.current) return;
+    // A BACKGROUND TAB MUST NOT RAISE A WALLET PROMPT.
+    //
+    // Connecting in one tab tells every open tab on this origin, and each was signing itself in, so
+    // a member with three tabs open got three prompts from tabs they were not even looking at. The
+    // cross-tab lock stops them colliding; this stops a hidden tab asking at all. It retries when
+    // the tab is next brought forward, by which point the visible tab has usually signed in and
+    // there is nothing left to ask.
+    if (document.visibilityState !== "visible") {
+      const onVisible = () => {
+        if (document.visibilityState === "visible") {
+          document.removeEventListener("visibilitychange", onVisible);
+          triedSignIn.current = false;
+          setRetry((n) => n + 1);
+        }
+      };
+      document.addEventListener("visibilitychange", onVisible);
+      return () => document.removeEventListener("visibilitychange", onVisible);
+    }
     triedSignIn.current = true;
     let cancelled = false;
     (async () => {
@@ -69,7 +89,7 @@ export function WalletButton() {
     return () => {
       cancelled = true;
     };
-  }, [mounted, isConnected, address, signIn, router]);
+  }, [mounted, isConnected, address, signIn, router, retry]);
 
   // DISCONNECTING SIGNS OUT.
   //
