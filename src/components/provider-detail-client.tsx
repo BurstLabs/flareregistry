@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
-import type { PendingConductView, SubjectCase } from "@/lib/governance";
+import type { LiveConductView, SubjectCase } from "@/lib/governance";
 import { FlagAction, ConductAction, ReportLogoAction } from "./governance-actions";
 import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
@@ -40,7 +40,7 @@ export interface DetailData {
    * on first paint had neither the endorsement label nor the withdraw control. A type that quietly
    * describes less than the runtime object is how that went unnoticed.
    */
-  viewerPendingCase: PendingConductView | null;
+  viewerLiveCase: LiveConductView | null;
   /**
    * Sealed cases against THIS listing, server-resolved for a signed-in owner, null for everyone
    * else. Present so the notices panel paints with the page rather than behind a button the subject
@@ -431,7 +431,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           providerId={d.providerId}
           viewerIsMember={d.viewerIsMember}
           initialPendingSignatures={d.viewerPendingSignatures}
-          initialPendingCase={d.viewerPendingCase}
+          initialLiveCase={d.viewerLiveCase}
         />
       )}
 

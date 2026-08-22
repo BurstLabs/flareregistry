@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { PendingConductView, SubjectCase } from "@/lib/governance";
+import type { LiveConductView, SubjectCase } from "@/lib/governance";
 import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProvider, formatWeiCompact, listingAddressesForSigner } from "@/lib/metrics";
@@ -178,12 +178,12 @@ export default async function ProviderDetail({
     loadMembers: loadMg,
     memberVoterFor: mgVoterFor,
     CONDUCT_CO_INITIATORS_REQUIRED: MG_REQUIRED,
-    pendingConductForMember: pendingConduct,
+    liveConductForMember: liveConduct,
     subjectCasesFor: subjectCases,
   } = await import("@/lib/governance");
   let viewerIsMember = false;
   let viewerPendingSignatures: number | null = null;
-  let viewerPendingCase: PendingConductView | null = null;
+  let viewerLiveCase: LiveConductView | null = null;
   /** The sealed cases against THIS listing, for a signed-in owner. Null for everyone else. */
   let viewerSubjectCases: SubjectCase[] | null = null;
   try {
@@ -201,8 +201,8 @@ export default async function ProviderDetail({
         // rendered as blank grounds here and the withdraw control never appeared, because this path
         // needs no fetch and is therefore the one every member actually hits.
         const memberVoter = mgVoterFor(sess, mg.voterByAddress)!;
-        viewerPendingCase = await pendingConduct(p.id, memberVoter);
-        viewerPendingSignatures = viewerPendingCase?.signatures ?? 0;
+        viewerLiveCase = await liveConduct(p.id, memberVoter);
+        viewerPendingSignatures = viewerLiveCase?.state === "PENDING" ? viewerLiveCase.signatures : 0;
       }
 
       // THE SUBJECT'S OWN NOTICES, resolved the same way and for the same reason.
@@ -237,7 +237,7 @@ export default async function ProviderDetail({
     // form is worth showing at all.
     viewerIsMember,
     viewerPendingSignatures,
-    viewerPendingCase,
+    viewerLiveCase,
     viewerSubjectCases,
     conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(p.createdAt, nowDate),
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],

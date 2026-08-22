@@ -132,7 +132,7 @@ for (const file of walk(SRC)) {
   // reaching it.
   const readsCases =
     /prisma\.providerFlagCase\.(findMany|findFirst|findUnique|count)/.test(body) ||
-    /pendingConductForMember/.test(body) ||
+    /liveConductForMember/.test(body) ||
     /subjectCasesFor/.test(body) ||
     /conductDirectoryForMember/.test(body);
   if (!readsCases) continue;
