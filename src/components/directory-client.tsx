@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount } from "wagmi";
-import { useWalletSign } from "@/lib/useWalletSign";
+import { useEnsureSession } from "@/lib/useWalletSign";
 import { useRouter } from "next/navigation";
 import { useApp } from "./providers";
 import { safeExternalUrl } from "@/lib/validation";
@@ -64,7 +64,7 @@ export function DirectoryClient({
   initialPending: { providerId: string; remaining: number; alreadySigned: boolean }[];
 }) {
   const { t } = useApp();
-  const connectAndSign = useWalletSign(t);
+  const ensureSession = useEnsureSession(t);
   const router = useRouter();
   const { address, isConnected } = useAccount();
 
@@ -120,16 +120,9 @@ export function DirectoryClient({
         // The action must be "session": governance signatures are bound to a coarse "governance"
         // action precisely so a sign-in cannot be replayed as a vote or a flag, and verify rejects
         // anything else. Using the wrong one here would fail 401 and look like a wallet problem.
-        const sig = await connectAndSign({ chainId: 14, action: "session" });
-        const verified = await fetch("/api/auth/verify", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ message: sig.message, signature: sig.signature }),
-        });
-        if (!verified.ok) {
-          const vb = await verified.json().catch(() => ({}));
-          throw new Error(`sign-in rejected (${verified.status}): ${vb.error ?? "no reason given"}`);
-        }
+        // ONE shared attempt; see useEnsureSession. Two components on one page were each running
+        // this, so the wallet queued two identical sign-in requests for a single credential.
+        if (!(await ensureSession())) throw new Error(t("submit.err.noAccount"));
         res = await fetch("/api/governance/conduct/pending-all", {
           method: "POST",
           headers: { "content-type": "application/json" },

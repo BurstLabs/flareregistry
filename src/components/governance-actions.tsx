@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import Link from "next/link";
 import { useApp } from "@/components/providers";
-import { useSignChallenge, useWalletSign } from "@/lib/useWalletSign";
+import { useSignChallenge, useWalletSign, useEnsureSession } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
 import { CONDUCT_CO_INITIATORS_REQUIRED, CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
 import { validateEvidence } from "@/lib/conduct-evidence";
@@ -1731,6 +1731,7 @@ function PendingConductCase({
 }) {
   const { t } = useApp();
   const connectAndSign = useWalletSign(t);
+  const ensureSession = useEnsureSession(t);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -1774,15 +1775,9 @@ function PendingConductCase({
           setNeedsSignature(true);
           return;
         }
-        // Sign IN, not a one-off challenge: see the note in directory-client. The action must be
-        // "session", since governance signatures are deliberately not accepted by verify.
-        const sg = await connectAndSign({ chainId: 14, action: "session" });
-        const verified = await fetch("/api/auth/verify", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ message: sg.message, signature: sg.signature }),
-        });
-        if (!verified.ok) throw new Error(t("gov.conduct.pending.err"));
+        // ONE shared attempt; see useEnsureSession. This panel and the directory badges were each
+        // signing in independently, which asked the same member to authorise the same session twice.
+        if (!(await ensureSession())) throw new Error(t("gov.conduct.pending.err"));
         res = await fetch("/api/governance/conduct/pending", {
           method: "POST",
           headers: { "content-type": "application/json" },
