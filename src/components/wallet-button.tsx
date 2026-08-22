@@ -91,6 +91,42 @@ export function WalletButton() {
     };
   }, [mounted, isConnected, address, signIn, router, retry]);
 
+  // SWITCHING ACCOUNTS SIGNS OUT TOO.
+  //
+  // Disconnecting already ended the session, but switching account inside the wallet did not, and
+  // that is the more common move. The cookie kept authorising the address that signed in while the
+  // header showed a different one, so a member could switch to an unrelated account and still be
+  // served the member-only panels, and a listing owner could switch away and still be shown the
+  // sealed case against their listing. Nothing leaked to another person, since the cookie never
+  // leaves the browser that earned it, but the page was telling the user something untrue about who
+  // it thought they were, and on a shared machine "who is at the keyboard" and "who signed in" stop
+  // being the same person.
+  //
+  // Compared against the SERVER'S idea of the session rather than a remembered local value: the
+  // session may have been established in another tab, and the server is the only thing that knows
+  // which address it is actually honouring.
+  useEffect(() => {
+    if (!mounted || !isConnected || !address) return;
+    let cancelled = false;
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((b) => {
+        const sess = typeof b?.address === "string" ? b.address.toLowerCase() : null;
+        if (cancelled || !sess || sess === address.toLowerCase()) return;
+        return fetch("/api/auth/session", { method: "DELETE" }).then(() => {
+          if (cancelled) return;
+          // Let the newly selected account be considered on its own merits: if it is also a member,
+          // the sign-in effect above will offer it one prompt.
+          triedSignIn.current = false;
+          router.refresh();
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, isConnected, address, router]);
+
   // DISCONNECTING SIGNS OUT.
   //
   // The session cookie and the wallet connection were independent, so disconnecting left the cookie
