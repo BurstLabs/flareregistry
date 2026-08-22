@@ -792,14 +792,14 @@ function ConductTab() {
         </p>
         <table className="w-full text-sm">
           <thead className="text-xs text-faint">
-            <tr>
+            <tr className="[&>th]:px-3 [&>th]:first:pl-0 [&>th]:last:pr-0">
               <th className="text-left font-normal">Provider</th>
               <th className="text-left font-normal">State</th>
               <th className="text-left font-normal">Public</th>
               <th className="text-left font-normal">Subject</th>
               <th className="text-right font-normal">Sigs</th>
               <th className="text-right font-normal">Votes</th>
-              <th className="text-left font-normal">Next deadline</th>
+              <th className="whitespace-nowrap text-left font-normal">Next deadline</th>
               <th />
             </tr>
           </thead>
@@ -814,7 +814,10 @@ function ConductTab() {
                       ? c.votingEndsAt
                       : null;
               return (
-                <tr key={c.id} className="border-t border-themed/60 align-top">
+                <tr
+                  key={c.id}
+                  className="border-t border-themed/60 align-top [&>td]:px-3 [&>td]:first:pl-0 [&>td]:last:pr-0"
+                >
                   <td className="py-1">{c.provider}</td>
                   <td className="py-1 text-muted">{c.state}</td>
                   <td className="py-1">
@@ -834,7 +837,7 @@ function ConductTab() {
                       ? `${c.votes.deny}D/${c.votes.keep}K/${c.votes.abstain}A`
                       : "—"}
                   </td>
-                  <td className="py-1 text-xs text-muted">
+                  <td className="whitespace-nowrap py-1 text-xs text-muted">
                     {next ? new Date(next).toISOString().slice(0, 10) : "—"}
                   </td>
                   <td className="py-1 text-right">
@@ -861,7 +864,12 @@ function ConductTab() {
 
       {rows
         .filter((c) => c.id === openId)
-        .map((c) => (
+        .map((c) => {
+          // MIRRORS THE SERVER RULE. Once a conduct case is served its signatory set is frozen for
+          // the operator as well, so the controls that would change it are disabled rather than left
+          // live to fail on click. The route decides; this only stops the click.
+          const signersFrozen = c.state !== "PENDING";
+          return (
           <Card key={c.id}>
             {/* HEADER: identity and state first, destructive action last and set apart. */}
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-themed/60 pb-3">
@@ -1012,7 +1020,8 @@ function ConductTab() {
                               "Co-initiator reassigned."
                             )
                           }
-                          className={`${inputCls} font-mono text-[11px]`}
+                          disabled={busy || signersFrozen}
+                          className={`${inputCls} font-mono text-[11px] disabled:opacity-60`}
                         >
                           {!mgMembers.some((m) => m.voter === p.member.toLowerCase()) && (
                             <option value={p.member.toLowerCase()}>
@@ -1040,7 +1049,7 @@ function ConductTab() {
                           onClick={() =>
                             send({ op: "initiation", id: c.id, initiationId: p.id, withdrawn: !p.withdrawn })
                           }
-                          disabled={busy}
+                          disabled={busy || signersFrozen}
                           className="rounded border border-themed px-2 py-0.5 text-[11px] text-muted hover:text-beacon disabled:opacity-50"
                         >
                           {p.withdrawn ? "Restore" : "Withdraw"}
@@ -1050,7 +1059,7 @@ function ConductTab() {
                             confirm("Delete this point and its evidence?") &&
                             send({ op: "deleteInitiation", id: c.id, initiationId: p.id }, "Point deleted.")
                           }
-                          disabled={busy}
+                          disabled={busy || signersFrozen}
                           className="rounded border border-red-500/40 px-2 py-0.5 text-[11px] text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                         >
                           Delete
@@ -1064,7 +1073,8 @@ function ConductTab() {
                         e.target.value !== (p.title ?? "") &&
                         send({ op: "initiation", id: c.id, initiationId: p.id, title: e.target.value })
                       }
-                      className={`${inputCls} mt-2 font-medium`}
+                      disabled={busy || signersFrozen}
+                      className={`${inputCls} mt-2 font-medium disabled:opacity-60`}
                     />
                     <textarea
                       defaultValue={p.grounds}
@@ -1086,6 +1096,7 @@ function ConductTab() {
                               ev.target.value !== e.kind &&
                               send({ op: "evidence", id: c.id, evidenceId: e.id, kind: ev.target.value })
                             }
+                            disabled={busy || signersFrozen}
                             className={`${inputCls} col-span-2 font-mono`}
                           />
                           <input
@@ -1095,6 +1106,7 @@ function ConductTab() {
                               ev.target.value !== (e.chain ?? "") &&
                               send({ op: "evidence", id: c.id, evidenceId: e.id, chain: ev.target.value || null })
                             }
+                            disabled={busy || signersFrozen}
                             className={`${inputCls} col-span-2`}
                           />
                           <input
@@ -1104,6 +1116,7 @@ function ConductTab() {
                               ev.target.value !== e.ref &&
                               send({ op: "evidence", id: c.id, evidenceId: e.id, ref: ev.target.value })
                             }
+                            disabled={busy || signersFrozen}
                             className={`${inputCls} col-span-4 font-mono`}
                           />
                           <input
@@ -1113,11 +1126,12 @@ function ConductTab() {
                               ev.target.value !== e.claim &&
                               send({ op: "evidence", id: c.id, evidenceId: e.id, claim: ev.target.value })
                             }
+                            disabled={busy || signersFrozen}
                             className={`${inputCls} col-span-3`}
                           />
                           <button
                             onClick={() => send({ op: "deleteEvidence", id: c.id, evidenceId: e.id }, "Evidence deleted.")}
-                            disabled={busy}
+                            disabled={busy || signersFrozen}
                             className="col-span-1 rounded border border-red-500/40 py-1 text-[11px] text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                           >
                             x
@@ -1132,20 +1146,29 @@ function ConductTab() {
                           "Evidence row added."
                         )
                       }
-                      disabled={busy}
+                      disabled={busy || signersFrozen}
                       className="mt-2 rounded border border-themed px-2 py-0.5 text-[11px] text-muted hover:text-beacon disabled:opacity-50"
                     >
                       + Evidence
                     </button>
                   </div>
                 ))}
-                <AddPoint
-                  caseId={c.id}
-                  onDone={send}
-                  busy={busy}
-                  mgMembers={mgMembers}
-                  taken={c.points.map((p: any) => String(p.member).toLowerCase())}
-                />
+                {signersFrozen ? (
+                  <p className="mt-3 border-t border-themed/60 pt-2 text-[11px] text-amber-500">
+                    This case has opened and {c.provider} has been served with these signatures.
+                    The signatory set is frozen: it cannot be added to, reassigned, withdrawn or
+                    deleted, here or anywhere else. Grounds and evidence remain editable, and the
+                    case itself can still be published, restored or deleted below.
+                  </p>
+                ) : (
+                  <AddPoint
+                    caseId={c.id}
+                    onDone={send}
+                    busy={busy}
+                    mgMembers={mgMembers}
+                    taken={c.points.map((p: any) => String(p.member).toLowerCase())}
+                  />
+                )}
               </div>
             </Section2>
 
@@ -1227,7 +1250,8 @@ function ConductTab() {
               </Section2>
             )}
           </Card>
-        ))}
+          );
+        })}
 
       {trail.length > 0 && (
         <Card>

@@ -68,9 +68,48 @@ export async function DELETE(req: NextRequest) {
   // is safe), then the case (cascades initiations, grounds, defense, votes, revisions).
   await prisma.providerFlagPointImage.deleteMany({ where: { caseId: id } });
   await prisma.providerFlagCase.delete({ where: { id } });
+
+  // GIVE THE FLAG CHANCE BACK when the deletion leaves no flag case standing.
+  //
+  // `flaggedOnce` is a provider's single opportunity to be flagged, spent when a flag case opens.
+  // Deleting the case removed the case and left the chance spent, so an operator could permanently
+  // close a provider's review path with one click and leave nothing on the record saying why: the
+  // flag button simply never appears again, and the reason is a row that no longer exists.
+  //
+  // The rule this restores is the one /api/governance/unflag already follows: a flag that no longer
+  // exists never opened, so it consumes nothing. Withdrawal was careful about this and deletion was
+  // not, which is the wrong way round, since withdrawal is a member's own choice and deletion is the
+  // operator acting on someone else.
+  //
+  // Only when NO flag case remains. A provider with another one on record has genuinely used it.
+  const remaining = await prisma.providerFlagCase.count({
+    where: { providerId: target.providerId, kind: "FLAG" },
+  });
+  let flagChanceReleased = false;
+  if (remaining === 0) {
+    const prov = await prisma.provider.findUnique({
+      where: { id: target.providerId },
+      select: { flaggedOnce: true },
+    });
+    if (prov?.flaggedOnce) {
+      await prisma.provider.update({
+        where: { id: target.providerId },
+        data: { flaggedOnce: false },
+      });
+      flagChanceReleased = true;
+    }
+  }
+
   await prisma.providerCaseAudit.create({
-    data: { caseId: id, action: "CASE_DELETED", actor: "admin" },
+    data: {
+      caseId: id,
+      action: "CASE_DELETED",
+      actor: "admin",
+      // Recorded either way, so the trail says whether the chance came back rather than leaving it
+      // to be inferred from a provider row nobody thinks to look at.
+      detail: JSON.stringify({ state: target.state, flagChanceReleased, flagCasesRemaining: remaining }),
+    },
   });
   await publishFeedToRepo().catch(() => {});
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, flagChanceReleased });
 }
