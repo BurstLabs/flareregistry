@@ -230,8 +230,17 @@ export async function ensureSessionOnce(
   return attempt;
 }
 
-export function useEnsureSession(t: TFn) {
-  const signIn = useSessionSignIn(t);
+/**
+ * Sign in, sharing one prompt with any other component asking at the same time.
+ *
+ * THIS IS THE ONLY EXPORTED SIGN-IN, deliberately. The uncoordinated version is module-private now,
+ * because leaving both exported meant the obvious-looking name was the wrong one: the header signs
+ * in automatically on connect and reached for it, so it could never share with the panel button a
+ * member might click a moment later, and the wallet queued two identical requests. Making the safe
+ * one the only one available is the difference between a fix and a fix that holds.
+ */
+export function useSessionSignIn(t: TFn) {
+  const signIn = useRawSessionSignIn(t);
   return useCallback(
     () =>
       ensureSessionOnce(
@@ -246,7 +255,7 @@ export function useEnsureSession(t: TFn) {
   );
 }
 
-export function useSessionSignIn(t: TFn) {
+function useRawSessionSignIn(t: TFn) {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   return useCallback(async (): Promise<boolean> => {
@@ -279,3 +288,6 @@ export function useSessionSignIn(t: TFn) {
     return true;
   }, [address, isConnected, signMessageAsync, t]);
 }
+
+/** Alias of useSessionSignIn, kept for call sites that read better as "ensure". */
+export const useEnsureSession = useSessionSignIn;
