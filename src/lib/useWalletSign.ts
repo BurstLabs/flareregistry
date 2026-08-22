@@ -230,7 +230,26 @@ export async function ensureSessionOnce(
   trace(`${source}: starting an attempt`);
   const attempt = (async () => {
     if (await hasSession()) return true;
-    return await signIn();
+    // ACROSS TABS, NOT JUST WITHIN ONE.
+    //
+    // The module variable above can only de-duplicate callers inside a single document. A session
+    // is a cookie, which every tab on this origin shares, and wagmi broadcasts a wallet connection
+    // to all of them: three open tabs each ran their own sign-in and the wallet queued three
+    // identical requests. That is the shape of the bug reported repeatedly, and no amount of
+    // in-page coordination could have fixed it.
+    //
+    // The Web Locks API serialises the attempt across tabs. The session is re-checked INSIDE the
+    // lock, so the tabs that queue behind the winner find the cookie it just set and prompt for
+    // nothing. Where the API is missing the behaviour is exactly what it was before.
+    const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+    if (!locks) return await signIn();
+    return await locks.request("flare-registry-signin", async () => {
+      if (await hasSession()) {
+        trace(`${source}: another tab signed in while we waited; nothing to do`);
+        return true;
+      }
+      return await signIn();
+    });
   })();
   sessionAttempt = attempt;
   // Cleared on settle, and deliberately NOT chained into the returned value: callers must see the

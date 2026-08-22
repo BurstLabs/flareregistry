@@ -37,7 +37,6 @@ if (/:\s*Promise<|\bhasSession:|\bsignIn:|msg:\s*string/.test(js)) {
 }
 writeFileSync(TMP, js);
 const { ensureSessionOnce } = await import(TMP);
-unlinkSync(TMP);
 
 const problems = [];
 const eq = (label, got, want) => { if (got !== want) problems.push(`${label}: got ${got}, expected ${want}`); };
@@ -85,7 +84,53 @@ const eq = (label, got, want) => { if (got !== want) problems.push(`${label}: go
   eq("a later attempt still runs after a rejection", after, 1);
 }
 
-// 5. NO UNCOORDINATED SIGN-IN ESCAPES THE MODULE. This is how the bug survived its first fix: the
+// 5. TABS SERIALISE, AND THE LATE ONES PROMPT FOR NOTHING.
+//
+//    This is the bug that survived three fixes. The module variable above only de-duplicates within
+//    one document, and a session is a cookie every tab shares, so three open tabs each signed
+//    themselves in and the wallet queued three identical requests.
+//
+//    Each tab therefore needs its OWN module instance, or the test proves nothing: sharing one
+//    instance exercises the in-page path and passes whether or not the cross-tab lock exists. That
+//    is exactly the mistake this assertion was written with the first time.
+{
+  let prompts = 0, held = false;
+  const queue = [];
+  // A minimal stand-in for navigator.locks: one holder at a time, the rest queued in order.
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    writable: true,
+    value: {
+      locks: {
+        request: (_name, fn) =>
+          new Promise((resolve, reject) => {
+            const run = async () => {
+              held = true;
+              try { resolve(await fn()); } catch (e) { reject(e); }
+              finally { held = false; const next = queue.shift(); if (next) next(); }
+            };
+            if (held) queue.push(run); else run();
+          }),
+      },
+    },
+  });
+
+  let signedIn = false;
+  const hasSession = async () => signedIn;
+  const signIn = async () => { prompts++; await new Promise((r) => setTimeout(r, 10)); signedIn = true; return true; };
+
+  // Three separate module instances: three tabs.
+  writeFileSync(TMP, js);
+  const tabs = await Promise.all([1, 2, 3].map((n) => import(`${TMP}?tab=${n}`)));
+  unlinkSync(TMP);
+  const results = await Promise.all(tabs.map((m) => m.ensureSessionOnce(hasSession, signIn, "tab")));
+
+  eq("three tabs cause this many prompts", prompts, 1);
+  eq("every tab ends up signed in", results.every(Boolean), true);
+  delete globalThis.navigator;
+}
+
+// 6. NO UNCOORDINATED SIGN-IN ESCAPES THE MODULE. This is how the bug survived its first fix: the
 //    raw hook was exported next to the shared one, the header used it, and the two could not share.
 if (/^export function useRawSessionSignIn/m.test(src)) {
   problems.push(
