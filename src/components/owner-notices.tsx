@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { useApp } from "./providers";
+import type { SubjectCase } from "@/lib/governance";
 import { useSignChallenge } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
 
@@ -24,40 +25,48 @@ import { apiErrorMessage } from "@/lib/i18n";
  * The wallet must sign, every time. The seal is lifted for a proven owner, not for whoever has the
  * page open on a shared machine.
  */
+/** Null while unknown (not signed in, or not the owner); an array once resolved. */
+type SubjectCasesProp = SubjectCase[] | null;
+
 export function OwnerNotices({
   providerId,
   ownerAddresses,
+  initialCases = null,
 }: {
   providerId: string;
   /** Verified owner addresses, lowercased. Empty when the listing has never been claimed. */
   ownerAddresses: string[];
+  /**
+   * Server-resolved from the session, so a signed-in owner sees their notices with the page.
+   *
+   * The panel used to render nothing but a "Check for notices" button: a provider who had been
+   * served with a sealed case had to know to press something before the site would tell them, and
+   * pressing it cost a wallet popup to prove something the session already proved. A notice nobody
+   * finds is not notice, and this is the primary channel, since most listings carry no email.
+   */
+  initialCases?: SubjectCasesProp;
 }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
   const { address, isConnected } = useAccount();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [cases, setCases] = useState<
-    | null
-    | {
-        caseId: string;
-        state: string;
-        noticeEndsAt: string | null;
-        discussionEndsAt: string | null;
-        votingEndsAt: string | null;
-        hasDefence: boolean;
-        points: {
-          title: string | null;
-          grounds: string;
-          /** Signed the case as it stood rather than authoring a ground. `grounds` is empty. */
-          endorsement: boolean;
-          evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
-        }[];
-      }[]
-  >(null);
-
+  const [cases, setCases] = useState<SubjectCasesProp>(initialCases);
+  useEffect(() => {
+    setCases(initialCases);
+  }, [initialCases]);
+  // THE SERVER'S ANSWER OUTRANKS THE WALLET'S.
+  //
+  // `initialCases` is non-null only when this request carried a session whose address controls a
+  // verified address on this listing, which the server checked. A connected wallet is the weaker
+  // signal: it is a heuristic this component runs to decide whether to bother asking.
+  //
+  // Gating on the wallet alone hid the panel from the very owner the server had just resolved it
+  // for. A session survives a refresh and wagmi reconnects asynchronously, so an owner returning to
+  // their own page saw nothing at all: the case was in the payload and never drawn.
   const isOwner =
-    isConnected && !!address && ownerAddresses.includes(address.toLowerCase());
+    initialCases !== null ||
+    (isConnected && !!address && ownerAddresses.includes(address.toLowerCase()));
   // Nothing is rendered to anyone else, including a visitor with some other wallet connected.
   if (!isOwner) return null;
 
@@ -65,12 +74,21 @@ export function OwnerNotices({
     setErr("");
     setBusy(true);
     try {
-      const s = await signChallenge();
-      const res = await fetch("/api/governance/my-case", {
+      // Session first, signature only if there is none. The route accepts either, so an owner who is
+      // already signed in is never asked to prove it twice.
+      let res = await fetch("/api/governance/my-case", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ providerId, message: s.message, signature: s.signature }),
+        body: JSON.stringify({ providerId }),
       });
+      if (res.status === 401) {
+        const s = await signChallenge();
+        res = await fetch("/api/governance/my-case", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ providerId, message: s.message, signature: s.signature }),
+        });
+      }
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(apiErrorMessage(t, b, "owner.notices.err"));
       setCases(b.cases ?? []);
@@ -94,6 +112,9 @@ export function OwnerNotices({
         >
           {busy ? t("gov.act.signing") : t("owner.notices.check")}
         </button>
+      )}
+      {cases === null && !busy && (
+        <p className="mt-2 text-xs text-faint">{t("owner.notices.signedOutHint")}</p>
       )}
 
       {cases !== null && cases.length === 0 && (
