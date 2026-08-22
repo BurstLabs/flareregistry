@@ -133,7 +133,8 @@ for (const file of walk(SRC)) {
   const readsCases =
     /prisma\.providerFlagCase\.(findMany|findFirst|findUnique|count)/.test(body) ||
     /pendingConductForMember/.test(body) ||
-    /subjectCasesFor/.test(body);
+    /subjectCasesFor/.test(body) ||
+    /conductDirectoryForMember/.test(body);
   if (!readsCases) continue;
   const rel = relative(SRC, file);
   seen.add(rel);

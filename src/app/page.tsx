@@ -1,3 +1,4 @@
+import type { ConductDirectoryView } from "@/lib/governance";
 import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProviders, formatWeiCompact } from "@/lib/metrics";
@@ -113,28 +114,22 @@ export default async function Home({
   // never handed to anyone else. If this page is ever made static or shared-cached, this block must
   // move back to the client, or a sealed case would be served to whoever got the cached copy.
   const { getSessionAddress } = await import("@/lib/session");
-  const { loadMembers, memberVoterFor, CONDUCT_CO_INITIATORS_REQUIRED } = await import("@/lib/governance");
+  const { loadMembers, memberVoterFor, conductDirectoryForMember } = await import("@/lib/governance");
   const session = await getSessionAddress();
   let viewerIsMember = false;
-  let initialPending: { providerId: string; remaining: number; alreadySigned: boolean }[] = [];
+  let initialPending: ConductDirectoryView["pending"] = [];
+  let initialOpen: ConductDirectoryView["open"] = [];
   if (session) {
     try {
       const members = await loadMembers();
       const memberVoter = memberVoterFor(session, members.voterByAddress);
       if (memberVoter) {
         viewerIsMember = true;
-        const rows = await prisma.providerFlagCase.findMany({
-          where: { kind: "CONDUCT", state: "PENDING" },
-          select: {
-            providerId: true,
-            initiations: { where: { withdrawnAt: null }, select: { memberEntityVoter: true } },
-          },
-        });
-        initialPending = rows.map((c) => ({
-          providerId: c.providerId,
-          remaining: Math.max(0, CONDUCT_CO_INITIATORS_REQUIRED - c.initiations.length),
-          alreadySigned: c.initiations.some((i) => i.memberEntityVoter === memberVoter),
-        }));
+        // The SAME loader the API uses, so the badges a member sees in the first paint and the ones
+        // they see after a refetch cannot disagree. This shape had been written out twice before.
+        const dir = await conductDirectoryForMember(memberVoter);
+        initialPending = dir.pending;
+        initialOpen = dir.open;
       }
     } catch {
       // Membership unreadable: fall through as a non-member. The client still probes after mount, so
@@ -230,6 +225,7 @@ export default async function Home({
       qualifiedCount={qualifiedCount}
       viewerIsMember={viewerIsMember}
       initialPending={initialPending}
+      initialOpen={initialOpen}
       showAll={showAll}
     />
   );

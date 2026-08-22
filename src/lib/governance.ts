@@ -544,6 +544,77 @@ export async function invalidateEndorsements(
 }
 
 /**
+ * WHAT A MEMBER NEEDS TO SEE ON A DIRECTORY CARD, for every conduct case at once.
+ *
+ * ONE LOADER, shared by /api/governance/conduct/pending-all and the home page, which is the third
+ * time this exact shape was about to exist in two places. The first two times they drifted and the
+ * copy the page actually rendered was the one missing the new fields.
+ *
+ * COUNTS, STAGE AND DATES ONLY. No grounds and no evidence, because nothing here is a place to READ
+ * a case: it exists so a member can see where one is and go to that provider's page to read it. The
+ * narrower payload also means a directory response never carries the text of a sealed accusation.
+ *
+ * The caller must have PROVEN control of `memberVoter`; this function authenticates nothing.
+ */
+export interface ConductDirectoryView {
+  pending: { providerId: string; signatures: number; remaining: number; alreadySigned: boolean }[];
+  /** Cases past their fourth signature: served, running, and heading for a vote. */
+  open: { providerId: string; state: string; nextDeadline: string | null; hasVoted: boolean }[];
+}
+
+export async function conductDirectoryForMember(memberVoter: string): Promise<ConductDirectoryView> {
+  const [pendingRows, openRows] = await Promise.all([
+    prisma.providerFlagCase.findMany({
+      where: { kind: "CONDUCT", state: "PENDING" },
+      select: {
+        providerId: true,
+        initiations: { where: { withdrawnAt: null }, select: { memberEntityVoter: true } },
+      },
+    }),
+    // A card stopped saying anything the moment a case reached four signatures, which is exactly
+    // when it starts to matter: the provider has been served, the clock is running, and the member
+    // reading the directory is one of the people who will have to vote. The badge disappeared at
+    // the point it became actionable.
+    prisma.providerFlagCase.findMany({
+      where: { kind: "CONDUCT", state: { in: ["NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] } },
+      select: {
+        providerId: true,
+        state: true,
+        noticeEndsAt: true,
+        discussionEndsAt: true,
+        votingEndsAt: true,
+        votes: { where: { memberEntityVoter: memberVoter }, select: { id: true } },
+      },
+    }),
+  ]);
+
+  return {
+    pending: pendingRows.map((c) => ({
+      providerId: c.providerId,
+      signatures: c.initiations.length,
+      remaining: Math.max(0, CONDUCT_CO_INITIATORS_REQUIRED - c.initiations.length),
+      /** So a card can say "you have signed this" rather than inviting a signature that would 409. */
+      alreadySigned: c.initiations.some((i) => i.memberEntityVoter === memberVoter),
+    })),
+    open: openRows.map((c) => {
+      const next =
+        c.state === "NOTICE"
+          ? c.noticeEndsAt
+          : c.state === "OPEN_DISCUSSION"
+            ? c.discussionEndsAt
+            : c.votingEndsAt;
+      return {
+        providerId: c.providerId,
+        state: c.state,
+        nextDeadline: next ? next.toISOString() : null,
+        /** So a card asks for a vote once, rather than nagging a member who has already cast one. */
+        hasVoted: c.votes.length > 0,
+      };
+    }),
+  };
+}
+
+/**
  * THE SUBJECT'S VIEW of the sealed cases they have been served with.
  *
  * ONE LOADER, shared by /api/governance/my-case and the provider page, for the same reason the
