@@ -96,8 +96,18 @@ export async function POST(req: NextRequest) {
   // A provider can respond from the moment it is flagged (PENDING) through the discussion period.
   // Once voting opens the defense LOCKS, matching member grounds and the reply lock: the record that
   // members vote on is frozen for everyone, so the provider cannot change its statement mid-vote.
-  // Same for flag cases and appeals (state-based).
-  if (theCase.state !== "PENDING" && theCase.state !== "OPEN_DISCUSSION") {
+  //
+  // CONDUCT ADDS THE NOTICE PERIOD, and its absence made the mechanism incoherent. A conduct case
+  // is sealed until decided, so its subject learns of it only at service, and NOTICE is the stage
+  // that exists to let them answer. Refusing a response then meant the notice period told a
+  // provider to prepare a reply while the only route to filing one returned "locked once voting has
+  // opened", about a vote that had not started. A finding could then be published recording
+  // SERVED_NO_DEFENCE against someone who was never able to answer.
+  const respondable =
+    theCase.kind === "CONDUCT"
+      ? ["NOTICE", "OPEN_DISCUSSION"]
+      : ["PENDING", "OPEN_DISCUSSION"];
+  if (!respondable.includes(theCase.state)) {
     return apiError(
       "VOTING_LOCKED_RESPONSE",
       "the response is locked once voting has opened",

@@ -178,14 +178,132 @@ export function OwnerNotices({
               {/* Who raised it is deliberately absent. Co-initiators become public if and when the
                   case is substantiated; naming them while it is still private, to the party they
                   have accused, invites exactly the retaliation this process should not host. */}
-              <p className="mt-3 text-xs text-faint">
-                {c.hasDefence ? t("owner.notices.replied") : t("owner.notices.howToRespond")}
-              </p>
+              {/* THE RESPONSE FORM, here because here is the only place the subject can see the
+                  case at all. A sealed case 404s on its own page, so the panel's old instruction to
+                  "use the response form on the case" pointed at nothing reachable: the provider was
+                  served, told it had time to prepare a reply, and given nowhere to write one. A
+                  finding could then be published recording that it did not answer. */}
+              <ResponseForm
+                caseId={c.caseId}
+                locked={c.state === "OPEN_VOTING"}
+                hasDefence={c.hasDefence}
+                onSaved={() => void check()}
+              />
             </div>
           );
         })}
 
       {err && <p className="mt-2 text-xs text-flare">{err}</p>}
+    </div>
+  );
+}
+
+/**
+ * The subject's reply to a case against them.
+ *
+ * Locked once voting opens, which is the same rule the members' grounds follow: the record the
+ * group votes on is frozen for everyone, so neither side can move it mid-vote.
+ *
+ * Every version is kept as a revision, and the reply is published with the case if the case is ever
+ * published at all. If it is not substantiated, none of it becomes public.
+ */
+function ResponseForm({
+  caseId,
+  locked,
+  hasDefence,
+  onSaved,
+}: {
+  caseId: string;
+  locked: boolean;
+  hasDefence: boolean;
+  onSaved: () => void;
+}) {
+  const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  if (locked) {
+    return <p className="mt-3 text-xs text-faint">{t("owner.notices.responseLocked")}</p>;
+  }
+
+  async function submit() {
+    setErr("");
+    setOk("");
+    if (text.trim().length < 10) {
+      setErr(t("owner.notices.responseTooShort"));
+      return;
+    }
+    setBusy(true);
+    try {
+      const sig = await signChallenge();
+      const res = await fetch("/api/governance/defend", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          caseId,
+          // The route reads this field as `body`, not `text`, on both the JSON and multipart paths.
+          body: text.trim(),
+          title: title.trim() || undefined,
+          message: sig.message,
+          signature: sig.signature,
+        }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "owner.notices.responseErr"));
+      setOk(t("owner.notices.responseSaved"));
+      setOpen(false);
+      onSaved();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("owner.notices.responseErr"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10"
+      >
+        {hasDefence ? t("owner.notices.responseEdit") : t("owner.notices.responseWrite")}
+      </button>
+      <p className="mt-1 text-xs text-faint">{t("owner.notices.responseHint")}</p>
+      {open && (
+        <div className="mt-2 rounded-lg border border-themed p-2">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={120}
+            placeholder={t("owner.notices.responseTitle")}
+            className="block w-full rounded border border-themed bg-elev px-2 py-1 text-sm"
+          />
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            maxLength={4000}
+            rows={6}
+            placeholder={t("owner.notices.responsePlaceholder")}
+            className="mt-2 block w-full rounded border border-themed bg-elev px-2 py-1 text-sm"
+          />
+          <button
+            type="button"
+            onClick={submit}
+            disabled={busy || text.trim().length < 10}
+            className="mt-2 rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
+          >
+            {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
+          </button>
+        </div>
+      )}
+      {err && <p className="mt-1 text-xs text-flare">{err}</p>}
+      {ok && <p className="mt-1 text-xs text-emerald-500">{ok}</p>}
     </div>
   );
 }
