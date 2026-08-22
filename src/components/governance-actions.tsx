@@ -10,6 +10,7 @@ import { apiErrorMessage } from "@/lib/i18n";
 import { CONDUCT_CO_INITIATORS_REQUIRED, CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
 import { validateEvidence } from "@/lib/conduct-evidence";
 import type { LiveConductView } from "@/lib/governance";
+import { SubjectSection, type SubjectHalf } from "./conduct-subject";
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -155,11 +156,21 @@ export function ConductAction({
   providerId,
   viewerIsMember = false,
   initialLiveCase = null,
+  subject = null,
 }: {
   providerId: string;
   /** Server-resolved from the session, so the badge paints with the page. */
   viewerIsMember?: boolean;
   initialLiveCase?: PendingCase | null;
+  /**
+   * The viewer's own half of this case, when they are ALSO the provider it is against.
+   *
+   * Passed in so the two roles share one card. A provider who is also a Management Group member was
+   * shown the same case twice, once as the party that must answer and once as a member who must
+   * vote, repeating the signatories, the grounds and the response in both. Two roles is a real
+   * distinction; two copies of the case is not.
+   */
+  subject?: SubjectHalf | null;
 }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
@@ -377,6 +388,7 @@ export function ConductAction({
             onLive={setLive}
             isMember={isMember}
             initialLiveCase={initialLiveCase}
+            subject={subject}
           />
 
           {/* THE CHOICE. Endorsing means: I have read the case above and I put my name to it as it
@@ -1701,11 +1713,13 @@ function PendingConductCase({
   onLive,
   isMember,
   initialLiveCase,
+  subject,
 }: {
   providerId: string;
   onLive: (c: PendingCase | null) => void;
   isMember: boolean;
   initialLiveCase: PendingCase | null;
+  subject: SubjectHalf | null;
 }) {
   const { t } = useApp();
   const connectAndSign = useWalletSign(t);
@@ -2001,7 +2015,7 @@ function PendingConductCase({
                 panel-level control, so it is unambiguous which of the signatures is being taken
                 back. The server re-checks ownership and the PENDING state; this only decides where
                 the button is drawn. */}
-            {pt.mine && (
+            {pt.mine && isPending && (
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 {/* EDITABLE UNTIL THE CASE IS SERVED. A member who mistyped, or who has sharpened
                     what they meant, should not have to withdraw and start again. An endorsement has
@@ -2050,7 +2064,7 @@ function PendingConductCase({
                 </button>
               </div>
             )}
-            {editing === i && !pt.endorsement && (
+            {editing === i && isPending && !pt.endorsement && (
               <div className="mt-2 rounded border border-beacon/40 p-2">
                 <input
                   value={editTitle}
@@ -2226,7 +2240,7 @@ function PendingConductCase({
           read the reply to it; a vote cast on the accusation alone is an echo, not a judgement.
           Absent while the case is still gathering signatures: the provider has not been served and
           does not know it exists. */}
-      {!isPending && (
+      {!isPending && !subject && (
         <div className="mt-3 rounded-lg border border-flare/40 bg-flare/5 p-3">
           <p className="text-[10px] uppercase tracking-wide text-flare">
             {t("gov.conduct.live.responseH")}
@@ -2257,6 +2271,11 @@ function PendingConductCase({
           onVoted={() => void check(false)}
         />
       )}
+
+      {/* THE VIEWER'S OWN HALF, when they are also the provider this case is against. Their reply
+          and their schedule belong in the same card as the accusation, not in a second panel that
+          repeats it. */}
+      {subject && <SubjectSection subject={subject} onSaved={() => void check(false)} />}
 
       {editing === null && err && <p className="mt-2 text-xs text-flare">{err}</p>}
 

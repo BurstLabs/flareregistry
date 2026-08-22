@@ -245,6 +245,24 @@ function Sparkline({ values, color }: { values: (string | null)[]; color: string
 }
 
 export function ProviderDetailClient({ data: d }: { data: DetailData }) {
+  // THE SAME CASE, SEEN FROM BOTH SIDES. A provider that is also a Management Group member gets one
+  // card rather than two: the member panel already shows the signatories, the grounds, the evidence
+  // and the response, and the owner panel was repeating all of it to say one extra thing, that they
+  // may reply. Merged only when both views describe the SAME case id, so a mismatch falls back to
+  // rendering them separately rather than silently hiding one.
+  const subjectCase = d.viewerSubjectCases?.find((c) => c.caseId === d.viewerLiveCase?.caseId) ?? null;
+  const mergedSubject =
+    subjectCase && d.viewerLiveCase
+      ? {
+          caseId: subjectCase.caseId,
+          state: subjectCase.state,
+          noticeEndsAt: subjectCase.noticeEndsAt,
+          discussionEndsAt: subjectCase.discussionEndsAt,
+          votingEndsAt: subjectCase.votingEndsAt,
+          defence: subjectCase.defence,
+        }
+      : null;
+
   const { t } = useApp();
 
   return (
@@ -387,14 +405,16 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
 
           owner address, and only after they sign, so it discloses nothing to anyone else. */}
 
-      <OwnerNotices
-
-        providerId={d.providerId}
-
-        ownerAddresses={d.addresses.filter((a) => a.verified).map((a) => a.address.toLowerCase())}
-        initialCases={d.viewerSubjectCases}
-
-      />
+      {/* Suppressed when the member card below is already showing this same case: see the note on
+          ConductAction's `subject` prop. Still rendered on its own for a provider who is not a
+          member, which is the ordinary case. */}
+      {!mergedSubject && (
+        <OwnerNotices
+          providerId={d.providerId}
+          ownerAddresses={d.addresses.filter((a) => a.verified).map((a) => a.address.toLowerCase())}
+          initialCases={d.viewerSubjectCases}
+        />
+      )}
 
       <ManageListingButton
         // Managing a claimed listing may be done with ANY of the five on-chain role addresses of a
@@ -430,6 +450,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           providerId={d.providerId}
           viewerIsMember={d.viewerIsMember}
           initialLiveCase={d.viewerLiveCase}
+          subject={mergedSubject}
         />
       )}
 

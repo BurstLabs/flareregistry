@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 import { useApp } from "./providers";
 import type { SubjectCase } from "@/lib/governance";
 import { useSignChallenge } from "@/lib/useWalletSign";
+import { SubjectSection } from "./conduct-subject";
 import { apiErrorMessage } from "@/lib/i18n";
 
 /**
@@ -213,165 +214,22 @@ export function OwnerNotices({
                   "use the response form on the case" pointed at nothing reachable: the provider was
                   served, told it had time to prepare a reply, and given nowhere to write one. A
                   finding could then be published recording that it did not answer. */}
-              {/* WHAT YOU ALREADY SAID. The panel used to report only that a response existed, so the
-                  one party who has to answer this case could not read their own answer back. */}
-              {c.defence && (
-                <div className="mt-3 rounded-lg border border-beacon/40 bg-beacon/5 p-3">
-                  <p className="text-[10px] uppercase tracking-wide text-beacon">
-                    {t("owner.notices.yourResponse")}
-                  </p>
-                  {c.defence.title && (
-                    <p className="mt-1 text-sm font-medium text-fg">{c.defence.title}</p>
-                  )}
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted">{c.defence.body}</p>
-                  <p className="mt-1 text-[11px] text-faint">
-                    {t("owner.notices.responseFiled", { date: c.defence.at.slice(0, 16).replace("T", " ") })}
-                  </p>
-                </div>
-              )}
-
-              <ResponseForm
-                caseId={c.caseId}
-                locked={c.state === "OPEN_VOTING"}
-                defence={c.defence}
+              <SubjectSection
+                subject={{
+                  caseId: c.caseId,
+                  state: c.state,
+                  noticeEndsAt: c.noticeEndsAt,
+                  discussionEndsAt: c.discussionEndsAt,
+                  votingEndsAt: c.votingEndsAt,
+                  defence: c.defence,
+                }}
                 onSaved={() => void check()}
               />
-
-              {/* WHAT HAPPENS NEXT, with the dates. The panel gave one deadline and no sense of what
-                  it led to, so a provider could see "until 29 August" without knowing whether that
-                  was when they lost, when they could speak, or when anyone would decide. */}
-              <div className="mt-3 rounded-lg border border-themed/60 p-3">
-                <p className="text-[10px] uppercase tracking-wide text-faint">
-                  {t("owner.notices.whatNextH")}
-                </p>
-                <ol className="mt-1 space-y-1 text-xs text-muted">
-                  <li>{t("owner.notices.stepNotice", { date: (c.noticeEndsAt ?? "").slice(0, 10) })}</li>
-                  <li>{t("owner.notices.stepDiscussion", { date: (c.discussionEndsAt ?? "").slice(0, 10) })}</li>
-                  <li>{t("owner.notices.stepVoting", { date: (c.votingEndsAt ?? "").slice(0, 10) })}</li>
-                </ol>
-                <p className="mt-2 text-xs text-faint">{t("owner.notices.outcomes")}</p>
-              </div>
             </div>
           );
         })}
 
       {err && <p className="mt-2 text-xs text-flare">{err}</p>}
-    </div>
-  );
-}
-
-/**
- * The subject's reply to a case against them.
- *
- * Locked once voting opens, which is the same rule the members' grounds follow: the record the
- * group votes on is frozen for everyone, so neither side can move it mid-vote.
- *
- * Every version is kept as a revision, and the reply is published with the case if the case is ever
- * published at all. If it is not substantiated, none of it becomes public.
- */
-function ResponseForm({
-  caseId,
-  locked,
-  defence,
-  onSaved,
-}: {
-  caseId: string;
-  locked: boolean;
-  defence: { title: string | null; body: string; at: string } | null;
-  onSaved: () => void;
-}) {
-  const { t } = useApp();
-  const signChallenge = useSignChallenge(t);
-  const [open, setOpen] = useState(false);
-  // SEEDED FROM WHAT WAS FILED. "Edit your response" opened an empty box, so editing meant retyping
-  // from memory, and a careless save would have replaced a considered reply with a blank one.
-  const [title, setTitle] = useState(defence?.title ?? "");
-  const [text, setText] = useState(defence?.body ?? "");
-  useEffect(() => {
-    setTitle(defence?.title ?? "");
-    setText(defence?.body ?? "");
-  }, [defence?.title, defence?.body]);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [ok, setOk] = useState("");
-
-  if (locked) {
-    return <p className="mt-3 text-xs text-faint">{t("owner.notices.responseLocked")}</p>;
-  }
-
-  async function submit() {
-    setErr("");
-    setOk("");
-    if (text.trim().length < 10) {
-      setErr(t("owner.notices.responseTooShort"));
-      return;
-    }
-    setBusy(true);
-    try {
-      const sig = await signChallenge();
-      const res = await fetch("/api/governance/defend", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          caseId,
-          // The route reads this field as `body`, not `text`, on both the JSON and multipart paths.
-          body: text.trim(),
-          title: title.trim() || undefined,
-          message: sig.message,
-          signature: sig.signature,
-        }),
-      });
-      const b = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(apiErrorMessage(t, b, "owner.notices.responseErr"));
-      setOk(t("owner.notices.responseSaved"));
-      setOpen(false);
-      onSaved();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : t("owner.notices.responseErr"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="mt-3">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10"
-      >
-        {defence ? t("owner.notices.responseEdit") : t("owner.notices.responseWrite")}
-      </button>
-      <p className="mt-1 text-xs text-faint">{t("owner.notices.responseHint")}</p>
-      {open && (
-        <div className="mt-2 rounded-lg border border-themed p-2">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={120}
-            placeholder={t("owner.notices.responseTitle")}
-            className="block w-full rounded border border-themed bg-elev px-2 py-1 text-sm"
-          />
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            maxLength={4000}
-            rows={6}
-            placeholder={t("owner.notices.responsePlaceholder")}
-            className="mt-2 block w-full rounded border border-themed bg-elev px-2 py-1 text-sm"
-          />
-          <button
-            type="button"
-            onClick={submit}
-            disabled={busy || text.trim().length < 10}
-            className="mt-2 rounded-lg border border-beacon px-3 py-1.5 text-xs font-medium text-beacon hover:bg-beacon/10 disabled:opacity-50"
-          >
-            {busy ? t("gov.act.signing") : t("gov.act.editSubmit")}
-          </button>
-        </div>
-      )}
-      {err && <p className="mt-1 text-xs text-flare">{err}</p>}
-      {ok && <p className="mt-1 text-xs text-emerald-500">{ok}</p>}
     </div>
   );
 }
