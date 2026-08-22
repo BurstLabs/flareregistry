@@ -792,7 +792,7 @@ function ConductTab() {
         </p>
         <table className="w-full text-sm">
           <thead className="text-xs text-faint">
-            <tr className="[&>th]:px-3 [&>th]:first:pl-0 [&>th]:last:pr-0">
+            <tr className="[&>th]:px-3 [&>th:first-child]:pl-0 [&>th:last-child]:pr-0">
               <th className="text-left font-normal">Provider</th>
               <th className="text-left font-normal">State</th>
               <th className="text-left font-normal">Public</th>
@@ -816,7 +816,7 @@ function ConductTab() {
               return (
                 <tr
                   key={c.id}
-                  className="border-t border-themed/60 align-top [&>td]:px-3 [&>td]:first:pl-0 [&>td]:last:pr-0"
+                  className="border-t border-themed/60 align-top [&>td]:px-3 [&>td:first-child]:pl-0 [&>td:last-child]:pr-0"
                 >
                   <td className="py-1">{c.provider}</td>
                   <td className="py-1 text-muted">{c.state}</td>
