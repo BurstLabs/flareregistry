@@ -15,7 +15,7 @@ const TMP = new URL("./.session-dedup.mjs", import.meta.url).pathname;
 // browser; the function under test is deliberately free of both.
 const src = readFileSync(SRC, "utf8");
 const start = src.indexOf("let sessionAttempt");
-const end = src.indexOf("export function useEnsureSession");
+const end = src.indexOf("export function useSessionSignIn");
 if (start < 0 || end < 0) {
   console.error("session-dedup: could not find ensureSessionOnce; has it been renamed or removed?");
   process.exit(1);
@@ -81,6 +81,15 @@ const eq = (label, got, want) => { if (got !== want) problems.push(`${label}: go
   let after = 0;
   await ensureSessionOnce(async () => false, async () => { after++; return true; });
   eq("a later attempt still runs after a rejection", after, 1);
+}
+
+// 5. NO UNCOORDINATED SIGN-IN ESCAPES THE MODULE. This is how the bug survived its first fix: the
+//    raw hook was exported next to the shared one, the header used it, and the two could not share.
+if (/^export function useRawSessionSignIn/m.test(src)) {
+  problems.push(
+    "useRawSessionSignIn is exported. Keep it module-private so no component can open a second " +
+      "wallet prompt for the same session; export only the coordinated useSessionSignIn."
+  );
 }
 
 if (problems.length) {
