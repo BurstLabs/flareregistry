@@ -8,7 +8,7 @@ import {
   CONDUCT_CO_INITIATORS_REQUIRED,
   loadMembers,
   memberVoterFor,
-  pendingConductForMember,
+  liveConductForMember,
 } from "@/lib/governance";
 
 // POST /api/governance/conduct/pending  { providerId, message, signature }
@@ -87,6 +87,6 @@ export async function POST(req: NextRequest) {
   // ONE BUILDER, shared with the provider page, which server-renders this same payload. Two copies
   // drifted once already: fields added here were missing there, so the panel everybody actually
   // sees lacked them.
-  const pending = await pendingConductForMember(providerId, memberVoter);
-  return NextResponse.json({ pending, required: CONDUCT_CO_INITIATORS_REQUIRED });
+  const live = await liveConductForMember(providerId, memberVoter);
+  return NextResponse.json({ live, required: CONDUCT_CO_INITIATORS_REQUIRED });
 }

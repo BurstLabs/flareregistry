@@ -9,6 +9,7 @@ import { useSignChallenge, useWalletSign, useEnsureSession } from "@/lib/useWall
 import { apiErrorMessage } from "@/lib/i18n";
 import { CONDUCT_CO_INITIATORS_REQUIRED, CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
 import { validateEvidence } from "@/lib/conduct-evidence";
+import type { LiveConductView } from "@/lib/governance";
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -148,45 +149,19 @@ export function FlagAction({ providerId }: { providerId: string }) {
 type EvidenceRow = { kind: string; chain: string; ref: string; claim: string };
 
 /** A pending conduct case as both the server render and the member-only endpoint describe it. */
-type PendingCase = {
-  caseId: string;
-  signatures: number;
-  required: number;
-  remaining: number;
-  alreadySigned: boolean;
-  openedAt?: string;
-  points: {
-    member: string;
-    memberName?: string | null;
-    at?: string;
-    title: string | null;
-    grounds: string;
-    /** Signed the case as it stood rather than authoring a ground. `grounds` is empty. */
-    endorsement?: boolean;
-    /** Server-resolved: this point is the asking member's own. */
-    mine?: boolean;
-    evidence: { id?: string; kind: string; chain: string | null; ref: string; claim: string }[];
-  }[];
-  audit?: {
-    at: string;
-    action: string;
-    actor: string;
-    actorName: string | null;
-    meta: Record<string, string | number | boolean>;
-  }[];
-};
+type PendingCase = LiveConductView;
 
 export function ConductAction({
   providerId,
   viewerIsMember = false,
   initialPendingSignatures = null,
-  initialPendingCase = null,
+  initialLiveCase = null,
 }: {
   providerId: string;
   /** Server-resolved from the session, so the badge paints with the page. */
   viewerIsMember?: boolean;
   initialPendingSignatures?: number | null;
-  initialPendingCase?: PendingCase | null;
+  initialLiveCase?: PendingCase | null;
 }) {
   const { t } = useApp();
   const signChallenge = useSignChallenge(t);
@@ -396,7 +371,7 @@ export function ConductAction({
             onCount={setPendingCount}
             isMember={isMember}
             initialPendingSignatures={initialPendingSignatures}
-            initialPendingCase={initialPendingCase}
+            initialLiveCase={initialLiveCase}
           />
 
           {/* THE CHOICE. Endorsing means: I have read the case above and I put my name to it as it
@@ -1721,13 +1696,13 @@ function PendingConductCase({
   onCount,
   isMember,
   initialPendingSignatures,
-  initialPendingCase,
+  initialLiveCase,
 }: {
   providerId: string;
   onCount: (n: number | null) => void;
   isMember: boolean;
   initialPendingSignatures: number | null;
-  initialPendingCase: PendingCase | null;
+  initialLiveCase: PendingCase | null;
 }) {
   const { t } = useApp();
   const connectAndSign = useWalletSign(t);
@@ -1738,7 +1713,7 @@ function PendingConductCase({
   // Seeded from the server for a member, so the case is readable the instant the panel opens with
   // no request at all. The fetch below remains for a wallet connected after the page rendered.
   const [data, setData] = useState<{ pending: PendingCase | null } | null>(
-    initialPendingCase ? { pending: initialPendingCase } : null
+    initialLiveCase ? { pending: initialLiveCase } : null
   );
 
   // Only when the session attempt failed: a member who is not signed in. Everyone else never sees a
@@ -1748,8 +1723,8 @@ function PendingConductCase({
   // Follow the server. Without this a sign-in or sign-out would leave the previous answer on screen,
   // since useState keeps only its first value.
   useEffect(() => {
-    setData(initialPendingCase ? { pending: initialPendingCase } : null);
-  }, [initialPendingCase]);
+    setData(initialLiveCase ? { pending: initialLiveCase } : null);
+  }, [initialLiveCase]);
 
   // LOAD IMMEDIATELY for a member with a session. Costs no popup and no click, so requiring either
   // was only ever an artefact of the counts having needed a fresh signature.
@@ -1788,9 +1763,9 @@ function PendingConductCase({
       setNeedsSignature(false);
       const b = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(b.error ?? t("gov.conduct.pending.err"));
-      setData(b);
+      setData({ pending: b?.live ?? null });
       // Tell the header, so a member who has checked sees the count without reopening the panel.
-      onCount(b?.pending ? b.pending.signatures : 0);
+      onCount(b?.live?.state === "PENDING" ? b.live.signatures : 0);
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("gov.conduct.pending.err"));
     } finally {
@@ -1959,23 +1934,39 @@ function PendingConductCase({
   }
 
   const p = data.pending;
+  // STILL GATHERING SIGNATURES, versus SERVED AND RUNNING. The two need different headings and
+  // different actions: one asks for a signature, the other asks for a vote.
+  const isPending = p.state === "PENDING";
   return (
     <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
       <p className="text-xs font-medium text-amber-600 dark:text-amber-300">
-        {t("gov.conduct.pending.h", { n: p.signatures, required: p.required })}
+        {isPending
+          ? t("gov.conduct.pending.h", { n: p.signatures, required: p.required })
+          : t(`gov.conduct.live.${p.state}`, {
+              date: (p.state === "NOTICE"
+                ? p.noticeEndsAt ?? ""
+                : p.state === "OPEN_DISCUSSION"
+                  ? p.discussionEndsAt
+                  : p.votingEndsAt
+              ).slice(0, 10),
+            })}
       </p>
-      <p className="mt-1 text-xs text-faint">
-        {p.alreadySigned
-          ? t("gov.conduct.pending.yours")
-          : t("gov.conduct.pending.join", { remaining: p.remaining })}
-      </p>
+      {isPending && (
+        <p className="mt-1 text-xs text-faint">
+          {p.alreadySigned
+            ? t("gov.conduct.pending.yours")
+            : t("gov.conduct.pending.join", { remaining: p.remaining })}
+        </p>
+      )}
       {/* WHAT HAPPENS IF NOBODY ELSE SIGNS. Until this was implemented the answer was "nothing, for
           ever": a case short of four signatures sat sealed with no route to a verdict, and the
           subject was never told so could not clear it either. A member weighing a signature is
           entitled to know the case lapses rather than lingering. */}
-      <p className="mt-1 text-xs text-faint">
-        {t("gov.conduct.pending.lapses", { days: CONDUCT_PENDING_EXPIRY_DAYS })}
-      </p>
+      {isPending && (
+        <p className="mt-1 text-xs text-faint">
+          {t("gov.conduct.pending.lapses", { days: CONDUCT_PENDING_EXPIRY_DAYS })}
+        </p>
+      )}
       <ul className="mt-3 space-y-3">
         {p.points.map((pt, i) => (
           <li key={i} className="rounded-lg border border-themed/60 bg-elev/40 p-3">
@@ -2229,6 +2220,42 @@ function PendingConductCase({
           CONDUCT_ENDORSEMENTS_INVALIDATED are operator-facing constants and never reach a reader:
           an action this build does not have a sentence for falls back to naming the actor and the
           time, which is still true, rather than printing the constant. */}
+      {/* THE SUBJECT'S ANSWER, beside the accusation. A member voting on a case has to be able to
+          read the reply to it; a vote cast on the accusation alone is an echo, not a judgement.
+          Absent while the case is still gathering signatures: the provider has not been served and
+          does not know it exists. */}
+      {!isPending && (
+        <div className="mt-3 rounded-lg border border-flare/40 bg-flare/5 p-3">
+          <p className="text-[10px] uppercase tracking-wide text-flare">
+            {t("gov.conduct.live.responseH")}
+          </p>
+          {p.defence ? (
+            <>
+              {p.defence.title && (
+                <p className="mt-1 text-sm font-medium text-fg">{p.defence.title}</p>
+              )}
+              <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{p.defence.body}</p>
+            </>
+          ) : (
+            <p className="mt-1 text-xs text-faint">{t("gov.conduct.live.noResponse")}</p>
+          )}
+        </div>
+      )}
+
+      {/* THE VOTE. Without this the mechanism could be started and could never finish: a case ran
+          its clock to a tally that counted nothing, failed quorum, and published nothing, because
+          there was nowhere to cast a vote. The sealed case page 404s for members too. */}
+      {!isPending && (
+        <ConductVote
+          caseId={p.caseId}
+          votingOpen={p.votingOpen}
+          myVote={p.myVote}
+          votes={p.votes}
+          votingEndsAt={p.votingEndsAt}
+          onVoted={() => void check(false)}
+        />
+      )}
+
       {editing === null && err && <p className="mt-2 text-xs text-flare">{err}</p>}
 
       {p.audit && p.audit.length > 0 && (
@@ -2263,3 +2290,102 @@ function PendingConductCase({
   );
 }
 
+/**
+ * A Management Group member's vote on a served conduct case.
+ *
+ * DENY means substantiated and KEEP means not substantiated. That is the same arithmetic the flag
+ * process uses and deliberately the opposite vocabulary, so the buttons say what the vote decides
+ * rather than repeating a word borrowed from a mechanism that suspends providers. A conduct vote
+ * suspends nobody; it decides whether a finding is published.
+ *
+ * A vote can be changed while voting is open, which is why an existing choice is shown rather than
+ * the control being hidden: the record is frozen at the close, not at the first click.
+ */
+function ConductVote({
+  caseId,
+  votingOpen,
+  myVote,
+  votes,
+  votingEndsAt,
+  onVoted,
+}: {
+  caseId: string;
+  votingOpen: boolean;
+  myVote: string | null;
+  votes: { deny: number; keep: number; abstain: number; total: number };
+  votingEndsAt: string;
+  onVoted: () => void;
+}) {
+  const { t } = useApp();
+  const signChallenge = useSignChallenge(t);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function cast(vote: "DENY" | "KEEP" | "ABSTAIN") {
+    setErr("");
+    setBusy(true);
+    try {
+      const sig = await signChallenge();
+      const res = await fetch("/api/governance/vote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ caseId, vote, message: sig.message, signature: sig.signature }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(apiErrorMessage(t, b, "gov.conduct.live.voteErr"));
+      onVoted();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("gov.conduct.live.voteErr"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border border-themed p-3">
+      <p className="text-[10px] uppercase tracking-wide text-faint">{t("gov.conduct.live.voteH")}</p>
+      <p className="mt-1 text-xs text-muted">
+        {t("gov.conduct.live.tally", {
+          deny: votes.deny,
+          keep: votes.keep,
+          abstain: votes.abstain,
+        })}
+      </p>
+      {votingOpen ? (
+        <>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(["DENY", "KEEP", "ABSTAIN"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => cast(v)}
+                disabled={busy}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${
+                  myVote === v
+                    ? "border-beacon bg-beacon/15 text-beacon"
+                    : "border-themed text-muted hover:text-beacon"
+                }`}
+              >
+                {v === "DENY"
+                  ? t("gov.case.conduct.voteSubstantiated")
+                  : v === "KEEP"
+                    ? t("gov.case.conduct.voteNotSubstantiated")
+                    : t("gov.case.abstain")}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-[11px] text-faint">
+            {myVote
+              ? t("gov.conduct.live.voteChange", { date: votingEndsAt.slice(0, 10) })
+              : t("gov.conduct.live.voteHint", { date: votingEndsAt.slice(0, 10) })}
+          </p>
+        </>
+      ) : (
+        <p className="mt-1 text-[11px] text-faint">
+          {t("gov.conduct.live.voteNotYet", { date: votingEndsAt.slice(0, 10) })}
+        </p>
+      )}
+      {err && <p className="mt-1 text-xs text-flare">{err}</p>}
+    </div>
+  );
+}

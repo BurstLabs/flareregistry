@@ -717,10 +717,19 @@ export async function subjectCasesFor(providerId: string, signer: string): Promi
  * Sealed either way. The caller is responsible for having PROVEN control of `memberVoter`; this
  * function does no authentication and must never be called with an address a client merely claimed.
  */
-export interface PendingConductView {
+export interface LiveConductView {
   caseId: string;
   network: string;
+  /** PENDING | NOTICE | OPEN_DISCUSSION | OPEN_VOTING. */
+  state: string;
   openedAt: string;
+  noticeEndsAt: string | null;
+  discussionEndsAt: string;
+  votingEndsAt: string;
+  votingOpen: boolean;
+  defence: { title: string | null; body: string; at: string } | null;
+  votes: { deny: number; keep: number; abstain: number; total: number };
+  myVote: string | null;
   signatures: number;
   required: number;
   remaining: number;
@@ -805,14 +814,23 @@ function auditMeta(action: string, detail: string | null): Record<string, string
   }
 }
 
-export async function pendingConductForMember(
+export async function liveConductForMember(
   providerId: string,
   memberVoter: string
-): Promise<PendingConductView | null> {
-  // PENDING only. A case past notice has opened and is no longer joinable, and the set of accusers
-  // the subject was served with can neither grow nor shrink behind them.
+): Promise<LiveConductView | null> {
+  // EVERY LIVE STAGE, not just PENDING.
+  //
+  // This used to stop at PENDING, which meant a case vanished from the member surface at the moment
+  // it became real. Members could see one that still needed signatures and nothing at all once it
+  // was served: no grounds to re-read, no sight of the provider's answer, and no way to vote. The
+  // case page cannot fill that gap either, because a sealed case 404s for everyone. The mechanism
+  // could be started and could never reach a verdict.
   const live = await prisma.providerFlagCase.findFirst({
-    where: { providerId, kind: "CONDUCT", state: "PENDING" },
+    where: {
+      providerId,
+      kind: "CONDUCT",
+      state: { in: ["PENDING", "NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] },
+    },
     orderBy: { createdAt: "desc" },
     include: {
       initiations: {
@@ -827,6 +845,10 @@ export async function pendingConductForMember(
           evidence: { select: { id: true, kind: true, chain: true, ref: true, claim: true } },
         },
       },
+      // THE SUBJECT'S ANSWER. A member voting on an accusation has to be able to read the reply to
+      // it; a vote cast on the accusation alone is not a judgement, it is an echo.
+      defense: { select: { title: true, body: true, createdAt: true, editedAt: true } },
+      votes: { select: { memberEntityVoter: true, vote: true } },
     },
   });
   if (!live) return null;
@@ -845,10 +867,32 @@ export async function pendingConductForMember(
     ...audit.map((a) => a.actor),
   ]);
   const signatures = live.initiations.length;
+  const mine = live.votes.find((v) => v.memberEntityVoter === memberVoter);
   return {
     caseId: live.id,
     network: live.network,
+    state: live.state,
     openedAt: live.openedAt.toISOString(),
+    noticeEndsAt: live.noticeEndsAt ? live.noticeEndsAt.toISOString() : null,
+    discussionEndsAt: live.discussionEndsAt.toISOString(),
+    votingEndsAt: live.votingEndsAt.toISOString(),
+    /** Open once discussion has run its course; the same rule the vote route enforces. */
+    votingOpen: isVotingOpen(live, new Date()),
+    defence: live.defense
+      ? {
+          title: live.defense.title,
+          body: live.defense.body,
+          at: (live.defense.editedAt ?? live.defense.createdAt).toISOString(),
+        }
+      : null,
+    votes: {
+      deny: live.votes.filter((v) => v.vote === "DENY").length,
+      keep: live.votes.filter((v) => v.vote === "KEEP").length,
+      abstain: live.votes.filter((v) => v.vote === "ABSTAIN").length,
+      total: live.votes.length,
+    },
+    /** So the control can say what this member already chose rather than inviting a duplicate. */
+    myVote: mine?.vote ?? null,
     signatures,
     required: CONDUCT_CO_INITIATORS_REQUIRED,
     remaining: Math.max(0, CONDUCT_CO_INITIATORS_REQUIRED - signatures),
