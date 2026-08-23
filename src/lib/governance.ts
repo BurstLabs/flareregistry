@@ -343,11 +343,16 @@ export function appealWindow(decidedAt: Date): { opensAt: Date; closesAt: Date }
 
 /** Whether a case is currently in its voting phase (used to gate vote casting). */
 export function isVotingOpen(c: { state: string; discussionEndsAt: Date; votingEndsAt: Date }, now: Date): boolean {
-  return (
-    (c.state === "OPEN_VOTING" || c.state === "OPEN_DISCUSSION") &&
-    now >= c.discussionEndsAt &&
-    now < c.votingEndsAt
-  );
+  // A CASE IN OPEN_VOTING IS IN VOTING. The date test used to apply to both branches, so a case
+  // whose state said OPEN_VOTING but whose discussion deadline was still in the future counted as
+  // closed: the panel hid the buttons and told a member voting had not opened, on a case the rest
+  // of the system was describing as being in it. That happens whenever the state is moved by hand
+  // from the admin surface, which is a supported thing to do.
+  if (c.state === "OPEN_VOTING") return now < c.votingEndsAt;
+  // Still nominally in discussion, but the deadline has passed and the sweep has not caught up yet.
+  // Voting is open by the clock, which is what the schedule promised, so a member is not made to
+  // wait on a cron tick.
+  return c.state === "OPEN_DISCUSSION" && now >= c.discussionEndsAt && now < c.votingEndsAt;
 }
 
 export interface ProviderGovernance {
