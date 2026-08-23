@@ -238,6 +238,14 @@ const CHAIN_NAME: Record<number, string> = { 14: "Flare", 19: "Songbird" };
 //
 // LABELS ONLY. The value posted is still DENY, KEEP or ABSTAIN, so the API, the tally and the
 // published finding are untouched.
+// NAME AND WHOLE ADDRESS, everywhere a member is named. The lists truncated to ten characters,
+// which is enough to recognise a member you already know and not enough to check one: addresses
+// differ in the middle, so a truncated pair is exactly where a misattribution hides. This field
+// decides whose signature or vote a row counts as, so it shows the thing being decided in full.
+function memberLabel(m: { voter: string; name: string | null }): string {
+  return m.name ? `${m.name} · ${m.voter}` : m.voter;
+}
+
 const CONDUCT_VOTE_LABEL: Record<string, string> = {
   DENY: "substantiated",
   KEEP: "not substantiated",
@@ -1052,7 +1060,7 @@ function ConductTab() {
                           )}
                           {mgMembers.map((m) => (
                             <option key={m.voter} value={m.voter}>
-                              {m.name ? `${m.name} · ${m.voter.slice(0, 10)}…` : m.voter}
+                              {memberLabel(m)}
                             </option>
                           ))}
                         </select>
@@ -1196,8 +1204,30 @@ function ConductTab() {
 
             <Section2 title={`Votes (${c.votes.rows.length})`}>
               <div className="space-y-1">
-                {c.votes.rows.map((v: any) => (
+                {c.votes.rows.map((v: any) => {
+                  // WHO THIS VOTE BELONGS TO, in words. The row showed forty-two characters of hex
+                  // and nothing else, so reading a tally meant matching addresses against the
+                  // member list by eye. The field stays a free text box rather than becoming a
+                  // dropdown, because an address that has left the Management Group must still be
+                  // correctable here, and the label says when that is what you are looking at.
+                  //
+                  // A NON-MEMBER IS NOT A COSMETIC DETAIL: the tally counts only votes whose voter
+                  // is a current member, so a row like this is silently discarded at decision time.
+                  const m = mgMembers.find(
+                    (x) => x.voter === String(v.memberEntityVoter).toLowerCase()
+                  );
+                  return (
                   <div key={v.id} className="flex items-center gap-1">
+                    <span
+                      className={`shrink-0 text-[11px] ${m ? "text-muted" : "text-amber-500"}`}
+                      title={
+                        m
+                          ? undefined
+                          : "Not a current Management Group member. This vote is ignored by the tally."
+                      }
+                    >
+                      {m ? (m.name ?? "unnamed member") : "not a current member"}
+                    </span>
                     <input
                       defaultValue={v.memberEntityVoter}
                       onBlur={(ev) =>
@@ -1225,7 +1255,8 @@ function ConductTab() {
                       x
                     </button>
                   </div>
-                ))}
+                  );
+                })}
                 {c.votes.rows.length === 0 && <p className="text-xs text-faint">No votes cast.</p>}
                 <AddVote
                   caseId={c.id}
@@ -1325,12 +1356,12 @@ function AddPoint({
         <select
           value={member}
           onChange={(e) => setMember(e.target.value)}
-          className={`${controlCls} w-72 shrink-0`}
+          className={`${controlCls} min-w-[26rem] flex-1`}
         >
           <option value="">Select a Management Group member…</option>
           {free.map((m) => (
             <option key={m.voter} value={m.voter}>
-              {m.name ? `${m.name} · ${m.voter.slice(0, 10)}…` : m.voter}
+              {memberLabel(m)}
             </option>
           ))}
         </select>
@@ -1402,12 +1433,12 @@ function AddVote({
       <select
         value={member}
         onChange={(e) => setMember(e.target.value)}
-        className={`${controlCls} min-w-[16rem] flex-1`}
+        className={`${controlCls} min-w-[26rem] flex-1`}
       >
         <option value="">Select a Management Group member…</option>
         {free.map((m) => (
           <option key={m.voter} value={m.voter}>
-            {m.name ? `${m.name} · ${m.voter.slice(0, 10)}…` : m.voter}
+            {memberLabel(m)}
           </option>
         ))}
       </select>
