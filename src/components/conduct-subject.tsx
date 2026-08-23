@@ -177,10 +177,39 @@ export function SubjectSection({ subject, onSaved }: { subject: SubjectHalf; onS
         <p className="text-[10px] uppercase tracking-wide text-faint">
           {t("owner.notices.whatNextH")}
         </p>
+        {/* WHICH STEP IS HAPPENING NOW. The three ran as a flat numbered list with no marker, so a
+            case already in voting still read as "3. Voting, until ..." pending, with two dates
+            behind us and nothing saying so. A schedule that never moves is indistinguishable from
+            one that has not started, and it was read as the latter. */}
         <ol className="mt-1 space-y-1 text-xs text-muted">
-          <li>{t("owner.notices.stepNotice", { date: d(subject.noticeEndsAt) })}</li>
-          <li>{t("owner.notices.stepDiscussion", { date: d(subject.discussionEndsAt) })}</li>
-          <li>{t("owner.notices.stepVoting", { date: d(subject.votingEndsAt) })}</li>
+          {(
+            [
+              ["NOTICE", t("owner.notices.stepNotice", { date: d(subject.noticeEndsAt) })],
+              ["OPEN_DISCUSSION", t("owner.notices.stepDiscussion", { date: d(subject.discussionEndsAt) })],
+              ["OPEN_VOTING", t("owner.notices.stepVoting", { date: d(subject.votingEndsAt) })],
+            ] as const
+          ).map(([step, text]) => {
+            const order = ["NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"];
+            const at = order.indexOf(subject.state);
+            const mine = order.indexOf(step);
+            const done = at > mine;
+            const now = at === mine;
+            return (
+              <li key={step} className={done ? "text-faint" : now ? "text-fg" : undefined}>
+                {text}
+                {done && (
+                  <span className="ml-1.5 rounded bg-elev px-1.5 py-0.5 text-[10px] text-faint">
+                    {t("owner.notices.stepDone")}
+                  </span>
+                )}
+                {now && (
+                  <span className="ml-1.5 rounded bg-beacon/15 px-1.5 py-0.5 text-[10px] font-medium text-beacon">
+                    {t("owner.notices.stepNow")}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ol>
         <p className="mt-2 text-xs text-faint">{t("owner.notices.outcomes")}</p>
       </div>

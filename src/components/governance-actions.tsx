@@ -437,7 +437,7 @@ export function ConductAction({
               submit that the case closed days ago. */}
           {joinClosed && (
             <p className="mt-3 rounded-lg border border-themed/60 p-3 text-xs text-faint">
-              {t("gov.conduct.joinClosed")}
+              {t(live?.votingOpen ? "gov.conduct.joinClosedVoting" : "gov.conduct.joinClosed")}
             </p>
           )}
 
@@ -1983,6 +1983,19 @@ function PendingConductCase({
               ).slice(0, 10),
             })}
       </p>
+      {/* WHERE THE VOTE IS. The vote box sits below the points, which is the right reading order:
+          a member should read what they are voting on before deciding. But on a case with four
+          signatures and their evidence that puts the one control needing a click a screen and a
+          half down, and it was missed entirely. The banner says voting is open, so it is also the
+          place to say where. */}
+      {!isPending && p.votingOpen && !p.myVote && (
+        <a
+          href="#conduct-vote"
+          className="mt-1 inline-block text-xs font-medium text-amber-600 underline underline-offset-2 dark:text-amber-300"
+        >
+          {t("gov.conduct.live.jumpToVote")} &darr;
+        </a>
+      )}
       {isPending && (
         <p className="mt-1 text-xs text-faint">
           {p.alreadySigned
@@ -2378,9 +2391,35 @@ function ConductVote({
     }
   }
 
+  // THE VOTE IS THE POINT OF THE PANEL, and it did not look like it. A ten pixel grey label over
+  // three small outline buttons, in the same card treatment as the evidence and the response, at
+  // the bottom of a case carrying four signatures: it read as one more thing to read past, and it
+  // was missed completely. So when a vote is actually WANTED the box takes the same amber the
+  // header badge uses and says so at heading size. Once cast it steps back to the quieter beacon
+  // treatment, because a recorded vote is a confirmation rather than a demand.
+  const wants = votingOpen && !myVote;
   return (
-    <div className="mt-3 rounded-lg border border-themed p-3">
-      <p className="text-[10px] uppercase tracking-wide text-faint">{t("gov.conduct.live.voteH")}</p>
+    <div
+      id="conduct-vote"
+      className={`mt-3 scroll-mt-24 rounded-lg border p-4 ${
+        wants
+          ? "border-amber-500/60 bg-amber-500/10"
+          : votingOpen
+            ? "border-beacon/50 bg-beacon/5"
+            : "border-themed p-3"
+      }`}
+    >
+      <p
+        className={
+          wants
+            ? "text-sm font-semibold text-amber-600 dark:text-amber-300"
+            : votingOpen
+              ? "text-sm font-semibold text-beacon"
+              : "text-[10px] uppercase tracking-wide text-faint"
+        }
+      >
+        {wants ? t("gov.conduct.badge.voteNeeded") : t("gov.conduct.live.voteH")}
+      </p>
       <p className="mt-1 text-xs text-muted">
         {t("gov.conduct.live.tally", {
           deny: votes.deny,
@@ -2390,17 +2429,17 @@ function ConductVote({
       </p>
       {votingOpen ? (
         <>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {(["DENY", "KEEP", "ABSTAIN"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => cast(v)}
                 disabled={busy}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${
+                className={`rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50 ${
                   myVote === v
                     ? "border-beacon bg-beacon/15 text-beacon"
-                    : "border-themed text-muted hover:text-beacon"
+                    : "border-themed bg-elev text-fg hover:border-beacon hover:text-beacon"
                 }`}
               >
                 {v === "DENY"
@@ -2411,7 +2450,7 @@ function ConductVote({
               </button>
             ))}
           </div>
-          <p className="mt-1 text-[11px] text-faint">
+          <p className="mt-2 text-[11px] text-faint">
             {myVote
               ? t("gov.conduct.live.voteChange", { date: votingEndsAt.slice(0, 10) })
               : t("gov.conduct.live.voteHint", { date: votingEndsAt.slice(0, 10) })}
