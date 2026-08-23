@@ -64,8 +64,11 @@ const problems = [];
     // the action is read from the text following each providerCaseAudit write.
     for (const m of body.matchAll(/providerCaseAudit\.create\(/g)) {
       const near = body.slice(m.index, m.index + 600);
-      const a = near.match(/\baction:\s*"([A-Z][A-Z0-9_]*)"/);
-      if (a) actions.add(a[1]);
+      // EVERY literal in the window, not just the first. A write that picks its action with a
+      // ternary has one literal per branch, and reading only the first registered CASE_SUBSTANTIATED
+      // while CASE_NOT_SUBSTANTIATED and CASE_FAILED_QUORUM went unchecked, which is exactly the
+      // case where a missing sentence is least likely to be noticed by hand.
+      for (const a of near.matchAll(/\baction:\s*"([A-Z][A-Z0-9_]*)"/g)) actions.add(a[1]);
     }
   }
   const enKeysNow = new Set(Object.keys(dicts.en));

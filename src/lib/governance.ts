@@ -856,6 +856,19 @@ function auditMeta(action: string, detail: string | null): Record<string, string
       return { added: n(d.added), updated: n(d.updated), removed: n(d.removed) };
     case "CONDUCT_ENDORSEMENTS_INVALIDATED":
       return { cleared: n(d.cleared), what: typeof d.what === "string" ? d.what : "" };
+    // The decision. "Failed quorum" means nothing without the turnout it fell short of, so the
+    // counts travel with the sentence rather than sitting unread in the detail column.
+    case "CASE_SUBSTANTIATED":
+    case "CASE_NOT_SUBSTANTIATED":
+    case "CASE_FAILED_QUORUM":
+      return {
+        turnout: n(d.turnout),
+        members: n(d.members),
+        quorum: n(d.quorum),
+        deny: n(d.deny),
+        keep: n(d.keep),
+        abstain: n(d.abstain),
+      };
     default:
       return {};
   }

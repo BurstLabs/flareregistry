@@ -572,6 +572,14 @@ function QualificationTab() {
 const inputCls =
   "w-full rounded border border-themed bg-elev px-2 py-1 text-sm text-fg placeholder:text-faint focus:border-beacon focus:outline-none";
 
+// THE SAME CLASS ORDER TRAP AS THE TABLE PADDING. inputCls leads with w-full, and appending w-44
+// to it does not win: the class attribute's order means nothing, and Tailwind emits fixed widths
+// BEFORE w-full, so the cascade takes w-full every time. Every control given an explicit width was
+// silently full width, which is why the vote row's member field was crushed to a sliver beside a
+// select that swallowed the line, and why the add-vote controls each wrapped onto their own row.
+// Strip the width rather than fight it, and let the caller state the one it wants.
+const controlCls = inputCls.replace("w-full ", "");
+
 /** A small status pill. Tone carries meaning: red is a decided finding, amber needs attention. */
 function Chip({ tone, children }: { tone: "green" | "amber" | "red" | "grey"; children: React.ReactNode }) {
   const cls =
@@ -1196,12 +1204,12 @@ function ConductTab() {
                         ev.target.value !== v.memberEntityVoter &&
                         send({ op: "vote", id: c.id, voteId: v.id, member: ev.target.value })
                       }
-                      className={`${inputCls} flex-1 font-mono`}
+                      className={`${controlCls} min-w-0 flex-1 font-mono`}
                     />
                     <select
                       defaultValue={v.vote}
                       onChange={(ev) => send({ op: "vote", id: c.id, voteId: v.id, vote: ev.target.value })}
-                      className={`${inputCls} w-44`}
+                      className={`${controlCls} w-44 shrink-0`}
                     >
                       {["DENY", "KEEP", "ABSTAIN"].map((x) => (
                         <option key={x} value={x}>
@@ -1317,7 +1325,7 @@ function AddPoint({
         <select
           value={member}
           onChange={(e) => setMember(e.target.value)}
-          className={`${inputCls} w-72`}
+          className={`${controlCls} w-72 shrink-0`}
         >
           <option value="">Select a Management Group member…</option>
           {free.map((m) => (
@@ -1329,7 +1337,7 @@ function AddPoint({
         <select
           value={kind}
           onChange={(e) => setKind(e.target.value as "authored" | "endorsement")}
-          className={`${inputCls} w-40`}
+          className={`${controlCls} w-40 shrink-0`}
         >
           <option value="authored">Own grounds</option>
           <option value="endorsement">Endorsement</option>
@@ -1339,7 +1347,7 @@ function AddPoint({
             value={grounds}
             onChange={(e) => setGrounds(e.target.value)}
             placeholder="Grounds"
-            className={`${inputCls} min-w-[12rem] flex-1`}
+            className={`${controlCls} min-w-[12rem] flex-1`}
           />
         )}
         <button
@@ -1394,7 +1402,7 @@ function AddVote({
       <select
         value={member}
         onChange={(e) => setMember(e.target.value)}
-        className={`${inputCls} min-w-[16rem] flex-1`}
+        className={`${controlCls} min-w-[16rem] flex-1`}
       >
         <option value="">Select a Management Group member…</option>
         {free.map((m) => (
@@ -1406,7 +1414,7 @@ function AddVote({
       <select
         value={vote}
         onChange={(e) => setVote(e.target.value)}
-        className={`${inputCls} w-44`}
+        className={`${controlCls} w-44 shrink-0`}
       >
         {["DENY", "KEEP", "ABSTAIN"].map((x) => (
           <option key={x} value={x}>
