@@ -230,6 +230,20 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 }
 const CHAIN_NAME: Record<number, string> = { 14: "Flare", 19: "Songbird" };
 
+// WHAT A CONDUCT VOTE ACTUALLY SAYS. The stored value is the flag mechanism's enum, where a vote
+// decides whether to DENY or KEEP a provider's standing. Conduct cases reuse the same column for a
+// different question, so the record says DENY where the case means substantiated, and this tab was
+// the only place still showing the letters: a tally reading "1D/0K/1A" needs a lookup table in the
+// operator's head, and D for substantiated is a bad mnemonic in any case.
+//
+// LABELS ONLY. The value posted is still DENY, KEEP or ABSTAIN, so the API, the tally and the
+// published finding are untouched.
+const CONDUCT_VOTE_LABEL: Record<string, string> = {
+  DENY: "substantiated",
+  KEEP: "not substantiated",
+  ABSTAIN: "abstain",
+};
+
 // ---------- Statistics ----------
 function StatsTab() {
   const [data, setData] = useState<any>(null);
@@ -832,10 +846,10 @@ function ConductTab() {
                     {c.hasDefence ? " · replied" : ""}
                   </td>
                   <td className="py-1 text-right">{c.signatures}</td>
-                  <td className="py-1 text-right">
+                  <td className="whitespace-nowrap py-1 text-right">
                     {c.votes.total > 0
-                      ? `${c.votes.deny}D/${c.votes.keep}K/${c.votes.abstain}A`
-                      : "—"}
+                      ? `${c.votes.deny} sub / ${c.votes.keep} not / ${c.votes.abstain} abs`
+                      : "\u2014"}
                   </td>
                   <td className="whitespace-nowrap py-1 text-xs text-muted">
                     {next ? new Date(next).toISOString().slice(0, 10) : "—"}
@@ -1187,11 +1201,11 @@ function ConductTab() {
                     <select
                       defaultValue={v.vote}
                       onChange={(ev) => send({ op: "vote", id: c.id, voteId: v.id, vote: ev.target.value })}
-                      className={`${inputCls} w-28`}
+                      className={`${inputCls} w-44`}
                     >
                       {["DENY", "KEEP", "ABSTAIN"].map((x) => (
                         <option key={x} value={x}>
-                          {x}
+                          {CONDUCT_VOTE_LABEL[x]}
                         </option>
                       ))}
                     </select>
@@ -1392,11 +1406,11 @@ function AddVote({
       <select
         value={vote}
         onChange={(e) => setVote(e.target.value)}
-        className={`${inputCls} w-28`}
+        className={`${inputCls} w-44`}
       >
         {["DENY", "KEEP", "ABSTAIN"].map((x) => (
           <option key={x} value={x}>
-            {x}
+            {CONDUCT_VOTE_LABEL[x]}
           </option>
         ))}
       </select>
