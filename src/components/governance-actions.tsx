@@ -208,6 +208,8 @@ export function ConductAction({
   const [authorOwn, setAuthorOwn] = useState(false);
   // Endorsing applies only while a case is still gathering signatures.
   const canEndorse = isMember && live?.state === "PENDING" && live.signatures > 0;
+  // A live case past PENDING takes no further signatures, so nothing here can be submitted.
+  const joinClosed = !!live && live.state !== "PENDING";
   const endorsing = canEndorse && !authorOwn;
 
   useEffect(() => {
@@ -429,10 +431,20 @@ export function ConductAction({
             </div>
           )}
 
+          {/* CLOSED TO NEW SIGNATURES. Once four have landed the subject has been served with a
+              fixed set of accusers, and the route refuses a late co-initiation. The form stayed on
+              screen anyway, so a member could write out grounds and evidence and only be told on
+              submit that the case closed days ago. */}
+          {joinClosed && (
+            <p className="mt-3 rounded-lg border border-themed/60 p-3 text-xs text-faint">
+              {t("gov.conduct.joinClosed")}
+            </p>
+          )}
+
           {/* The authoring fields exist only when the member is authoring. Leaving them on screen
               greyed out beside an endorsement would keep asking for something the submission will
               not send. */}
-          {!endorsing && (
+          {!endorsing && !joinClosed && (
             <>
           <input
             value={title}
@@ -514,19 +526,23 @@ export function ConductAction({
             </>
           )}
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={submit}
-              disabled={busy}
-              className="rounded-lg border border-flare px-4 py-2 font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
-            >
-              {busy
-                ? t("gov.act.signing")
-                : endorsing
-                  ? t("gov.conduct.signEndorse")
-                  : t("gov.conduct.signSubmit")}
-            </button>
-          </div>
+          {/* Not rendered rather than hidden with a class: a button that cannot do anything should
+              not be in the page for a keyboard or a screen reader to reach either. */}
+          {!joinClosed && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={submit}
+                disabled={busy}
+                className="rounded-lg border border-flare px-4 py-2 font-medium text-flare hover:bg-flare/10 disabled:opacity-50"
+              >
+                {busy
+                  ? t("gov.act.signing")
+                  : endorsing
+                    ? t("gov.conduct.signEndorse")
+                    : t("gov.conduct.signSubmit")}
+              </button>
+            </div>
+          )}
           {err && <Note kind="err" text={err} />}
           {ok && <Note kind="ok" text={ok} />}
         </div>
