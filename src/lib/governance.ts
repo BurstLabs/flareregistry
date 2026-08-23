@@ -1004,6 +1004,22 @@ export interface ConductFinding {
     evidence: { kind: string; chain: string | null; ref: string; claim: string }[];
   }[];
   hasDefence: boolean;
+  /** WHO RAISED IT, named. A finding is an act by identified members, not an anonymous verdict. */
+  signers: { name: string | null; link: string | null; endorsement: boolean }[];
+  /** THE VOTE THAT DECIDED IT. A card headed "decided by a vote" that never shows the vote is
+   *  asking to be taken on trust, which is the opposite of what publishing a record is for. */
+  vote: {
+    cast: number;
+    substantiated: number;
+    notSubstantiated: number;
+    abstained: number;
+    members: number;
+    quorum: number;
+  };
+  /** The provider's own answer, in full. It is already published on the case page, and summarising
+   *  it as "a response was submitted" on the page most people actually read leaves the accusation
+   *  visible and the reply one click away. */
+  defence: { title: string | null; body: string } | null;
 }
 
 /**
@@ -1024,10 +1040,14 @@ export async function conductFindingsByProvider(): Promise<Map<string, ConductFi
       decidedAt: true,
       serviceStatus: true,
       lateReplyAt: true,
-      defense: { select: { id: true } },
+      memberCountAtOpen: true,
+      defense: { select: { title: true, body: true } },
+      votes: { select: { vote: true } },
       initiations: {
         where: { withdrawnAt: null },
+        orderBy: { createdAt: "asc" },
         select: {
+          memberEntityVoter: true,
           title: true,
           grounds: true,
           endorsement: true,
@@ -1036,15 +1056,40 @@ export async function conductFindingsByProvider(): Promise<Map<string, ConductFi
       },
     },
   });
+
+  // Resolved ONCE for every signer across every published case, rather than per card. The five-role
+  // join is the expensive part and it does not vary by case.
+  const voters = [
+    ...new Set(cases.flatMap((c) => c.initiations.map((i) => i.memberEntityVoter.toLowerCase()))),
+  ];
+  const names = voters.length ? await namesForMemberVoters(voters) : new Map<string, string>();
+  const links = voters.length ? await linksForMemberVoters(voters) : new Map<string, string>();
+
   const map = new Map<string, ConductFinding[]>();
   for (const c of cases) {
     const list = map.get(c.providerId) ?? [];
+    const cast = c.votes.length;
     list.push({
       caseId: c.id,
       decidedAt: c.decidedAt?.toISOString() ?? null,
       serviceStatus: c.serviceStatus,
       lateReplyAt: c.lateReplyAt?.toISOString() ?? null,
       hasDefence: !!c.defense,
+      defence: c.defense ? { title: c.defense.title, body: c.defense.body } : null,
+      signers: c.initiations.map((i) => ({
+        name: names.get(i.memberEntityVoter.toLowerCase()) ?? null,
+        link: links.get(i.memberEntityVoter.toLowerCase()) ?? null,
+        endorsement: i.endorsement,
+      })),
+      vote: {
+        cast,
+        // DENY means substantiated here; the enum is the flag mechanism's. See the admin panel.
+        substantiated: c.votes.filter((v) => v.vote === "DENY").length,
+        notSubstantiated: c.votes.filter((v) => v.vote === "KEEP").length,
+        abstained: c.votes.filter((v) => v.vote === "ABSTAIN").length,
+        members: c.memberCountAtOpen,
+        quorum: Math.ceil((QUORUM_TURNOUT_BIPS / 10000) * c.memberCountAtOpen),
+      },
       points: c.initiations.map((i) => ({
         title: i.title,
         grounds: i.grounds,

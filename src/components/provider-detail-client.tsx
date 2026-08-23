@@ -11,7 +11,11 @@ import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
 import { apportionWhole, displayScore } from "@/lib/display-rounding";
-import { INGEST_INTERVAL_HOURS } from "@/lib/reputation";
+import {
+  INGEST_INTERVAL_HOURS,
+  FINDING_PENALTY_MAX,
+  FINDING_RECOVERY_YEARS,
+} from "@/lib/reputation";
 import { ManageListingButton } from "./manage-listing-button";
 import { OwnerNotices } from "./owner-notices";
 import { MgJoinButton } from "./mg-join-button";
@@ -46,12 +50,24 @@ export interface DetailData {
    * has to know to press.
    */
   viewerSubjectCases: SubjectCase[] | null;
+  // Structurally the same shape lib/governance builds as ConductFinding. Restated here rather than
+  // imported because this file's props describe what the page was handed, not what a loader returns.
   conduct: {
     caseId: string;
     decidedAt: string | null;
     serviceStatus: string | null;
     lateReplyAt: string | null;
     hasDefence: boolean;
+    defence: { title: string | null; body: string } | null;
+    signers: { name: string | null; link: string | null; endorsement: boolean }[];
+    vote: {
+      cast: number;
+      substantiated: number;
+      notSubstantiated: number;
+      abstained: number;
+      members: number;
+      quorum: number;
+    };
     points: {
       title: string | null;
       grounds: string;
@@ -747,14 +763,65 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           <p className="mb-3 text-xs text-faint">{t("conduct.intro")}</p>
           <div className="space-y-4">
             {d.conduct.map((c) => (
-              <div key={c.caseId} className="surface rounded-xl border border-flare/40 p-5 text-sm">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-medium text-fg">{t("conduct.substantiated")}</span>
+              <div key={c.caseId} className="surface overflow-hidden rounded-xl border border-flare/40 text-sm">
+                {/* THE VERDICT AS A HEADER BAR, not a line of body text. This card is the public
+                    record of a decision about a named business, and it read as a paragraph with a
+                    date beside it. */}
+                <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-flare/30 bg-flare/10 px-5 py-3">
+                  <span className="font-semibold text-fg">{t("conduct.substantiated")}</span>
                   {c.decidedAt && (
-                    <span className="text-xs text-faint">{c.decidedAt.slice(0, 10)}</span>
+                    <span className="text-xs tabular-nums text-muted">{c.decidedAt.slice(0, 10)}</span>
                   )}
                 </div>
-                <p className="mt-2 rounded-lg bg-black/5 p-2 text-xs text-muted dark:bg-white/5">
+                <div className="space-y-4 px-5 py-4">
+                {/* THE VOTE. A card headed "decided by a vote of the group" that never showed the
+                    vote was asking to be taken on trust, which is the opposite of what publishing a
+                    record is for. Turnout and the quorum it had to clear go together: either number
+                    alone is unreadable. */}
+                <FindingSection label={t("conduct.sec.vote")}>
+                  <p className="text-muted">
+                    {t("conduct.voteLine", {
+                      cast: c.vote.cast,
+                      members: c.vote.members,
+                      quorum: c.vote.quorum,
+                    })}
+                  </p>
+                  <p className="mt-1 text-muted">
+                    {t("conduct.voteSplit", {
+                      sub: c.vote.substantiated,
+                      not: c.vote.notSubstantiated,
+                      abs: c.vote.abstained,
+                    })}
+                  </p>
+                </FindingSection>
+
+                {/* WHO RAISED IT. Named, and linked where the member has a listing. An accusation
+                    carries the weight of who made it, and this card printed a verdict with no
+                    accuser anywhere on it. */}
+                {c.signers.length > 0 && (
+                  <FindingSection label={t("conduct.sec.raisedBy")}>
+                    <ul className="flex flex-wrap gap-x-3 gap-y-1">
+                      {c.signers.map((sg, i) => (
+                        <li key={i} className="text-muted">
+                          {sg.link ? (
+                            <Link href={sg.link} className="text-beacon hover:underline">
+                              {sg.name ?? t("conduct.unnamedSigner")}
+                            </Link>
+                          ) : (
+                            <span>{sg.name ?? t("conduct.unnamedSigner")}</span>
+                          )}
+                          {sg.endorsement && (
+                            <span className="ml-1 text-[11px] text-faint">
+                              ({t("conduct.endorsedTag")})
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </FindingSection>
+                )}
+
+                <p className="rounded-lg bg-black/5 p-2 text-xs text-muted dark:bg-white/5">
                   {t(`conduct.service.${c.serviceStatus ?? "UNKNOWN"}`)}
                 </p>
                 {/* HOW MANY MEMBERS ACTUALLY FOUND SOMETHING. A finding can be one stated ground
@@ -762,14 +829,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                     valid four-signature findings and they carry different weight, so the count is
                     printed rather than left to be inferred from how many paragraphs follow. */}
                 {c.points.some((pt) => pt.endorsement) && (
-                  <p className="mt-2 text-xs text-faint">
+                  <p className="text-xs text-faint">
                     {t("conduct.endorsedCount", {
                       endorsed: c.points.filter((pt) => pt.endorsement).length,
                       total: c.points.length,
                     })}
                   </p>
                 )}
-                <ul className="mt-3 space-y-3">
+                <FindingSection label={t("conduct.sec.found")}>
+                <ul className="space-y-3">
                   {c.points.filter((pt) => !pt.endorsement).map((pt, i) => (
                     <li key={i}>
                       {pt.title && <p className="font-medium text-fg">{pt.title}</p>}
@@ -805,27 +873,64 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                     </li>
                   ))}
                 </ul>
-                {(() => {
-                  const f = d.reputation && !d.reputation.departed
-                    ? d.reputation.findings.find((x) => x.caseId === c.caseId)
-                    : undefined;
-                  return f && f.penalty > 0 ? (
-                    <p className="mt-2 text-xs text-faint">
-                      {t("conduct.costing", { pts: f.penalty.toFixed(1) })}
-                    </p>
-                  ) : null;
-                })()}
-                {c.hasDefence && (
-                  <p className="mt-3 rounded-lg border border-themed/60 p-2 text-xs text-muted">
-                    {t(c.lateReplyAt ? "conduct.replyLate" : "conduct.replyOnTime")}
-                  </p>
+                </FindingSection>
+
+                {/* THE ANSWER, IN THE PROVIDER'S OWN WORDS. This said "a response was submitted and
+                    is published with the record" and left the reply a click away while the
+                    accusation sat in full above it. The reply is already public on the case page,
+                    so nothing new is disclosed by printing it beside what it answers. */}
+                {c.defence && (
+                  <FindingSection label={t("conduct.sec.answer")}>
+                    <div className="rounded-lg border border-beacon/40 bg-beacon/5 p-3">
+                      {c.defence.title && (
+                        <p className="font-medium text-fg">{c.defence.title}</p>
+                      )}
+                      <p className="mt-1 whitespace-pre-wrap text-muted">{c.defence.body}</p>
+                      <p className="mt-2 text-[11px] text-faint">
+                        {t(c.lateReplyAt ? "conduct.replyLate" : "conduct.replyOnTime")}
+                      </p>
+                    </div>
+                  </FindingSection>
                 )}
-                <p className="mt-3 text-xs text-faint">
-                  {t("conduct.noScore")}{" "}
+
+                {/* WHAT IT COSTS, as a figure rather than a sentence. The deduction decays linearly
+                    from the decision, so the points remaining ARE the time remaining: a penalty at
+                    half its maximum is half the recovery period from clearing. */}
+                <FindingSection label={t("conduct.sec.effect")}>
+                  {(() => {
+                    const f = d.reputation && !d.reputation.departed
+                      ? d.reputation.findings.find((x) => x.caseId === c.caseId)
+                      : undefined;
+                    if (!f || f.penalty <= 0) {
+                      return <p className="text-muted">{t("conduct.noDeduction")}</p>;
+                    }
+                    const years = (FINDING_RECOVERY_YEARS * f.penalty) / FINDING_PENALTY_MAX;
+                    return (
+                      <>
+                        <p className="text-base font-semibold text-flare">
+                          {t("conduct.deduction", { pts: f.penalty.toFixed(1) })}
+                        </p>
+                        {/* How much of the penalty is left to run, drawn rather than described. */}
+                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-flare/70"
+                            style={{ width: `${Math.min(100, (f.penalty / FINDING_PENALTY_MAX) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="mt-1.5 text-xs text-faint">
+                          {t("conduct.easing", { years: years.toFixed(1) })}
+                        </p>
+                      </>
+                    );
+                  })()}
+                </FindingSection>
+
+                <p className="border-t border-themed/40 pt-3 text-xs text-faint">
                   <Link href={`/governance/${c.caseId}`} className="text-beacon hover:underline">
                     {t("conduct.record")}
                   </Link>
                 </p>
+                </div>
               </div>
             ))}
           </div>
@@ -1440,5 +1545,20 @@ function RefreshLine({
       {dataThroughEpoch != null && rel ? " " : ""}
       {rel && t("rep.refresh.next", { when: rel })}
     </p>
+  );
+}
+
+/**
+ * A labelled block inside a published finding.
+ *
+ * The card was a flat stack of paragraphs: verdict, service line, grounds, cost and reply all in
+ * the same voice at the same weight, so nothing told a reader which part they were looking at.
+ */
+function FindingSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1 text-[10px] uppercase tracking-wide text-faint">{label}</p>
+      {children}
+    </div>
   );
 }

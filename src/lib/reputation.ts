@@ -186,6 +186,14 @@ export const FINDING_PENALTY_MAX = 10;
  */
 export const FINDING_RECOVERY_EPOCHS = CHILL_RECOVERY_EPOCHS;
 
+/**
+ * The same horizon in years, for pages that must say it in words.
+ *
+ * Derived rather than typed as "5" beside a constant of 522, so the prose and the arithmetic cannot
+ * drift apart if the epoch count is ever changed.
+ */
+export const FINDING_RECOVERY_YEARS = (FINDING_RECOVERY_EPOCHS * 3.5) / 365;
+
 /** 0 on the day a finding is decided, rising to 1 over FINDING_RECOVERY_EPOCHS. */
 export function findingRecovery(decidedEpoch: number, currentEpoch: number): number {
   if (currentEpoch <= decidedEpoch) return 0;
