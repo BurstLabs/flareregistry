@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
       const denyVotes = validVotes.filter((v) => v.vote === "DENY").length;
       const keepVotes = validVotes.filter((v) => v.vote === "KEEP").length;
       const decisiveVotes = denyVotes + keepVotes; // excludes abstentions (for the deny majority)
-      const { decided } = evaluateOutcome(members.memberCount, votesCast, denyVotes, decisiveVotes, {
+      const { decided, turnoutFloor } = evaluateOutcome(members.memberCount, votesCast, denyVotes, decisiveVotes, {
         isReVote: c.isReVote,
         keepVotes,
       });
@@ -236,6 +236,38 @@ export async function POST(req: NextRequest) {
           },
         });
         await tx.provider.update({ where: { id: c.providerId }, data: { suspended: suspend } });
+
+        // THE DECISION, WRITTEN DOWN. The trail logged NOTICE_ENDED and VOTING_OPENED but never
+        // the outcome, so a case history ran up to the last edit and then simply stopped: the one
+        // event the whole mechanism exists to produce was the one event it did not record. The
+        // counts go in beside it, because "failed quorum" is only meaningful next to the turnout
+        // it fell short of.
+        //
+        // Written inside the transaction, so a decided case can never exist without the row that
+        // says how it was decided.
+        if (isConduct) {
+          const detail = JSON.stringify({
+            turnout: votesCast,
+            members: members.memberCount,
+            quorum: turnoutFloor,
+            deny: denyVotes,
+            keep: keepVotes,
+            abstain: votesCast - decisiveVotes,
+            serviceStatus,
+          });
+          // SPELT OUT PER BRANCH rather than chosen with a ternary. check-i18n proves every action
+          // a route can write has a sentence by reading the literal after `action:`, and a ternary
+          // hands it an expression instead, so all three went unchecked. That was verified rather
+          // than assumed: with the ternary in place, deleting a sentence still passed the build.
+          const row = { caseId: c.id, actor: "system", detail };
+          if (conductState === "SUBSTANTIATED") {
+            await tx.providerCaseAudit.create({ data: { ...row, action: "CASE_SUBSTANTIATED" } });
+          } else if (conductState === "NOT_SUBSTANTIATED") {
+            await tx.providerCaseAudit.create({ data: { ...row, action: "CASE_NOT_SUBSTANTIATED" } });
+          } else {
+            await tx.providerCaseAudit.create({ data: { ...row, action: "CASE_FAILED_QUORUM" } });
+          }
+        }
       });
       transitions.push({ caseId: c.id, to: decided });
 
@@ -244,10 +276,25 @@ export async function POST(req: NextRequest) {
       // retain subscriber emails only during review. Best-effort; never fail the tally over email.
       try {
         const { notifyWatchers, shredWatches } = await import("@/lib/watch");
-        if (!c.isReVote) {
-          await notifyWatchers(c.providerId, `Management Group case was decided: ${decided}`);
+        // NEITHER OF THESE IS FOR A CONDUCT CASE, and both were running on one.
+        //
+        // The notification would have emailed every watcher of the provider to say a Management
+        // Group case existed and how it ended. A conduct case that is not substantiated is sealed
+        // precisely so it leaves no trace, and an email announcing it to subscribers is a trace:
+        // four members could have published the fact of an accusation by filing one and losing the
+        // vote, which is the attack the seal exists to stop. A substantiated finding needs no help
+        // here, since publication puts it on the provider page.
+        //
+        // The shred is scoped for a different reason. Watches are retained for the duration of a
+        // NEW PROVIDER's review and dropped when that review ends. A conduct case is not that
+        // review, so shredding on its decision would delete subscriptions belonging to an entirely
+        // unrelated process.
+        if (!isConduct) {
+          if (!c.isReVote) {
+            await notifyWatchers(c.providerId, `Management Group case was decided: ${decided}`);
+          }
+          await shredWatches(c.providerId);
         }
-        await shredWatches(c.providerId);
       } catch (e) {
         console.error("[watch] verdict notify/shred failed:", e instanceof Error ? e.message : e);
       }
