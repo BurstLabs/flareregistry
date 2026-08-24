@@ -269,6 +269,10 @@ export default function GovernancePage() {
           })}
         </p>
         <p>{t("gov.docs.c4.body2")}</p>
+        {/* THE THRESHOLDS. The section described the calendar in full and never said what the vote
+            has to reach, so a reader was told a case is "decided by a vote of the group" with no way
+            to know what that means. Both figures come from the constants the tally applies. */}
+        <p>{t("gov.docs.c4.body3", { quorum: QUORUM_TURNOUT_BIPS / 100 })}</p>
       </Section>
 
       <Section title={t("gov.docs.c5.title")}>

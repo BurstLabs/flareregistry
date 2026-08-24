@@ -10,7 +10,7 @@ import { FlagAction, ConductAction, ReportLogoAction } from "./governance-action
 import { WatchAction } from "./watch-action";
 import { LinkNetworkPanel } from "./link-network-panel";
 import { InfoTip } from "./info-tip";
-import { apportionWhole, displayScore } from "@/lib/display-rounding";
+import { apportionWhole, apportionCapped, displayScore } from "@/lib/display-rounding";
 import {
   INGEST_INTERVAL_HOURS,
   FINDING_PENALTY_MAX,
@@ -1054,11 +1054,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   // The earned column targets the displayed BASE score (before any deduction), which
                   // is the subtotal the column is actually a breakdown of; the deductions are shown
                   // as their own subtractions underneath.
-                  const shownPoints = apportionWhole(
-                    comps.map((c) => c.points * scale),
-                    displayScore(d.reputation!.baseScore)
-                  );
+                  // MAXIMA FIRST, then points capped by them. Apportioned independently, the two
+                  // columns rounded apart and a component at full marks printed more points than it
+                  // could possibly earn.
                   const shownMax = apportionWhole(comps.map((c) => c.weight * scale), 100);
+                  const shownPoints = apportionCapped(
+                    comps.map((c) => c.points * scale),
+                    displayScore(d.reputation!.baseScore),
+                    shownMax
+                  );
                   return (
                     <ul className="mt-4 space-y-3">
                       {d.reputation!.components.map((c, ci) => (
