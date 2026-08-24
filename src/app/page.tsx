@@ -62,12 +62,14 @@ export default async function Home({
   const createdById = new Map(all.map((p) => [p.id, holdAnchor(p)]));
   // The claim clock, kept beside the entity clock; a provider is held until both have run.
   const claimedById = new Map(all.map((p) => [p.id, claimAnchor(p)]));
+  // What the listing was before it was claimed; only a chain-only registration serves a window.
+  const claimSrcById = new Map(all.map((p) => [p.id, p.claimedFromSource]));
   const held = (id: string) => {
     const c = createdById.get(id);
     const g = govByProvider.get(id);
     return (
       (c ? isHeldNewProvider(c, now) : false) ||
-      isHeldNewClaim(claimedById.get(id) ?? null, now) ||
+      isHeldNewClaim(claimedById.get(id) ?? null, claimSrcById.get(id) ?? null, now) ||
       !!g?.underReview ||
       !!g?.pending
     );
@@ -87,7 +89,7 @@ export default async function Home({
     const meetsCriteria = latched.get(id) ?? false;
     const cl = claimedById.get(id) ?? null;
     const byEntity = !!c && isHeldNewProvider(c, now);
-    const byClaim = isHeldNewClaim(cl, now);
+    const byClaim = isHeldNewClaim(cl, claimSrcById.get(id) ?? null, now);
     if (!c || !meetsCriteria || liveCase || (!byEntity && !byClaim)) return null;
     // The later of the two clocks, matching provider/[address]/page.tsx exactly.
     return new Date(

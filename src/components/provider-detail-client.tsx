@@ -567,6 +567,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
         <section className="mt-8">
           <h2 className="mb-3 text-lg font-semibold">{t("card.qualification")}</h2>
           <ul className="surface space-y-2 rounded-xl border p-5 text-sm">
+            {/* A chain-only listing never auto-lists, so it gets the truth instead of a date. */}
+            {d.onchainOnly && !d.verified && (
+              <li className="flex items-start gap-2">
+                <span className="text-muted">&#8212;</span>
+                <span className="text-muted">{t("detail.onchainNotListed")}</span>
+              </li>
+            )}
             {d.heldUntil && (
               <li className="flex items-start gap-2">
                 <span className="text-amber-500 dark:text-amber-400">⏳</span>

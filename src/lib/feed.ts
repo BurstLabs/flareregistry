@@ -216,7 +216,11 @@ export async function buildProviderList(): Promise<ProviderList> {
     const held =
       isHeldNewProvider(holdAnchor(a.provider), now) ||
       // The claim clock, which the entity clock cannot stand in for: see isHeldNewClaim.
-      isHeldNewClaim(claimedByProvider.get(providerId) ?? null, now) ||
+      isHeldNewClaim(
+        claimedByProvider.get(providerId) ?? null,
+        a.provider.claimedFromSource,
+        now
+      ) ||
       (gov?.underReview ?? false) ||
       (gov?.pending ?? false);
     const managementGroup = mgByProvider.get(providerId) ?? false;
