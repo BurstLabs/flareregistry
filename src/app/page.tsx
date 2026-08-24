@@ -201,7 +201,9 @@ export default async function Home({
       description: p.description,
       url: p.url,
       logo: cardLogo(p.logoPath, p.logoURI),
-      qualified: isQualified(p.id),
+      // See the provider page: a chain-only listing shows its checks but never claims to qualify,
+      // since it cannot be listed. The qualified COUNT above already excluded these.
+      qualified: isQualified(p.id) && !isOnchainOnly(p),
       heldUntil: heldUntil(p.id),
       registered: !!m?.registered,
       managementGroup: mgByProvider.get(p.id) ?? false,

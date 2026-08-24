@@ -565,7 +565,12 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
       {/* Qualification checklist */}
       {d.checks.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 text-lg font-semibold">{t("card.qualification")}</h2>
+          {/* A chain-only listing is shown its measured checks under a neutral heading. The facts
+              are the same; "Qualification" framed them as a verdict on eligibility it cannot act
+              on, so the panel read as qualified-but-mysteriously-absent. */}
+          <h2 className="mb-3 text-lg font-semibold">
+            {t(d.onchainOnly && !d.verified ? "card.onchainChecks" : "card.qualification")}
+          </h2>
           <ul className="surface space-y-2 rounded-xl border p-5 text-sm">
             {/* A chain-only listing never auto-lists, so it gets the truth instead of a date. */}
             {d.onchainOnly && !d.verified && (

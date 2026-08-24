@@ -578,9 +578,19 @@ export function DirectoryClient({
                 {!p.qualified && p.checks.some((c) => c.status !== "unknown") && (
                   <details className="mt-4 text-xs">
                     <summary className="cursor-pointer text-muted hover:text-beacon">
-                      {t("card.qualification")} (
-                      {p.checks.filter((c) => c.status === "pass").length}/{p.checks.length}{" "}
-                      {t("card.checks")})
+                      {/* Neutral heading for a tier that cannot be listed; see the detail page. */}
+                      {p.onchainOnly && !p.verified ? (
+                        <>
+                          {t("card.onchainChecks")} (
+                          {p.checks.filter((c) => c.status === "pass").length}/{p.checks.length})
+                        </>
+                      ) : (
+                        <>
+                          {t("card.qualification")} (
+                          {p.checks.filter((c) => c.status === "pass").length}/{p.checks.length}{" "}
+                          {t("card.checks")})
+                        </>
+                      )}
                       {p.heldUntil && (
                         <span className="ml-1 text-amber-500 dark:text-amber-400">
                           {" · ⏳ "}
