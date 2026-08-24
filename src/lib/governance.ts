@@ -35,13 +35,18 @@ export const PENDING_EXPIRY_DAYS = 7; // a single-member pending flag auto-expir
  * that size, short enough that a case nobody would co-sign does not persist on the strength of one
  * member's word.
  */
+import { QUORUM_TURNOUT_BIPS } from "./outcome-rule";
+export {
+  QUORUM_TURNOUT_BIPS,
+  DENY_MAJORITY_BIPS,
+  evaluateOutcome,
+} from "./outcome-rule";
+
 export const CONDUCT_PENDING_EXPIRY_DAYS = 14;
 export const APPEAL_COOLDOWN_DAYS = 30; // earliest an appeal may open after a denial
 export const APPEAL_DEADLINE_DAYS = 365; // latest an appeal may open; then suspension is final
 
 // Quorum (basis points of the current member count / of votes cast).
-export const QUORUM_TURNOUT_BIPS = 3300; // >=33% of members must vote
-export const DENY_MAJORITY_BIPS = 6667; // >=2/3 of votes cast must be DENY
 // For context only: Flare's own management-group standard, surfaced in the UI.
 export const FLARE_QUORUM_TURNOUT_BIPS = 6600; // 66%
 export const FLARE_MAJORITY_BIPS = 5000; // >50%
@@ -251,37 +256,6 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 //   Appeal(status quo = suspended)- a KEEP supermajority is required to lift the suspension. Otherwise
 //                                   the appeal is rejected (DENIED), so an all-abstain appeal does NOT
 //                                   lift the suspension.
-export function evaluateOutcome(
-  memberCount: number,
-  votesCast: number,
-  denyVotes: number,
-  decisiveVotes: number = votesCast,
-  opts: { isReVote?: boolean; keepVotes?: number } = {}
-): { decided: FlagState; turnoutFloor: number; denyNeeded: number; keepNeeded: number } {
-  const turnoutFloor = Math.ceil((QUORUM_TURNOUT_BIPS / 10000) * memberCount);
-  // Symmetric supermajority bar applied to whichever side must affirmatively win.
-  const denyNeeded = Math.ceil((DENY_MAJORITY_BIPS / 10000) * decisiveVotes);
-  const keepNeeded = Math.ceil((DENY_MAJORITY_BIPS / 10000) * decisiveVotes);
-  if (votesCast < turnoutFloor) {
-    return { decided: "FAILED_QUORUM", turnoutFloor, denyNeeded, keepNeeded };
-  }
-  if (opts.isReVote) {
-    // Appeal: only an affirmative KEEP supermajority overturns the denial. With zero decisive votes
-    // (all abstain) keepNeeded is 0, but a non-vote is not a win, so require at least one keep.
-    const keepVotes = opts.keepVotes ?? 0;
-    if (keepVotes >= keepNeeded && keepVotes > 0) {
-      return { decided: "CLEARED", turnoutFloor, denyNeeded, keepNeeded };
-    }
-    // Anything else with quorum (deny majority, a split, or all-abstain) rejects the appeal.
-    return { decided: "DENIED", turnoutFloor, denyNeeded, keepNeeded };
-  }
-  // Flag: a DENY supermajority suspends. With zero decisive votes denyNeeded is 0, so require at
-  // least one deny; otherwise the provider stays listed.
-  if (denyVotes >= denyNeeded && denyVotes > 0) {
-    return { decided: "DENIED", turnoutFloor, denyNeeded, keepNeeded };
-  }
-  return { decided: "CLEARED", turnoutFloor, denyNeeded, keepNeeded };
-}
 
 /**
  * Resolve the Management Group member set to (a) the set of all member addresses (every role) and

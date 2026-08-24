@@ -58,8 +58,16 @@ export async function GET(
 
   const votesCast = c.votes.length;
   const denyVotes = c.votes.filter((v) => v.vote === "DENY").length;
-  const keepVotes = votesCast - denyVotes;
-  const { turnoutFloor, denyNeeded } = evaluateOutcome(memberCount, votesCast, denyVotes);
+  const keepVotes = c.votes.filter((v) => v.vote === "KEEP").length;
+  // DECISIVE VOTES, not turnout. This passed votesCast, so with any abstention on the case the
+  // published denyNeeded was measured against the wrong denominator and overstated the bar.
+  const decisiveVotes = denyVotes + keepVotes;
+  const { turnoutFloor, denyNeeded } = evaluateOutcome(
+    memberCount,
+    votesCast,
+    denyVotes,
+    decisiveVotes
+  );
 
   const body = {
     id: c.id,
@@ -84,6 +92,11 @@ export async function GET(
       votesCast,
       denyVotes,
       keepVotes,
+      // PUBLISHED so the three add up. keepVotes was votesCast - denyVotes, which counted every
+      // abstention as a vote to keep: a consumer of this API reading a split of 2/14 had no way to
+      // know that fourteen members had declined to take a side rather than opposed the case.
+      abstainVotes: c.votes.filter((v) => v.vote === "ABSTAIN").length,
+      decisiveVotes,
     },
     initiations: c.initiations.map((i) => ({
       member: i.memberEntityVoter,
