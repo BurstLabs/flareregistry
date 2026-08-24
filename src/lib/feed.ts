@@ -7,7 +7,7 @@
 
 import { prisma } from "./db";
 import { toChecksum } from "./validation";
-import { isHeldNewProvider, holdAnchor } from "./governance";
+import { isHeldNewProvider, isHeldNewClaim, holdAnchor } from "./governance";
 import { getChain } from "./chains";
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -117,6 +117,15 @@ export async function buildProviderList(): Promise<ProviderList> {
     orderBy: [{ chainId: "asc" }, { provider: { name: "asc" } }],
   });
 
+  // EARLIEST CLAIM per provider, for the claim hold. Built from the rows already loaded rather
+  // than re-queried: a verified ProviderAddress IS a claim, and its verifiedAt is when it happened.
+  const claimedByProvider = new Map<string, Date>();
+  for (const a of addresses) {
+    if (!a.verified || !a.verifiedAt) continue;
+    const cur = claimedByProvider.get(a.providerId);
+    if (!cur || a.verifiedAt < cur) claimedByProvider.set(a.providerId, a.verifiedAt);
+  }
+
   // Qualification status per provider: the persisted LATCHED status (sticky; only revoked by a
   // long no-submit gap, advanced during ingestion), not a fresh per-render compute.
   const provForQual = await prisma.provider.findMany({
@@ -206,6 +215,8 @@ export async function buildProviderList(): Promise<ProviderList> {
     // it never reaches wallets mid-vote; a CLEARED/expired case lets it list normally afterwards.
     const held =
       isHeldNewProvider(holdAnchor(a.provider), now) ||
+      // The claim clock, which the entity clock cannot stand in for: see isHeldNewClaim.
+      isHeldNewClaim(claimedByProvider.get(providerId) ?? null, now) ||
       (gov?.underReview ?? false) ||
       (gov?.pending ?? false);
     const managementGroup = mgByProvider.get(providerId) ?? false;

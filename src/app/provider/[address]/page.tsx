@@ -6,8 +6,10 @@ import { metricsForProvider, formatWeiCompact, listingAddressesForSigner } from 
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
 import {
   isHeldNewProvider,
+  isHeldNewClaim,
   inNewProviderWindow,
   holdAnchor,
+  claimAnchor,
   NEW_PROVIDER_WINDOW_DAYS,
 } from "@/lib/governance";
 import { ProviderDetailClient, type DetailData } from "@/components/provider-detail-client";
@@ -166,14 +168,30 @@ export default async function ProviderDetail({
   const nowDate = new Date();
   const meetsCriteria = latchedMap.get(p.id) ?? false;
   const anchor = holdAnchor(p);
-  const heldWindow = isHeldNewProvider(anchor, nowDate);
+  // TWO INDEPENDENT CLOCKS, and a provider lists only when both have run. The entity clock measures
+  // time on-chain; the claim clock measures time since anyone asserted an identity for it. Neither
+  // substitutes for the other, and for an ordinary submitted provider they start together.
+  const claimedAt = claimAnchor(p);
+  const heldWindow =
+    isHeldNewProvider(anchor, nowDate) || isHeldNewClaim(claimedAt, nowDate);
   const liveCase = !!gov?.underReview || !!gov?.pending;
   const held = meetsCriteria && (heldWindow || liveCase);
   // heldUntil (the "lists on {date}" note) reflects only the clock; a live case has no fixed end
   // date, so we only surface the auto-list date when the sole reason for the hold is the window.
   const heldUntil =
     held && heldWindow && !liveCase
-      ? new Date(anchor.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString()
+      ? new Date(
+          Math.max(
+            isHeldNewProvider(anchor, nowDate)
+              ? anchor.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000
+              : 0,
+            // The later of the two, since the provider is held until BOTH have elapsed. Showing the
+            // earlier one would promise a listing date that comes and goes with nothing happening.
+            claimedAt && isHeldNewClaim(claimedAt, nowDate)
+              ? claimedAt.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000
+              : 0
+          )
+        ).toISOString()
       : null;
 
   // Same server-side resolution as the directory: the session is already on this request, so a
