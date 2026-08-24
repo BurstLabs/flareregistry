@@ -28,17 +28,39 @@ export async function POST(req: NextRequest) {
   let stored = 0;
   let departed = 0;
   let failed = 0;
+  // Entities with a row but too little history to publish a figure.
+  let unscored = 0;
+  // Entities on a network the score is not published for.
+  let offNetwork = 0;
 
   for (const e of entities) {
+    // FLARE ONLY. The score is a statement about Flare mainnet operation and is not published for
+    // Songbird. Storing one anyway is how a Songbird figure reached a directory card in the first
+    // place, so the rule is enforced where the row is written rather than at each place it is read.
+    if (e.network !== "flare") {
+      await prisma.providerScore.deleteMany({
+        where: { network: e.network, voter: e.voter.toLowerCase() },
+      });
+      offNetwork++;
+      continue;
+    }
     try {
       const rep = await reputationFor(e.network, e.voter);
       // A departed entity has no score at all rather than a zero. Clear any row it had, so the
       // directory shows nothing for it instead of a figure that stopped being maintained.
-      if (!rep || "departed" in rep) {
+      //
+      // AND NEITHER DOES AN IMMATURE ONE. `mature` is false when there is too little history for
+      // the figure to mean anything, and the provider page honours that: it prints "Not scored yet"
+      // instead of a number. This table did not, so a stored figure reached the directory anyway
+      // and a card advertised "17 - Needs attention" while the page it linked to said the provider
+      // could not be scored. Of the two, the page is right, and a judgement drawn from too little
+      // history is exactly the kind that should not be published about a named business.
+      if (!rep || "departed" in rep || !rep.mature) {
         await prisma.providerScore.deleteMany({
           where: { network: e.network, voter: e.voter.toLowerCase() },
         });
-        departed++;
+        if (rep && !("departed" in rep)) unscored++;
+        else departed++;
         continue;
       }
       const data = {
@@ -73,6 +95,8 @@ export async function POST(req: NextRequest) {
     entities: entities.length,
     stored,
     departed,
+    unscored,
+    offNetwork,
     failed,
     purgedOldVersion: purged.count,
   });
