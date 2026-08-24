@@ -373,6 +373,23 @@ export function inNewProviderWindow(createdAt: Date, now: Date): boolean {
  * moment), the same anchor the flag window uses. This is NOT MG-gated: after the window it lists
  * automatically. Providers claimed on/before the cutoff (the seeded launch base) are grandfathered.
  */
+/**
+ * The date the new-provider hold is measured from.
+ *
+ * NOT the row's createdAt, which is when someone ran an import. An operator importing candidates on
+ * a Saturday afternoon created thirteen listings at once for entities that had been registered
+ * on-chain for as long as 53 days; every one was then held from the listed feed for thirty days as
+ * a new provider, and shown a notice saying it had been held since claiming, which none of them had
+ * done. The hold exists to give the Management Group a window on a genuinely new entrant, and an
+ * entity two months into its on-chain life is not one.
+ *
+ * firstSeenAt is null on rows that predate the column and on listings where the two dates agree, so
+ * createdAt remains the fallback and nothing depends on a backfill having reached everything.
+ */
+export function holdAnchor(p: { createdAt: Date; firstSeenAt?: Date | null }): Date {
+  return p.firstSeenAt && p.firstSeenAt < p.createdAt ? p.firstSeenAt : p.createdAt;
+}
+
 export function isHeldNewProvider(createdAt: Date, now: Date): boolean {
   if (createdAt <= NEW_PROVIDER_HOLD_CUTOFF) return false; // grandfathered launch base
   return inNewProviderWindow(createdAt, now);

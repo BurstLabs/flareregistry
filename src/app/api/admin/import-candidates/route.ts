@@ -132,6 +132,25 @@ export async function POST(req: NextRequest) {
     // it appears in the feed only once it qualifies on-chain, or when the real owner claims it by
     // wallet signature (source flips to "submitted" then). The upstream logo URL is kept verbatim
     // until the owner uploads their own.
+    // WHEN THIS ENTITY ACTUALLY APPEARED, so the new-provider hold measures the provider rather
+    // than the import. Without it the row's createdAt is the anchor, and an operator importing a
+    // batch of candidates hands every one of them a fresh thirty-day hold no matter how long it has
+    // been registered on-chain. That happened: thirteen listings in one afternoon, nine of them for
+    // entities already up to 53 days old.
+    const onchainSince = await prisma.providerOnchain.findFirst({
+      where: {
+        OR: [
+          { voter: c.address.toLowerCase() },
+          { delegationAddress: c.address.toLowerCase() },
+          { submitAddress: c.address.toLowerCase() },
+          { submitSignaturesAddress: c.address.toLowerCase() },
+          { signingPolicyAddress: c.address.toLowerCase() },
+        ],
+      },
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true },
+    });
+
     await prisma.$transaction(async (tx) => {
       const providerId =
         mergeTarget?.id ??
@@ -143,6 +162,7 @@ export async function POST(req: NextRequest) {
               url: c.url,
               logoURI: c.logoURI,
               source: providerSource,
+              firstSeenAt: onchainSince?.createdAt ?? null,
             },
           })
         ).id;

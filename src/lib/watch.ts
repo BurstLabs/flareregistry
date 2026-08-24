@@ -13,7 +13,8 @@ import { sendWatchFlagNotice } from "./mailer";
 
 // A provider can be WATCHED only while it is a genuinely new provider still inside its review window
 // (post-cutoff and within the 30-day hold). Watching an established/listed provider is pointless: the
-// watch would auto-shred immediately, and there is nothing to review. `createdAt` is the claim date.
+// watch would auto-shred immediately, and there is nothing to review. Callers pass the HOLD
+// ANCHOR, not the row's createdAt: an imported listing is created whenever someone ran the import.
 export function isWatchable(createdAt: Date, now: Date = new Date()): boolean {
   return isHeldNewProvider(createdAt, now);
 }
