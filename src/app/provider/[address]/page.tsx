@@ -173,13 +173,17 @@ export default async function ProviderDetail({
   // substitutes for the other, and for an ordinary submitted provider they start together.
   const claimedAt = claimAnchor(p);
   const heldWindow =
-    isHeldNewProvider(anchor, nowDate) || isHeldNewClaim(claimedAt, nowDate);
+    isHeldNewProvider(anchor, nowDate) ||
+    isHeldNewClaim(claimedAt, p.claimedFromSource, nowDate);
   const liveCase = !!gov?.underReview || !!gov?.pending;
   const held = meetsCriteria && (heldWindow || liveCase);
   // heldUntil (the "lists on {date}" note) reflects only the clock; a live case has no fixed end
   // date, so we only surface the auto-list date when the sole reason for the hold is the window.
+  // NOT FOR A CHAIN-ONLY LISTING. `listed` is hardcoded false for source "onchain", so the clock
+  // running out changes nothing and promising a date is simply untrue: this listing showed "Lists
+  // automatically on September 2" for an entity that cannot list on any date until it is claimed.
   const heldUntil =
-    held && heldWindow && !liveCase
+    held && heldWindow && !liveCase && p.source !== "onchain"
       ? new Date(
           Math.max(
             isHeldNewProvider(anchor, nowDate)
@@ -187,7 +191,7 @@ export default async function ProviderDetail({
               : 0,
             // The later of the two, since the provider is held until BOTH have elapsed. Showing the
             // earlier one would promise a listing date that comes and goes with nothing happening.
-            claimedAt && isHeldNewClaim(claimedAt, nowDate)
+            claimedAt && isHeldNewClaim(claimedAt, p.claimedFromSource, nowDate)
               ? claimedAt.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000
               : 0
           )

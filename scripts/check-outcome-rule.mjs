@@ -68,16 +68,21 @@ console.log(`outcome-rule: OK. ${cases.length} cases, quorum ${QUORUM / 100}% ($
   const hold = await import(new URL("../src/lib/hold-rule.ts", import.meta.url).href);
   const now = new Date("2026-08-24T12:00:00Z");
   const days = (n) => new Date(now.getTime() - n * 86400000);
+  // The fourth column is what the listing was BEFORE the claim: only a chain-only registration
+  // serves a window, because an imported listing was already carried in the feed and holding it
+  // would remove a provider that was already there.
   const rows = [
-    ["on-chain long ago, claimed today", days(400), days(0), true],
-    ["on-chain long ago, claimed 40d ago", days(400), days(40), false],
-    ["on-chain 5d ago, claimed 5d ago", days(5), days(5), true],
-    ["on-chain 5d ago, never claimed", days(5), null, true],
-    ["on-chain long ago, never claimed", days(400), null, false],
+    ["chain-only, claimed today", days(400), days(0), "onchain", true],
+    ["chain-only, claimed 40d ago", days(400), days(40), "onchain", false],
+    ["IMPORTED, claimed today", days(400), days(0), "imported", false],
+    ["imported, claimed today, new on-chain", days(5), days(0), "imported", true],
+    ["chain-only 5d ago, claimed 5d ago", days(5), days(5), "onchain", true],
+    ["never claimed, new on-chain", days(5), null, null, true],
+    ["never claimed, long on-chain", days(400), null, null, false],
   ];
   let bad = 0;
-  for (const [name, seen, claimed, want] of rows) {
-    const got = hold.isHeldNewProvider(seen, now) || hold.isHeldNewClaim(claimed, now);
+  for (const [name, seen, claimed, src, want] of rows) {
+    const got = hold.isHeldNewProvider(seen, now) || hold.isHeldNewClaim(claimed, src, now);
     const ok = got === want;
     if (!ok) bad++;
     console.log(`  ${ok ? "ok  " : "FAIL"} hold: ${name.padEnd(34)} -> ${got ? "held" : "lists"}`);

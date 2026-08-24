@@ -121,7 +121,8 @@ export async function POST(req: NextRequest) {
   const existingLogo = existingOwned
     ? await prisma.provider.findUnique({
         where: { id: existingOwned.providerId },
-        select: { logoURI: true, logoPath: true },
+        // source and claimedFromSource come along so the claim can record what it is overwriting.
+        select: { logoURI: true, logoPath: true, source: true, claimedFromSource: true },
       })
     : null;
   const hasLogo =
@@ -197,6 +198,12 @@ export async function POST(req: NextRequest) {
         ? { noticeEmail: input.noticeEmail ? input.noticeEmail.toLowerCase() : null }
         : {}),
       source: "submitted",
+      // RECORD WHAT IT WAS. Claiming overwrites `source`, and whether this listing was chain-only
+      // beforehand decides whether the claim serves a review window. Written only on the first
+      // claim, so a later edit by the same owner cannot rewrite the answer.
+      ...(existingLogo && !existingLogo.claimedFromSource
+        ? { claimedFromSource: existingLogo.source }
+        : {}),
       // A logo uploaded before publish goes through the SAME review window as any change: it is
       // stored as PENDING (held LOGO_REVIEW_DAYS, promoted by cron), not live. The /api/provider/logo
       // route commits it under assets/pending/, so its URL contains "/pending/"; persist it as pending

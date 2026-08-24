@@ -51,6 +51,17 @@ model Provider {
   // Null for rows that predate this and for listings where the two are the same; readers fall back
   // to createdAt, so nothing depends on the backfill having reached everything.
   firstSeenAt DateTime?
+  // WHAT THIS LISTING WAS IMMEDIATELY BEFORE ITS OWNER CLAIMED IT, because claiming overwrites
+  // `source` with "submitted" and the previous value is otherwise lost.
+  //
+  // It decides whether the claim starts a review window. An "imported" listing was already carried
+  // in the feed under a name some upstream list vouched for, so claiming it adds a verified owner
+  // and introduces nothing new to review; holding it would REMOVE a provider that was already
+  // there, which punishes the act of claiming. An "onchain" listing was never listed at all, so the
+  // claim is the first moment anything about it becomes visible, and that is the one case the
+  // window exists for.
+  claimedFromSource String?
+
   flaggedOnce Boolean @default(false)
   // suspended: a DENIED flag outcome. Not Qualified, hidden from the default directory.
   suspended   Boolean @default(false)

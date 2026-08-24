@@ -49,8 +49,19 @@ export function claimAnchor(p: {
  * Independent of the entity hold rather than replacing it, and a provider lists only once BOTH have
  * run. For an ordinary submitted provider the two start together and nothing changes.
  */
-export function isHeldNewClaim(claimedAt: Date | null, now: Date): boolean {
+export function isHeldNewClaim(
+  claimedAt: Date | null,
+  claimedFromSource: string | null | undefined,
+  now: Date
+): boolean {
   if (!claimedAt) return false;
+  // ONLY A CHAIN-ONLY REGISTRATION. An imported listing was already carried in the feed under a
+  // name an upstream list vouched for, so claiming it adds a verified owner and introduces nothing
+  // new to review. Holding it would take a provider that was already in wallets and remove it,
+  // which makes claiming your own listing a penalty. A chain-only entity was never listed at all,
+  // so the claim is the first moment anything about it is visible, and that is the case this exists
+  // for.
+  if (claimedFromSource !== "onchain") return false;
   if (claimedAt <= NEW_PROVIDER_HOLD_CUTOFF) return false; // grandfathered, as for the entity clock
   return inNewProviderWindow(claimedAt, now);
 }
