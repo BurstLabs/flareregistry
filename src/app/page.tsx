@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProviders, formatWeiCompact } from "@/lib/metrics";
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
-import { isHeldNewProvider, NEW_PROVIDER_WINDOW_DAYS } from "@/lib/governance";
+import { isHeldNewProvider, holdAnchor, NEW_PROVIDER_WINDOW_DAYS } from "@/lib/governance";
 import { DirectoryClient, type CardProvider } from "@/components/directory-client";
 
 // Public directory. Fetches + computes here, hands a serializable shape to the client component.
@@ -52,7 +52,8 @@ export default async function Home({
   // case opened late in the window keeps it unlisted through the vote instead of auto-listing at
   // day 30 mid-vote (matches feed.ts).
   const now = new Date();
-  const createdById = new Map(all.map((p) => [p.id, p.createdAt]));
+  // The hold anchor, not the row date; see holdAnchor in lib/governance.
+  const createdById = new Map(all.map((p) => [p.id, holdAnchor(p)]));
   const held = (id: string) => {
     const c = createdById.get(id);
     const g = govByProvider.get(id);

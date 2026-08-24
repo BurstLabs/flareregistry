@@ -40,6 +40,17 @@ model Provider {
 
   // Governance (new-provider flag mechanism, see docs/governance-flag-mechanism.md).
   // flaggedOnce: this account has already been through the flag process once (once-only guard).
+  // WHEN THIS PROVIDER FIRST BECAME OBSERVABLE, which is what the new-provider hold measures.
+  //
+  // `createdAt` is when the ROW was made, and for an imported or chain-seeded listing that is when
+  // an operator happened to run the import, not when the provider appeared. Thirteen listings were
+  // created in one afternoon for entities that had been registered on-chain for up to 53 days, and
+  // every one of them was then held from the feed for 30 days as a "new provider" and told it had
+  // been held since claiming, which it never did.
+  //
+  // Null for rows that predate this and for listings where the two are the same; readers fall back
+  // to createdAt, so nothing depends on the backfill having reached everything.
+  firstSeenAt DateTime?
   flaggedOnce Boolean @default(false)
   // suspended: a DENIED flag outcome. Not Qualified, hidden from the default directory.
   suspended   Boolean @default(false)

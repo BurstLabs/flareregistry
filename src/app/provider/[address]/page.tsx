@@ -4,7 +4,12 @@ import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProvider, formatWeiCompact, listingAddressesForSigner } from "@/lib/metrics";
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
-import { isHeldNewProvider, inNewProviderWindow, NEW_PROVIDER_WINDOW_DAYS } from "@/lib/governance";
+import {
+  isHeldNewProvider,
+  inNewProviderWindow,
+  holdAnchor,
+  NEW_PROVIDER_WINDOW_DAYS,
+} from "@/lib/governance";
 import { ProviderDetailClient, type DetailData } from "@/components/provider-detail-client";
 
 export const dynamic = "force-dynamic";
@@ -160,14 +165,15 @@ export default async function ProviderDetail({
   // only when it meets criteria AND is not held by either axis (mirrors feed.ts and the directory).
   const nowDate = new Date();
   const meetsCriteria = latchedMap.get(p.id) ?? false;
-  const heldWindow = isHeldNewProvider(p.createdAt, nowDate);
+  const anchor = holdAnchor(p);
+  const heldWindow = isHeldNewProvider(anchor, nowDate);
   const liveCase = !!gov?.underReview || !!gov?.pending;
   const held = meetsCriteria && (heldWindow || liveCase);
   // heldUntil (the "lists on {date}" note) reflects only the clock; a live case has no fixed end
   // date, so we only surface the auto-list date when the sole reason for the hold is the window.
   const heldUntil =
     held && heldWindow && !liveCase
-      ? new Date(p.createdAt.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString()
+      ? new Date(anchor.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString()
       : null;
 
   // Same server-side resolution as the directory: the session is already on this request, so a
@@ -236,7 +242,7 @@ export default async function ProviderDetail({
     viewerIsMember,
     viewerLiveCase,
     viewerSubjectCases,
-    conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(p.createdAt, nowDate),
+    conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(anchor, nowDate),
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
     hasLogo: !!p.logoURI,
@@ -250,7 +256,7 @@ export default async function ProviderDetail({
       !(meetsCriteria && !heldWindow) &&
       !p.flaggedOnce &&
       !p.suspended &&
-      inNewProviderWindow(p.createdAt, nowDate),
+      inNewProviderWindow(anchor, nowDate),
     // Watchable: a new provider still in its review window. Anyone may subscribe to be emailed if it
     // is flagged; the subscription is shredded once it lists/qualifies (or is denied). Uses the raw
     // window (heldWindow) so it is offered throughout review regardless of criteria state.

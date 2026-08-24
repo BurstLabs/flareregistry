@@ -7,7 +7,7 @@
 
 import { prisma } from "./db";
 import { toChecksum } from "./validation";
-import { isHeldNewProvider } from "./governance";
+import { isHeldNewProvider, holdAnchor } from "./governance";
 import { getChain } from "./chains";
 
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -195,7 +195,7 @@ export async function buildProviderList(): Promise<ProviderList> {
     // A suspended provider (DENIED governance outcome) is never Qualified/listed.
     const qualified = (risk?.qualified ?? false) && !gov?.suspended;
     // New-provider hold: even a qualifying provider is not LISTED until its 30-day new-provider
-    // window (anchored on the signed-claim date) has elapsed, so a pre-warmed on-chain entity
+    // window has elapsed, so a pre-warmed on-chain entity
     // cannot register and instantly appear in wallets before the Management Group can react. The
     // Qualified badge still reflects `qualified`; only feed listing waits out the window.
     //
@@ -205,7 +205,7 @@ export async function buildProviderList(): Promise<ProviderList> {
     // yanked back only at the verdict. Keep it unlisted while any case is pending or under review so
     // it never reaches wallets mid-vote; a CLEARED/expired case lets it list normally afterwards.
     const held =
-      isHeldNewProvider(a.provider.createdAt, now) ||
+      isHeldNewProvider(holdAnchor(a.provider), now) ||
       (gov?.underReview ?? false) ||
       (gov?.pending ?? false);
     const managementGroup = mgByProvider.get(providerId) ?? false;
