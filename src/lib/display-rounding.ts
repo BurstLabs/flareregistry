@@ -37,6 +37,47 @@ export function apportionWhole(values: number[], target: number): number[] {
 }
 
 /**
+ * The same apportionment, but no cell may exceed its own ceiling.
+ *
+ * The provider page prints two columns for each component, the points earned and the points
+ * available, and each was apportioned INDEPENDENTLY: points to the displayed base score, maxima to
+ * 100. Both columns summed correctly and neither was wrong on its own, but the two roundings do not
+ * have to agree, so a component sitting at full marks could be handed a rounding unit in one column
+ * and docked one in the other. The published page showed "Implementation independence ... 6 / 5
+ * pts", six points out of a possible five.
+ *
+ * On a page whose entire claim is that the figure can be recomputed from published inputs, a cell
+ * that scores more than its own maximum is worse than a rounding error: it is the reader's first
+ * reason to stop trusting the arithmetic, and they would be right.
+ *
+ * Caps are respected first and the remainder is handed to whichever cells still have headroom, so
+ * the column still sums exactly to the target.
+ */
+export function apportionCapped(values: number[], target: number, caps: number[]): number[] {
+  const out = values.map((v, i) => Math.min(Math.floor(v + 1e-9), caps[i]));
+  let left = Math.round(target) - out.reduce((a, b) => a + b, 0);
+  const byFrac = values
+    .map((v, i) => ({ i, frac: v - Math.floor(v + 1e-9) }))
+    .sort((a, b) => b.frac - a.frac || a.i - b.i);
+  // Hand out the remainder, skipping anything already at its ceiling. Repeated passes because a
+  // skipped cell must not consume the unit it could not take.
+  let progress = true;
+  while (left > 0 && progress) {
+    progress = false;
+    for (const { i } of byFrac) {
+      if (left <= 0) break;
+      if (out[i] < caps[i]) {
+        out[i]++;
+        left--;
+        progress = true;
+      }
+    }
+  }
+  for (let k = byFrac.length - 1; k >= 0 && left < 0; k--, left++) out[byFrac[k].i]--;
+  return out;
+}
+
+/**
  * The score as a whole number: rounded, but NEVER across a band floor the score has not reached.
  *
  * Every band floor is an integer (Strong 95, Solid 85, Mixed 80). Plain rounding would print "80 out
