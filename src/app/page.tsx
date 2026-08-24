@@ -3,7 +3,13 @@ import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProviders, formatWeiCompact } from "@/lib/metrics";
 import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
-import { isHeldNewProvider, holdAnchor, NEW_PROVIDER_WINDOW_DAYS } from "@/lib/governance";
+import {
+  isHeldNewProvider,
+  isHeldNewClaim,
+  holdAnchor,
+  claimAnchor,
+  NEW_PROVIDER_WINDOW_DAYS,
+} from "@/lib/governance";
 import { DirectoryClient, type CardProvider } from "@/components/directory-client";
 
 // Public directory. Fetches + computes here, hands a serializable shape to the client component.
@@ -54,10 +60,17 @@ export default async function Home({
   const now = new Date();
   // The hold anchor, not the row date; see holdAnchor in lib/governance.
   const createdById = new Map(all.map((p) => [p.id, holdAnchor(p)]));
+  // The claim clock, kept beside the entity clock; a provider is held until both have run.
+  const claimedById = new Map(all.map((p) => [p.id, claimAnchor(p)]));
   const held = (id: string) => {
     const c = createdById.get(id);
     const g = govByProvider.get(id);
-    return (c ? isHeldNewProvider(c, now) : false) || !!g?.underReview || !!g?.pending;
+    return (
+      (c ? isHeldNewProvider(c, now) : false) ||
+      isHeldNewClaim(claimedById.get(id) ?? null, now) ||
+      !!g?.underReview ||
+      !!g?.pending
+    );
   };
   const isQualified = (id: string) => (latched.get(id) ?? false) && !held(id);
   // The auto-list date for a provider held SOLELY by the new-provider clock, mirroring the provider
@@ -72,8 +85,17 @@ export default async function Home({
     const g = govByProvider.get(id);
     const liveCase = !!g?.underReview || !!g?.pending;
     const meetsCriteria = latched.get(id) ?? false;
-    if (!c || !meetsCriteria || liveCase || !isHeldNewProvider(c, now)) return null;
-    return new Date(c.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000).toISOString();
+    const cl = claimedById.get(id) ?? null;
+    const byEntity = !!c && isHeldNewProvider(c, now);
+    const byClaim = isHeldNewClaim(cl, now);
+    if (!c || !meetsCriteria || liveCase || (!byEntity && !byClaim)) return null;
+    // The later of the two clocks, matching provider/[address]/page.tsx exactly.
+    return new Date(
+      Math.max(
+        byEntity ? c.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000 : 0,
+        byClaim && cl ? cl.getTime() + NEW_PROVIDER_WINDOW_DAYS * 86_400_000 : 0
+      )
+    ).toISOString();
   };
   // True if any qualification check passes. Zero passes = stale name, hidden even from "show all".
   const hasAnyPass = (id: string) =>

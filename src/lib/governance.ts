@@ -7,7 +7,6 @@ import { prisma } from "./db";
 import { fetchManagementGroupMembers } from "./management-group";
 
 // Timing (days).
-export const NEW_PROVIDER_WINDOW_DAYS = 30; // a provider is flaggable only inside this window
 
 // New-provider listing hold: a qualifying provider is NOT listed until it has been claimed for
 // NEW_PROVIDER_WINDOW_DAYS, so a pre-warmed on-chain entity cannot register and instantly appear
@@ -15,7 +14,6 @@ export const NEW_PROVIDER_WINDOW_DAYS = 30; // a provider is flaggable only insi
 // grandfathered (never held): the initial launch base was seeded in one bulk event on 2026-06-22
 // (+ Burst FTSO 2026-06-25), so their createdAt is an artifact of that import, not real onboarding.
 // The cutoff sits after that batch and before the first genuine post-launch claims.
-export const NEW_PROVIDER_HOLD_CUTOFF = new Date("2026-07-01T00:00:00Z");
 export const FLAG_PAUSE_DAYS = 14; // total added pause once a case opens
 export const DISCUSSION_DAYS = 3; // discussion-only portion at the start
 export const VOTING_DAYS = FLAG_PAUSE_DAYS - DISCUSSION_DAYS; // 11 days of voting
@@ -36,6 +34,16 @@ export const PENDING_EXPIRY_DAYS = 7; // a single-member pending flag auto-expir
  * member's word.
  */
 import { QUORUM_TURNOUT_BIPS } from "./outcome-rule";
+import { NEW_PROVIDER_WINDOW_DAYS } from "./hold-rule";
+export {
+  NEW_PROVIDER_WINDOW_DAYS,
+  NEW_PROVIDER_HOLD_CUTOFF,
+  inNewProviderWindow,
+  isHeldNewProvider,
+  isHeldNewClaim,
+  holdAnchor,
+  claimAnchor,
+} from "./hold-rule";
 export {
   QUORUM_TURNOUT_BIPS,
   DENY_MAJORITY_BIPS,
@@ -359,10 +367,6 @@ export function memberVoterFor(
   return voterByAddress.get(address.toLowerCase()) ?? null;
 }
 
-/** Is this provider currently inside the new-provider window (created, not yet qualified, <30d)? */
-export function inNewProviderWindow(createdAt: Date, now: Date): boolean {
-  return now.getTime() - createdAt.getTime() < NEW_PROVIDER_WINDOW_DAYS * DAY_MS;
-}
 
 /**
  * Is this provider currently HELD from listing? A provider claimed after NEW_PROVIDER_HOLD_CUTOFF
@@ -373,27 +377,9 @@ export function inNewProviderWindow(createdAt: Date, now: Date): boolean {
  * moment), the same anchor the flag window uses. This is NOT MG-gated: after the window it lists
  * automatically. Providers claimed on/before the cutoff (the seeded launch base) are grandfathered.
  */
-/**
- * The date the new-provider hold is measured from.
- *
- * NOT the row's createdAt, which is when someone ran an import. An operator importing candidates on
- * a Saturday afternoon created thirteen listings at once for entities that had been registered
- * on-chain for as long as 53 days; every one was then held from the listed feed for thirty days as
- * a new provider, and shown a notice saying it had been held since claiming, which none of them had
- * done. The hold exists to give the Management Group a window on a genuinely new entrant, and an
- * entity two months into its on-chain life is not one.
- *
- * firstSeenAt is null on rows that predate the column and on listings where the two dates agree, so
- * createdAt remains the fallback and nothing depends on a backfill having reached everything.
- */
-export function holdAnchor(p: { createdAt: Date; firstSeenAt?: Date | null }): Date {
-  return p.firstSeenAt && p.firstSeenAt < p.createdAt ? p.firstSeenAt : p.createdAt;
-}
 
-export function isHeldNewProvider(createdAt: Date, now: Date): boolean {
-  if (createdAt <= NEW_PROVIDER_HOLD_CUTOFF) return false; // grandfathered launch base
-  return inNewProviderWindow(createdAt, now);
-}
+
+
 
 /** Compute the case deadlines from an open time. */
 export function caseDeadlines(openedAt: Date): {

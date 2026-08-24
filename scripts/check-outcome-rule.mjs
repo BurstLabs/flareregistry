@@ -56,3 +56,49 @@ if (bad) {
   process.exit(1);
 }
 console.log(`outcome-rule: OK. ${cases.length} cases, quorum ${QUORUM / 100}% (${floor} of ${M}), majority ${(MAJORITY / 100).toFixed(2)}%.`);
+
+// THE NEW-PROVIDER HOLDS. Two independent clocks, and a provider lists only when both have run.
+// Asserted because the second was added after a change to the first listed three providers early,
+// and the interaction is invisible from either function on its own.
+//
+// NO catch() HERE. The first version of this block imported lib/governance, which pulls in prisma,
+// failed, and swallowed the error, so every assertion below silently did not run. A guard that
+// cannot fail is not a guard, so an unimportable module is now a hard failure.
+{
+  const hold = await import(new URL("../src/lib/hold-rule.ts", import.meta.url).href);
+  const now = new Date("2026-08-24T12:00:00Z");
+  const days = (n) => new Date(now.getTime() - n * 86400000);
+  const rows = [
+    ["on-chain long ago, claimed today", days(400), days(0), true],
+    ["on-chain long ago, claimed 40d ago", days(400), days(40), false],
+    ["on-chain 5d ago, claimed 5d ago", days(5), days(5), true],
+    ["on-chain 5d ago, never claimed", days(5), null, true],
+    ["on-chain long ago, never claimed", days(400), null, false],
+  ];
+  let bad = 0;
+  for (const [name, seen, claimed, want] of rows) {
+    const got = hold.isHeldNewProvider(seen, now) || hold.isHeldNewClaim(claimed, now);
+    const ok = got === want;
+    if (!ok) bad++;
+    console.log(`  ${ok ? "ok  " : "FAIL"} hold: ${name.padEnd(34)} -> ${got ? "held" : "lists"}`);
+  }
+  // holdAnchor must prefer the earlier first-seen date over the row date, and ignore a later one.
+  const rowDate = new Date("2026-08-15T00:00:00Z");
+  const earlier = new Date("2026-06-22T00:00:00Z");
+  const later = new Date("2026-09-01T00:00:00Z");
+  const checks = [
+    ["holdAnchor prefers an earlier firstSeenAt", hold.holdAnchor({ createdAt: rowDate, firstSeenAt: earlier }).getTime() === earlier.getTime()],
+    ["holdAnchor ignores a later firstSeenAt", hold.holdAnchor({ createdAt: rowDate, firstSeenAt: later }).getTime() === rowDate.getTime()],
+    ["holdAnchor falls back to createdAt", hold.holdAnchor({ createdAt: rowDate, firstSeenAt: null }).getTime() === rowDate.getTime()],
+    ["claimAnchor takes the earliest claim", hold.claimAnchor({ addresses: [
+        { verified: true, verifiedAt: later }, { verified: true, verifiedAt: earlier },
+        { verified: false, verifiedAt: rowDate }] }).getTime() === earlier.getTime()],
+    ["claimAnchor is null when unclaimed", hold.claimAnchor({ addresses: [{ verified: false, verifiedAt: rowDate }] }) === null],
+  ];
+  for (const [name, ok] of checks) {
+    if (!ok) bad++;
+    console.log(`  ${ok ? "ok  " : "FAIL"} ${name}`);
+  }
+  if (bad) { console.error(`hold-rule: ${bad} failure(s)`); process.exit(1); }
+  console.log("hold-rule: OK. entity clock and claim clock both enforced.");
+}
