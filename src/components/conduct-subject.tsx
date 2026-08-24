@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isConductDecided } from "@/lib/governance";
 import { useApp } from "./providers";
 import { useSignChallenge } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
@@ -19,6 +20,7 @@ export type SubjectHalf = {
   noticeEndsAt: string | null;
   discussionEndsAt: string | null;
   votingEndsAt: string | null;
+  decidedAt: string | null;
   defence: { title: string | null; body: string; at: string } | null;
 };
 
@@ -147,6 +149,7 @@ export function ResponseForm({
 export function SubjectSection({ subject, onSaved }: { subject: SubjectHalf; onSaved: () => void }) {
   const { t } = useApp();
   const d = (x: string | null) => (x ?? "").slice(0, 10);
+  const decided = isConductDecided(subject.state);
   return (
     <>
       {subject.defence && (
@@ -168,11 +171,40 @@ export function SubjectSection({ subject, onSaved }: { subject: SubjectHalf; onS
 
       <ResponseForm
         caseId={subject.caseId}
-        locked={subject.state === "OPEN_VOTING"}
+        locked={subject.state === "OPEN_VOTING" || decided}
         defence={subject.defence}
         onSaved={onSaved}
       />
 
+      {/* HOW IT ENDED, in place of what happens next. The schedule is for a case that is still
+          running; showing "3. Voting, until ..." on a case decided last week tells the one person
+          who most needs the result that it has not happened yet. */}
+      {decided ? (
+        <div
+          className={`mt-3 rounded-lg border p-3 ${
+            subject.state === "SUBSTANTIATED"
+              ? "border-flare/40 bg-flare/5"
+              : "border-emerald-500/40 bg-emerald-500/5"
+          }`}
+        >
+          <p className="text-[10px] uppercase tracking-wide text-faint">
+            {t("owner.notices.closedH")}
+          </p>
+          <p className="mt-1 text-sm text-fg">
+            {t(`gov.conduct.live.${subject.state}`, {
+              date: (subject.decidedAt ?? "").slice(0, 10),
+            })}
+          </p>
+          <p className="mt-2 text-xs text-muted">
+            {t(
+              subject.state === "SUBSTANTIATED"
+                ? "owner.notices.closedSub"
+                : "owner.notices.closedClear"
+            )}
+          </p>
+          <p className="mt-2 text-xs text-faint">{t("owner.notices.closedFrozen")}</p>
+        </div>
+      ) : (
       <div className="mt-3 rounded-lg border border-themed/60 p-3">
         <p className="text-[10px] uppercase tracking-wide text-faint">
           {t("owner.notices.whatNextH")}
@@ -213,6 +245,7 @@ export function SubjectSection({ subject, onSaved }: { subject: SubjectHalf; onS
         </ol>
         <p className="mt-2 text-xs text-faint">{t("owner.notices.outcomes")}</p>
       </div>
+      )}
     </>
   );
 }

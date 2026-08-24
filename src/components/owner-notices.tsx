@@ -221,6 +221,7 @@ export function OwnerNotices({
                   noticeEndsAt: c.noticeEndsAt,
                   discussionEndsAt: c.discussionEndsAt,
                   votingEndsAt: c.votingEndsAt,
+                  decidedAt: c.decidedAt,
                   defence: c.defence,
                 }}
                 onSaved={() => void check()}

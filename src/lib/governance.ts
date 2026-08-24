@@ -86,6 +86,52 @@ export const CONDUCT_DISCUSSION_DAYS = 7;
 export const CONDUCT_VOTING_DAYS = 7;
 
 /**
+ * How long a DECIDED conduct case stays visible to the two sides that took part.
+ *
+ * A case that is not substantiated leaves no PUBLIC trace, and that is the whole protection for an
+ * accusation that never carried the group. It does not follow that the outcome should be hidden
+ * from the accused. Both panels used to key on the live states alone, so the moment the tally ran,
+ * the case vanished from the subject's page and from every member's page at once: a provider who
+ * had been served a notice, read an accusation and written a reply was simply never told it had
+ * ended, and from their side that is indistinguishable from the page having broken.
+ *
+ * Thirty days is long enough that nobody has to be watching on the day, and short enough that a
+ * closed case does not sit on a provider's page indefinitely. Neither loader is a public surface:
+ * both demand a signature and re-check membership or ownership server-side, so widening them
+ * cannot widen what the public sees.
+ */
+export const CONDUCT_OUTCOME_VISIBLE_DAYS = 30;
+
+/** The three terminal conduct outcomes. */
+export const CONDUCT_DECIDED_STATES = [
+  "SUBSTANTIATED",
+  "NOT_SUBSTANTIATED",
+  "FAILED_QUORUM",
+] as const;
+
+/**
+ * States a party to a case may read, given the live states that party is entitled to see.
+ *
+ * ONE BUILDER for both the member view and the subject view, because the two lists drifted apart
+ * once already and the failure mode is silent: a case shown to one side and not the other reads as
+ * a bug to whoever cannot see it.
+ */
+export function conductVisibleWhere(liveStates: string[], now: Date = new Date()) {
+  const since = new Date(now.getTime() - CONDUCT_OUTCOME_VISIBLE_DAYS * 86_400_000);
+  return {
+    OR: [
+      { state: { in: liveStates } },
+      { state: { in: [...CONDUCT_DECIDED_STATES] }, decidedAt: { gte: since } },
+    ],
+  };
+}
+
+/** True for a terminal outcome, so a caller can branch without repeating the list. */
+export function isConductDecided(state: string): boolean {
+  return (CONDUCT_DECIDED_STATES as readonly string[]).includes(state);
+}
+
+/**
  * Whether the subject could be told, and what they did about it. A PUBLISHED FIELD, not a gate.
  *
  * Silence from a provider who was asked and declined, and silence from one who was never reachable
@@ -644,6 +690,8 @@ export interface SubjectCase {
   caseId: string;
   state: string;
   openedAt: string;
+  /** Set once the case has a terminal outcome; null while it is still running. */
+  decidedAt: string | null;
   noticeEndsAt: string | null;
   discussionEndsAt: string | null;
   votingEndsAt: string | null;
@@ -685,7 +733,11 @@ export async function subjectCasesFor(providerId: string, signer: string): Promi
   if (!owns) return null;
 
   const cases = await prisma.providerFlagCase.findMany({
-    where: { providerId, kind: "CONDUCT", state: { in: ["NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] } },
+    where: {
+      providerId,
+      kind: "CONDUCT",
+      ...conductVisibleWhere(["NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"]),
+    },
     orderBy: { openedAt: "desc" },
     include: {
       defense: { select: { id: true, title: true, body: true, createdAt: true, editedAt: true } },
@@ -728,6 +780,7 @@ export async function subjectCasesFor(providerId: string, signer: string): Promi
     caseId: c.id,
     state: c.state,
     openedAt: c.openedAt.toISOString(),
+    decidedAt: c.decidedAt?.toISOString() ?? null,
     noticeEndsAt: c.noticeEndsAt ? c.noticeEndsAt.toISOString() : null,
     discussionEndsAt: c.discussionEndsAt ? c.discussionEndsAt.toISOString() : null,
     votingEndsAt: c.votingEndsAt ? c.votingEndsAt.toISOString() : null,
@@ -767,9 +820,11 @@ export async function subjectCasesFor(providerId: string, signer: string): Promi
 export interface LiveConductView {
   caseId: string;
   network: string;
-  /** PENDING | NOTICE | OPEN_DISCUSSION | OPEN_VOTING. */
+  /** PENDING | NOTICE | OPEN_DISCUSSION | OPEN_VOTING, or a terminal outcome for its visible window. */
   state: string;
   openedAt: string;
+  /** Set once the case has a terminal outcome; null while it is still running. */
+  decidedAt: string | null;
   noticeEndsAt: string | null;
   discussionEndsAt: string;
   votingEndsAt: string;
@@ -889,7 +944,7 @@ export async function liveConductForMember(
     where: {
       providerId,
       kind: "CONDUCT",
-      state: { in: ["PENDING", "NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] },
+      ...conductVisibleWhere(["PENDING", "NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"]),
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -933,6 +988,7 @@ export async function liveConductForMember(
     network: live.network,
     state: live.state,
     openedAt: live.openedAt.toISOString(),
+    decidedAt: live.decidedAt?.toISOString() ?? null,
     noticeEndsAt: live.noticeEndsAt ? live.noticeEndsAt.toISOString() : null,
     discussionEndsAt: live.discussionEndsAt.toISOString(),
     votingEndsAt: live.votingEndsAt.toISOString(),

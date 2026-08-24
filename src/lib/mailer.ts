@@ -294,3 +294,56 @@ export async function sendConductNotice(opts: {
   ].join("\n");
   await getPublicTransport().sendMail({ from: PUBLIC_FROM, to: opts.to, subject, text });
 }
+
+/**
+ * TELL THE SUBJECT THEIR CASE IS OVER.
+ *
+ * They were emailed when it opened, and then nothing. The case simply stopped appearing on their
+ * page, which from their side is indistinguishable from the page having broken, and they were left
+ * unable to tell whether an accusation against them was still running.
+ *
+ * The outcome IS stated, unlike the opening notice which deliberately withholds every detail. The
+ * reasoning differs because the facts differ: an open case is private and might never be
+ * substantiated, so putting it in an email would leak an unproven accusation. A closed one is
+ * either published already, in which case the email reveals nothing the listing does not, or closed
+ * without a finding, in which case the only fact conveyed is that nothing was published. Neither
+ * discloses the grounds, and the grounds are what the seal protects.
+ */
+export async function sendConductOutcome(opts: {
+  to: string;
+  providerName: string;
+  detailUrl: string;
+  outcome: "SUBSTANTIATED" | "NOT_SUBSTANTIATED" | "FAILED_QUORUM";
+}): Promise<void> {
+  if (!publicMailerConfigured()) return;
+  const name = safeName(opts.providerName);
+  const substantiated = opts.outcome === "SUBSTANTIATED";
+  const subject = substantiated
+    ? `The Management Group conduct case regarding ${name} was substantiated`
+    : `The Management Group conduct case regarding ${name} closed without a finding`;
+  const body = substantiated
+    ? [
+        `The Management Group voted to substantiate the conduct case regarding ${name}.`,
+        "",
+        "The finding is now published on your listing, with the response you filed shown beside it.",
+        "It deducts points from your reputation score, easing to nothing over five years.",
+        "",
+        "You remain listed. A conduct finding does not suspend a provider and never has.",
+      ]
+    : [
+        opts.outcome === "FAILED_QUORUM"
+          ? `The conduct case regarding ${name} has closed. Not enough Management Group members voted for it to be decided.`
+          : `The conduct case regarding ${name} has closed. The Management Group did not substantiate it.`,
+        "",
+        "Nothing has been published and the case leaves no public trace. Your reputation score is",
+        "unaffected. There is nothing you need to do.",
+      ];
+  const text = [
+    ...body,
+    "",
+    "The closed case stays readable on your listing for a short period when you are signed in with",
+    "the wallet that claimed it:",
+    opts.detailUrl,
+  ].join("\n");
+  await getPublicTransport().sendMail({ from: PUBLIC_FROM, to: opts.to, subject, text });
+}
