@@ -137,7 +137,7 @@ score = max(0, components - chill deduction)`}</Formula>
             </thead>
             <tbody className="align-top">
               {/* WEIGHTS OUT OF 100, the same figures a provider page prints.
-                  The raw model weights sum to 90, and this table used to show them that way while the
+                  The raw model weights sum to 95, and this table used to show them that way while the
                   provider panel showed them rescaled, so the two pages disagreed about the same five
                   numbers and this page's prose had to explain the discrepancy away. Rescaling here
                   through the SAME helper the panel uses means they cannot drift apart. The constants

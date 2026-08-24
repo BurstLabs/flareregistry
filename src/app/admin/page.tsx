@@ -744,7 +744,17 @@ function ConductTab() {
         body: JSON.stringify(body),
       });
       const b = await r.json().catch(() => ({}));
-      setMsg(r.ok ? ok : `Failed: ${b.error ?? r.status}`);
+      // WARNINGS ARE NOT FAILURES, and they are the only notice an operator gets that a hand
+      // published finding will contradict its own vote on a public page. Shown with the success
+      // message rather than swallowed by it.
+      const warn: string[] = Array.isArray(b.warnings) ? b.warnings : [];
+      setMsg(
+        r.ok
+          ? warn.length
+            ? `${ok} ${warn.join(" ")}`
+            : ok
+          : `Failed: ${b.error ?? r.status}`
+      );
       if (r.ok) await load();
     } finally {
       setBusy(false);

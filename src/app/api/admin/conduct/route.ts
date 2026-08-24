@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin, getAdminAddress } from "@/lib/admin";
-import { CONDUCT_CO_INITIATORS_REQUIRED, conductDeadlines, loadMembers } from "@/lib/governance";
+import {
+  CONDUCT_CO_INITIATORS_REQUIRED,
+  QUORUM_TURNOUT_BIPS,
+  DENY_MAJORITY_BIPS,
+  conductDeadlines,
+  loadMembers,
+  selfVotersForProvider,
+} from "@/lib/governance";
 import { serveConductNotice } from "@/lib/conduct-open";
 import { publishFeedToRepo } from "@/lib/feed";
 
@@ -275,6 +282,9 @@ export async function PATCH(req: NextRequest) {
 
   switch (op) {
     case "case": {
+      // Was implicit: the code below reached through `existing` with an `as never` cast, so a bad id
+      // threw rather than answering.
+      if (!existing) return NextResponse.json({ error: "case not found" }, { status: 404 });
       // Every column is writable. `state` and `publishedAt` are the consequential ones: publishedAt
       // is the single gate that makes a sealed case public, and a published SUBSTANTIATED case is
       // what deducts points from the provider's reputation score.
@@ -307,7 +317,98 @@ export async function PATCH(req: NextRequest) {
       // record used to say and not merely that it was touched.
       const before: Record<string, unknown> = {};
       for (const k of Object.keys(data)) before[k] = (existing as never)[k as never];
+      // PUBLISHING BY HAND MUST NOT PRODUCE A HALF-WRITTEN DECISION.
+      //
+      // This operation writes any column, which is the point of it. But `publishedAt` is not just
+      // another column: setting it turns a sealed case into a public finding about a named business,
+      // and the tally sets four other fields at the same moment. Publishing from here skipped all of
+      // them, silently:
+      //
+      //   decidedEpoch   the scorer cannot age a finding without it, and charges ZERO rather than
+      //                  the maximum, so the page said it deducted while it deducted nothing.
+      //   serviceStatus  the finding read "Notification status not recorded" about a provider who
+      //                  had been served and had replied.
+      //   decidedAt      the record had no decision date.
+      //
+      // Each is filled only when the operator did not supply one, so nothing here overrides an
+      // explicit choice. This is not a restriction on the admin surface; it is the difference
+      // between publishing a finding and publishing a broken one.
+      const publishing =
+        existing.kind === "CONDUCT" &&
+        "publishedAt" in data &&
+        data.publishedAt != null &&
+        existing.publishedAt == null;
+      const warnings: string[] = [];
+      if (publishing) {
+        const { conductServiceStatus } = await import("@/lib/conduct-open");
+        if (data.decidedAt == null && existing.decidedAt == null) data.decidedAt = new Date();
+        if (data.decidedEpoch == null && existing.decidedEpoch == null) {
+          const head = await prisma.ingestState.findUnique({ where: { network: "flare" } });
+          if (head?.lastEpochIngested != null) {
+            data.decidedEpoch = head.lastEpochIngested;
+          } else {
+            warnings.push(
+              "No ingest head is recorded, so decidedEpoch could not be set. The finding will not deduct any points until it is."
+            );
+          }
+        }
+        if (data.serviceStatus == null && existing.serviceStatus == null) {
+          data.serviceStatus = await conductServiceStatus(id, existing.providerId);
+        }
+
+        // THE ARITHMETIC THE PAGE WILL PRINT. A published finding shows its own turnout against the
+        // quorum it had to clear, so publishing an outcome the vote does not support puts a visible
+        // contradiction on a public page. The operator is told before it goes out rather than left
+        // to find it there.
+        const votes = await prisma.providerFlagVote.findMany({
+          where: { caseId: id },
+          select: { memberEntityVoter: true, vote: true },
+        });
+        const selfVoters = await selfVotersForProvider(existing.providerId);
+        const counted = votes.filter((v) => !selfVoters.has(v.memberEntityVoter.toLowerCase()));
+        const quorum = Math.ceil((QUORUM_TURNOUT_BIPS / 10000) * (existing.memberCountAtOpen || 0));
+        const deny = counted.filter((v) => v.vote === "DENY").length;
+        const decisive = counted.filter((v) => v.vote === "DENY" || v.vote === "KEEP").length;
+        const needed = Math.ceil((DENY_MAJORITY_BIPS / 10000) * decisive);
+        if (counted.length < quorum) {
+          warnings.push(
+            `Only ${counted.length} of the ${quorum} votes needed for quorum have been cast, so the published finding will state that it did not reach quorum.`
+          );
+        } else if (!(deny > 0 && deny >= needed)) {
+          warnings.push(
+            `${deny} of ${decisive} decisive votes are for substantiation and ${needed} are needed, so the published finding will not be supported by its own vote.`
+          );
+        }
+        if (votes.length !== counted.length) {
+          warnings.push(
+            `${votes.length - counted.length} vote(s) from the subject's own entity are excluded: a member cannot vote on a case about their own listing.`
+          );
+        }
+      }
+
       const updated = await prisma.providerFlagCase.update({ where: { id }, data });
+
+      // THE DECISION, RECORDED. Publishing from here wrote only ADMIN_EDIT_CASE, so a case history
+      // showed that a field changed and never that the case had been decided. The tally writes one
+      // of these; so should this.
+      if (publishing) {
+        const st = (data.state as string | undefined) ?? existing.state;
+        const action =
+          st === "SUBSTANTIATED"
+            ? "CASE_SUBSTANTIATED"
+            : st === "NOT_SUBSTANTIATED"
+              ? "CASE_NOT_SUBSTANTIATED"
+              : st === "FAILED_QUORUM"
+                ? "CASE_FAILED_QUORUM"
+                : null;
+        if (action === "CASE_SUBSTANTIATED") {
+          await audit(id, "CASE_SUBSTANTIATED", actor, JSON.stringify({ byAdmin: true }));
+        } else if (action === "CASE_NOT_SUBSTANTIATED") {
+          await audit(id, "CASE_NOT_SUBSTANTIATED", actor, JSON.stringify({ byAdmin: true }));
+        } else if (action === "CASE_FAILED_QUORUM") {
+          await audit(id, "CASE_FAILED_QUORUM", actor, JSON.stringify({ byAdmin: true }));
+        }
+      }
       await audit(
         id,
         "ADMIN_EDIT_CASE",
@@ -320,7 +421,7 @@ export async function PATCH(req: NextRequest) {
       if ("publishedAt" in data || "state" in data || "providerId" in data) {
         await publishFeedToRepo().catch(() => {});
       }
-      return NextResponse.json({ ok: true, case: updated });
+      return NextResponse.json({ ok: true, case: updated, warnings });
     }
 
     case "initiation": {

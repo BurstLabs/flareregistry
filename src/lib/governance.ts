@@ -127,6 +127,42 @@ export function conductVisibleWhere(liveStates: string[], now: Date = new Date()
 }
 
 /** True for a terminal outcome, so a caller can branch without repeating the list. */
+/**
+ * The member-entity voters that ARE the provider a case is about.
+ *
+ * RECUSAL. Nothing stopped the subject of a conduct case, when they are themselves a Management
+ * Group member, from co-signing the case against their own listing and from voting on it. Both were
+ * observed on a live case. Substantiation turns on two thirds of the votes that take a side, so a
+ * self-interested vote can decide a close one, and a member ruling on their own conduct is a defect
+ * in the mechanism whether or not it changes the count.
+ *
+ * Matched through all FIVE role addresses in both directions, because a listing is filed under
+ * whichever role its owner claimed with, and a member signs with whichever role they hold. Matching
+ * on the voter alone would let the same operator through under a different address, which is the
+ * only interesting way to attack this.
+ */
+export async function selfVotersForProvider(providerId: string): Promise<Set<string>> {
+  const p = await prisma.provider.findUnique({
+    where: { id: providerId },
+    select: { addresses: { select: { address: true } } },
+  });
+  const addrs = (p?.addresses ?? []).map((a) => a.address.toLowerCase());
+  if (!addrs.length) return new Set();
+  const ents = await prisma.providerOnchain.findMany({
+    where: {
+      OR: [
+        { voter: { in: addrs } },
+        { delegationAddress: { in: addrs } },
+        { submitAddress: { in: addrs } },
+        { submitSignaturesAddress: { in: addrs } },
+        { signingPolicyAddress: { in: addrs } },
+      ],
+    },
+    select: { voter: true },
+  });
+  return new Set(ents.map((e) => e.voter.toLowerCase()));
+}
+
 export function isConductDecided(state: string): boolean {
   return (CONDUCT_DECIDED_STATES as readonly string[]).includes(state);
 }
