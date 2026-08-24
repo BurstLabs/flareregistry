@@ -965,9 +965,9 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3">
             <h2 className="text-lg font-semibold">
               {t("card.reputation")}
-              {/* The NETWORK SCORED, not a constant. A provider on both chains should not have to
-                  guess which operation the figure describes, and a Songbird-only one was being
-                  told "Flare" about a number that came from Songbird. */}
+              {/* The network the figure describes. Always Flare today, because the score is not
+                  published for Songbird, but derived rather than hardcoded so the label cannot
+                  silently claim the wrong chain if that ever changes. */}
               <span className="ml-2 text-sm font-normal text-faint">
                 {d.reputationNetwork === "songbird" ? "Songbird" : "Flare"}
               </span>

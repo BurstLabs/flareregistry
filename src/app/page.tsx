@@ -176,10 +176,14 @@ export default async function Home({
   );
   // A provider is matched through its entity, which is what the score is keyed by. metricsForProviders
   // already resolved that entity, so reuse it rather than repeating the five-role join.
+  // FLARE ONLY, matching the provider page. This looked the score up on the provider's OWN
+  // network, so a Songbird-only provider carried "17 - Needs attention" on its card while the page
+  // it linked to showed no score at all, because that page has always scored Flare and nothing
+  // else. A number visible exactly where it cannot be examined is the worst of the two.
   const scoreFor = (id: string) => {
     const m = metrics.get(id);
-    if (!m) return null;
-    return scoreByVoter.get(`${m.network}:${m.voter.toLowerCase()}`) ?? null;
+    if (!m || m.network !== "flare") return null;
+    return scoreByVoter.get(`flare:${m.voter.toLowerCase()}`) ?? null;
   };
   const { managementGroupByProvider } = await import("@/lib/management-group");
   const mgByProvider = await managementGroupByProvider();

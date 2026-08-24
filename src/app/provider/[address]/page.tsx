@@ -151,20 +151,13 @@ export default async function ProviderDetail({
   // Songbird, and the page showed the Songbird figure under an unlabelled heading. A Songbird-only
   // provider now gets no section at all, which is honest, rather than a number that reads as Flare.
   const { reputationFor } = await import("@/lib/reputation");
-  // FLARE WHERE THERE IS ONE, otherwise whatever chain this provider is actually on.
-  //
-  // This scored Flare and only Flare, so a Songbird-only provider got no reputation section at all
-  // while its DIRECTORY CARD showed a score, because the card looks the score up by the provider's
-  // own network. A reader following the card to the page found the number had vanished. Songbird
-  // scores are real and current: 65 of them at the same method version as Flare's.
-  //
-  // The heading carries the network, which is what the Flare-only restriction was originally for:
-  // the complaint it fixed was an UNLABELLED Songbird figure, not a Songbird figure.
-  const scoredEntity = flareEntity ?? entities[0] ?? null;
-  const reputation = scoredEntity
-    ? await reputationFor(scoredEntity.network, scoredEntity.voter)
-    : null;
-  const reputationNetwork = scoredEntity?.network ?? null;
+  // FLARE ONLY. The reputation score is a statement about Flare mainnet operation and is not
+  // published for Songbird, by decision rather than by omission. A Songbird-only provider gets no
+  // section at all, which is honest; what it must NOT get is a figure somewhere else, which is the
+  // bug this pairs with. See the directory, which now looks scores up on flare alone, and
+  // compute-scores, which no longer stores anything for Songbird.
+  const reputation = flareEntity ? await reputationFor("flare", flareEntity.voter) : null;
+  const reputationNetwork = flareEntity ? "flare" : null;
 
   const gov = (await (await import("@/lib/governance")).governanceByProvider()).get(p.id) ?? null;
   // Published conduct findings, entirely separate from the new-provider case record above. A
