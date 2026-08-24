@@ -132,6 +132,8 @@ export interface DetailData {
   } | null;
   // Composite reputation over Flare's own measurements. Weights are published and versioned; scoring
   // is absolute rather than relative, so no provider's figure moves when a competitor's does.
+  /** Which chain the reputation figure describes, so the heading cannot claim the wrong one. */
+  reputationNetwork: string | null;
   reputation:
     | { departed: true; network: string; epochsAbsent: number; lastEpochSeen: number }
     | {
@@ -963,7 +965,12 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3">
             <h2 className="text-lg font-semibold">
               {t("card.reputation")}
-              <span className="ml-2 text-sm font-normal text-faint">Flare</span>
+              {/* The NETWORK SCORED, not a constant. A provider on both chains should not have to
+                  guess which operation the figure describes, and a Songbird-only one was being
+                  told "Flare" about a number that came from Songbird. */}
+              <span className="ml-2 text-sm font-normal text-faint">
+                {d.reputationNetwork === "songbird" ? "Songbird" : "Flare"}
+              </span>
             </h2>
             <Link href="/reputation" className="text-xs text-beacon hover:underline">
               {t("rep.howCalculated")}
