@@ -570,7 +570,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
             {/* A chain-only listing never auto-lists, so it gets the truth instead of a date. */}
             {d.onchainOnly && !d.verified && (
               <li className="flex items-start gap-2">
-                <span className="text-muted">&#8212;</span>
+                <span className="text-muted">&#8226;</span>
                 <span className="text-muted">{t("detail.onchainNotListed")}</span>
               </li>
             )}
