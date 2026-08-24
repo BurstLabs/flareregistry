@@ -840,7 +840,11 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
   // and no schedule, so an empty "0 of N, quorum not met" tally would imply a vote that has not
   // started. A withdrawn case never voted, so it has no tally.
   const showTally = !isWithdrawn && (v.state === "OPEN_VOTING" || (decided && !isWithdrawn));
-  const quorumMet = v.votesCast >= v.turnoutFloor;
+  // BOTH FLOORS. Turnout alone no longer decides a case: the votes that take a side must clear the
+  // same bar, so a forecast built on turnout alone would have promised a verdict the tally will not
+  // deliver, on the very page the parties are watching.
+  const quorumMet = v.votesCast >= v.turnoutFloor && v.decisiveVotes >= v.turnoutFloor;
+  const turnoutMet = v.votesCast >= v.turnoutFloor;
   const denyMet = v.denyVotes >= v.denyNeeded;
   // An appeal is upheld only by an affirmative KEEP supermajority (same 67%-of-decisive bar as deny),
   // and at least one keep, so an all-abstain or split vote does NOT lift the suspension.
@@ -1104,7 +1108,9 @@ export function GovernanceCaseClient({ view: v }: { view: CaseView }) {
                     ? t("gov.case.provisionalDeny")
                     : quorumMet && !denyMet
                       ? t("gov.case.provisionalClear")
-                      : t("gov.case.provisionalQuorum")}
+                      : turnoutMet
+                        ? t("gov.case.provisionalUndecided")
+                        : t("gov.case.provisionalQuorum")}
               </p>
               {!quorumMet && (
                 <p className="mt-1 text-xs text-amber-600 dark:text-amber-300">
