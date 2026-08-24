@@ -9,6 +9,7 @@ import {
   CONDUCT_PENDING_EXPIRY_DAYS,
   CONDUCT_CO_INITIATORS_REQUIRED,
   NEW_PROVIDER_WINDOW_DAYS,
+  selfVotersForProvider,
 } from "@/lib/governance";
 
 export const dynamic = "force-dynamic";
@@ -156,7 +157,19 @@ export async function POST(req: NextRequest) {
 
     for (const c of toTally) {
       // Only count votes from CURRENT members (dedup is already enforced per member entity).
-      const validVotes = c.votes.filter((v) => members.memberAddresses.has(v.memberEntityVoter));
+      //
+      // AND NEVER THE SUBJECT'S OWN. The member routes now refuse a self-vote outright, but the
+      // admin panel is deliberately unrestricted, so a self-vote can still exist on a case. The
+      // recusal rule belongs to the mechanism rather than to one entry point: a vote that must not
+      // count must not count however it was entered, and enforcing it here is what makes that true
+      // for rows that predate the guard.
+      const selfVoters = await selfVotersForProvider(c.providerId);
+      const validVotes = c.votes.filter(
+        (v) =>
+          members.memberAddresses.has(v.memberEntityVoter) &&
+          !selfVoters.has(v.memberEntityVoter.toLowerCase())
+      );
+      const recused = c.votes.filter((v) => selfVoters.has(v.memberEntityVoter.toLowerCase())).length;
       const votesCast = validVotes.length; // all present members, incl. abstentions (for quorum)
       const denyVotes = validVotes.filter((v) => v.vote === "DENY").length;
       const keepVotes = validVotes.filter((v) => v.vote === "KEEP").length;
@@ -247,6 +260,7 @@ export async function POST(req: NextRequest) {
         // says how it was decided.
         if (isConduct) {
           const detail = JSON.stringify({
+            recused,
             turnout: votesCast,
             members: members.memberCount,
             quorum: turnoutFloor,

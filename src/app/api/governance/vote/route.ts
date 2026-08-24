@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { verifyChallenge } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { isClean } from "@/lib/content-filter";
-import { loadMembers, memberVoterFor, isVotingOpen } from "@/lib/governance";
+import { loadMembers, memberVoterFor, isVotingOpen, selfVotersForProvider } from "@/lib/governance";
 import { apiError } from "@/lib/api-error";
 
 // POST /api/governance/vote
@@ -59,6 +59,18 @@ export async function POST(req: NextRequest) {
     return apiError(
       "NOT_A_MEMBER",
       "the signing address is not a current Management Group member",
+      403
+    );
+  }
+
+  // RECUSAL. A member cannot vote on a case about their own listing. The supermajority is measured
+  // against the votes that take a side, so on a thin turnout a single self-interested vote can
+  // decide the outcome; and a member ruling on their own conduct is wrong even when it cannot.
+  const selfVoters = await selfVotersForProvider(theCase.providerId);
+  if (selfVoters.has(memberVoter)) {
+    return apiError(
+      "SELF_CASE",
+      "a member cannot vote on a case about their own listing",
       403
     );
   }

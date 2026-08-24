@@ -116,3 +116,30 @@ export async function notifyConductOutcome(
       .catch(() => {});
   }
 }
+
+/**
+ * WHAT THE RECORD CAN HONESTLY SAY ABOUT SERVICE, computed the same way for every caller.
+ *
+ * A published finding states which of four things happened, and the distinction matters: silence
+ * from a provider who was asked and declined is not silence from one who was never reachable. The
+ * tally worked this out inline, so publishing by hand from the admin panel skipped it entirely and
+ * produced findings reading "Notification status not recorded" about providers who had in fact been
+ * served and had replied.
+ */
+export async function conductServiceStatus(caseId: string, providerId: string): Promise<string> {
+  const [provider, defense, audit] = await Promise.all([
+    prisma.provider.findUnique({
+      where: { id: providerId },
+      select: { addresses: { select: { verified: true } } },
+    }),
+    prisma.providerFlagDefense.findUnique({ where: { caseId }, select: { id: true } }),
+    prisma.providerCaseAudit.findMany({
+      where: { caseId, action: { in: ["NOTICE_EMAILED", "SUBJECT_VIEWED"] } },
+      select: { action: true },
+    }),
+  ]);
+  const claimed = (provider?.addresses ?? []).some((a) => a.verified);
+  if (!claimed) return "UNCLAIMED_NOT_SERVED";
+  if (defense) return "SERVED_DEFENDED";
+  return audit.length > 0 ? "SERVED_NO_DEFENCE" : "NOTICE_UNDELIVERED";
+}

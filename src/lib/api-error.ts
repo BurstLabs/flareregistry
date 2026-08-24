@@ -12,6 +12,7 @@ export type ApiErrorCode =
   // generic
   | "NOT_AUTHENTICATED"
   | "NOT_A_MEMBER"
+  | "SELF_CASE"
   | "MEMBERSHIP_UNVERIFIED"
   | "CASE_NOT_FOUND"
   // content validation
@@ -61,6 +62,7 @@ export type ApiErrorCode =
 export const API_ERROR_I18N: Record<ApiErrorCode, string> = {
   NOT_AUTHENTICATED: "apiErr.notAuthenticated",
   NOT_A_MEMBER: "apiErr.notAMember",
+  SELF_CASE: "apiErr.selfCase",
   MEMBERSHIP_UNVERIFIED: "apiErr.membershipUnverified",
   CASE_NOT_FOUND: "apiErr.caseNotFound",
   GROUNDS_LENGTH: "apiErr.groundsLength",

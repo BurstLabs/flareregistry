@@ -8,6 +8,7 @@ import {
   memberVoterFor,
   conductDeadlines,
   CONDUCT_CO_INITIATORS_REQUIRED,
+  selfVotersForProvider,
 } from "@/lib/governance";
 import { apiError } from "@/lib/api-error";
 import { validateEvidence, type CleanEvidence } from "@/lib/conduct-evidence";
@@ -116,6 +117,18 @@ export async function POST(req: NextRequest) {
   const memberVoter = memberVoterFor(verified.address, members.voterByAddress);
   if (!memberVoter) {
     return apiError("NOT_A_MEMBER", "the signing address is not a current Management Group member", 403);
+  }
+
+  // RECUSAL. A member cannot put a case, or add their signature to one, about their own listing.
+  // Each signature counts toward the four that serve notice and start the clock, so without this a
+  // provider could contribute to the quorum of accusers against itself.
+  const selfVoters = await selfVotersForProvider(providerId);
+  if (selfVoters.has(memberVoter)) {
+    return apiError(
+      "SELF_CASE",
+      "a member cannot raise or co-initiate a conduct case about their own listing",
+      403
+    );
   }
 
   const provider = await prisma.provider.findUnique({
