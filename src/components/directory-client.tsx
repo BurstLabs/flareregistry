@@ -589,6 +589,14 @@ export function DirectoryClient({
                       )}
                     </summary>
                     <ul className="mt-2 space-y-1">
+                      {/* A chain-only listing never auto-lists, so it gets the truth rather than a
+                          date. Mirrors the provider detail page. */}
+                      {p.onchainOnly && !p.verified && (
+                        <li className="flex items-start gap-2">
+                          <span className="text-muted">&#8226;</span>
+                          <span className="text-muted">{t("detail.onchainNotListed")}</span>
+                        </li>
+                      )}
                       {p.heldUntil && (
                         <li className="flex items-start gap-2">
                           <span className="text-amber-500 dark:text-amber-400">⏳</span>

@@ -60,6 +60,7 @@ export default async function Home({
   const now = new Date();
   // The hold anchor, not the row date; see holdAnchor in lib/governance.
   const createdById = new Map(all.map((p) => [p.id, holdAnchor(p)]));
+  const sourceById = new Map(all.map((p) => [p.id, p.source]));
   // The claim clock, kept beside the entity clock; a provider is held until both have run.
   const claimedById = new Map(all.map((p) => [p.id, claimAnchor(p)]));
   // What the listing was before it was claimed; only a chain-only registration serves a window.
@@ -90,6 +91,9 @@ export default async function Home({
     const cl = claimedById.get(id) ?? null;
     const byEntity = !!c && isHeldNewProvider(c, now);
     const byClaim = isHeldNewClaim(cl, claimSrcById.get(id) ?? null, now);
+    // NOT FOR A CHAIN-ONLY LISTING, which has listed hardcoded false: the clock running out
+    // changes nothing, so naming a date is a promise nothing will keep. Matches the detail page.
+    if (sourceById.get(id) === "onchain") return null;
     if (!c || !meetsCriteria || liveCase || (!byEntity && !byClaim)) return null;
     // The later of the two clocks, matching provider/[address]/page.tsx exactly.
     return new Date(
