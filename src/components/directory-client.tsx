@@ -46,6 +46,8 @@ export interface CardProvider {
   roles: { label: string; address: string }[];
   /** Precomputed reputation, or null when none is stored under the current scoring version. */
   reputation: { score: number; band: string } | null;
+  /** Why there is no figure, when there is none: not scored yet, or a network we do not score. */
+  reputationNote: "immature" | "offNetwork" | null;
 }
 
 export function DirectoryClient({
@@ -488,6 +490,24 @@ export function DirectoryClient({
                   </Link>
                 )}
 
+                {/* SAY WHY, rather than leaving a gap. A missing score meant Songbird, or too
+                    little history, or departed, and the card rendered all three identically as
+                    nothing at all. The provider page already distinguishes them. */}
+                {!p.reputation && p.reputationNote && (
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className="rounded-md bg-black/10 px-2 py-1 text-xs font-medium text-muted dark:bg-white/10">
+                      {t(p.reputationNote === "immature" ? "card.repNotScored" : "card.repFlareOnly")}
+                    </span>
+                    <InfoTip
+                      label={<span className="text-xs text-muted">{t("card.reputation")}</span>}
+                      tip={t(
+                        p.reputationNote === "immature"
+                          ? "card.repNotScoredTip"
+                          : "card.repFlareOnlyTip"
+                      )}
+                    />
+                  </div>
+                )}
                 {p.reputation && (
                   <Link
                     href={`/provider/${p.detailAddress}#reputation`}

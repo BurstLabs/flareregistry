@@ -452,9 +452,13 @@ model ProviderScore {
   /// Entity identity address, matching ProviderOnchain.voter.
   voter   String
 
-  score     Float
-  baseScore Float
-  band      String
+  // NULL when the entity is known but not yet scoreable: too little history for the figure to mean
+  // anything. Nullable rather than absent so a reader can tell "not scored yet" apart from
+  // "departed" and from "we do not score this network", which an empty space conflates. Nullable
+  // rather than flagged so it is structurally impossible to render a number that should not exist.
+  score     Float?
+  baseScore Float?
+  band      String?
   /// REPUTATION_VERSION at the time of computation.
   version   String
 
