@@ -286,7 +286,11 @@ export default async function ProviderDetail({
     // New-provider hold: qualifying providers still inside their 30-day window (or with a live case)
     // are not shown as Qualified/listed yet (same effect as listed:false), matching the feed and the
     // directory. Not MG-gated; auto-lists once the window elapses and no case is open.
-    qualified: meetsCriteria && !held,
+    // NOT FOR AN UNCLAIMED CHAIN-ONLY LISTING. The three checks behind this are real and still
+    // shown, but `listed` is hardcoded false for this tier, so badging it Qualified asserts an
+    // eligibility it can never act on and contradicts the On-chain only badge beside it, whose own
+    // tooltip says it stays out of the listed feed. Nine providers carried both badges at once.
+    qualified: meetsCriteria && !held && p.source !== "onchain",
     heldUntil,
     network: metrics?.network ?? null,
     votePower: formatWeiCompact(metrics?.wNatWeight ?? null),
