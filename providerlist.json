@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-24T20:21:47.499Z",
+  "timestamp": "2026-08-24T20:21:50.597Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -46,60 +46,6 @@
           "lastSubmittedEpoch": 423,
           "epochsSinceSubmit": 3,
           "epochsUntilRevoke": 14,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0x3fcb0b871a82ba8d329b2f1d6e35b3535bd019ef",
-      "description": "",
-      "url": "",
-      "address": "0x457464F9390Ebc5217cfeFcBCEd3f1562A0379B2",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": true,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "27357487122877058825337282",
-        "votePowerCapped": "27277251502675821250740224",
-        "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "7249904242709630823955",
-        "feeRewardLastEpoch": "3137507159138031286536",
-        "entity": {
-          "identity": "0x3Fcb0b871A82bA8D329B2F1d6E35B3535bd019Ef",
-          "submit": "0xBdCb67A617D97B628878dBEAABdFfE0Cc9023661",
-          "submitSignatures": "0xCc3789C9E555350529fDe7ac40087b5283280623",
-          "signingPolicy": "0x909652A53Ad7aA3B8EEbED4B95801Ee95BC04795",
-          "delegation": "0x457464F9390Ebc5217cfeFcBCEd3f1562A0379B2"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-Eb7EMwgvoKDq1Wgk6EapXxqVeHiCeR14R",
-            "feePercent": 20,
-            "uptimePercent": 99.989,
-            "connected": true,
-            "weight": "4000000000000000",
-            "selfBond": "4000000000000000",
-            "delegatedWeight": "0",
-            "delegatorCount": 0
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:19.147Z",
-          "lastSubmittedEpoch": 426,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         }
       }
@@ -2916,6 +2862,60 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.764Z",
+          "lastSubmittedEpoch": 426,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Flare Strategies",
+      "description": "Independent, self-hosted FTSO/FDC signal provider and validator on Flare. All infrastructure runs on our own bare-metal nodes (Flare, Songbird, Bitcoin, Ethereum, XRP, Dogecoin) — no cloud, no third-party RPC. FTSO submissions use the vanilla Flare Foundation value provider; FDC attestations are served by our own verifier stack across all supported chains. Eligible since reward epoch 388 (April 2026), 4M FLR self-bond, 20% fee, operated as a long-term compounding infrastructure business.",
+      "url": "https://flarestrategies.github.io",
+      "address": "0x457464F9390Ebc5217cfeFcBCEd3f1562A0379B2",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "27357487122877058825337282",
+        "votePowerCapped": "27277251502675821250740224",
+        "feedCount": 62,
+        "lastEpoch": 426,
+        "delegatorRewardLastEpoch": "7249904242709630823955",
+        "feeRewardLastEpoch": "3137507159138031286536",
+        "entity": {
+          "identity": "0x3Fcb0b871A82bA8D329B2F1d6E35B3535bd019Ef",
+          "submit": "0xBdCb67A617D97B628878dBEAABdFfE0Cc9023661",
+          "submitSignatures": "0xCc3789C9E555350529fDe7ac40087b5283280623",
+          "signingPolicy": "0x909652A53Ad7aA3B8EEbED4B95801Ee95BC04795",
+          "delegation": "0x457464F9390Ebc5217cfeFcBCEd3f1562A0379B2"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-Eb7EMwgvoKDq1Wgk6EapXxqVeHiCeR14R",
+            "feePercent": 20,
+            "uptimePercent": 99.989,
+            "connected": true,
+            "weight": "4000000000000000",
+            "selfBond": "4000000000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": null,
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:19.147Z",
           "lastSubmittedEpoch": 426,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
