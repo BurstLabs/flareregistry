@@ -7,7 +7,9 @@ import Link from "next/link";
 import { useApp } from "@/components/providers";
 import { useSignChallenge, useWalletSign, useEnsureSession } from "@/lib/useWalletSign";
 import { apiErrorMessage } from "@/lib/i18n";
-import { CONDUCT_CO_INITIATORS_REQUIRED, CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
+import {
+  isConductDecided,
+  CONDUCT_OUTCOME_VISIBLE_DAYS, CONDUCT_CO_INITIATORS_REQUIRED, CONDUCT_PENDING_EXPIRY_DAYS } from "@/lib/governance";
 import { validateEvidence } from "@/lib/conduct-evidence";
 import type { LiveConductView } from "@/lib/governance";
 import { SubjectSection, type SubjectHalf } from "./conduct-subject";
@@ -1969,17 +1971,23 @@ function PendingConductCase({
   // STILL GATHERING SIGNATURES, versus SERVED AND RUNNING. The two need different headings and
   // different actions: one asks for a signature, the other asks for a vote.
   const isPending = p.state === "PENDING";
+  // A DECIDED CASE STILL SHOWS, for a window, to the two sides that took part. Both panels used to
+  // key on the live states alone, so a case vanished the moment the tally ran and neither the
+  // accused nor the members who signed it were ever told how it ended.
+  const decided = isConductDecided(p.state);
   return (
     <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
       <p className="text-xs font-medium text-amber-600 dark:text-amber-300">
         {isPending
           ? t("gov.conduct.pending.h", { n: p.signatures, required: p.required })
           : t(`gov.conduct.live.${p.state}`, {
-              date: (p.state === "NOTICE"
-                ? p.noticeEndsAt ?? ""
-                : p.state === "OPEN_DISCUSSION"
-                  ? p.discussionEndsAt
-                  : p.votingEndsAt
+              date: (isConductDecided(p.state)
+                ? p.decidedAt ?? ""
+                : p.state === "NOTICE"
+                  ? p.noticeEndsAt ?? ""
+                  : p.state === "OPEN_DISCUSSION"
+                    ? p.discussionEndsAt
+                    : p.votingEndsAt
               ).slice(0, 10),
             })}
       </p>
@@ -2290,7 +2298,21 @@ function PendingConductCase({
       {/* THE VOTE. Without this the mechanism could be started and could never finish: a case ran
           its clock to a tally that counted nothing, failed quorum, and published nothing, because
           there was nowhere to cast a vote. The sealed case page 404s for members too. */}
-      {!isPending && (
+      {!isPending && decided && (
+        <div className="mt-3 rounded-lg border border-themed p-3">
+          <p className="text-[10px] uppercase tracking-wide text-faint">
+            {t("gov.conduct.live.voteH")}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            {t("gov.conduct.voteClosed", {
+              sub: p.votes.deny,
+              not: p.votes.keep,
+              abs: p.votes.abstain,
+            })}
+          </p>
+        </div>
+      )}
+      {!isPending && !decided && (
         <ConductVote
           caseId={p.caseId}
           votingOpen={p.votingOpen}
@@ -2305,6 +2327,12 @@ function PendingConductCase({
           and their schedule belong in the same card as the accusation, not in a second panel that
           repeats it. */}
       {subject && <SubjectSection subject={subject} onSaved={() => void check(false)} />}
+
+      {decided && (
+        <p className="mt-3 rounded-lg border border-themed/60 p-2 text-[11px] text-faint">
+          {t("gov.conduct.closedNotice", { days: CONDUCT_OUTCOME_VISIBLE_DAYS })}
+        </p>
+      )}
 
       {editing === null && err && <p className="mt-2 text-xs text-flare">{err}</p>}
 

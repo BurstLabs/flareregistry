@@ -275,6 +275,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
           noticeEndsAt: subjectCase.noticeEndsAt,
           discussionEndsAt: subjectCase.discussionEndsAt,
           votingEndsAt: subjectCase.votingEndsAt,
+          decidedAt: subjectCase.decidedAt,
           defence: subjectCase.defence,
         }
       : null;

@@ -60,3 +60,59 @@ export async function serveConductNotice(caseId: string, providerId: string): Pr
       .catch(() => {});
   }
 }
+
+/**
+ * NOTIFY THE SUBJECT THAT THEIR CASE HAS BEEN DECIDED.
+ *
+ * The mirror of serveConductNotice, and it exists for the same reason: a deadline nobody was told
+ * about is not a deadline, and an outcome nobody was told about is not an outcome. The tally is the
+ * only place that knows a case has just ended, so it is the only place this can be sent from.
+ *
+ * Best-effort and outside the deciding transaction, so a mail failure can never leave a case
+ * un-decided. Every path writes an audit row, so the record can later say what was actually sent
+ * rather than what was intended.
+ */
+export async function notifyConductOutcome(
+  caseId: string,
+  providerId: string,
+  outcome: "SUBSTANTIATED" | "NOT_SUBSTANTIATED" | "FAILED_QUORUM"
+): Promise<void> {
+  try {
+    const p = await prisma.provider.findUnique({
+      where: { id: providerId },
+      select: { name: true, noticeEmail: true, addresses: { select: { address: true }, take: 1 } },
+    });
+    if (p?.noticeEmail) {
+      const { sendConductOutcome } = await import("@/lib/mailer");
+      await sendConductOutcome({
+        to: p.noticeEmail,
+        providerName: p.name,
+        detailUrl: `${process.env.PUBLIC_BASE_URL ?? "https://flareregistry.com"}/provider/${p.addresses[0]?.address ?? ""}`,
+        outcome,
+      });
+      await prisma.providerCaseAudit.create({
+        data: { caseId, action: "OUTCOME_EMAILED", actor: "system" },
+      });
+    } else {
+      await prisma.providerCaseAudit.create({
+        data: {
+          caseId,
+          action: "OUTCOME_NO_EMAIL",
+          actor: "system",
+          detail: "no noticeEmail on the listing; the outcome is on the provider page when signed in",
+        },
+      });
+    }
+  } catch (e) {
+    await prisma.providerCaseAudit
+      .create({
+        data: {
+          caseId,
+          action: "OUTCOME_EMAIL_FAILED",
+          actor: "system",
+          detail: e instanceof Error ? e.message.slice(0, 200) : "unknown",
+        },
+      })
+      .catch(() => {});
+  }
+}

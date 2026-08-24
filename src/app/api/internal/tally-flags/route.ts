@@ -271,6 +271,12 @@ export async function POST(req: NextRequest) {
       });
       transitions.push({ caseId: c.id, to: decided });
 
+      // THE SUBJECT IS TOLD. Outside the transaction, so a mail failure cannot undecide a case.
+      if (isConduct) {
+        const { notifyConductOutcome } = await import("@/lib/conduct-open");
+        await notifyConductOutcome(c.id, c.providerId, conductState).catch(() => {});
+      }
+
       // Notify watchers of the verdict, then shred their emails: the case is now decided, so the
       // provider has left review (denied -> permanently off the feed; cleared -> will list), and we
       // retain subscriber emails only during review. Best-effort; never fail the tally over email.
