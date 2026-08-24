@@ -55,12 +55,31 @@ export async function POST(req: NextRequest) {
       // and a card advertised "17 - Needs attention" while the page it linked to said the provider
       // could not be scored. Of the two, the page is right, and a judgement drawn from too little
       // history is exactly the kind that should not be published about a named business.
-      if (!rep || "departed" in rep || !rep.mature) {
+      if (!rep || "departed" in rep) {
         await prisma.providerScore.deleteMany({
           where: { network: e.network, voter: e.voter.toLowerCase() },
         });
-        if (rep && !("departed" in rep)) unscored++;
-        else departed++;
+        departed++;
+        continue;
+      }
+      // KNOWN BUT NOT YET SCOREABLE. The row stays and the figure does not, so a reader can say
+      // "not scored yet" rather than showing a blank that means departed, off-network or immature
+      // all at once. Deleting the row lost that distinction; storing the number leaked it onto a
+      // card while the provider page said the provider could not be scored.
+      if (!rep.mature) {
+        const empty = {
+          score: null,
+          baseScore: null,
+          band: null,
+          version: REPUTATION_VERSION,
+          computedAt: new Date(),
+        };
+        await prisma.providerScore.upsert({
+          where: { network_voter: { network: e.network, voter: e.voter.toLowerCase() } },
+          create: { network: e.network, voter: e.voter.toLowerCase(), ...empty },
+          update: empty,
+        });
+        unscored++;
         continue;
       }
       const data = {

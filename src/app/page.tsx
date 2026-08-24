@@ -214,9 +214,19 @@ export default async function Home({
       verified: p.source === "submitted",
       onchainOnly: isOnchainOnly(p),
       roles: m?.roles ?? [],
+      // WHY THERE IS NO FIGURE, when there is none. An empty space meant Songbird, or too little
+      // history, or departed, and a reader could not tell which.
+      reputationNote: (() => {
+        const m = metrics.get(p.id);
+        if (!m) return null;
+        if (m.network !== "flare") return "offNetwork" as const;
+        const r = scoreByVoter.get(`flare:${m.voter.toLowerCase()}`);
+        return r && r.score == null ? ("immature" as const) : null;
+      })(),
       reputation: (() => {
         const r = scoreFor(p.id);
-        return r ? { score: r.score, band: r.band } : null;
+        // An immature row carries no figure; the note above says so instead.
+        return r && r.score != null && r.band != null ? { score: r.score, band: r.band } : null;
       })(),
       governance: govByProvider.get(p.id)
         ? {
