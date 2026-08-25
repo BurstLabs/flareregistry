@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-25T20:47:02.735Z",
+  "timestamp": "2026-08-25T21:15:18.620Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -97,6 +97,90 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.478Z",
+          "lastSubmittedEpoch": 426,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "0x7060082318372a2cc4917ba1ce7b6481371f7e00",
+      "description": "",
+      "url": "",
+      "address": "0x7060082318372a2CC4917BA1CE7b6481371f7E00",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "0",
+        "votePowerCapped": "0",
+        "feedCount": 62,
+        "lastEpoch": 426,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "39937390681276106695365",
+        "entity": {
+          "identity": "0xb70c6987626A96df66C9068bd10b84Ecb8e949df",
+          "submit": "0x56c9437bbA914c0EEe7e6d609f125dfB5ab4DC71",
+          "submitSignatures": "0x129D5223312177fF45CE0fB1e905E6B5dC860b04",
+          "signingPolicy": "0x93476993778f7d727e59813ef9aafC52a03f70D6",
+          "delegation": "0x7060082318372a2CC4917BA1CE7b6481371f7E00"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-QcDi1guqnomkd4zX9wZGqPpyUjZVVbY8",
+            "feePercent": 20,
+            "uptimePercent": 99.8892,
+            "connected": true,
+            "weight": "300000000000000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "280000000000000000",
+            "delegatorCount": 44
+          },
+          {
+            "nodeId": "NodeID-K8GPcA8hRBYHBUE62TfJXVvc9XfrbiXMq",
+            "feePercent": 20,
+            "uptimePercent": 99.8591,
+            "connected": true,
+            "weight": "138992282220000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "118992282220000000",
+            "delegatorCount": 77
+          },
+          {
+            "nodeId": "NodeID-Q3Mp12xwbqm9Byj46mxawQtKaETY1vJs",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          },
+          {
+            "nodeId": "NodeID-5XbNmzyxPNk3HNJj3iqv6NcBcqr6SzBaB",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-08-24T16:18:24.432Z",
           "lastSubmittedEpoch": 426,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
