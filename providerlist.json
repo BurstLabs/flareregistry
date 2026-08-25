@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-25T21:15:18.620Z",
+  "timestamp": "2026-08-25T21:15:27.830Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -6490,6 +6490,49 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.253Z",
+          "lastSubmittedEpoch": 426,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "0xc4cceca39bdca9428b482aff538ad68558597b79",
+      "description": "",
+      "url": "",
+      "address": "0xc4cCeca39BDCA9428b482AFf538Ad68558597b79",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "4176327161079343577817627",
+        "votePowerCapped": "4182244362967843671638016",
+        "feedCount": 63,
+        "lastEpoch": 426,
+        "delegatorRewardLastEpoch": "7944483773541925782441",
+        "feeRewardLastEpoch": "1986120943385481442758",
+        "entity": {
+          "identity": "0xdd8fE872D02942dBc3f5a2ECC62c78331430a90F",
+          "submit": "0x4ee74B4bd478621F51Db5294D00729376B8208ba",
+          "submitSignatures": "0x04572aFB00b83bAbDd230e95b52c5706c39F865e",
+          "signingPolicy": "0x57Bc972bf2e5cc455E0D7aB0EB5d3d3cF004f10B",
+          "delegation": "0xc4cCeca39BDCA9428b482AFf538Ad68558597b79"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:20.061Z",
           "lastSubmittedEpoch": 426,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
