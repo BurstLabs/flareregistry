@@ -60,6 +60,20 @@ for b in blocks(md):
             t += "<tr>" + "".join(f"<td>{inline(c)}</td>" for c in cells) + "</tr>"
         parts.append(t + "</tbody></table>")
         continue
+    m_img = re.match(r"^!\[(.*?)\]\((.+?)\)\s*$", first)
+    if m_img and len(bl) == 1:
+        alt, src = m_img.group(1), m_img.group(2)
+        path = src if os.path.isabs(src) else os.path.join(os.path.dirname(os.path.abspath(SRC)), src)
+        if not os.path.exists(path):
+            sys.exit(f"image not found: {src} (looked in {path})")
+        ext = os.path.splitext(path)[1].lower().lstrip(".") or "png"
+        mime = {"jpg": "jpeg", "svg": "svg+xml"}.get(ext, ext)
+        b64 = base64.b64encode(open(path, "rb").read()).decode()
+        cap = f"<figcaption>{inline(alt)}</figcaption>" if alt.strip() else ""
+        parts.append(
+            f'<figure><img src="data:image/{mime};base64,{b64}" alt="{html.escape(alt)}">{cap}</figure>'
+        )
+        continue
     if first.startswith("### "):
         parts.append(f"<h3>{inline(first[4:])}</h3>"); continue
     if first.startswith("## "):
@@ -98,6 +112,10 @@ body = "\n".join(parts)
 css = """
 @page { margin: 20mm 18mm; }
 body{font-family:'Helvetica Neue',Arial,sans-serif;color:#222;line-height:1.45;font-size:13.5px}
+/* Figures are kept off a page break: a chart split across two pages is worse than a chart moved. */
+figure{margin:18px 0;page-break-inside:avoid;break-inside:avoid;text-align:center}
+figure img{max-width:100%;height:auto;border:1px solid #e2e2e2;border-radius:6px}
+figcaption{margin-top:7px;font-size:11.5px;color:#555;text-align:left;line-height:1.4}
 h1{font-size:26px;color:#1a1a1a;margin:0 0 4px;font-weight:700;letter-spacing:-.3px;line-height:1.2}
 h2{font-size:17.5px;margin:26px 0 9px;color:#1a1a1a;font-weight:700;border-left:4px solid #f5a623;padding-left:10px;line-height:1.25;break-after:avoid}
 h3{font-size:14px;margin:18px 0 5px;color:#444;font-weight:700;line-height:1.3;break-after:avoid}
