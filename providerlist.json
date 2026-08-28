@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-08-28T09:47:03.029Z",
+  "timestamp": "2026-08-28T10:20:05.535Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -44,8 +44,8 @@
         "qualification": {
           "qualifiedSince": "2026-07-13T16:18:09.642Z",
           "lastSubmittedEpoch": 423,
-          "epochsSinceSubmit": 3,
-          "epochsUntilRevoke": 14,
+          "epochsSinceSubmit": 4,
+          "epochsUntilRevoke": 13,
           "revokeAfterEpochs": 17
         }
       }
@@ -65,12 +65,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "55255334772000241875913072",
+        "votePower": "55255566266178809635825777",
         "votePowerCapped": "48515150664390066726502400",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "13682344202562124647712",
-        "feeRewardLastEpoch": "4658687698112173468584",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "13281594242143971883670",
+        "feeRewardLastEpoch": "4522231709631187142420",
         "entity": {
           "identity": "0x5dF7D653aB5F80560B1494D17F6DaeF7Dee5f7BE",
           "submit": "0x92A74E5C5A4c42dfc6B531244A29c68b7da57196",
@@ -97,7 +97,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.478Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -122,9 +122,9 @@
         "votePower": "0",
         "votePowerCapped": "0",
         "feedCount": 62,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
-        "feeRewardLastEpoch": "39937390681276106695365",
+        "feeRewardLastEpoch": "40356260459554356547440",
         "entity": {
           "identity": "0xb70c6987626A96df66C9068bd10b84Ecb8e949df",
           "submit": "0x56c9437bbA914c0EEe7e6d609f125dfB5ab4DC71",
@@ -181,7 +181,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-08-24T16:18:24.432Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -206,7 +206,7 @@
         "votePower": "200000000000000000000",
         "votePowerCapped": "200000000000000000000",
         "feedCount": 62,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -235,7 +235,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-08-10T16:18:24.348Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -257,12 +257,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "35677357614896390573307600",
+        "votePower": "35557771580928526357635325",
         "votePowerCapped": "35767917030029785919651840",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "2830355811744678980070",
-        "feeRewardLastEpoch": "119705575261475743727659",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "2503417404665547920847",
+        "feeRewardLastEpoch": "106232194004718927734235",
         "entity": {
           "identity": "0x7e74D30eF4dd811830118645633a9471f6cc63D3",
           "submit": "0x68A8270ca20Ce92b1870554e2c3E58736890Efb6",
@@ -319,7 +319,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-10T10:18:14.105Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -341,12 +341,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "138190173537641589307219184",
+        "votePower": "137927966032437303307888089",
         "votePowerCapped": "137614578162767513572605952",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "12731222802550432140382",
-        "feeRewardLastEpoch": "104523912121571619117570",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "12270938386874008527065",
+        "feeRewardLastEpoch": "100930645316267577773198",
         "entity": {
           "identity": "0x802c64FCD19D8DBA98Ae96302C0C9fAa16952Cd5",
           "submit": "0x6e6Bca42a3A82AdaD355703Abc201A6619AD0a58",
@@ -403,7 +403,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-24T10:18:50.063Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -428,9 +428,9 @@
         "votePower": "2457316897258754896817936",
         "votePowerCapped": "5883405508297506714288128",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "871934690081123247664",
-        "feeRewardLastEpoch": "1548603704251543381072",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "870859166731534438807",
+        "feeRewardLastEpoch": "1546693515951743890418",
         "entity": {
           "identity": "0x882EE9cebe3d7B38eEbD640b89DE01B326351679",
           "submit": "0xb0A1797E150EE76F5F2D2dE951544C4d592594b7",
@@ -457,7 +457,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-10T10:18:14.019Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -501,8 +501,8 @@
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.876Z",
           "lastSubmittedEpoch": 426,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
+          "epochsSinceSubmit": 1,
+          "epochsUntilRevoke": 16,
           "revokeAfterEpochs": 17
         }
       }
@@ -522,12 +522,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "13889686877974130621230118",
+        "votePower": "13727978100267133080786941",
         "votePowerCapped": "17718734370195076653514752",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "4602729800673293358897",
-        "feeRewardLastEpoch": "1772015274448748302388",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "4118281180647174262014",
+        "feeRewardLastEpoch": "1935149987338427891517",
         "entity": {
           "identity": "0xC4019E18D89D94bcAaCa46B601793316876D84c1",
           "submit": "0xf92D7307e69e02AC8db5c5D395C440C547bbD4fa",
@@ -554,7 +554,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.575Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -576,12 +576,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "22257412515307670169208219",
+        "votePower": "23222564420059023697080044",
         "votePowerCapped": "29638303391243933300293632",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "7227699326908693342613",
-        "feeRewardLastEpoch": "2212840166938966900248",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "7106709426995540765728",
+        "feeRewardLastEpoch": "2159209944941852969334",
         "entity": {
           "identity": "0xF1A4E1DBB022e5b8ad6838F5331B1959B07561cC",
           "submit": "0x7Bb4E0abFf3fCebB94EA320caf2882572136d629",
@@ -608,7 +608,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-24T15:13:19.594Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -630,12 +630,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "20893540559987206921841373",
+        "votePower": "33647585108550932091485831",
         "votePowerCapped": "31936171945818841814138880",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "6503950212251128166861",
-        "feeRewardLastEpoch": "2987881297059998963429",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
         "entity": {
           "identity": "0xEA9e0432a2770dC9FA09eb25Bee0fd5B70158FBC",
           "submit": "0x74D6cBa774879756eE5A0Df45314bf02b6CC69fD",
@@ -662,7 +662,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.379Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -684,12 +684,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "127175977162927718649754041",
+        "votePower": "125597241556276980982758784",
         "votePowerCapped": "121811318089173041730813952",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "17905876352947032754586",
-        "feeRewardLastEpoch": "23099790849575431839975",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "16957599743492951019695",
+        "feeRewardLastEpoch": "22989351343138799274110",
         "entity": {
           "identity": "0x5637eEd1E134f4e17AD7B063b991D18b95Af41A8",
           "submit": "0x486aC9352F2001d1f43B9c02622Aa26099b86609",
@@ -716,7 +716,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.564Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -738,12 +738,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "241046064717213916706614111",
+        "votePower": "239289141314553541644343138",
         "votePowerCapped": "239879722924160315914452992",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "21019961231047197048058",
-        "feeRewardLastEpoch": "88342449608200818915221",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "20787656522723641737716",
+        "feeRewardLastEpoch": "88860210840014335761299",
         "entity": {
           "identity": "0x0Be579444595e122Bc9B236bEFCb598B1CB7F1cE",
           "submit": "0xc4a19715F3Dd209F01E84ABe65De7c2E9C8b6269",
@@ -800,7 +800,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.072Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -822,12 +822,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "132642959490864037238817506",
+        "votePower": "130903561840885049793101133",
         "votePowerCapped": "130987707648019303923449856",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "20174790283211710168755",
-        "feeRewardLastEpoch": "17249304558607910695459",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "17965626668122841862829",
+        "feeRewardLastEpoch": "15557671846145840084267",
         "entity": {
           "identity": "0x26534aC74153E3257dDD3471f96faA33D5D3B575",
           "submit": "0x366BCb8c23490327A1C63880875a35de41705876",
@@ -854,7 +854,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.007Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -876,12 +876,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "742367413640621468417245375",
+        "votePower": "742806501532829034133782870",
         "votePowerCapped": "751504095010047110827474944",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "86811084771393015288398",
-        "feeRewardLastEpoch": "50771872250009396740346",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "85027597197043799586479",
+        "feeRewardLastEpoch": "49873110507991149199415",
         "entity": {
           "identity": "0xeD077A4ab0864bf5B3b56caACBb3e41633aCf52f",
           "submit": "0x85Be5ECDa6b130Ed06De1F79d5f1D3ba88A4577F",
@@ -908,7 +908,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.806Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -930,12 +930,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "72662437684879541208431822",
+        "votePower": "73276816684435947934194331",
         "votePowerCapped": "77546575208886356274053120",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "11915537040064751709421",
-        "feeRewardLastEpoch": "15173191598068114182659",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "11692303766447669247748",
+        "feeRewardLastEpoch": "14715494701621015238124",
         "entity": {
           "identity": "0x3168E8457B3f36d01Cef47947f927B9c30076F2a",
           "submit": "0x27786B7eF601d1bcde1BdA7e859890D48145C5fd",
@@ -962,7 +962,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.264Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -984,12 +984,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "903661689040511122949386527",
+        "votePower": "897956514602644789674953922",
         "votePowerCapped": "875319015031328331068866560",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "95689864359672376383189",
-        "feeRewardLastEpoch": "79751999893849413537748",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "93637896138061729710846",
+        "feeRewardLastEpoch": "78506668484608467698894",
         "entity": {
           "identity": "0xC29E844B2E9393155B8E3F441bc68f2A69d1EFe5",
           "submit": "0x55a662a4fE401ac19C4f9B807c6D9A40BC15B9A7",
@@ -1036,7 +1036,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.696Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1058,12 +1058,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "47363342538045472645455187",
+        "votePower": "46221832619641020090527128",
         "votePowerCapped": "43951292094117701459378176",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "5663884433798200554400",
-        "feeRewardLastEpoch": "43693960552567797883613",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "5033206102442472390358",
+        "feeRewardLastEpoch": "40220237108321607814523",
         "entity": {
           "identity": "0x25A762a3AE37aD037221DAF623dAdfA8e3247Ca2",
           "submit": "0xe2529e20eCe2BD340C32360Feb250D3F427E48fc",
@@ -1090,7 +1090,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.100Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1112,12 +1112,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "266629571581868108634702973",
+        "votePower": "262931594154842549474290561",
         "votePowerCapped": "256354522335990093931610112",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "23376432475605354037933",
-        "feeRewardLastEpoch": "27603268011819839029524",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "31796756440998077589415",
+        "feeRewardLastEpoch": "37629082967786475956477",
         "entity": {
           "identity": "0xE9c9930D6704F1e24C153dbaabCa687EA27c960D",
           "submit": "0xcA0E4b980Fa7A8Bf58B31E14714388AA29ef9933",
@@ -1154,7 +1154,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.929Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1176,12 +1176,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "1014340184764885541648272610",
+        "votePower": "1010513799196672040349641527",
         "votePowerCapped": "989377791616738036270759936",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "94077532430646182339721",
-        "feeRewardLastEpoch": "104644691938217291585522",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "92221800313982802355578",
+        "feeRewardLastEpoch": "102838556418814839699025",
         "entity": {
           "identity": "0xe3E7C8E587a273966562c8f9768a10f214f63c49",
           "submit": "0x991B71d7380E89354ea71007Eb744316829B62ae",
@@ -1228,7 +1228,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.152Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1250,12 +1250,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "775549482037954500883435120",
+        "votePower": "765701383571453594332887445",
         "votePowerCapped": "764427663366724522719838208",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "74462596762236625678910",
-        "feeRewardLastEpoch": "101757481789870573940988",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "74053211116255572390790",
+        "feeRewardLastEpoch": "93615222099756104611108",
         "entity": {
           "identity": "0xB3C9AA09F22A06122d3608Ef075f14E001561470",
           "submit": "0x5eF6c59a665765233926d2B9Ddf0aAe30d63c7fB",
@@ -1312,7 +1312,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.287Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1334,12 +1334,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "411483189797628956145604626",
+        "votePower": "419817268686699595335457031",
         "votePowerCapped": "370447376712001878807805952",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "44191518353729476795650",
-        "feeRewardLastEpoch": "67084941592714814325790",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "43898308357654805505327",
+        "feeRewardLastEpoch": "65664577304204328560442",
         "entity": {
           "identity": "0xE3b7968c1B706461A8f63540080ECF4Ce70C30c0",
           "submit": "0xaDC0E58ab5d85bAFa5383b1997F58a554960419A",
@@ -1386,7 +1386,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.140Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1408,12 +1408,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "1538374805819813465322449071",
+        "votePower": "1533168191138509063832822982",
         "votePowerCapped": "1118196519811482342324699136",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "90065812879399427181122",
-        "feeRewardLastEpoch": "114413063356156436140768",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "84850939121777042676915",
+        "feeRewardLastEpoch": "107100434317299378869475",
         "entity": {
           "identity": "0x1650d2760BAee638c034200DEdCBe17B050d0364",
           "submit": "0x09981b26225021BAF22Ad86C952f1aaDBac609F6",
@@ -1470,7 +1470,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.486Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1492,12 +1492,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "112261303757671875684931198",
+        "votePower": "112019674622114352757291444",
         "votePowerCapped": "110289439253799137095712768",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "18301123272204124770202",
-        "feeRewardLastEpoch": "16801874957296094248656",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "17453236274210273216891",
+        "feeRewardLastEpoch": "16048599002529420609103",
         "entity": {
           "identity": "0x258B0352dF1D1268856f92846D223C74eB2De9d9",
           "submit": "0x47af96571e3BEae0B9a2B9D3448AdF0301187873",
@@ -1524,7 +1524,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-29T20:02:16.605Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1546,12 +1546,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "160713716082112428495602013",
+        "votePower": "160762258373815512633445046",
         "votePowerCapped": "161349035180266844181233664",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "20320215402396877659025",
-        "feeRewardLastEpoch": "50683840821075393339344",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "19756244383456998558909",
+        "feeRewardLastEpoch": "50655732747207364318510",
         "entity": {
           "identity": "0x69175664e592a41D789f912Ad92EC0C45AC64609",
           "submit": "0x9D26BF1F1E80BDb70cF9134471EadCda9c8b7dDb",
@@ -1588,7 +1588,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.502Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1610,12 +1610,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "2075603004176284225200936",
+        "votePower": "2088402769942001112859531",
         "votePowerCapped": "2111508315295185786372096",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "492548648568733307888",
-        "feeRewardLastEpoch": "5251274033284578807064",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "482337075118300019795",
+        "feeRewardLastEpoch": "5111625433504681205960",
         "entity": {
           "identity": "0xDDe5D41C0B79c25Da05EE4E02AECECf6eB7E67De",
           "submit": "0xf4c512F2871Af4C8dcd11cD255f1e2B1B51801b1",
@@ -1642,7 +1642,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-08-10T16:18:24.391Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1664,12 +1664,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "591553404928805503746523829",
+        "votePower": "585058693208895386012190371",
         "votePowerCapped": "596249590891896979677249536",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "75234056275020840522782",
-        "feeRewardLastEpoch": "53926046080653556705722",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "72514225040614438900124",
+        "feeRewardLastEpoch": "54386700242775994082080",
         "entity": {
           "identity": "0xB90B0fD5E028e09bd75fdfD3Fa371Dcfaee70dA8",
           "submit": "0x92BF54Ae8AeD699a038e8d8b0e62e5b511F56DC5",
@@ -1696,7 +1696,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.953Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1718,12 +1718,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "130262218956416916600800327",
+        "votePower": "129014590184090302027191670",
         "votePowerCapped": "129530185011076853808496640",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "15394071098268683695174",
-        "feeRewardLastEpoch": "47289443026799046273134",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "14957057694702900212858",
+        "feeRewardLastEpoch": "46479157192803229681402",
         "entity": {
           "identity": "0x568a27b3770B6eA514c2008D8f6a3FDDF61ff017",
           "submit": "0xdc12432B3d1B8F0a7C9c77D80f20f54132970c73",
@@ -1770,7 +1770,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.329Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1792,12 +1792,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "111230145638952485132552778",
+        "votePower": "81851064371028580152871819",
         "votePowerCapped": "73583274499236552851324928",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "0",
-        "feeRewardLastEpoch": "0",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "15412561410481830486590",
+        "feeRewardLastEpoch": "10305921873849003029921",
         "entity": {
           "identity": "0xc058D02FdD08294D29fd4db631e6edc789741EA6",
           "submit": "0x7b6C3bf0DA61353a195FB2aCcC5C2c6d0B72DcAE",
@@ -1824,7 +1824,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.357Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1846,12 +1846,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "197857102071387898573728867",
+        "votePower": "195487051308022663064180996",
         "votePowerCapped": "201886688951125327667527680",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "31329915393756137101396",
-        "feeRewardLastEpoch": "18609294221283741206868",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "30187564115703260356947",
+        "feeRewardLastEpoch": "18046684282450081469765",
         "entity": {
           "identity": "0x781Ea2DcE725CA139c6ECC62C1EE7c8876608392",
           "submit": "0x04a7Aa6b6a318b525Aff7bAfa0269d9BEF977380",
@@ -1888,7 +1888,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.498Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1910,12 +1910,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "116210647800207059888532789",
+        "votePower": "116284376204298126626696322",
         "votePowerCapped": "107808755121443500441206784",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "11405993469492567923843",
-        "feeRewardLastEpoch": "41312265077439787530595",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "12063665887039082876779",
+        "feeRewardLastEpoch": "45786661711859906580970",
         "entity": {
           "identity": "0x6053267bD317fE8f2D51Bf063271CD1596d12783",
           "submit": "0x71aec2Bc126654d116386864b5f3BAbce0cA87e0",
@@ -1952,7 +1952,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.728Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -1974,12 +1974,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "362205079332425485475815761",
+        "votePower": "343682991386318957227589925",
         "votePowerCapped": "363498051437448910015037440",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "53095836840339566567935",
-        "feeRewardLastEpoch": "18361360217518401692006",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "50987155369592956237219",
+        "feeRewardLastEpoch": "17895431860083291528840",
         "entity": {
           "identity": "0x2A0A6c933853555cFd88398fdc13aeF32433579A",
           "submit": "0x3288cFDE1F0Cf48FD0a8F8661b5f672a3a9C7d8f",
@@ -2006,7 +2006,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.040Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2028,12 +2028,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "86495837775639544215191193",
+        "votePower": "86143244711339663117073314",
         "votePowerCapped": "90896513401936335815573504",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "10461081804168717831158",
-        "feeRewardLastEpoch": "41107855767586476096319",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "10130471553172982709148",
+        "feeRewardLastEpoch": "40032100411541103509788",
         "entity": {
           "identity": "0x16C0619b2C427AaEb5931426eB0a898b6E3Cd885",
           "submit": "0x6Be30c886D5d838556E2C3B2CA634Aa3B3a9dC34",
@@ -2070,7 +2070,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.159Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2092,12 +2092,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "109885900179404212736178001",
+        "votePower": "109889100659500562916746196",
         "votePowerCapped": "107962368288969430501687296",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "13198576770654809332871",
-        "feeRewardLastEpoch": "29302618707515914977722",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "12455519588784476828368",
+        "feeRewardLastEpoch": "27848911607743811692168",
         "entity": {
           "identity": "0xf697CEF9e0be6Bebac06410a5Bcc56F7E8F52835",
           "submit": "0x0054a662C151a36B5b0358FD7A1a51180dad2Fd6",
@@ -2124,7 +2124,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.632Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2146,12 +2146,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "92151869705449457405173225",
+        "votePower": "94081923834724252316806299",
         "votePowerCapped": "87151449789874324520304640",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "11876753057024637450731",
-        "feeRewardLastEpoch": "42886113550554774896834",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "11973483757029058214006",
+        "feeRewardLastEpoch": "37270287962663596272028",
         "entity": {
           "identity": "0xC1d269E9D2A39c6A285EaAF53Eb9fe9b7245C87E",
           "submit": "0xEb431ACA7D7B626c8635dE8842a8ca4A25c53aB1",
@@ -2178,7 +2178,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.685Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2200,12 +2200,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "714550656236020265186484261",
+        "votePower": "713177138021953316114666906",
         "votePowerCapped": "706608144174150045132652544",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "94787899632599264909995",
-        "feeRewardLastEpoch": "42124228722349955515736",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "92569915780986266376525",
+        "feeRewardLastEpoch": "41226058032529984384834",
         "entity": {
           "identity": "0xC841535773FEba1e53C09Eb1e8890EBea0208d89",
           "submit": "0xa1e706E163Ac0469F3b28cA4177F86Fa04C63A88",
@@ -2232,7 +2232,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.310Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2254,12 +2254,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "94815584121447501316573173",
+        "votePower": "94529364401835262990418434",
         "votePowerCapped": "85075483120944047827451904",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "13784579668867615860596",
-        "feeRewardLastEpoch": "25011482450762173889321",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "13381105113542677407617",
+        "feeRewardLastEpoch": "24595624177046695805880",
         "entity": {
           "identity": "0x59b1aB4aD053dE8f9C9a0660F6a995f37D40f03d",
           "submit": "0x68Daef8eA63020D624b77B231C1a0590fa7b9e19",
@@ -2296,7 +2296,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.851Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2318,12 +2318,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "274356224327766017140088040",
+        "votePower": "274438852184764048122428720",
         "votePowerCapped": "268391079139004914750980096",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "37572830233221503946264",
-        "feeRewardLastEpoch": "40520776702844719318021",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "37142175413206510875264",
+        "feeRewardLastEpoch": "40991052646965748633714",
         "entity": {
           "identity": "0x8372deecFe2a7b700031Ab2b455Df6B02b9c0cc1",
           "submit": "0xE6c5024a337451e32f18f4B043bdb2d755897F7E",
@@ -2360,7 +2360,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.950Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2382,12 +2382,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "363950194539421785888907621",
+        "votePower": "360957848956978487203936041",
         "votePowerCapped": "354316977731763225235554304",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "48188603391200553493639",
-        "feeRewardLastEpoch": "29473831521637303791772",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "47135964821933719127964",
+        "feeRewardLastEpoch": "28670174703295365696120",
         "entity": {
           "identity": "0x3CFD132642356730341221F8E52Cce82cF10Caa9",
           "submit": "0xF2a9CeD48870D37c7E3362b4aa4a2733b1FC6BEF",
@@ -2424,7 +2424,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.298Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2446,12 +2446,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "135710473233973317738166614",
+        "votePower": "133871509603899318662118654",
         "votePowerCapped": "123788413053347846030360576",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "14480441196004466453641",
-        "feeRewardLastEpoch": "58140814464877293766474",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "14489173305275731488823",
+        "feeRewardLastEpoch": "57376896032708844827952",
         "entity": {
           "identity": "0x52D45fE5D1c5e4531B05aa224589c82f8A011FD9",
           "submit": "0x7cA68F9f41072De982C7d948ddfdD2E3B8177E80",
@@ -2508,7 +2508,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.261Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2530,12 +2530,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "505573004118356267359000600",
+        "votePower": "505844791665533504568730725",
         "votePowerCapped": "504834452882982707883147264",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "57023833793021860768226",
-        "feeRewardLastEpoch": "34823168252012569295599",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "54599584780578863821528",
+        "feeRewardLastEpoch": "35396831599184990527240",
         "entity": {
           "identity": "0x813d2D3E5Ef3b446DF83d8d5264972a07A690657",
           "submit": "0xD43B300449DEe51F0C78d834579b395A5b344B71",
@@ -2562,7 +2562,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.940Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2584,12 +2584,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "31334079707631462173949188",
+        "votePower": "30786173076380730365088669",
         "votePowerCapped": "29981609258018882336063488",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "8291010291496006716029",
-        "feeRewardLastEpoch": "2816080277188976940718",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
         "entity": {
           "identity": "0xCcf1Dce8A01B32BCF3dcF00C67C72b372E689145",
           "submit": "0x9059c78F2Eb769f47253EbeB8C9361AcC5e28d15",
@@ -2616,7 +2616,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-08-03T16:18:36.265Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2638,12 +2638,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "847353530357397470885460825",
+        "votePower": "849313651328865259147190587",
         "votePowerCapped": "855911152901878727686750208",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "99917550815438153338917",
-        "feeRewardLastEpoch": "63147399143774579844636",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "97551975438960319599039",
+        "feeRewardLastEpoch": "64439558121677439000137",
         "entity": {
           "identity": "0xF05015da740Eb3A7AA3C51d4eF09375f472030d4",
           "submit": "0xe8a41662716C769b139860A947f3d4eF084084f1",
@@ -2670,7 +2670,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.164Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2692,12 +2692,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "965788488108723684085032",
+        "votePower": "966288488108723684085032",
         "votePowerCapped": "1084178861103363074818048",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "315296013161982664705",
-        "feeRewardLastEpoch": "1400609459617351249874",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "311859698311102125244",
+        "feeRewardLastEpoch": "1414521576009229638010",
         "entity": {
           "identity": "0x1FBB55a1877817A0f90cAE60c1ab22FC94f97110",
           "submit": "0x4e1d158779f5F41d9397BBB101af9D37Fc92D750",
@@ -2724,7 +2724,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-24T15:13:19.648Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2746,12 +2746,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "742880650101792204091466483",
+        "votePower": "741047925516867472420363800",
         "votePowerCapped": "735952176869577391570157568",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "95834704327068466117889",
-        "feeRewardLastEpoch": "42432424876568992939791",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "92834529351627353152140",
+        "feeRewardLastEpoch": "41176360681496144731258",
         "entity": {
           "identity": "0xD18c9DD0302B3F56EA6f1B021f4259684b3619e8",
           "submit": "0x6b5aA7e68FEe9b1829D8939182855F743F946C3C",
@@ -2788,7 +2788,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.390Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2810,12 +2810,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "91140532529779189191927878",
+        "votePower": "100473610440566137599089162",
         "votePowerCapped": "97655680990671181155663872",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "10105801734115860737032",
-        "feeRewardLastEpoch": "56190413887097843794510",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "10973019109584345050970",
+        "feeRewardLastEpoch": "52689383248883298555574",
         "entity": {
           "identity": "0x5a7fbD867A4E3ef65085448bEb05eD2A55B223ae",
           "submit": "0x844472F63665Ca611fC73A824497d71Bfaf72A9B",
@@ -2862,7 +2862,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.738Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2884,12 +2884,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "2902939043262668389893688080",
+        "votePower": "2903828800975413505341526462",
         "votePowerCapped": "1118196519811482342324699136",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "101001213724408229792374",
-        "feeRewardLastEpoch": "131708649513185683750751",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "98129442733832146756442",
+        "feeRewardLastEpoch": "128790087463712566906544",
         "entity": {
           "identity": "0xFf1E3dc8b89c4443baC578d3c8fAe0F27060E5De",
           "submit": "0x51ED08AD4C57aD29D951A0eCE9bB1a750DEeaa2c",
@@ -2946,7 +2946,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.764Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -2968,12 +2968,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "27357487122877058825337282",
+        "votePower": "27277251502675822928370286",
         "votePowerCapped": "27283332056114262387458048",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "7249904242709630823955",
-        "feeRewardLastEpoch": "3137507159138031286536",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "7352314131310741193003",
+        "feeRewardLastEpoch": "3185779222281221229987",
         "entity": {
           "identity": "0x3Fcb0b871A82bA8D329B2F1d6E35B3535bd019Ef",
           "submit": "0xBdCb67A617D97B628878dBEAABdFfE0Cc9023661",
@@ -3000,7 +3000,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.147Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3022,12 +3022,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "110616413643217975026767681",
+        "votePower": "109942705342429695791795665",
         "votePowerCapped": "65784417798485928444952576",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "12058200748317541195586",
-        "feeRewardLastEpoch": "39805136850053944350108",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "11599757478021481080870",
+        "feeRewardLastEpoch": "38495331234708548411064",
         "entity": {
           "identity": "0xBdeb203e55e65451fABf0e7B778b32ac174918fF",
           "submit": "0x24DC4e640Ac8F95dfA20F0aA1f5Bb300d9689bd2",
@@ -3054,7 +3054,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-03T10:18:38.594Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3076,12 +3076,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "97586775668696576718953442",
+        "votePower": "97535705362225853513568788",
         "votePowerCapped": "93950585256961497471385600",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "13614270950865617379242",
-        "feeRewardLastEpoch": "30341360129842472443757",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "13233859298309120967047",
+        "feeRewardLastEpoch": "29677547029988052507467",
         "entity": {
           "identity": "0xbc1682730aE5BD0Aed7d210da330Ed581D9F2c4D",
           "submit": "0xB0e80448fDF21Cec226041Ca8165a36d22F2dFA2",
@@ -3108,7 +3108,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-24T10:18:49.929Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3130,12 +3130,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "51614884538732629205955999",
+        "votePower": "54010252501112004363172959",
         "votePowerCapped": "75128953686025970959515648",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "8895948315456040749850",
-        "feeRewardLastEpoch": "8313452950290216962117",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "8880477078559433264216",
+        "feeRewardLastEpoch": "8820719231163383481948",
         "entity": {
           "identity": "0x3A32539045A214958132E1D9afBA66460E0073Eb",
           "submit": "0x77e37aDFdE61942Ceb46f6657e65001e0baAe805",
@@ -3162,7 +3162,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.441Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3184,12 +3184,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "510602793960914198021745580",
+        "votePower": "508962373778296011916056633",
         "votePowerCapped": "524486161491161780708179968",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "74824820528504702308241",
-        "feeRewardLastEpoch": "22389996377531499386926",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "70602619188977676934970",
+        "feeRewardLastEpoch": "24873174373080313981423",
         "entity": {
           "identity": "0xa6b95941845b229aD7b2cD4c3c6dE3aD9d0865Ff",
           "submit": "0x1b7202D589B133CB4179b6d034E047Bda2620303",
@@ -3216,7 +3216,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.019Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3238,12 +3238,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "133942513544563721741580254",
+        "votePower": "122157254580226475350805806",
         "votePowerCapped": "111785549684834620804169728",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "17305324155813207895039",
-        "feeRewardLastEpoch": "19270020464609042173761",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "17824380147561689389260",
+        "feeRewardLastEpoch": "21404558993946646632725",
         "entity": {
           "identity": "0x05D8F084bf6aC2267A5ca699740E9236DB6E2bDb",
           "submit": "0xC967d1Fd27A94E4FC5C085C0AdfA9bcD2418d1a0",
@@ -3280,7 +3280,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.939Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3302,12 +3302,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "109030886305762665120153471",
+        "votePower": "109139518097285978387636766",
         "votePowerCapped": "104139411111931370226581504",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "17260728017388363714485",
-        "feeRewardLastEpoch": "17168010961005841570608",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "17144824479626071320776",
+        "feeRewardLastEpoch": "15858108316788937168943",
         "entity": {
           "identity": "0x9843A22fa7fD382a38D7fe5a15D0153Dbbe0799C",
           "submit": "0x8938fb6fB294De8Cca3eAF7D78f7eE65103187A2",
@@ -3344,7 +3344,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.828Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3366,12 +3366,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "217723885659112985992477456",
+        "votePower": "218667630787497127333238308",
         "votePowerCapped": "222611963784412440291180544",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "28397961387864718436294",
-        "feeRewardLastEpoch": "28462802065391170399359",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "28296803991578443950933",
+        "feeRewardLastEpoch": "28109976480416951861013",
         "entity": {
           "identity": "0x267757380d129191994Ed55606E41aB3aac52b6a",
           "submit": "0xe0BF8A741fBb6c83bf079AdE80Aa8d22092267B6",
@@ -3408,7 +3408,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.476Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3430,12 +3430,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "277656486906520010599184140",
+        "votePower": "268359950786418375889891760",
         "votePowerCapped": "263332434379932399417950208",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "42543127704872870766615",
-        "feeRewardLastEpoch": "25000359470543181983710",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "40243701094239779251400",
+        "feeRewardLastEpoch": "24111686956568894733436",
         "entity": {
           "identity": "0x69E79bb0De5dcD9F7201f8277957f12c0F4C142c",
           "submit": "0xaAa1e2A4137B3CCAFc6E117eFF8263E68709df4A",
@@ -3462,7 +3462,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.803Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3484,12 +3484,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "198172259239136562719325416",
+        "votePower": "197737864531367683806485809",
         "votePowerCapped": "196809837427472777439346688",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "29292916048470823323557",
-        "feeRewardLastEpoch": "25201482255660495340836",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "28513579373185609772660",
+        "feeRewardLastEpoch": "24135603261958866985246",
         "entity": {
           "identity": "0x5558543cb4Da2c0F6D6C066a5ad1080943F9341E",
           "submit": "0x606cbeA1e4Cc2377D1Ef0910073933d15ebEF483",
@@ -3516,7 +3516,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.594Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3538,12 +3538,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "298209748340459879887940125",
+        "votePower": "297603870462650137343053759",
         "votePowerCapped": "305639565742320312060477440",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "40518597058812844874111",
-        "feeRewardLastEpoch": "31885702092849984080665",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "34815296420196940477206",
+        "feeRewardLastEpoch": "38025944590875518787293",
         "entity": {
           "identity": "0x6EbbE1E29aEe3325A34a10BB267c55DB7664750E",
           "submit": "0x8Dd6CfFA01a429Ff2232881efC5df0c340bA38F1",
@@ -3570,7 +3570,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.851Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3592,12 +3592,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "164694163342127879716036739",
+        "votePower": "163575392427222460412189531",
         "votePowerCapped": "163577091106947345158242304",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "30571730281108578580565",
-        "feeRewardLastEpoch": "10781264096674586991805",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "26716534343290522486717",
+        "feeRewardLastEpoch": "9766509797298853065338",
         "entity": {
           "identity": "0x30339750867a19381F4cBCd5dA9b04C8ac6c5EaE",
           "submit": "0x47E01ee35dBaecFC146619231e5b67939B45E447",
@@ -3624,7 +3624,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.367Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3646,12 +3646,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "43597966966940251735048904",
+        "votePower": "44308504850651642297195182",
         "votePowerCapped": "44156645045934314110320640",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "7455855560406363533809",
-        "feeRewardLastEpoch": "13323896237708615165069",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "7029707911584642473598",
+        "feeRewardLastEpoch": "14140567658412621399670",
         "entity": {
           "identity": "0x11cd153df9f4497aa3D21e95f61cF638911377Eb",
           "submit": "0x6dC9f5e5EeFDdf1982BfE00c29Ad2f7c8917e1BB",
@@ -3688,7 +3688,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.963Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3710,12 +3710,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "109162763047751131908362903",
+        "votePower": "105883231560380849948138329",
         "votePowerCapped": "105965846545075560534507520",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "15772497498092114969574",
-        "feeRewardLastEpoch": "26809956428675076452149",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "15043532734685115195442",
+        "feeRewardLastEpoch": "25596681117495942326268",
         "entity": {
           "identity": "0x631c6ed44E4dfC461c9fbB583651aba06A8e2F94",
           "submit": "0x6b02d41a497d889a4276aa82B0F591dcC3e0f930",
@@ -3752,7 +3752,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.345Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3774,12 +3774,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "31290853385377289108311466",
+        "votePower": "31343361592585909036327809",
         "votePowerCapped": "24017623415359719168016384",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "4979111432140487620031",
-        "feeRewardLastEpoch": "18835217741153747152158",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "4909624664316072461321",
+        "feeRewardLastEpoch": "18204690995142465873420",
         "entity": {
           "identity": "0xF1416cE1F91d565Fa4FFA8BAb153Ba5495C6BD49",
           "submit": "0x41Fc6DE61DcB7BDB1005F1EdBDf70f57DAf04c38",
@@ -3806,7 +3806,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.528Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3828,12 +3828,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "79843137679618165676715746",
+        "votePower": "77812579577703677874621882",
         "votePowerCapped": "80257920569651715733716992",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "12127657670380969230059",
-        "feeRewardLastEpoch": "27175688520069516001719",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "11716398522547627180007",
+        "feeRewardLastEpoch": "26808270771036076828155",
         "entity": {
           "identity": "0x1645A43eC5d09a0F0110683B5F5a4Dc2FFCef17d",
           "submit": "0xe439E27259095dD0cEC2eB48B9E5aa01AC41eE17",
@@ -3860,7 +3860,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.606Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3882,12 +3882,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "58377929043867349457348371",
+        "votePower": "58187425848319336312973326",
         "votePowerCapped": "57019415412740160682459136",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "6423488322287835433786",
-        "feeRewardLastEpoch": "51235710209128177007625",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "6363428983916204427260",
+        "feeRewardLastEpoch": "50740689286266509427643",
         "entity": {
           "identity": "0xe34Fb45b2e966a69F8b2A17118Aa14D57667d197",
           "submit": "0xe4b58cf70eB715B1a8F04f666ea46Af7d7046355",
@@ -3924,7 +3924,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.463Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -3946,12 +3946,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "78073048950883070397272972",
+        "votePower": "44297665207903773063487784",
         "votePowerCapped": "38789777472863804265070592",
         "feedCount": 62,
-        "lastEpoch": 425,
-        "delegatorRewardLastEpoch": "12925102010121288759145",
-        "feeRewardLastEpoch": "17712883246047742828233",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
         "entity": {
           "identity": "0x5Cbd87F8591869f5959a196722245F0C893C78EA",
           "submit": "0x8234e63a20191770085ed1772292Fd4edeDC6a7B",
@@ -3978,9 +3978,9 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.839Z",
-          "lastSubmittedEpoch": 425,
-          "epochsSinceSubmit": 1,
-          "epochsUntilRevoke": 16,
+          "lastSubmittedEpoch": 427,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         }
       }
@@ -4033,8 +4033,8 @@
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.401Z",
           "lastSubmittedEpoch": 414,
-          "epochsSinceSubmit": 12,
-          "epochsUntilRevoke": 5,
+          "epochsSinceSubmit": 13,
+          "epochsUntilRevoke": 4,
           "revokeAfterEpochs": 17
         }
       }
@@ -4054,12 +4054,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "51855072045932127889521305",
+        "votePower": "51895863287717319492292570",
         "votePowerCapped": "53362968234679331977166848",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "8172244253142207267686",
-        "feeRewardLastEpoch": "19843730288548077252508",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "7878967717194400287929",
+        "feeRewardLastEpoch": "19110852657821429116673",
         "entity": {
           "identity": "0x59Ce07fCdD12fa7f902d2dddcab6E1696415615A",
           "submit": "0x1e5E4C20c9222a3aA22E6174C7fe2064232A866c",
@@ -4086,7 +4086,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.554Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4108,12 +4108,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "141890100950957431717300063",
+        "votePower": "135517878821317270307670165",
         "votePowerCapped": "129596677142063490369847296",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "12549012477022239360574",
-        "feeRewardLastEpoch": "83398068351072292966839",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
         "entity": {
           "identity": "0xc459a983636c2F5fC690968A732037d1eaD1a10F",
           "submit": "0xA448B629F735D9609343410fe22bCAB7d971D27E",
@@ -4170,7 +4170,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.171Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4192,12 +4192,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "122166549865103840092392425",
+        "votePower": "118609080753882645985445641",
         "votePowerCapped": "141729740252464910025359360",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "21425604669847566441267",
-        "feeRewardLastEpoch": "13465999825944922158348",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "20675106891271588226508",
+        "feeRewardLastEpoch": "13229024766032051973250",
         "entity": {
           "identity": "0xc3EB218212feB146A84eAffb2b8Bc4D165F58e75",
           "submit": "0x2dB90b3960a7e025D683F34d87a136D3A39589Ae",
@@ -4224,7 +4224,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.275Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4246,12 +4246,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "84899935024504595185697475",
+        "votePower": "83822173732556087481757913",
         "votePowerCapped": "86273471610205470822760448",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "7969129816815326499244",
-        "feeRewardLastEpoch": "97933695710844776521723",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "7667585325707431068557",
+        "feeRewardLastEpoch": "95432196703052896632705",
         "entity": {
           "identity": "0x7596fcDc437840D5beFAD5AF8C831698a29c5B58",
           "submit": "0x1553e985748BDfFCcF2c1946DB37a67DCFEca3dc",
@@ -4308,7 +4308,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.306Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4330,12 +4330,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "177588775267753648757130170",
+        "votePower": "174276847161545014055020024",
         "votePowerCapped": "172390347688398091697782784",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "27983198280595185836090",
-        "feeRewardLastEpoch": "21617478256901042763844",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "26544751226201382217434",
+        "feeRewardLastEpoch": "20788421088589804939896",
         "entity": {
           "identity": "0x693a28bCd38f99308315074A2f6e7535Fecd27fa",
           "submit": "0x3d71539F5814b3F77e084fE636378AA0B59A38c2",
@@ -4362,7 +4362,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.514Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4384,12 +4384,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "40192448909532519776211557",
+        "votePower": "40198281681451980945572255",
         "votePowerCapped": "38994793232061464607457280",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "6144301683638827136338",
-        "feeRewardLastEpoch": "17538304339404162901142",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "5739616375585910786627",
+        "feeRewardLastEpoch": "19986000364802424061980",
         "entity": {
           "identity": "0x1A34A80deB40D2a1A6c0E2959785058A975AD900",
           "submit": "0xC3B54c0AC337Cb33eed108f1a23a95983C8C58aA",
@@ -4425,8 +4425,8 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.175Z",
-          "lastSubmittedEpoch": 426,
+          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4448,12 +4448,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "145850316293993659730444271",
+        "votePower": "137407878489684663031615835",
         "votePowerCapped": "136607954254921452266455040",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "16816329718985169471796",
-        "feeRewardLastEpoch": "47441037993888145974229",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "15706438374127861058747",
+        "feeRewardLastEpoch": "46791068713611525419825",
         "entity": {
           "identity": "0x3887d51081D03Ee6b1ad8Bd0Dc4E2Ec88683a109",
           "submit": "0x473620d640e7dF8B36b6042b3CCb2891ACF8bb0E",
@@ -4480,7 +4480,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.390Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4502,12 +4502,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "120277395045705968835839611",
+        "votePower": "117627538765346061776377031",
         "votePowerCapped": "112965370045412224408748032",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "16390382728910699447298",
-        "feeRewardLastEpoch": "16739785904641304550362",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "15296199772532908968301",
+        "feeRewardLastEpoch": "16088378995574620163237",
         "entity": {
           "identity": "0x65Ae92f3473D75815F2a86298b76A608F94E1575",
           "submit": "0x8982e007397Edc5E6EfE3978fa5ee2e19ec62070",
@@ -4534,7 +4534,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.411Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4556,12 +4556,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "4254243165034766361104367",
+        "votePower": "4254882032343418870782328",
         "votePowerCapped": "4702727788860414309171200",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "642679667348632501024",
-        "feeRewardLastEpoch": "17155612109696337232428",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "682318248634248898912",
+        "feeRewardLastEpoch": "14171911102034644061023",
         "entity": {
           "identity": "0xb5A081dEc72c8C87256b7e14cFAdcbc342bDeac3",
           "submit": "0xeF3fE201f3319B3E576177f5F331708C032a8d3f",
@@ -4588,7 +4588,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.206Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4610,12 +4610,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "134608077008185053044595793",
+        "votePower": "132121454391981591489218760",
         "votePowerCapped": "95140237989297018313375744",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "16071552316469653330178",
-        "feeRewardLastEpoch": "35340460979179833944167",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "15048588331871500727644",
+        "feeRewardLastEpoch": "34635039226798425585777",
         "entity": {
           "identity": "0x6c7C332a090c8D2085857cf3220eA01C6d45a723",
           "submit": "0xf73731C25b7287D0B9ca7aCb011d1a046D380928",
@@ -4642,7 +4642,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.825Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4664,12 +4664,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "133181234378625621744836502",
+        "votePower": "130571389315711613312069430",
         "votePowerCapped": "130239475512657887035916288",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "13865376692335621408631",
-        "feeRewardLastEpoch": "81561172921776494461295",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "13367439595005963646300",
+        "feeRewardLastEpoch": "80137019073773553888404",
         "entity": {
           "identity": "0xFed1eFF46608249054A6C7C4BCe8998051dCfF7D",
           "submit": "0x61d328cc6C18076432acfDa8d5b5Bd86041aeF79",
@@ -4726,7 +4726,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.273Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4748,12 +4748,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "804380594685806465446674815",
+        "votePower": "803655321945680335758517976",
         "votePowerCapped": "797729369273787906625896448",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "77942494417106676828920",
-        "feeRewardLastEpoch": "107962839422653545313014",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "75008126703152370960721",
+        "feeRewardLastEpoch": "104690483178398023332989",
         "entity": {
           "identity": "0x6241834Cd0A3ae76b7Eb07b32ee9F0a3219fa6D5",
           "submit": "0x749eB1Ab531D79413761381f776Ef8bB9FF216E1",
@@ -4800,7 +4800,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.321Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4822,12 +4822,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "569769816829715642680919975",
+        "votePower": "567808495575279053094630478",
         "votePowerCapped": "568095776577670909863657472",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "74728830654968495233173",
-        "feeRewardLastEpoch": "43004268843681029896119",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "71830439676761860159296",
+        "feeRewardLastEpoch": "41508376730474196249249",
         "entity": {
           "identity": "0xA6F5901011aac01427428c97394743E193879490",
           "submit": "0xcc5Ceeb5d05e3ce0A738892fa0A7ABea4CD79479",
@@ -4884,7 +4884,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.371Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4906,12 +4906,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "169591936513182344066041404",
+        "votePower": "172229335070588235731244194",
         "votePowerCapped": "139346199690391526853050368",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "27065617068588288194882",
-        "feeRewardLastEpoch": "18012353438769603732138",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "27634905438321519515405",
+        "feeRewardLastEpoch": "18215383956563119100057",
         "entity": {
           "identity": "0xDF371cB9e9Eb25612A165f02B4d8573F85027eE4",
           "submit": "0xf404ea14326F2d856fB870cB2fc3978B242A8dA1",
@@ -4938,7 +4938,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.924Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -4960,12 +4960,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "638563878080437484637803939",
+        "votePower": "627411198757878561206267392",
         "votePowerCapped": "630260716440856228819632128",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "70931186178743414935707",
-        "feeRewardLastEpoch": "81140350385823316125395",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "68052082647064339503060",
+        "feeRewardLastEpoch": "79254063270603708601887",
         "entity": {
           "identity": "0x3cDF058eFb4a09Ed78A40F8e6941B5814187d9cd",
           "submit": "0xe0bFd268E193103Cb3e8331725414D7644f05e35",
@@ -5022,7 +5022,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.718Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5044,10 +5044,10 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "4804304340515175474301809",
+        "votePower": "4732787367276396017429087",
         "votePowerCapped": "4485228510589103592439808",
         "feedCount": 62,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -5086,7 +5086,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.770Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5108,12 +5108,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "29876157774365279017154271",
+        "votePower": "39024418137173933098593210",
         "votePowerCapped": "63406888903678787170861056",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "3743284650160669567858",
-        "feeRewardLastEpoch": "40000637887730356857014",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "4506832405562748175360",
+        "feeRewardLastEpoch": "44434519793683641117876",
         "entity": {
           "identity": "0x7121Ee7189631b7DD08f0cc82F931403a0548E28",
           "submit": "0x36f31E7277a4D5423f9cd5821fB4977636EB7a19",
@@ -5140,7 +5140,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-17T10:18:19.968Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5162,12 +5162,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "29885608238215605229426964",
+        "votePower": "30135750954477481728191176",
         "votePowerCapped": "29846715917208079604645888",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "4846535711430323153909",
-        "feeRewardLastEpoch": "22046252209444223841536",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "4654737974917729379002",
+        "feeRewardLastEpoch": "24755256600759710686240",
         "entity": {
           "identity": "0xEB5Bb53864d7E2e67E62a8671F816737Eec45cF4",
           "submit": "0x74cE5423ADAccc76a6dB7c201dc309BC0596D5FD",
@@ -5204,7 +5204,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.611Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5226,12 +5226,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "52804317315862845772895697",
+        "votePower": "52680146292851032982216334",
         "votePowerCapped": "52701209439209269980299264",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "9251239575827477868896",
-        "feeRewardLastEpoch": "9967899198391032090287",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "9119588413093346408254",
+        "feeRewardLastEpoch": "9843836345070513812605",
         "entity": {
           "identity": "0x4fd3B47e10017D767BeE358fe7290533C7218836",
           "submit": "0x9Adf4f025282C87A374580Ce566A2D0DdA198A53",
@@ -5258,7 +5258,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.251Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5280,12 +5280,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "84729597308518901613014313",
+        "votePower": "82601469152064120129626291",
         "votePowerCapped": "82200401181313037835960320",
         "feedCount": 62,
-        "lastEpoch": 425,
-        "delegatorRewardLastEpoch": "12342516176295372787426",
-        "feeRewardLastEpoch": "24922459751484076188284",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
         "entity": {
           "identity": "0x12649c1937fbDaD9bEbc1246110fCaFeA490b8a2",
           "submit": "0x797a667434454E54fD1E66C25D2C73353143F43F",
@@ -5312,9 +5312,9 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.716Z",
-          "lastSubmittedEpoch": 425,
-          "epochsSinceSubmit": 1,
-          "epochsUntilRevoke": 16,
+          "lastSubmittedEpoch": 427,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         }
       }
@@ -5334,12 +5334,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "7327185622283578436152375",
+        "votePower": "8292508292749876232708972",
         "votePowerCapped": "8324361092208459226546176",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "1571534505678241946210",
-        "feeRewardLastEpoch": "7609277434012945266986",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "1742127891398801826622",
+        "feeRewardLastEpoch": "7504037748833565998578",
         "entity": {
           "identity": "0x0e6A50e6Fe42ba2299409Fa77F5279E0ABc07489",
           "submit": "0x9e36C786BD1FaFC9CbDb05f16eFd08345b25CDa1",
@@ -5396,7 +5396,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.217Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5418,12 +5418,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "657104423081362331094353204",
+        "votePower": "652845035212143466868661505",
         "votePowerCapped": "650632205330019285074968576",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "86248527454379718615331",
-        "feeRewardLastEpoch": "40601899814821049407655",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "83838619380728409349137",
+        "feeRewardLastEpoch": "39588638858608664660734",
         "entity": {
           "identity": "0x7A1259118f5bE97AFCaEa3ADB16F77a3944a9f85",
           "submit": "0x8B5484A822d1D8dBbFaFcb1ef66E71566F026603",
@@ -5450,7 +5450,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.119Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5472,12 +5472,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "56900161536310528559040357",
+        "votePower": "55586300941020611910261393",
         "votePowerCapped": "58958167051911922043584512",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "9498231664384919164311",
-        "feeRewardLastEpoch": "11764259291387788241314",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "8539552291883823958917",
+        "feeRewardLastEpoch": "10776402309598324271983",
         "entity": {
           "identity": "0xFCAB33D4af3a8e7c9997968114c5754D987B8563",
           "submit": "0xf5bf13d159E5e093a1980240F7Aa4Bc1211FD54f",
@@ -5504,7 +5504,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.295Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5526,12 +5526,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "243314355350144305364941480",
+        "votePower": "242142116827418683943274129",
         "votePowerCapped": "218632736896272667420655616",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "40289155583418128014065",
-        "feeRewardLastEpoch": "16233817857328024115324",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "39521344204135654836441",
+        "feeRewardLastEpoch": "17363429668707273039945",
         "entity": {
           "identity": "0xCDEAE85d8cEF99a6433F341c3DcE6096C3c5598c",
           "submit": "0x6a4121a29839b446052640655818B4c7F9Bb569f",
@@ -5568,7 +5568,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.728Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5590,12 +5590,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "56438842196472650593933464",
+        "votePower": "56092823010981294106000233",
         "votePowerCapped": "55945569523388178835177472",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "6237171839697400795274",
-        "feeRewardLastEpoch": "22653609078095291401057",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "3901249862067947693416",
+        "feeRewardLastEpoch": "12606571936334189372320",
         "entity": {
           "identity": "0xaa9c30ff905d056E7DD06E0d81246C68272d63D6",
           "submit": "0x4F45b627aCf32d715CB246f0A993Df93556CADC4",
@@ -5622,7 +5622,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.986Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5644,12 +5644,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "357016161995820898383116869",
+        "votePower": "353640680186652203812983690",
         "votePowerCapped": "366753718531445580227411968",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "41919149351737321065957",
-        "feeRewardLastEpoch": "28747187754920403310608",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "40744222641700145147514",
+        "feeRewardLastEpoch": "28246018008770149210290",
         "entity": {
           "identity": "0x4B84Eeb4492A53FA6C8d6A188c1Ab2327f3ABC45",
           "submit": "0x39A875a881BF934bA1483F2bdAe8C1A19125CBbF",
@@ -5696,7 +5696,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.684Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5718,12 +5718,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "119512748122842869811688337",
+        "votePower": "119549555199043569264151035",
         "votePowerCapped": "109323169501820427163402240",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "10953340684690021259076",
-        "feeRewardLastEpoch": "24523249833487795800526",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "13045111965954210061559",
+        "feeRewardLastEpoch": "29184853394928704430784",
         "entity": {
           "identity": "0xA65810ab797902aF04843F24cEc2208942EecbE1",
           "submit": "0xA0B3ec77907b56ba295331F41D5885c4c80771Af",
@@ -5750,7 +5750,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.242Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5805,8 +5805,8 @@
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.342Z",
           "lastSubmittedEpoch": 416,
-          "epochsSinceSubmit": 10,
-          "epochsUntilRevoke": 7,
+          "epochsSinceSubmit": 11,
+          "epochsUntilRevoke": 6,
           "revokeAfterEpochs": 17
         }
       }
@@ -5826,12 +5826,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "66673736040878988036689534",
+        "votePower": "66770577024592645612784534",
         "votePowerCapped": "75103793825188053971369984",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "11653426921505925687587",
-        "feeRewardLastEpoch": "9417557184086442988794",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "11151102108371719148669",
+        "feeRewardLastEpoch": "9002583509255545801014",
         "entity": {
           "identity": "0xea92F0754e66fE02D97612eB759fD1802dE644A1",
           "submit": "0x3B8fcc9505D56e269Ca17eADc2C972cDd390226f",
@@ -5858,7 +5858,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.794Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5880,12 +5880,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "1085502315558177483210137",
+        "votePower": "1049647066840895076458429",
         "votePowerCapped": "1168180336210323729022976",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "145716264061785725737",
-        "feeRewardLastEpoch": "33449244802828102405745",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "137881556592235544974",
+        "feeRewardLastEpoch": "32730775918612534714963",
         "entity": {
           "identity": "0x04cfe617FaBD475d6d79cEB41eEa60C46f17d186",
           "submit": "0x1616BD72Ce167Ac52977B6396656C6FB486ECA0F",
@@ -5922,7 +5922,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.550Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -5944,12 +5944,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "79914338583031971970198643",
+        "votePower": "78426151639961440358587228",
         "votePowerCapped": "80499530445043704581324800",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "12287988514590761701804",
-        "feeRewardLastEpoch": "21034644650857770540753",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "11603145182566232036620",
+        "feeRewardLastEpoch": "19246473703810465273936",
         "entity": {
           "identity": "0x8080eC3d0330A80D57901bCecb298646FBdE5419",
           "submit": "0x7D73c6AACCDfc0583ED2d9CD7Ee74c151d5AC43f",
@@ -5986,7 +5986,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-03T10:18:38.711Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6008,12 +6008,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "63330337961961733486302852",
+        "votePower": "70262805746361511558901897",
         "votePowerCapped": "139611315883830380058378240",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "12053871350025538041068",
-        "feeRewardLastEpoch": "10137934621744564493384",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "11486202377596601090985",
+        "feeRewardLastEpoch": "11100903033261859172424",
         "entity": {
           "identity": "0xD03a130079430a5d8fd1caEA3535a80dDc6bFc0D",
           "submit": "0x85D134f68c3c564bb935479490E5C8Df5F4F1124",
@@ -6040,7 +6040,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.029Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6062,12 +6062,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "121161436013359671847860443",
+        "votePower": "121115987887726735118775448",
         "votePowerCapped": "120095447860562005466284032",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "18760706028544988250113",
-        "feeRewardLastEpoch": "22965343114226320017955",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "18480268457298484794875",
+        "feeRewardLastEpoch": "22242663592517019825197",
         "entity": {
           "identity": "0x4b44a128aC0a3D4eD7cc80532F16B9fbCfa96E0b",
           "submit": "0x70eD382d56E24453A83daFbDadc5F0B2492992ce",
@@ -6114,7 +6114,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.187Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6136,12 +6136,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "162774254643138039152010139",
+        "votePower": "161461820335929317792791064",
         "votePowerCapped": "149838124595903817842688000",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "19110238517089857097801",
-        "feeRewardLastEpoch": "55024057765013536239816",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "18006474603993752320307",
+        "feeRewardLastEpoch": "54625673233090435178574",
         "entity": {
           "identity": "0x19e655BB5F25cCbB88Ca26F69694cD83641F3B78",
           "submit": "0x878614F253E5F6039D8755dbdd97b4eAf5FeD2d9",
@@ -6178,7 +6178,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.284Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6200,12 +6200,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "232532914132466838649496910",
+        "votePower": "227621171578420321103790788",
         "votePowerCapped": "224499843452407330560278528",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "33841359142042025713458",
-        "feeRewardLastEpoch": "23358810358618633460246",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "32895770878397203310357",
+        "feeRewardLastEpoch": "22866038810889995935285",
         "entity": {
           "identity": "0x661a71e863c887E68aa8c9348e8AA60E48a868Ad",
           "submit": "0x6eE543bd1CF7AFa237233C29e7562665c82B89ED",
@@ -6232,7 +6232,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.197Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6254,10 +6254,10 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "75083295813635502647379530",
+        "votePower": "70878107359995119656167208",
         "votePowerCapped": "60202796736668393080356864",
         "feedCount": 62,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -6286,7 +6286,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.897Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6308,12 +6308,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "74617954156436327560137298",
+        "votePower": "74045887336052670382088284",
         "votePowerCapped": "86165772679377869491666944",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "13403864130510189902462",
-        "feeRewardLastEpoch": "13454646462512376702685",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "13048683988387542609852",
+        "feeRewardLastEpoch": "13174787359105460671652",
         "entity": {
           "identity": "0x80A4a02420aF8d7e42b111032C66692848dea62F",
           "submit": "0x917445462E58E32aF317FB5271D7EB028438F87F",
@@ -6340,7 +6340,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.987Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6362,12 +6362,12 @@
         "qualified": true,
         "network": "flare",
         "feePercent": 20,
-        "votePower": "133734770572658787528831615",
+        "votePower": "132576063610216380872068509",
         "votePowerCapped": "119779749129938003417890816",
         "feedCount": 62,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "19588225050015345959130",
-        "feeRewardLastEpoch": "20681938389914835820311",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "19379187877286409907051",
+        "feeRewardLastEpoch": "19547116964421279531422",
         "entity": {
           "identity": "0x625598caF40C63EB62860260cfD343d5FA4D88D4",
           "submit": "0x0B65694DC9F9c8540889eFB3Cf7F3A134C13298C",
@@ -6404,7 +6404,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.863Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6429,7 +6429,7 @@
         "votePower": "50000000000000000000000",
         "votePowerCapped": "49999999999999995805696",
         "feedCount": 63,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -6447,7 +6447,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-08-03T16:18:36.243Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6469,12 +6469,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "64340404314411381327128387",
+        "votePower": "20781595586338867639827639",
         "votePowerCapped": "20028504573405284746133504",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "62110425729435097647865",
-        "feeRewardLastEpoch": "15527606432358774403227",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "26567429491466391637151",
+        "feeRewardLastEpoch": "6641857372866597904460",
         "entity": {
           "identity": "0x6976b491CF6043Bbc11214633f7A51467760a967",
           "submit": "0x30A4Ae4E8C78fC087d166e90f8F564fF2fb55698",
@@ -6490,7 +6490,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.253Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6512,12 +6512,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "4176327161079343577817627",
+        "votePower": "4182244362967843812951368",
         "votePowerCapped": "6412955021081887748653056",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "7944483773541925782441",
-        "feeRewardLastEpoch": "1986120943385481442758",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "8039478009713356159783",
+        "feeRewardLastEpoch": "2009869502428339034825",
         "entity": {
           "identity": "0xdd8fE872D02942dBc3f5a2ECC62c78331430a90F",
           "submit": "0x4ee74B4bd478621F51Db5294D00729376B8208ba",
@@ -6533,7 +6533,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.061Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6555,12 +6555,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "66515590216544739532260958",
+        "votePower": "64209926465244591785483836",
         "votePowerCapped": "64370143017964883910066176",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "58733643507235862707925",
-        "feeRewardLastEpoch": "14683410876808965667854",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "57201133235799367330393",
+        "feeRewardLastEpoch": "14300283308949841824330",
         "entity": {
           "identity": "0x0A2128437f75Ea111887f033fD84794403562737",
           "submit": "0xD296098327d541E6057Cb2fFA309e19e9c7207eE",
@@ -6576,7 +6576,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.564Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6598,12 +6598,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "87363899941230942842177559",
+        "votePower": "87774494489287435136522624",
         "votePowerCapped": "88146286452371736944967680",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "51498910583562545288010",
-        "feeRewardLastEpoch": "12874727645890636313626",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "77124441321801057524326",
+        "feeRewardLastEpoch": "19281110330450264371354",
         "entity": {
           "identity": "0xC5261026e08Ec6dc23162ef7Eb1248548715be76",
           "submit": "0x3eb6A7eC0453b176A46a81aE49255E913b7e4749",
@@ -6619,7 +6619,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.072Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6641,12 +6641,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "55360375291757262426120933",
+        "votePower": "81263687294473427839883542",
         "votePowerCapped": "56762331660074207936512000",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "56383212647232935011284",
-        "feeRewardLastEpoch": "14095803161808233744632",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "70680492857674141191981",
+        "feeRewardLastEpoch": "17670123214418535290897",
         "entity": {
           "identity": "0xcf3A3e5797A960C67e0E4B23D4594246ffB9d935",
           "submit": "0xa8BBBA017b2ce496bBED4CFC0FB5D1aFd4F23772",
@@ -6662,7 +6662,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.007Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6684,12 +6684,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "352598710029641285329367382",
+        "votePower": "353461965651107876241450079",
         "votePowerCapped": "227684163073237094412320768",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "176587508201266346374157",
-        "feeRewardLastEpoch": "44146877050316586577840",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "184774421552151100250060",
+        "feeRewardLastEpoch": "46193605388037775050263",
         "entity": {
           "identity": "0x0c660191434484428A563614E0aa9d2041772953",
           "submit": "0x85Be5ECDa6b130Ed06De1F79d5f1D3ba88A4577F",
@@ -6705,7 +6705,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.806Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6727,12 +6727,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "36071289008108267586053016",
+        "votePower": "36509138544791779225931522",
         "votePowerCapped": "61370527093889193199271936",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "39238098271411646946561",
-        "feeRewardLastEpoch": "9809524567852911727964",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "39263309607585951454031",
+        "feeRewardLastEpoch": "9815827401896487855083",
         "entity": {
           "identity": "0xc9AAE1C39de077aEB7D7BC5B018ACC4c71504A84",
           "submit": "0x1037187c620B36e8c19eA1BD134F1C79417c3798",
@@ -6748,7 +6748,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.264Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6770,12 +6770,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "277640502486519176367568637",
+        "votePower": "277176035819776078696054512",
         "votePowerCapped": "227684163073237094412320768",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "186358586293877394374464",
-        "feeRewardLastEpoch": "46589646573469348577501",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "184221708211214415778627",
+        "feeRewardLastEpoch": "46055427052803603932385",
         "entity": {
           "identity": "0xB4466BE43F01e8A615490098AAF18a1dc5c56568",
           "submit": "0xe191a91F55bd34192FbF8c573D6880df7E0Ea19a",
@@ -6791,7 +6791,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.696Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6813,10 +6813,10 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "88794057457165791184855972",
+        "votePower": "88910995771579669342015809",
         "votePowerCapped": "85821722889597113306447872",
         "feedCount": 63,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -6834,7 +6834,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.929Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6856,12 +6856,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "159082710328720937609006615",
+        "votePower": "159257194232149896158428552",
         "votePowerCapped": "159987238298532190472896512",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "138244228697892837651392",
-        "feeRewardLastEpoch": "34561057174473209401847",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "136801821497293150997479",
+        "feeRewardLastEpoch": "34200455374323287738659",
         "entity": {
           "identity": "0x19585c914AeA4d985E034399c581B35014ec94eF",
           "submit": "0x991B71d7380E89354ea71007Eb744316829B62ae",
@@ -6877,7 +6877,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.152Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6899,12 +6899,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "268583525400511636231829482",
+        "votePower": "265219019798310748647761963",
         "votePowerCapped": "227684163073237094412320768",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "181625552901559350542786",
-        "feeRewardLastEpoch": "45406388225389837619715",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "183992840399656309974563",
+        "feeRewardLastEpoch": "45998210099914077481321",
         "entity": {
           "identity": "0xB3C9AA09F22A06122d3608Ef075f14E001561470",
           "submit": "0x38F01976677021A2599C1D155206037eCB28c1E5",
@@ -6920,7 +6920,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.287Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6942,12 +6942,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "165290902621178895317396827",
+        "votePower": "163779532412505745115846027",
         "votePowerCapped": "163816895647883544410193920",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "129903876671309594405552",
-        "feeRewardLastEpoch": "32475969167827398590198",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "143664246101517316433467",
+        "feeRewardLastEpoch": "35916061525379329095842",
         "entity": {
           "identity": "0xBe311F1640b700F76D17C009a505487C23b0312c",
           "submit": "0x7Ce5F38bA4b9A11A462C0235159052CF5d026972",
@@ -6963,7 +6963,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.140Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -6985,12 +6985,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "495743447980475791546587680",
+        "votePower": "492811744725986588654230345",
         "votePowerCapped": "227684163073237094412320768",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "163226422217102321936709",
-        "feeRewardLastEpoch": "40806605554275580468408",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "165462671853366288408232",
+        "feeRewardLastEpoch": "41365667963341572089909",
         "entity": {
           "identity": "0x7429E0C70306834E2B210cf3FEB306342f456ce7",
           "submit": "0xf01f5A31A07A046Cd63d5Ec27E82D12E6A89762f",
@@ -7006,7 +7006,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.486Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7028,12 +7028,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "68299701649728599269791437",
+        "votePower": "68433808286483410579533514",
         "votePowerCapped": "68189204032512449247707136",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "64754750594392018499986",
-        "feeRewardLastEpoch": "16188687648598004617054",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "63769200605679734857844",
+        "feeRewardLastEpoch": "15942300151419933705143",
         "entity": {
           "identity": "0x121c651710217239592A169b9f7D1038Ad53446d",
           "submit": "0x44bAE8BA9DA0a0583e49937ca5a251b8CdC1BC81",
@@ -7049,7 +7049,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-29T20:02:16.605Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7071,12 +7071,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "121291645945147192937437582",
+        "votePower": "121411873558710415842019356",
         "votePowerCapped": "121447912835252369693343744",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "117683336400830376883435",
-        "feeRewardLastEpoch": "29420834100207594211117",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "117270964389262382548809",
+        "feeRewardLastEpoch": "29317741097315595628104",
         "entity": {
           "identity": "0x01F24Cb1DE93f218f6627D496e6318BEa65f2f34",
           "submit": "0x854D6971733c84a8a62Bab6F62A588a9e1e33F92",
@@ -7092,7 +7092,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.502Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7114,12 +7114,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "238563952616295842618779508",
+        "votePower": "243440171363309254854429340",
         "votePowerCapped": "227684163073237094412320768",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "192970778258897913555898",
-        "feeRewardLastEpoch": "48242694564724478373258",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "194923226449151134997271",
+        "feeRewardLastEpoch": "48730806612287783736828",
         "entity": {
           "identity": "0x8ddd48b520Df91f05C5d8c19b2cEE59ABe65978a",
           "submit": "0x92BF54Ae8AeD699a038e8d8b0e62e5b511F56DC5",
@@ -7135,7 +7135,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.953Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7157,10 +7157,10 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "22657070213470179724029602",
+        "votePower": "22658864498169974879333202",
         "votePowerCapped": "22659195202198627445374976",
         "feedCount": 63,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -7178,7 +7178,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.357Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7200,12 +7200,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "74348393747191935044807741",
+        "votePower": "73083798838945382468988641",
         "votePowerCapped": "75007260157376959336153088",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "58331036614061199422090",
-        "feeRewardLastEpoch": "14582759153515299847482",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "63528399643150420104581",
+        "feeRewardLastEpoch": "15882099910787605017424",
         "entity": {
           "identity": "0xd6C5f3e3a8A76EC73F2fAFaf06ef9dA57796DdF0",
           "submit": "0x71aec2Bc126654d116386864b5f3BAbce0cA87e0",
@@ -7221,7 +7221,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.728Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7243,12 +7243,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "104934881706907095997665653",
+        "votePower": "102441032609215231225299088",
         "votePowerCapped": "104448826145231033050595328",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "92781459898028940990367",
-        "feeRewardLastEpoch": "23195364974507235236893",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
         "entity": {
           "identity": "0x00620F4659Bc546284dAB2720373C606727f073A",
           "submit": "0x57857265f6015f2193Fc4E924055172b54826fB1",
@@ -7264,7 +7264,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.040Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7286,12 +7286,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "131467560500651626166060602",
+        "votePower": "130705852068856466987448255",
         "votePowerCapped": "129662337269216456386543616",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "117659880903661093267789",
-        "feeRewardLastEpoch": "29414970225915273307679",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "116793115717696205533064",
+        "feeRewardLastEpoch": "29198278929424051374259",
         "entity": {
           "identity": "0xC1d269E9D2A39c6A285EaAF53Eb9fe9b7245C87E",
           "submit": "0xEb431ACA7D7B626c8635dE8842a8ca4A25c53aB1",
@@ -7307,7 +7307,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.685Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7329,12 +7329,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "257794269706556643723343883",
+        "votePower": "258012965955924070381852680",
         "votePowerCapped": "227684163073237094412320768",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "187916447626182930636488",
-        "feeRewardLastEpoch": "46979111906545732642875",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "190372872831984798944183",
+        "feeRewardLastEpoch": "47593218207996199723878",
         "entity": {
           "identity": "0x89f7498a8db97FF7d8ef323E480Cb18dB44a1309",
           "submit": "0x216E8856902c0e90170e1a4f1Bc8659C1b200AFC",
@@ -7350,7 +7350,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.310Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7372,12 +7372,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "124613509706867724529038641",
+        "votePower": "124680106258116252948026534",
         "votePowerCapped": "124802757011708684695240704",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "120974720314058937260545",
-        "feeRewardLastEpoch": "30243680078514734304398",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "120951686885780787335016",
+        "feeRewardLastEpoch": "30237921721445196823936",
         "entity": {
           "identity": "0x527E5e829763885008E171493C0E8d4A1eC48239",
           "submit": "0xE6c5024a337451e32f18f4B043bdb2d755897F7E",
@@ -7393,7 +7393,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.950Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7415,12 +7415,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "131087444082384949526857455",
+        "votePower": "131107485995427720728849237",
         "votePowerCapped": "131560940389469631490818048",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "115345966393314253603800",
-        "feeRewardLastEpoch": "28836491598328563391477",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "114398848516105358532932",
+        "feeRewardLastEpoch": "28599712129026339622594",
         "entity": {
           "identity": "0x44Eb776cd95aE59b2edA2cE354557427361e75Da",
           "submit": "0xB9f0F796BebCA28c9813452C9B1B5719D89604e3",
@@ -7436,7 +7436,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.298Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7458,12 +7458,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "78191226778643132910457397",
+        "votePower": "75095018438009984681541567",
         "votePowerCapped": "80615204990608258675769344",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "75943844311090812834311",
-        "feeRewardLastEpoch": "18985961077772703198685",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "73855621351775390075666",
+        "feeRewardLastEpoch": "18463905337943847509621",
         "entity": {
           "identity": "0x6fAcdb16cA28aDe44f682c17BE7B3357EB2f6A4c",
           "submit": "0x86EaC68014dB746b662E6BeA8bE9A2DF3caEFda5",
@@ -7479,7 +7479,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.261Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7501,12 +7501,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "138774067985361778250900906",
+        "votePower": "138770371755074371453988584",
         "votePowerCapped": "138788277618107580527149056",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "107251677966229709421253",
-        "feeRewardLastEpoch": "26812919491557427344514",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "107765727345995323120280",
+        "feeRewardLastEpoch": "26941431836498830769681",
         "entity": {
           "identity": "0x342C8c165Db96a60EfEdd2E3480ae5398A1fd322",
           "submit": "0xc7Aeb460f425667D4fb16e0C0c42325b031030a0",
@@ -7522,7 +7522,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.940Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7544,12 +7544,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "154404035644577104643387",
+        "votePower": "46094449026615841738852121",
         "votePowerCapped": "45104738751817745958961152",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "826031341238204286204",
-        "feeRewardLastEpoch": "206507835309551066905",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "22347097538088298481287",
+        "feeRewardLastEpoch": "5586774384522074615848",
         "entity": {
           "identity": "0x98957a7a4d5FCD9C410A19d2363959d52FF2965e",
           "submit": "0xCf5965b26B91347c699B71843E163a0feC6Fd92e",
@@ -7565,7 +7565,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-08-03T16:18:36.265Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7587,10 +7587,10 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "161781680680329167529781002",
+        "votePower": "162704629698675668641582892",
         "votePowerCapped": "145514303580296551933673472",
         "feedCount": 63,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -7608,7 +7608,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.164Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7630,12 +7630,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "181059998582129475933348252",
+        "votePower": "180805809991254846159100734",
         "votePowerCapped": "180743413081957032437743616",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "137022030895068118787035",
-        "feeRewardLastEpoch": "34255507723767029682836",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "135765718708942698315380",
+        "feeRewardLastEpoch": "33941429677235674567608",
         "entity": {
           "identity": "0x6c2209754845dF0FC01D048c3F3C3537B5D35B9c",
           "submit": "0x8CA22a091F467d4E4d0e0357B6cd6d963e426689",
@@ -7651,7 +7651,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.390Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7673,12 +7673,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "129687429949290083262413943",
+        "votePower": "106847171961543623215378976",
         "votePowerCapped": "109427087937584773229182976",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "110074679497137019002943",
-        "feeRewardLastEpoch": "27518669874284254739059",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "92566951433779411912453",
+        "feeRewardLastEpoch": "23141737858444852968447",
         "entity": {
           "identity": "0x48DcD1215b7F8C92150742765ffE989F55b3A5b0",
           "submit": "0x2B6A18eF47c03e37bB7e3E8F4a4fDC4af8577d97",
@@ -7694,7 +7694,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.738Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7716,12 +7716,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "215801536297765567882051106",
+        "votePower": "217579173784684911361681553",
         "votePowerCapped": "217913757329922609719017472",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "170662167769917232172647",
-        "feeRewardLastEpoch": "42665541942479308028183",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "169044517936504293556566",
+        "feeRewardLastEpoch": "42261129484126073375611",
         "entity": {
           "identity": "0x4985138d5efaB799CaA5abb09Eb7DBC87Dd5141A",
           "submit": "0xe50C2243dD448DFCBd037463Dc8D9F0787bfb17a",
@@ -7737,7 +7737,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.764Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7759,12 +7759,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "142659078806045857471447335",
+        "votePower": "90149164216832495947633060",
         "votePowerCapped": "64466768193998795099340800",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "109820421901361913089284",
-        "feeRewardLastEpoch": "27455105475340478261911",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "77963174543450745325429",
+        "feeRewardLastEpoch": "19490793635862686322170",
         "entity": {
           "identity": "0xBdeb203e55e65451fABf0e7B778b32ac174918fF",
           "submit": "0x58Ced1F8150498DfEBa90451F033314A00Da3525",
@@ -7780,7 +7780,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-03T10:18:38.594Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7802,12 +7802,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "32551519841966426921408775",
+        "votePower": "32699364724744859832227483",
         "votePowerCapped": "32576491291499722088382464",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "35580604846391043994322",
-        "feeRewardLastEpoch": "8895151211597760991754",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "35907102559128099392319",
+        "feeRewardLastEpoch": "8976775639782024841241",
         "entity": {
           "identity": "0xbc1682730aE5BD0Aed7d210da330Ed581D9F2c4D",
           "submit": "0xc280FcABd9cb4524D84E3ea9F7f970E123FeC53E",
@@ -7823,7 +7823,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-24T10:18:49.929Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7845,12 +7845,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "127311089960570237243753119",
+        "votePower": "126868610608093691313214338",
         "votePowerCapped": "126944919315522092663832576",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "113105011619114416902189",
-        "feeRewardLastEpoch": "28276252904778604214838",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "112100167095575279169528",
+        "feeRewardLastEpoch": "28025041773893819782228",
         "entity": {
           "identity": "0xa6b95941845b229aD7b2cD4c3c6dE3aD9d0865Ff",
           "submit": "0x1b7202D589B133CB4179b6d034E047Bda2620303",
@@ -7866,7 +7866,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.019Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7888,12 +7888,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "82668613039967948786112467",
+        "votePower": "83808477924203871901968962",
         "votePowerCapped": "75700996799910187571871744",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "65194196801208742520520",
-        "feeRewardLastEpoch": "16298549200302185621601",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "78162572312154758751289",
+        "feeRewardLastEpoch": "19540643078038689679028",
         "entity": {
           "identity": "0x05D8F084bf6aC2267A5ca699740E9236DB6E2bDb",
           "submit": "0xC967d1Fd27A94E4FC5C085C0AdfA9bcD2418d1a0",
@@ -7909,7 +7909,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.939Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7931,12 +7931,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "60365676745854894859640490",
+        "votePower": "60312686904632580022808020",
         "votePowerCapped": "60357228065858477583499264",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "59659895885071651091074",
-        "feeRewardLastEpoch": "14914973971267912763709",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "59344355530587873927480",
+        "feeRewardLastEpoch": "14836088882646968473997",
         "entity": {
           "identity": "0xEc056b0EF36de1D63031fdBb9bceF5FEB36FB27f",
           "submit": "0x1A2c2CF93667B0936c2e2e057FaFc8637Df56642",
@@ -7952,7 +7952,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.828Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -7974,12 +7974,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "96192629474632418611010172",
+        "votePower": "95226252071431764729948043",
         "votePowerCapped": "94327259459745553601003520",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "87396746311634617650234",
-        "feeRewardLastEpoch": "21849186577908654404230",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "88225030390806787553829",
+        "feeRewardLastEpoch": "22056257597701696877768",
         "entity": {
           "identity": "0xbB99dda7b6dcE88908dCD684ab7bf1a90f084401",
           "submit": "0x41C2c30B9bD902Ce3710903f27f5024da49C509E",
@@ -7995,7 +7995,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.476Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8017,12 +8017,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "152768439031416275750180016",
+        "votePower": "153351701471955236013466730",
         "votePowerCapped": "153224744161690303779045376",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "141066454194794800710324",
-        "feeRewardLastEpoch": "35266613548698700167019",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "140269731947049616365950",
+        "feeRewardLastEpoch": "35067432986762404081125",
         "entity": {
           "identity": "0xD288C3EF25eBf79e7C53EA37DcDfB0710f3Ed173",
           "submit": "0x2d4da92b99b98DD4a0744Fa563BF27B30aEE6b0B",
@@ -8038,7 +8038,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.803Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8060,12 +8060,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "65453706909931568803364457",
+        "votePower": "66002342706485394644750057",
         "votePowerCapped": "66043175804672476658532352",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "63409518763007113222679",
-        "feeRewardLastEpoch": "15852379690751778296814",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "56079546384408963863831",
+        "feeRewardLastEpoch": "14019886596102240959157",
         "entity": {
           "identity": "0x28603D496801086f503d80B5D321EcAd13CA3AFC",
           "submit": "0x8051e1447d2DBC375C218605F623898EdFFE0a28",
@@ -8081,7 +8081,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.594Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8103,12 +8103,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "129420110509275339364268286",
+        "votePower": "129437616647514127755969020",
         "votePowerCapped": "129436029186381483423563776",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "117398114394176098092592",
-        "feeRewardLastEpoch": "29349528598544024513442",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "114127449392721925583335",
+        "feeRewardLastEpoch": "28531862348180481386136",
         "entity": {
           "identity": "0xDbB159Ee372D58d2653023bF1c5ab5678b842870",
           "submit": "0x9F061f18fDe13b8AFB4Ad002D40B94d26f86c9b6",
@@ -8124,7 +8124,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.851Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8161,7 +8161,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.367Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8205,8 +8205,8 @@
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.401Z",
           "lastSubmittedEpoch": 414,
-          "epochsSinceSubmit": 12,
-          "epochsUntilRevoke": 5,
+          "epochsSinceSubmit": 13,
+          "epochsUntilRevoke": 4,
           "revokeAfterEpochs": 17
         }
       }
@@ -8226,12 +8226,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "113371890392513772305243399",
+        "votePower": "112643936887997104637555205",
         "votePowerCapped": "112894811302186558100078592",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "103749756001969607344461",
-        "feeRewardLastEpoch": "25937439000492401826648",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "104505830455305613960595",
+        "feeRewardLastEpoch": "26126457613826403481518",
         "entity": {
           "identity": "0x7e74F48ee5575e028d6bEbd77e368761F1d74a2a",
           "submit": "0xCF1392B41ff06ab51D6F1bDf69e7cD706141a8BA",
@@ -8247,7 +8247,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.275Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8269,12 +8269,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "94471523744847219847102780",
+        "votePower": "94369693937933949377332405",
         "votePowerCapped": "95981105410359160599478272",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "81998110905839819880876",
-        "feeRewardLastEpoch": "20499527726459954960145",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "81481408829000857255137",
+        "feeRewardLastEpoch": "20370352207250214304855",
         "entity": {
           "identity": "0xEE6f6572cfeB3467CE5F3572Bea7c5FD6d2b1725",
           "submit": "0x5d62D85f7903ECA56C65521172BdA8904A1e0937",
@@ -8290,7 +8290,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.514Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8312,12 +8312,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "75034935575658459442258662",
+        "votePower": "75104097997163593433704203",
         "votePowerCapped": "53303448022769478079086592",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "68843354119246938382549",
-        "feeRewardLastEpoch": "17210838529811734587372",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "67327619996960462808611",
+        "feeRewardLastEpoch": "16831904999240115693963",
         "entity": {
           "identity": "0x1A34A80deB40D2a1A6c0E2959785058A975AD900",
           "submit": "0xC3B54c0AC337Cb33eed108f1a23a95983C8C58aA",
@@ -8332,8 +8332,8 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.175Z",
-          "lastSubmittedEpoch": 426,
+          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8355,12 +8355,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "41405220544572889492445698",
+        "votePower": "41559038113978722167833675",
         "votePowerCapped": "41903777615118463943049216",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "44788410305648301256754",
-        "feeRewardLastEpoch": "11197102576412075305834",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "44435129994725289449776",
+        "feeRewardLastEpoch": "11108782498681322357124",
         "entity": {
           "identity": "0x65Ae92f3473D75815F2a86298b76A608F94E1575",
           "submit": "0x8982e007397Edc5E6EfE3978fa5ee2e19ec62070",
@@ -8376,7 +8376,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.411Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8398,12 +8398,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "367991666055288176946213369",
+        "votePower": "371218491040157246168052074",
         "votePowerCapped": "227684163073237094412320768",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "182076422336341504352657",
-        "feeRewardLastEpoch": "45519105584085376073971",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "181177495344476248700983",
+        "feeRewardLastEpoch": "45294373836119062161375",
         "entity": {
           "identity": "0x3ED54c61EC0fF7C144d547C2d032392864e66cA2",
           "submit": "0x0bf38D9067A250C0f470ddbd123c4210270Ea710",
@@ -8419,7 +8419,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.321Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8441,12 +8441,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "72053932081075820017766121",
+        "votePower": "72037615918773830095986420",
         "votePowerCapped": "72125793949590174329470976",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "73277309458279449007109",
-        "feeRewardLastEpoch": "18319327364569862243435",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "74883801001137041752608",
+        "feeRewardLastEpoch": "18720950250284260429133",
         "entity": {
           "identity": "0xaDEDCd23941E479b4736B38e271Eb926596BBe3d",
           "submit": "0x70E0c2E0831b135a62DEC08A32A4e99f64433541",
@@ -8462,7 +8462,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.371Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8505,7 +8505,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.924Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8527,12 +8527,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "180648555380445460921968223",
+        "votePower": "178279195263461272580934413",
         "votePowerCapped": "180000618734767614866751488",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "154211035905574944554192",
-        "feeRewardLastEpoch": "38552758976393736124739",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "148043995482475756024115",
+        "feeRewardLastEpoch": "37010998870618938993679",
         "entity": {
           "identity": "0x4F84caAb4a53Aabbad2dfE1013d2bB53EDBF2f0a",
           "submit": "0xe0bFd268E193103Cb3e8331725414D7644f05e35",
@@ -8548,7 +8548,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.718Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8570,12 +8570,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "53655752946717139489483537",
+        "votePower": "53671614755882839727760868",
         "votePowerCapped": "53722566035694716018753536",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "54746638369428168911140",
-        "feeRewardLastEpoch": "13686659592357042218734",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "54783979025962526266235",
+        "feeRewardLastEpoch": "13695994756490631558615",
         "entity": {
           "identity": "0xEcAFe633830Fa27b4912a5588c28B7D994e1f203",
           "submit": "0x232b3ceCC2e4EAae6122952AD0b1bBC60f85A829",
@@ -8591,7 +8591,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.770Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8634,7 +8634,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.251Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8656,12 +8656,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "136952216941097875068452476",
+        "votePower": "138013743497952138731436246",
         "votePowerCapped": "138079129151395845529141248",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "126405908657321673537875",
-        "feeRewardLastEpoch": "31601477164330418373588",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "124391079903200462226129",
+        "feeRewardLastEpoch": "31097769975800115544329",
         "entity": {
           "identity": "0x1CBf078705c907510fdB711Cf3c6e9B8E583f156",
           "submit": "0x959fE25A0f1b4E1BeA43C57C611AFB62442124b0",
@@ -8677,7 +8677,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.119Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8699,12 +8699,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "71683302171743241174001137",
+        "votePower": "108413271036539673977813193",
         "votePowerCapped": "98233879228964676451696640",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "72241348872534946689003",
-        "feeRewardLastEpoch": "18060337218133736662272",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "98526164209005278418173",
+        "feeRewardLastEpoch": "24631541052251319594036",
         "entity": {
           "identity": "0xCDEAE85d8cEF99a6433F341c3DcE6096C3c5598c",
           "submit": "0x6a4121a29839b446052640655818B4c7F9Bb569f",
@@ -8720,7 +8720,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.728Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8742,12 +8742,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "106856443243650166382040170",
+        "votePower": "82827616441378248037019057",
         "votePowerCapped": "82966547093587413407105024",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "80446338736146293542997",
-        "feeRewardLastEpoch": "20111584684036573377022",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "69199842418181353664581",
+        "feeRewardLastEpoch": "17299960604545338408403",
         "entity": {
           "identity": "0xa0E1FBA30e75e2d0D6C428cFF4B3b6A06233422b",
           "submit": "0x39A875a881BF934bA1483F2bdAe8C1A19125CBbF",
@@ -8763,7 +8763,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.684Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8785,12 +8785,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "47959771205132190115646130",
+        "votePower": "48093883696486097481353476",
         "votePowerCapped": "47917083755143699992936448",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "39376943520821788217428",
-        "feeRewardLastEpoch": "9844235880205447048478",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "45043485278887307902317",
+        "feeRewardLastEpoch": "11260871319721826968856",
         "entity": {
           "identity": "0xC2AE38bd4804f74Bba2828CdFC1fFa4be4D71304",
           "submit": "0xcC5ea80eE5aE7FEBe57913D330b41E16e7DAf13E",
@@ -8806,7 +8806,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.242Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8828,10 +8828,10 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "60778129205778641100052935",
+        "votePower": "60293915809127842740339428",
         "votePowerCapped": "60334040990389804520701952",
         "feedCount": 63,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -8849,7 +8849,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.794Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8871,12 +8871,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "56129634092695885418191886",
+        "votePower": "56220204544129929340208309",
         "votePowerCapped": "52845780692354240457211904",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "56374283389452661541739",
-        "feeRewardLastEpoch": "14093570847363165376634",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "55387791425355114573008",
+        "feeRewardLastEpoch": "13846947856338778635374",
         "entity": {
           "identity": "0xD9DdD06B3E603F451DD8A16574CA9D3dF564742b",
           "submit": "0xB410331e0f29f9Cf5792a18982bF416a7768Fdec",
@@ -8892,7 +8892,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-03T10:18:38.711Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8914,12 +8914,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "23288068137508197015554219",
+        "votePower": "23288767894598809476604730",
         "votePowerCapped": "103999022268654843265548288",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "26443504528304560932743",
-        "feeRewardLastEpoch": "6610876132076140226145",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "25836710297249105547926",
+        "feeRewardLastEpoch": "6459177574312276379997",
         "entity": {
           "identity": "0xD03a130079430a5d8fd1caEA3535a80dDc6bFc0D",
           "submit": "0x85D134f68c3c564bb935479490E5C8Df5F4F1124",
@@ -8935,7 +8935,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.029Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -8957,12 +8957,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "82412111770492837336786736",
+        "votePower": "84561772652319824495634457",
         "votePowerCapped": "84889007493738511781068800",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "76968467590067575355792",
-        "feeRewardLastEpoch": "19242116897516893829922",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "80389154093766791229429",
+        "feeRewardLastEpoch": "20097288523441697798237",
         "entity": {
           "identity": "0x01CaAAA7B40AA13aB2a04087d262B5558E695607",
           "submit": "0xBE9f00D70c357c663b63cf5972D4c59c851a7618",
@@ -8978,7 +8978,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.284Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -9000,12 +9000,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "173907142706873917354909262",
+        "votePower": "173771054057722859019874942",
         "votePowerCapped": "174524909699385600459669504",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "146222822344398403776999",
-        "feeRewardLastEpoch": "36555705586099600931579",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "146265305166824548962465",
+        "feeRewardLastEpoch": "36566326291706137229395",
         "entity": {
           "identity": "0x661a71e863c887E68aa8c9348e8AA60E48a868Ad",
           "submit": "0x6eE543bd1CF7AFa237233C29e7562665c82B89ED",
@@ -9021,7 +9021,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.197Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -9043,10 +9043,10 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "44345671342104039594716212",
+        "votePower": "44122032436920365603659570",
         "votePowerCapped": "44060958863531769650479104",
         "feedCount": 63,
-        "lastEpoch": 426,
+        "lastEpoch": 427,
         "delegatorRewardLastEpoch": "0",
         "feeRewardLastEpoch": "0",
         "entity": {
@@ -9064,7 +9064,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.897Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -9086,12 +9086,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "32752671148747812230321729",
+        "votePower": "57176992271721072960424809",
         "votePowerCapped": "61511988126155229278240768",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "36528139363525312626022",
-        "feeRewardLastEpoch": "9132034840881328149892",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "57627986181735721805405",
+        "feeRewardLastEpoch": "14406996545433930445573",
         "entity": {
           "identity": "0xfe193A0f95bBeeE5a5c8306bca5ceDfA65114460",
           "submit": "0x917445462E58E32aF317FB5271D7EB028438F87F",
@@ -9107,7 +9107,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.987Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -9129,12 +9129,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "96926960406575142961741453",
+        "votePower": "96990602175295203584767419",
         "votePowerCapped": "97036360463122592474071040",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "86851361283157435981126",
-        "feeRewardLastEpoch": "21712840320789358987509",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "89268628613965323298446",
+        "feeRewardLastEpoch": "22317157153491330814502",
         "entity": {
           "identity": "0x625598caF40C63EB62860260cfD343d5FA4D88D4",
           "submit": "0x9eE69d3B7C8099aB0E604BBAc544e77E2066d38c",
@@ -9150,7 +9150,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.863Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
@@ -9172,12 +9172,12 @@
         "qualified": true,
         "network": "songbird",
         "feePercent": 20,
-        "votePower": "58282211879026536476616697",
+        "votePower": "58296395144876390717945929",
         "votePowerCapped": "58343622706771810408464384",
         "feedCount": 63,
-        "lastEpoch": 426,
-        "delegatorRewardLastEpoch": "56384393229687065131050",
-        "feeRewardLastEpoch": "14096098307421766275514",
+        "lastEpoch": 427,
+        "delegatorRewardLastEpoch": "58265925707494696390766",
+        "feeRewardLastEpoch": "14566481426873674090751",
         "entity": {
           "identity": "0xEd1AF13D359044Eea494cb9Acf03997caBfFD44b",
           "submit": "0x9A18bAf7Dd4261F337B206cfFC5C0D723D2AfC4B",
@@ -9193,7 +9193,7 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.382Z",
-          "lastSubmittedEpoch": 426,
+          "lastSubmittedEpoch": 427,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
