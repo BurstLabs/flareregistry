@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-09-05T08:47:02.957Z",
+  "timestamp": "2026-09-05T09:05:49.651Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -2369,70 +2369,6 @@
     },
     {
       "chainId": 14,
-      "name": "Flare Beacon",
-      "description": "Songbird network signal provider. Beaconing since inception",
-      "url": "https://flarebeacon.xyz",
-      "address": "0xdd33Ba13F32C90D678422251B52B005335fB7A4c",
-      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x633CE03ea66d910c15869e1552fDccC2bf9aAD87.png",
-      "listed": true,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": true,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "353647095607501905670135393",
-        "votePowerCapped": "352648975101347607051501568",
-        "feedCount": 62,
-        "lastEpoch": 429,
-        "delegatorRewardLastEpoch": "47667609696097603973257",
-        "feeRewardLastEpoch": "27468539114459076915873",
-        "entity": {
-          "identity": "0x3CFD132642356730341221F8E52Cce82cF10Caa9",
-          "submit": "0xF2a9CeD48870D37c7E3362b4aa4a2733b1FC6BEF",
-          "submitSignatures": "0x5c980a7b3dbb602FA298FdC6C3e35F4b037b9929",
-          "signingPolicy": "0x644c70e36168b8A922AECAdDae38C95d40403E3a",
-          "delegation": "0xdd33Ba13F32C90D678422251B52B005335fB7A4c"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-CrsvTSFLB8G3ziPaVjgH1pj8NQxSZkECD",
-            "feePercent": 20,
-            "uptimePercent": 99.9925,
-            "connected": true,
-            "weight": "105341559581896905",
-            "selfBond": "18250000000000000",
-            "delegatedWeight": "87091559581896905",
-            "delegatorCount": 47
-          },
-          {
-            "nodeId": "NodeID-Fvr7jSqNdueYRthVBp2qVWdAgw3tQzjxa",
-            "feePercent": 20,
-            "uptimePercent": 99.9996,
-            "connected": true,
-            "weight": "20587742318696250",
-            "selfBond": "9568469000000000",
-            "delegatedWeight": "11019273318696250",
-            "delegatorCount": 9
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.298Z",
-          "lastSubmittedEpoch": 429,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 14,
       "name": "FlareBus",
       "description": "FlareBus is a decentralized FTSO provider that delivers accurate and real-time price data for the Flare Network ecosystem. Our infrastructure is a hybrid blend of dedicated bare-metal servers and scalable cloud environments. This combination allows us to optimize for both low-latency performance and high availability.",
       "url": "https://flarebus.com",
@@ -4435,7 +4371,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 429,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -7419,7 +7355,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x633CE03ea66d910c15869e1552fDccC2bf9aAD87.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -7440,12 +7376,12 @@
         },
         "validators": [],
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.298Z",
+          "qualifiedSince": "2026-06-22T23:47:18.776Z",
           "lastSubmittedEpoch": 429,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -8342,7 +8278,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 429,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
