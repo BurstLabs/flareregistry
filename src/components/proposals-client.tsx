@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers";
 import { ProposalVote } from "@/components/proposal-vote";
+import { ProposalCompose } from "@/components/proposal-compose";
 import { safeExternalUrl } from "@/lib/validation";
 import type { MgProposalView } from "@/lib/mg-proposals";
 
@@ -13,6 +14,8 @@ import type { MgProposalView } from "@/lib/mg-proposals";
 interface Payload {
   settings: { thresholdBips: number; majorityBips: number; feeWei: string };
   memberCount: number;
+  /** The deployment a NEW proposal goes to; historic ones are read-only. */
+  currentContract: string | null;
   proposals: MgProposalView[];
 }
 
@@ -172,6 +175,10 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
       {/* Said plainly, because the whole page is about a vote and a reader is entitled to know that
           this site is not part of it. */}
       <p className="mt-2 text-xs text-faint">{t("prop.readOnly")}</p>
+
+      {/* Only rendered for an address the contract says may propose; it returns null otherwise, so
+          nobody else learns the form exists. New proposals always go to the CURRENT deployment. */}
+      {data.currentContract && <ProposalCompose contract={data.currentContract} />}
 
       <p className="mb-2 mt-8 text-xs text-faint">
         {t("prop.count", { total: data.proposals.length, page: current, pages })}
