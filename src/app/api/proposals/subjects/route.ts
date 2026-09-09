@@ -3,66 +3,74 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/proposals/subjects -> every provider that can be named in a Management Group proposal,
-// with the on-chain identity address a proposal should carry.
+// GET /api/proposals/subjects -> every entity a Management Group proposal can name, with the
+// on-chain identity address the proposal should carry.
 //
 // WHY THIS EXISTS AT ALL. A proposal names its subject by address, and until now that address was
 // typed by hand into a textarea. Addresses differ in the middle and a transposition looks like
 // nothing, so a slip names the WRONG provider in a public governance action, and the mistake is
 // discovered only after 100 FLR has been burned on a proposal that cannot be cancelled. Picking a
-// provider by name and letting us supply the address removes the entire class of error.
+// subject by name and letting us supply the address removes the entire class of error.
 //
-// NOT A SECURITY BOUNDARY and it needs none: provider names and their on-chain identity addresses
-// are already public, on the directory and in the feed. The eligibility to actually submit is
-// enforced by the contract, which accepts a proposal only from a current Management Group member.
+// DRIVEN OFF THE CHAIN, NOT OFF OUR REGISTRY, and the difference is not academic. The first version
+// of this listed the 108 providers with a listing here and missed the other 121 entities entirely,
+// including Rotko and Sceptre, who between them are the subjects of both proposals currently open.
+// A form that cannot name the thing the group is actually voting on is worse than no form. The
+// registry supplies a NAME where it has one; the chain decides who exists.
 //
-// THE IDENTITY (voter) ADDRESS, not the listing's claimed address. A listing is filed under
-// whichever of the five roles its owner claimed with, usually the delegation address, but a
-// proposal is about the ENTITY, and every existing proposal names the voter.
+// NOT A SECURITY BOUNDARY and it needs none: entity addresses and provider names are already public
+// on the directory and in the feed. Eligibility to submit is enforced by the contract, which takes
+// a proposal only from a current Management Group member.
 export async function GET() {
-  const providers = await prisma.provider.findMany({
-    where: { archivedAt: null },
-    select: { name: true, addresses: { select: { address: true } } },
-  });
+  const [entities, addresses] = await Promise.all([
+    prisma.providerOnchain.findMany({
+      select: {
+        network: true,
+        voter: true,
+        delegationAddress: true,
+        submitAddress: true,
+        submitSignaturesAddress: true,
+        signingPolicyAddress: true,
+      },
+    }),
+    prisma.providerAddress.findMany({
+      select: { address: true, provider: { select: { name: true, archivedAt: true } } },
+    }),
+  ]);
 
-  const entities = await prisma.providerOnchain.findMany({
-    select: {
-      network: true,
-      voter: true,
-      delegationAddress: true,
-      submitAddress: true,
-      submitSignaturesAddress: true,
-      signingPolicyAddress: true,
-    },
-  });
-
-  // Any of the five roles maps back to the entity, matching how the rest of this codebase resolves
-  // a listing to its on-chain identity.
-  const byRole = new Map<string, { voter: string; network: string }>();
-  for (const e of entities) {
-    for (const r of [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]) {
-      if (r) byRole.set(r.toLowerCase(), { voter: e.voter.toLowerCase(), network: e.network });
-    }
+  const nameByRole = new Map<string, string>();
+  for (const a of addresses) {
+    if (a.provider.archivedAt) continue;
+    nameByRole.set(a.address.toLowerCase(), a.provider.name);
   }
 
+  // One row per entity, keyed by the voter, which is the address every existing proposal names.
+  // A name is found through ANY of the five roles, since a listing is filed under whichever role
+  // its owner claimed with.
   const seen = new Set<string>();
-  const subjects: { name: string; address: string; network: string }[] = [];
-  for (const p of providers) {
-    for (const a of p.addresses) {
-      const hit = byRole.get(a.address.toLowerCase());
-      if (!hit || seen.has(hit.voter)) continue;
-      seen.add(hit.voter);
-      subjects.push({ name: p.name, address: hit.voter, network: hit.network });
-      break;
-    }
+  const subjects: { name: string; address: string; network: string; listed: boolean }[] = [];
+  for (const e of entities) {
+    const voter = e.voter.toLowerCase();
+    if (seen.has(voter)) continue;
+    seen.add(voter);
+    const roles = [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]
+      .filter((r): r is string => !!r)
+      .map((r) => r.toLowerCase());
+    const named = roles.map((r) => nameByRole.get(r)).find(Boolean) ?? null;
+    // A listing whose name is its own address tells a reader nothing the address does not, so it
+    // counts as unnamed and sorts with the rest of the anonymous entities.
+    const real = named && !/^0x[0-9a-f]{40}$/i.test(named.trim()) ? named : null;
+    subjects.push({
+      name: real ?? voter,
+      address: voter,
+      network: e.network,
+      listed: !!real,
+    });
   }
 
-  // Named first, then alphabetical, so the list reads as operators rather than as hex. A listing
-  // whose name is its own address is the chain-only tier and sorts last.
+  // Named first and alphabetical, so the list reads as operators; the address-only entities follow.
   subjects.sort((a, b) => {
-    const ax = /^0x[0-9a-f]{40}$/i.test(a.name.trim());
-    const bx = /^0x[0-9a-f]{40}$/i.test(b.name.trim());
-    if (ax !== bx) return ax ? 1 : -1;
+    if (a.listed !== b.listed) return a.listed ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
 
