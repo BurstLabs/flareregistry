@@ -45,7 +45,14 @@ function shortAddr(a: string | undefined): string {
   return a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "";
 }
 
-export function ProposalCompose({ contract }: { contract: string }) {
+export function ProposalCompose({
+  contract,
+  seed,
+}: {
+  contract: string;
+  /** Server-resolved state for the signed-in address, trusted only if that wallet is connected. */
+  seed: { address: string; canPropose: boolean; votedIds: string[] } | null;
+}) {
   const { t } = useApp();
   const { address, isConnected, chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
@@ -55,7 +62,12 @@ export function ProposalCompose({ contract }: { contract: string }) {
   // undefined = not asked yet, null = the read failed, boolean = the contract answered. Collapsing
   // the first two told a member their eligibility check had FAILED during the moment it was still
   // in flight, which is a different and more alarming claim than "one moment".
-  const [allowed, setAllowed] = useState<boolean | null | undefined>(undefined);
+  // Seeded from the server when the connected wallet matches the one it resolved, so a member sees
+  // the form rather than a grey "checking" panel that resolves a moment later.
+  const seedMatches = !!seed && !!address && seed.address === address.toLowerCase();
+  const [allowed, setAllowed] = useState<boolean | null | undefined>(
+    seedMatches ? seed!.canPropose : undefined
+  );
   const [fee, setFee] = useState<bigint | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   // Whether the list actually ARRIVED. Without this, a failed or slow fetch left the array empty
@@ -83,7 +95,9 @@ export function ProposalCompose({ contract }: { contract: string }) {
       setAllowed(undefined);
       return;
     }
-    setAllowed(undefined);
+    // Only blank it when there is no seed to show meanwhile; otherwise the panel would flash grey
+    // for a member whose eligibility we already resolved on the server.
+    if (!seedMatches) setAllowed(undefined);
     (async () => {
       try {
         const [can, f] = await Promise.all([
@@ -107,6 +121,7 @@ export function ProposalCompose({ contract }: { contract: string }) {
     return () => {
       off = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, isConnected, publicClient, contract]);
 
   useEffect(() => {

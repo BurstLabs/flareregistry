@@ -4,6 +4,7 @@ import {
   fetchMgProposalSettings,
   deriveOutcome,
   currentPollingContract,
+  viewerProposalState,
 } from "@/lib/mg-proposals";
 import { loadMembers } from "@/lib/governance";
 import { ProposalsClient } from "@/components/proposals-client";
@@ -38,13 +39,26 @@ export default async function ProposalsPage() {
       currentPollingContract(),
     ]);
     const now = new Date();
+    const shown = proposals.map((p) =>
+      deriveOutcome(p, members.memberCount, now, settings.thresholdBips, settings.majorityBips)
+    );
+
+    // THE SIGNED-IN VIEWER'S ELIGIBILITY, resolved here so the page paints its final state. The
+    // client used to render optimistically and then correct itself: vote buttons appeared and
+    // vanished once the read landed, and the proposal form sat grey saying it was still checking.
+    const { getSessionAddress } = await import("@/lib/session");
+    const session = await getSessionAddress();
+    const viewer = await viewerProposalState(
+      session,
+      shown.filter((p) => p.outcome === "open").map((p) => ({ id: p.id, contract: p.contract }))
+    );
+
     payload = {
       settings,
       memberCount: members.memberCount,
       currentContract,
-      proposals: proposals.map((p) =>
-        deriveOutcome(p, members.memberCount, now, settings.thresholdBips, settings.majorityBips)
-      ),
+      viewer,
+      proposals: shown,
     };
   } catch {
     payload = null;

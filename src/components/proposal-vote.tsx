@@ -31,10 +31,13 @@ const voteAbi = [
 export function ProposalVote({
   proposalId,
   contract,
+  seed,
   onVoted,
 }: {
   proposalId: number;
   contract: string;
+  /** Server-resolved state for the signed-in address, trusted only if that wallet is connected. */
+  seed: { address: string; canPropose: boolean; votedIds: string[] } | null;
   onVoted: () => void;
 }) {
   const { t } = useApp();
@@ -43,8 +46,16 @@ export function ProposalVote({
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient({ chainId: FLARE_CHAIN_ID });
 
-  const [eligible, setEligible] = useState<boolean | null>(null);
-  const [already, setAlready] = useState<boolean | null>(null);
+  // Seeded from the server when the connected wallet is the one it resolved, so the first paint is
+  // the final state. Undefined means not yet known, and while it is unknown NOTHING is offered:
+  // buttons that appear and then withdraw are worse than buttons that arrive a moment late.
+  const seedMatches = !!seed && !!address && seed.address === address.toLowerCase();
+  const [eligible, setEligible] = useState<boolean | undefined>(
+    seedMatches ? seed!.canPropose || undefined : undefined
+  );
+  const [already, setAlready] = useState<boolean | undefined>(
+    seedMatches ? seed!.votedIds.includes(`${contract}:${proposalId}`) : undefined
+  );
   const [busy, setBusy] = useState<"for" | "against" | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [err, setErr] = useState("");
@@ -55,8 +66,8 @@ export function ProposalVote({
   useEffect(() => {
     let cancelled = false;
     if (!isConnected || !address || !publicClient) {
-      setEligible(null);
-      setAlready(null);
+      setEligible(undefined);
+      setAlready(undefined);
       return;
     }
     (async () => {
@@ -77,8 +88,8 @@ export function ProposalVote({
         }
       } catch {
         if (!cancelled) {
-          setEligible(null);
-          setAlready(null);
+          setEligible(false); // could not confirm: offer nothing rather than a button that reverts
+          setAlready(undefined);
         }
       }
     })();
@@ -139,6 +150,11 @@ export function ProposalVote({
   }
   if (eligible === false) {
     return <p className="mt-2 text-[11px] text-faint">{t("prop.notEligible")}</p>;
+  }
+  // Still asking the chain. Say so in the space the buttons will occupy rather than showing them
+  // and taking them away.
+  if (eligible === undefined || already === undefined) {
+    return <p className="mt-2 text-[11px] text-faint">{t("prop.checkingVote")}</p>;
   }
 
   return (
