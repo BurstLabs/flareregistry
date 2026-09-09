@@ -34,3 +34,39 @@ export function buildProposalPayload(f: ProposalFields): string {
     url: f.url.trim(),
   });
 }
+
+/**
+ * The venue a proposal's discussion link must point at.
+ *
+ * NOT A GUESS: every one of the 44 proposals ever submitted, across all four contract deployments
+ * and two years, links to forum.flare.network. Nothing else has ever been used.
+ */
+export const PROPOSAL_FORUM_HOST = "forum.flare.network";
+
+/** Longest real title is 54 characters and the median is 23, so 80 is generous. */
+export const TITLE_MAX = 80;
+export const TITLE_MIN = 3;
+/** Longest real description is 242 and the median is 34; the shortest that ever passed is 20. */
+export const DESCRIPTION_MAX = 500;
+export const DESCRIPTION_MIN = 20;
+
+/**
+ * Why a discussion link is not acceptable, or null when it is.
+ *
+ * A link is MANDATORY because the group gets 48 hours to decide and needs somewhere to read the
+ * argument. "Any https URL" was too weak a test: a link back to the portal passed, which is both
+ * self-referential and gives a reader nothing, and that is exactly what slipped through.
+ */
+export function checkForumUrl(raw: string): "empty" | "notUrl" | "notForum" | null {
+  const v = raw.trim();
+  if (!v) return "empty";
+  let u: URL;
+  try {
+    u = new URL(v);
+  } catch {
+    return "notUrl";
+  }
+  if (u.protocol !== "http:" && u.protocol !== "https:") return "notUrl";
+  const host = u.host.toLowerCase().replace(/^www\./, "");
+  return host === PROPOSAL_FORUM_HOST ? null : "notForum";
+}
