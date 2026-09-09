@@ -28,7 +28,7 @@ const proposeAbi = [
     inputs: [], outputs: [{ type: "uint256" }] },
 ] as const;
 
-type Subject = { name: string; address: string; network: string };
+type Subject = { name: string; address: string; network: string; listed: boolean };
 
 /**
  * The exact string that goes on chain.
@@ -202,14 +202,14 @@ export function ProposalCompose({ contract }: { contract: string }) {
               onChange={(e) => {
                 setSubject(e.target.value);
                 const s = subjects.find((x) => x.address === e.target.value);
-                if (s && !title.trim()) setTitle(s.name);
+                if (s?.listed && !title.trim()) setTitle(s.name);
               }}
               className="mt-1 block w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
             >
               <option value="">{t("prop.new.subjectNone")}</option>
               {subjects.map((s) => (
                 <option key={s.address} value={s.address}>
-                  {s.name} · {s.address.slice(0, 10)}…
+                  {s.listed ? `${s.name} · ${s.address.slice(0, 10)}…` : s.address}
                 </option>
               ))}
             </select>
