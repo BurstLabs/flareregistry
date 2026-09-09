@@ -53,9 +53,12 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
   // top of page 1 without needing a section of their own.
   const PER_PAGE = 16;
   const pages = Math.max(1, Math.ceil(data.proposals.length / PER_PAGE));
+  // CLAMPED. The list is re-fetched on every render of this dynamic page, and a proposal set that
+  // shrinks while someone sits on the last page would otherwise leave them staring at nothing.
+  const current = Math.min(Math.max(1, page), pages);
   const slice = useMemo(
-    () => data.proposals.slice((page - 1) * PER_PAGE, page * PER_PAGE),
-    [data.proposals, page]
+    () => data.proposals.slice((current - 1) * PER_PAGE, current * PER_PAGE),
+    [data.proposals, current]
   );
 
   const card = (p: MgProposalView) => {
@@ -171,7 +174,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
       <p className="mt-2 text-xs text-faint">{t("prop.readOnly")}</p>
 
       <p className="mb-2 mt-8 text-xs text-faint">
-        {t("prop.count", { total: data.proposals.length, page, pages })}
+        {t("prop.count", { total: data.proposals.length, page: current, pages })}
       </p>
       <ul className="space-y-4">{slice.map(card)}</ul>
 
@@ -180,7 +183,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           <button
             type="button"
             onClick={() => setPage((n) => Math.max(1, n - 1))}
-            disabled={page === 1}
+            disabled={current === 1}
             className="rounded-lg border border-themed px-3 py-1.5 text-xs text-muted hover:text-beacon disabled:opacity-40"
           >
             {t("prop.prev")}
@@ -190,9 +193,9 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
               key={n}
               type="button"
               onClick={() => setPage(n)}
-              aria-current={n === page ? "page" : undefined}
+              aria-current={n === current ? "page" : undefined}
               className={`rounded-lg border px-3 py-1.5 text-xs ${
-                n === page
+                n === current
                   ? "border-beacon bg-beacon/15 text-beacon"
                   : "border-themed text-muted hover:text-beacon"
               }`}
@@ -203,7 +206,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           <button
             type="button"
             onClick={() => setPage((n) => Math.min(pages, n + 1))}
-            disabled={page === pages}
+            disabled={current === pages}
             className="rounded-lg border border-themed px-3 py-1.5 text-xs text-muted hover:text-beacon disabled:opacity-40"
           >
             {t("prop.next")}
