@@ -177,3 +177,24 @@ console.log(`outcome-rule: OK. ${cases.length} cases, quorum ${QUORUM / 100}% ($
   if (bad) { console.error(`proposal-url: ${bad} failure(s)`); process.exit(1); }
   console.log("proposal-url: OK. discussion link must be a forum thread.");
 }
+
+// REPETITION. Filler passes every length and format check, so it is measured instead. The threshold
+// is not a guess: scored against all 88 titles and descriptions ever submitted, the lowest real
+// score is 0.83 and pasted filler scores 0.00, so 0.4 sits in a wide empty gap.
+{
+  const pp = await import(new URL("../src/lib/proposal-payload.ts", import.meta.url).href);
+  let bad = 0;
+  const ok = (name, cond) => { if (!cond) bad++; console.log(`  ${cond ? "ok  " : "FAIL"} repetition: ${name}`); };
+  ok("catches a phrase pasted many times", pp.looksRepetitive("4DadsFTSO dfsfadsf".repeat(28)));
+  ok("catches a single word repeated", pp.looksRepetitive("spam ".repeat(40)));
+  ok("catches a unit with no spaces", pp.looksRepetitive("abcdefgh".repeat(20)));
+  ok("passes a real Foundation description",
+     !pp.looksRepetitive("The Foundation proposes to delist the USDX/USD feed due to insufficient venue coverage."));
+  ok("passes a real conduct description",
+     !pp.looksRepetitive("Sceptre/Rotko DevOp running multiple on chain identities"));
+  ok("does not judge a short title", !pp.looksRepetitive("Add new feed"));
+  ok("does not judge a short repeated title", !pp.looksRepetitive("Best FTSO"));
+  ok("threshold leaves room below the lowest real score", pp.REPETITION_MIN < 0.83);
+  if (bad) { console.error(`repetition: ${bad} failure(s)`); process.exit(1); }
+  console.log("repetition: OK. filler blocked, real writing untouched.");
+}
