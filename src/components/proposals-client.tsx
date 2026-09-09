@@ -69,7 +69,14 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           </span>
         </div>
 
-        {p.summary && <p className="mt-2 whitespace-pre-wrap text-muted">{p.summary}</p>}
+        {p.summary ? (
+          <p className="mt-2 whitespace-pre-wrap text-muted">{p.summary}</p>
+        ) : (
+          // Nothing parsed. Show what is actually on chain rather than an empty card: these
+          // descriptions were hand-typed over two years in at least four different shapes, and a
+          // fifth is only a matter of time.
+          <p className="mt-2 break-all font-mono text-[11px] text-faint">{p.raw.slice(0, 400)}</p>
+        )}
 
         {/* The address the proposal is ABOUT, when it names one. Shown in full: these proposals
             report on named operators, and a truncated address is exactly where a misattribution

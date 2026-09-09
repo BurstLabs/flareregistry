@@ -32,10 +32,13 @@ const pollingAbi = [
     inputs: [{ type: "uint256" }], outputs: [{ type: "string" }] },
   { type: "function", name: "getProposalVotes", stateMutability: "view",
     inputs: [{ type: "uint256" }], outputs: [{ type: "uint256" }, { type: "uint256" }] },
+  // Decoded as a bag of words on purpose: see readProposalInfo. The two contract generations
+  // return DIFFERENT tuples from this name, and pinning either one loses the other's proposals.
   { type: "function", name: "getProposalInfo", stateMutability: "view",
     inputs: [{ type: "uint256" }],
-    outputs: [{ type: "uint256" }, { type: "address" }, { type: "bool" },
-              { type: "uint256" }, { type: "uint256" }] },
+    outputs: [{ type: "uint256" }, { type: "uint256" }, { type: "uint256" },
+              { type: "uint256" }, { type: "uint256" }, { type: "uint256" },
+              { type: "uint256" }] },
   { type: "function", name: "state", stateMutability: "view",
     inputs: [{ type: "uint256" }], outputs: [{ type: "uint8" }] },
   { type: "function", name: "hasVoted", stateMutability: "view",
@@ -66,6 +69,8 @@ export interface MgProposal {
   votesAgainst: number;
   /** Raw contract state, carried but never used to label anything. See deriveOutcome. */
   chainState: number;
+  /** Which deployment this id belongs to. Ids restart per contract, so this is half the key. */
+  contract: string;
 }
 
 export interface MgProposalView extends MgProposal {
@@ -92,78 +97,172 @@ export interface MgProposalView extends MgProposal {
 export function parseProposalDescription(raw: string): {
   name: string | null; subject: string | null; summary: string | null; url: string | null;
 } {
-  const empty = { name: null, subject: null, summary: null, url: null };
-  const attempt = (s: string) => {
-    try {
-      const o = JSON.parse(s) as Record<string, unknown>;
-      const str = (k: string) => (typeof o[k] === "string" ? (o[k] as string) : null);
+  const text = raw.trim();
+  // 1. The correct form. Proposals 1 to 11 on the current contract are valid JSON, and anything
+  //    this site ever emits will be too.
+  try {
+    const o = JSON.parse(text) as Record<string, unknown>;
+    const str = (k: string) => (typeof o[k] === "string" ? (o[k] as string) : null);
+    if (str("name") || str("description")) {
       return { name: str("name"), subject: str("address"), summary: str("description"), url: str("url") };
-    } catch {
-      return null;
     }
+  } catch {
+    // fall through
+  }
+  // 2. Everything else. The historical descriptions were typed by hand into a textarea over two
+  //    years and it shows: straight single quotes, curly quotes from a word processor, a
+  //    capitalised Name key, keys with no quotes at all, and combinations of those inside one
+  //    string. Rather than try to repair such a thing into valid JSON, pull each field out
+  //    directly. Reading junk tolerantly is not the same as producing it.
+  const norm = text.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+  const field = (key: string): string | null => {
+    const re = new RegExp(
+      `["']?${key}["']?\\s*:\\s*["']([^"']*)["']`,
+      "i"
+    );
+    const m = norm.match(re);
+    return m ? m[1].trim() || null : null;
   };
-  const direct = attempt(raw.trim());
-  if (direct) return direct;
-  // Single-quoted variant. Only quotes sitting against a structural character are rewritten, so an
-  // apostrophe inside a sentence is left alone: "DevOp's identities" must not become a parse error
-  // or, worse, a silently truncated value.
-  const coerced = raw
-    .trim()
-    .replace(/\{\s*'/g, '{"')
-    .replace(/'\s*\}/g, '"}')
-    .replace(/'\s*:/g, '":')
-    .replace(/:\s*'/g, ':"')
-    .replace(/'\s*,/g, '",')
-    .replace(/,\s*'/g, ',"');
-  return attempt(coerced) ?? empty;
+  // 3. No quotes at all, on either keys or values: {name:Best FTSO,address:0x..,url:https://..}.
+  //    Three of the oldest proposals look like this, one of them with backslashes where the quotes
+  //    should be. Read each value up to the next known key or the closing brace, which is the only
+  //    delimiter these strings actually have, and which a url full of colons and slashes survives.
+  const KEYS = ["name", "address", "description", "url"];
+  const loose = (key: string): string | null => {
+    const next = KEYS.join("|");
+    const re = new RegExp(
+      `[\\\\"']?${key}[\\\\"']?\\s*:\\s*[\\\\"']?(.*?)[\\\\"']?\\s*(?=,\\s*[\\\\"']?(?:${next})[\\\\"']?\\s*:|\\}\\s*$)`,
+      "is"
+    );
+    const m = norm.match(re);
+    return m ? m[1].trim() || null : null;
+  };
+  return {
+    name: field("name") ?? loose("name"),
+    subject: field("address") ?? loose("address"),
+    summary: field("description") ?? loose("description"),
+    url: field("url") ?? loose("url"),
+  };
+}
+
+/**
+ * Every contract that has held Management Group proposals.
+ *
+ * Proposal ids RESTART AT 1 on each deployment, and Flare's portal keys a proposal by id AND
+ * contract, which is why its URLs look like /view/13-0x1e91a5... Reading only the contract the
+ * registry currently points at therefore shows the newest 13 and silently drops the other 31.
+ *
+ * The registry resolves a NAME to ONE address, the live one, and keeps no history, so the retired
+ * deployments cannot be discovered from it. These two were found through the block explorer's
+ * contract-name search and confirmed by reading their proposals. They are pinned rather than
+ * discovered because a retired contract never changes again; a NEW deployment, by contrast, is
+ * picked up automatically through the registry.
+ */
+const HISTORIC_POLLING_CONTRACTS: Address[] = [
+  "0x55233A9Ed066621e02b166C416f804b04ee4a03a", // PollingManagementGroup, retired: 7 proposals
+  "0x461c4219d5fcAF0fEA304F57a4b0f8061f08064A", // PollingFtso, retired: 23 proposals
+];
+
+/** Registry names to resolve for CURRENT deployments. Both have carried proposals. */
+const REGISTRY_NAMES = ["PollingManagementGroup", "PollingFtso"];
+
+/**
+ * Pull proposer and vote window out of getProposalInfo WITHOUT pinning a tuple.
+ *
+ * The two generations of this contract return different things from the same function name. The
+ * current one gives (uint256, address, bool, start, end); the retired PollingFtso gives
+ * (uint256, address, start, end, thresholdBips, majorityBips, eligibleMembers). Pinning either
+ * shape silently drops every proposal held by the other, which is how 24 of the 44 went missing.
+ *
+ * So the return is decoded as plain words and the fields are recognised by what they look like: a
+ * unix timestamp in a plausible range followed by a larger one is the vote window, and the first
+ * word that fits in 20 bytes without being a timestamp is the proposer. Ugly, and much harder to
+ * break than a guessed ABI: a third generation with yet another layout still reads correctly as
+ * long as it returns these values at all.
+ */
+function readProposalInfo(words: readonly bigint[]): {
+  proposer: string; startTs: bigint; endTs: bigint;
+} | null {
+  const LOW = 1_400_000_000n; // 2014, before any of this existed
+  const HIGH = 4_000_000_000n; // 2096
+  let startTs = 0n, endTs = 0n;
+  for (let i = 0; i + 1 < words.length; i++) {
+    const a = words[i], b = words[i + 1];
+    if (a >= LOW && a <= HIGH && b > a && b <= HIGH) { startTs = a; endTs = b; break; }
+  }
+  if (startTs === 0n) return null;
+  const MAX_ADDR = (1n << 160n) - 1n;
+  let proposer = "0x0000000000000000000000000000000000000000";
+  for (const w of words) {
+    if (w > HIGH && w <= MAX_ADDR) {
+      proposer = "0x" + w.toString(16).padStart(40, "0");
+      break;
+    }
+  }
+  return { proposer, startTs, endTs };
 }
 
 let cache: { at: number; data: MgProposal[] } | null = null;
 const TTL_MS = 120_000;
 
-/** Every proposal on chain, newest first. Cached briefly so a page render is not 50 RPC calls. */
+/** Every proposal across every deployment, newest first. Cached briefly; this is ~44 reads. */
 export async function fetchMgProposals(): Promise<MgProposal[]> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
   const client = createPublicClient({ transport: http(FLARE_RPC) });
-  const address = (await client.readContract({
-    address: CONTRACT_REGISTRY, abi: registryAbi,
-    functionName: "getContractAddressByName", args: ["PollingManagementGroup"],
-  })) as Address;
 
-  // No enumeration function exists on the contract, so ids are walked from 1 until one is missing.
-  // Cheap: there are 13 of them after a year, and the whole walk is cached.
+  const current = await Promise.all(
+    REGISTRY_NAMES.map((name) =>
+      client
+        .readContract({
+          address: CONTRACT_REGISTRY, abi: registryAbi,
+          functionName: "getContractAddressByName", args: [name],
+        })
+        .catch(() => null)
+    )
+  );
+  const contracts = [
+    ...current.filter((a): a is Address => !!a && a !== "0x0000000000000000000000000000000000000000"),
+    ...HISTORIC_POLLING_CONTRACTS,
+  ];
+
   const out: MgProposal[] = [];
-  for (let id = 1; id < 500; id++) {
-    let info: readonly [bigint, string, boolean, bigint, bigint];
-    try {
-      info = (await client.readContract({
-        address, abi: pollingAbi, functionName: "getProposalInfo", args: [BigInt(id)],
-      })) as readonly [bigint, string, boolean, bigint, bigint];
-    } catch {
-      break; // reverted: walked past the last one
+  for (const address of contracts) {
+    // No enumeration function exists, so ids are walked from 1. getProposalInfo does NOT revert for
+    // an unused id, it returns zeros, so an unset vote window is the end marker; walking until it
+    // throws invented a hundred empty proposals.
+    for (let id = 1; id < 300; id++) {
+      let words: readonly bigint[];
+      try {
+        words = (await client.readContract({
+          address, abi: pollingAbi, functionName: "getProposalInfo", args: [BigInt(id)],
+        })) as readonly bigint[];
+      } catch {
+        break; // reverted: no such id on this deployment
+      }
+      const info = readProposalInfo(words);
+      if (!info) break; // an unused id returns zeros rather than reverting
+      const { proposer, startTs, endTs } = info;
+      const [raw, votes, chainState] = await Promise.all([
+        client.readContract({ address, abi: pollingAbi, functionName: "getProposalDescription", args: [BigInt(id)] }).catch(() => "") as Promise<string>,
+        client.readContract({ address, abi: pollingAbi, functionName: "getProposalVotes", args: [BigInt(id)] }).catch(() => [0n, 0n] as const) as Promise<readonly [bigint, bigint]>,
+        client.readContract({ address, abi: pollingAbi, functionName: "state", args: [BigInt(id)] }).catch(() => 0) as Promise<number>,
+      ]);
+      const parsed = parseProposalDescription(raw);
+      out.push({
+        id, ...parsed, raw,
+        contract: address.toLowerCase(),
+        proposer,
+        voteStartAt: new Date(Number(startTs) * 1000).toISOString(),
+        voteEndAt: new Date(Number(endTs) * 1000).toISOString(),
+        votesFor: Number(votes[0]),
+        votesAgainst: Number(votes[1]),
+        chainState: Number(chainState),
+      });
     }
-    const [, proposer, , startTs, endTs] = info;
-    // getProposalInfo does NOT revert for an id that was never used, it returns zeros, so the walk
-    // ran to the loop bound and invented a hundred empty proposals. An unset vote window is the
-    // reliable end marker.
-    if (startTs === 0n && endTs === 0n) break;
-    const [raw, votes, chainState] = await Promise.all([
-      client.readContract({ address, abi: pollingAbi, functionName: "getProposalDescription", args: [BigInt(id)] }) as Promise<string>,
-      client.readContract({ address, abi: pollingAbi, functionName: "getProposalVotes", args: [BigInt(id)] }) as Promise<readonly [bigint, bigint]>,
-      client.readContract({ address, abi: pollingAbi, functionName: "state", args: [BigInt(id)] }).catch(() => 0) as Promise<number>,
-    ]);
-    const parsed = parseProposalDescription(raw);
-    out.push({
-      id, ...parsed, raw,
-      proposer: proposer.toLowerCase(),
-      voteStartAt: new Date(Number(startTs) * 1000).toISOString(),
-      voteEndAt: new Date(Number(endTs) * 1000).toISOString(),
-      votesFor: Number(votes[0]),
-      votesAgainst: Number(votes[1]),
-      chainState: Number(chainState),
-    });
   }
-  out.reverse();
+  // Newest first ACROSS deployments. Ids are only meaningful within one contract, so the vote
+  // window is the only ordering that means anything here.
+  out.sort((a, b) => b.voteStartAt.localeCompare(a.voteStartAt));
   cache = { at: Date.now(), data: out };
   return out;
 }
@@ -197,7 +296,8 @@ export function deriveOutcome(
     now < start ? "pending" : open ? "open" : p.chainState === 4 ? "accepted" : "closed";
   return {
     ...p, open, quorumNeeded, quorumMet, majorityMet, outcome,
-    portalUrl: `${PORTAL_BASE}/${p.id}-0x1e91a59aac440d7eca5ebf58d85903cdb0021812`,
+    // Keyed by id AND contract, because ids restart on each deployment.
+    portalUrl: `${PORTAL_BASE}/${p.id}-${p.contract}`,
   };
 }
 
