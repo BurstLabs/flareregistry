@@ -12,6 +12,7 @@ import {
   DESCRIPTION_MAX,
   DESCRIPTION_MIN,
   PROPOSAL_FORUM_HOST,
+  looksRepetitive,
 } from "@/lib/proposal-payload";
 
 // SUBMITTING A PROPOSAL. The most consequential thing this site does.
@@ -134,12 +135,16 @@ export function ProposalCompose({ contract }: { contract: string }) {
   const urlProblem = checkForumUrl(url);
   const titleLen = title.trim().length;
   const descLen = description.trim().length;
+  const titleRepeats = looksRepetitive(title);
+  const descRepeats = looksRepetitive(description);
   const ready =
     titleLen >= TITLE_MIN &&
     titleLen <= TITLE_MAX &&
     descLen >= DESCRIPTION_MIN &&
     descLen <= DESCRIPTION_MAX &&
     urlProblem === null &&
+    !titleRepeats &&
+    !descRepeats &&
     (trimmedSubject === "" || subjectWellFormed) &&
     ack;
 
@@ -303,6 +308,9 @@ export function ProposalCompose({ contract }: { contract: string }) {
             <span className="mt-1 block text-[11px] text-faint">
               {t("prop.new.counter", { n: titleLen, max: TITLE_MAX })}
             </span>
+            {titleRepeats && (
+              <span className="mt-1 block text-[11px] text-flare">{t("prop.new.repetitive")}</span>
+            )}
           </label>
 
           <label className="block">
@@ -317,6 +325,9 @@ export function ProposalCompose({ contract }: { contract: string }) {
             <span className="mt-1 block text-[11px] text-faint">
               {t("prop.new.counter", { n: descLen, max: DESCRIPTION_MAX })}
             </span>
+            {descRepeats && (
+              <span className="mt-1 block text-[11px] text-flare">{t("prop.new.repetitive")}</span>
+            )}
           </label>
 
           <label className="block">
