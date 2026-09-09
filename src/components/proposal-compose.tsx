@@ -31,6 +31,11 @@ const proposeAbi = [
 
 type Subject = { name: string; address: string; network: string; listed: boolean };
 
+/** First and last few characters, which is enough to recognise which of your wallets is connected. */
+function shortAddr(a: string | undefined): string {
+  return a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "";
+}
+
 export function ProposalCompose({ contract }: { contract: string }) {
   const { t } = useApp();
   const { address, isConnected, chainId } = useAccount();
@@ -167,7 +172,30 @@ export function ProposalCompose({ contract }: { contract: string }) {
     }
   }
 
-  if (!isConnected || allowed !== true) return null;
+  // SHOWN EVEN WHEN IT CANNOT BE USED, and disabled rather than hidden.
+  //
+  // Hiding it meant a member who happened to be connected with the wrong account saw nothing at
+  // all, with no hint that the feature existed or that their other wallet would work. Eligibility
+  // is public on chain anyway, so there is nothing to protect by concealing the control; what
+  // actually helps is naming the connected address, since "not a member" and "wrong account of
+  // mine" look identical from the outside.
+  const blocked =
+    !isConnected
+      ? t("prop.new.needConnect")
+      : allowed === false
+        ? t("prop.new.needMember", { address: shortAddr(address) })
+        : allowed === null
+          ? t("prop.new.checkFailed")
+          : null;
+
+  if (blocked) {
+    return (
+      <div className="mt-8 rounded-xl border border-themed p-5 opacity-60">
+        <p className="text-sm font-medium text-muted">{t("prop.new.h")}</p>
+        <p className="mt-1 text-xs text-faint">{blocked}</p>
+      </div>
+    );
+  }
 
   if (doneId) {
     return (
