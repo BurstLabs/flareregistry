@@ -11,7 +11,9 @@ import { ProposalsClient } from "@/components/proposals-client";
 
 // /proposals - Flare's own Management Group proposals, read from PollingManagementGroup.
 //
-// READ ONLY, and deliberately separate from this registry's own governance records. A flag or a
+// Members vote and submit proposals from here; both are signed by the member's own wallet and sent
+// straight to Flare. This page still only READS to build the list, and is deliberately separate
+// from this registry's own governance records. A flag or a
 // conduct case is OURS: our evidence rules, our timetable, our published finding. A management
 // proposal is FLARE'S, decided on chain by the group in 48 hours. Presenting the two together would
 // suggest one feeds the other, which it does not and should not.
