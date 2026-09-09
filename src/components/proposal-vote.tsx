@@ -148,7 +148,7 @@ export function ProposalVote({
           type="button"
           onClick={() => cast(SUPPORT_FOR, "for")}
           disabled={busy !== null}
-          className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-300"
+          className="min-h-[44px] rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-4 text-xs font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-300"
         >
           {busy === "for" ? t(confirming ? "prop.confirming" : "prop.voting") : t("prop.voteFor")}
         </button>
@@ -156,7 +156,7 @@ export function ProposalVote({
           type="button"
           onClick={() => cast(SUPPORT_AGAINST, "against")}
           disabled={busy !== null}
-          className="rounded-lg border border-flare/50 bg-flare/10 px-3 py-1.5 text-xs font-medium text-flare hover:bg-flare/20 disabled:opacity-50"
+          className="min-h-[44px] rounded-lg border border-flare/50 bg-flare/10 px-4 text-xs font-medium text-flare hover:bg-flare/20 disabled:opacity-50"
         >
           {busy === "against" ? t(confirming ? "prop.confirming" : "prop.voting") : t("prop.voteAgainst")}
         </button>
