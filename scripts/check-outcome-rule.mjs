@@ -107,3 +107,53 @@ console.log(`outcome-rule: OK. ${cases.length} cases, quorum ${QUORUM / 100}% ($
   if (bad) { console.error(`hold-rule: ${bad} failure(s)`); process.exit(1); }
   console.log("hold-rule: OK. entity clock and claim clock both enforced.");
 }
+
+// THE PROPOSAL PAYLOAD. What a submission burns 100 FLR to write on chain, permanently, naming
+// somebody. Asserted against the shipped function, not a copy: lib/proposal-payload has no React
+// or wallet imports precisely so this can run here.
+{
+  const pp = await import(new URL("../src/lib/proposal-payload.ts", import.meta.url).href);
+  let bad = 0;
+  const ok = (name, cond) => {
+    if (!cond) bad++;
+    console.log(`  ${cond ? "ok  " : "FAIL"} payload: ${name}`);
+  };
+
+  // Round-trips as strict JSON, which is the convention proposals 1 to 11 follow.
+  const basic = pp.buildProposalPayload({
+    title: "Rotko", address: "0xB70c6987626A96Df66C9068bd10b84Ecb8e949df",
+    description: "Running multiple identities", url: "https://forum.flare.network/t/x/577",
+  });
+  // Parsed defensively: if the builder ever stops producing JSON, this guard should SAY so rather
+  // than crash with a parse error halfway through the run.
+  let parsed = null;
+  try { parsed = JSON.parse(basic); } catch { /* reported below */ }
+  ok("is valid JSON", parsed !== null && typeof parsed === "object");
+  if (parsed === null) { console.error("proposal-payload: builder no longer emits JSON"); process.exit(1); }
+  ok("keys are name/address/description/url",
+     ["name", "address", "description", "url"].every((k) => k in parsed));
+  ok("address is lowercased", parsed.address === "0xb70c6987626a96df66c9068bd10b84ecb8e949df");
+
+  // An apostrophe is how the historical entries became unparseable. It must survive.
+  const quoted = pp.buildProposalPayload({
+    title: "O'Brien's node", address: "", description: 'He said "no" and left.\nThen returned.', url: "https://x.test",
+  });
+  let q = null;
+  try { q = JSON.parse(quoted); } catch { /* reported below */ }
+  if (q === null) { console.error("proposal-payload: a quoted field broke the JSON"); process.exit(1); }
+  ok("apostrophe survives round-trip", q.name === "O'Brien's node");
+  ok("double quotes survive round-trip", q.description.includes('"no"'));
+  ok("newline survives round-trip", q.description.includes("\n"));
+
+  ok("fields are trimmed",
+     JSON.parse(pp.buildProposalPayload({ title: "  T  ", address: "", description: " d ", url: " https://a.test " })).name === "T");
+  ok("a non-address subject is left alone",
+     JSON.parse(pp.buildProposalPayload({ title: "t", address: "not-an-address", description: "d", url: "https://a.test" })).address === "not-an-address");
+
+  ok("isAddress accepts a checksummed address", pp.isAddress("0xB70c6987626A96Df66C9068bd10b84Ecb8e949df"));
+  ok("isAddress rejects a short address", !pp.isAddress("0xb70c"));
+  ok("isAddress rejects a non-hex address", !pp.isAddress("0x" + "z".repeat(40)));
+
+  if (bad) { console.error(`proposal-payload: ${bad} failure(s)`); process.exit(1); }
+  console.log("proposal-payload: OK. strict JSON, escaping and address handling asserted.");
+}
