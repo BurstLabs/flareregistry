@@ -62,6 +62,7 @@ export function ProposalCompose({ contract }: { contract: string }) {
   const [open, setOpen] = useState(false);
 
   const [subject, setSubject] = useState("");
+  const [manual, setManual] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
@@ -106,6 +107,7 @@ export function ProposalCompose({ contract }: { contract: string }) {
 
   useEffect(() => {
     if (!open || subjects.length) return;
+    // Loaded once the form is opened; it backs both the picker and the typed-address check.
     fetch("/api/proposals/subjects")
       .then((r) => r.json())
       .then((d) => setSubjects(Array.isArray(d?.subjects) ? d.subjects : []))
@@ -113,14 +115,29 @@ export function ProposalCompose({ contract }: { contract: string }) {
   }, [open, subjects.length]);
 
   const payload = useMemo(
-    () => buildProposalPayload({ title, address: subject, description, url }),
+    () =>
+      buildProposalPayload({
+        // Lowercased so a hand-typed address cannot differ from the picked one by case alone.
+        title,
+        address: /^0x[0-9a-fA-F]{40}$/.test(subject.trim()) ? subject.trim().toLowerCase() : subject,
+        description,
+        url,
+      }),
     [title, subject, description, url]
   );
   const feeFlr = fee != null ? (Number(fee) / 1e18).toLocaleString() : "…";
+  const trimmedSubject = subject.trim();
+  const subjectWellFormed = /^0x[0-9a-fA-F]{40}$/.test(trimmedSubject);
+  // A typed address that matches no entity we know of is the case the picker existed to prevent, so
+  // it is called out. NOT blocked: a brand new registration we have not ingested yet is a perfectly
+  // good subject, and refusing it would make the manual field useless exactly when it is needed.
+  const subjectKnown =
+    subjectWellFormed && subjects.some((x) => x.address === trimmedSubject.toLowerCase());
   const ready =
     title.trim().length >= 3 &&
     description.trim().length >= 10 &&
     isHttpUrl(url.trim()) &&
+    (trimmedSubject === "" || subjectWellFormed) &&
     ack;
 
   async function submit() {
@@ -198,22 +215,51 @@ export function ProposalCompose({ contract }: { contract: string }) {
             <span className="text-xs text-muted">{t("prop.new.subject")}</span>
             {/* PICKED, NEVER TYPED. This field decides who the proposal is about. */}
             <select
-              value={subject}
+              value={manual ? "__manual__" : subject}
               onChange={(e) => {
-                setSubject(e.target.value);
-                const s = subjects.find((x) => x.address === e.target.value);
+                const v = e.target.value;
+                if (v === "__manual__") {
+                  setManual(true);
+                  setSubject("");
+                  return;
+                }
+                setManual(false);
+                setSubject(v);
+                const s = subjects.find((x) => x.address === v);
                 if (s?.listed && !title.trim()) setTitle(s.name);
               }}
               className="mt-1 block w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
             >
               <option value="">{t("prop.new.subjectNone")}</option>
+              {/* FULL ADDRESSES. A truncated pair is exactly where a misattribution hides, and this
+                  field decides who a public governance proposal is about. */}
               {subjects.map((s) => (
                 <option key={s.address} value={s.address}>
-                  {s.listed ? `${s.name} · ${s.address.slice(0, 10)}…` : s.address}
+                  {s.listed ? `${s.name} · ${s.address}` : s.address}
                 </option>
               ))}
+              <option value="__manual__">{t("prop.new.manual")}</option>
             </select>
-            {subject && (
+
+            {manual && (
+              <input
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="0x0000000000000000000000000000000000000000"
+                spellCheck={false}
+                className="mt-2 block w-full rounded border border-themed bg-elev px-3 py-2 font-mono text-xs"
+              />
+            )}
+
+            {trimmedSubject !== "" && !subjectWellFormed && (
+              <span className="mt-1 block text-[11px] text-flare">{t("prop.new.addrBad")}</span>
+            )}
+            {subjectWellFormed && !subjectKnown && (
+              <span className="mt-1 block text-[11px] text-amber-600 dark:text-amber-300">
+                {t("prop.new.addrUnknown")}
+              </span>
+            )}
+            {subject && !manual && (
               <span className="mt-1 block break-all font-mono text-[11px] text-faint">{subject}</span>
             )}
           </label>
