@@ -58,6 +58,10 @@ export function ProposalCompose({ contract }: { contract: string }) {
   const [allowed, setAllowed] = useState<boolean | null | undefined>(undefined);
   const [fee, setFee] = useState<bigint | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  // Whether the list actually ARRIVED. Without this, a failed or slow fetch left the array empty
+  // and every well-formed address was declared unknown, which is the most alarming message in this
+  // form and would have been shown to a member typing a perfectly good address.
+  const [subjectsLoaded, setSubjectsLoaded] = useState(false);
   const [open, setOpen] = useState(false);
 
   const [subject, setSubject] = useState("");
@@ -110,8 +114,15 @@ export function ProposalCompose({ contract }: { contract: string }) {
     // Loaded once the form is opened; it backs both the picker and the typed-address check.
     fetch("/api/proposals/subjects")
       .then((r) => r.json())
-      .then((d) => setSubjects(Array.isArray(d?.subjects) ? d.subjects : []))
-      .catch(() => setSubjects([]));
+      .then((d) => {
+        if (Array.isArray(d?.subjects) && d.subjects.length) {
+          setSubjects(d.subjects);
+          setSubjectsLoaded(true);
+        }
+      })
+      .catch(() => {
+        // Left unloaded on purpose: an empty list must not masquerade as "no such provider".
+      });
   }, [open, subjects.length]);
 
   const payload = useMemo(
@@ -130,8 +141,11 @@ export function ProposalCompose({ contract }: { contract: string }) {
   // A typed address that matches no entity we know of is the case the picker existed to prevent, so
   // it is called out. NOT blocked: a brand new registration we have not ingested yet is a perfectly
   // good subject, and refusing it would make the manual field useless exactly when it is needed.
+  // Only meaningful once the list is loaded; otherwise we have nothing to compare against and must
+  // say nothing rather than accuse a good address of being unrecognised.
   const subjectKnown =
-    subjectWellFormed && subjects.some((x) => x.address === trimmedSubject.toLowerCase());
+    !subjectsLoaded ||
+    (subjectWellFormed && subjects.some((x) => x.address === trimmedSubject.toLowerCase()));
   const urlProblem = checkForumUrl(url);
   const titleLen = title.trim().length;
   const descLen = description.trim().length;
@@ -162,15 +176,34 @@ export function ProposalCompose({ contract }: { contract: string }) {
         address: contract as `0x${string}`, abi: proposeAbi, functionName: "proposalFeeValueWei",
       })) as bigint;
       setFee(liveFee);
-      const balance = await publicClient.getBalance({ address: address as `0x${string}` });
-      if (balance <= liveFee) {
-        setErr(t("prop.new.insufficient", { fee: (Number(liveFee) / 1e18).toLocaleString() }));
-        return;
-      }
       await publicClient.simulateContract({
         address: contract as `0x${string}`, abi: proposeAbi, functionName: "propose",
         args: [payload], value: liveFee, account: address as `0x${string}`,
       });
+
+      // FEE PLUS GAS, not just the fee. simulateContract is an eth_call and passes with no funds at
+      // all, so it cannot catch this; checking only balance > fee let a wallet holding exactly the
+      // fee sail through and fail in the wallet with an opaque error instead of here with a clear
+      // one. Estimated rather than guessed, with a margin for the price moving between now and the
+      // block that includes it.
+      const balance = await publicClient.getBalance({ address: address as `0x${string}` });
+      let needed = liveFee;
+      try {
+        const [gas, gasPrice] = await Promise.all([
+          publicClient.estimateContractGas({
+            address: contract as `0x${string}`, abi: proposeAbi, functionName: "propose",
+            args: [payload], value: liveFee, account: address as `0x${string}`,
+          }),
+          publicClient.getGasPrice(),
+        ]);
+        needed = liveFee + (gas * gasPrice * 15n) / 10n;
+      } catch {
+        // Estimation failed; fall back to requiring more than the bare fee rather than blocking.
+      }
+      if (balance < needed) {
+        setErr(t("prop.new.insufficient", { fee: (Number(liveFee) / 1e18).toLocaleString() }));
+        return;
+      }
 
       setBusy("signing");
       const hash = await writeContractAsync({
