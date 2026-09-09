@@ -62,7 +62,13 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
     const cast = p.votesFor + p.votesAgainst;
     const left = hoursLeft(p.voteEndAt);
     return (
-      <li key={p.id} className="surface rounded-xl border border-themed p-5 text-sm">
+      // KEYED BY CONTRACT AND ID. Ids restart at 1 on every deployment, so id alone collides across
+      // the four of them: React then reconciled a new page against stale cards and page two rendered
+      // seventeen items, one of them left over from page one.
+      <li
+        key={`${p.contract}:${p.id}`}
+        className="surface rounded-xl border border-themed p-5 text-sm"
+      >
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <span className="font-medium text-fg">
             {p.name ?? t("prop.untitled", { id: p.id })}
