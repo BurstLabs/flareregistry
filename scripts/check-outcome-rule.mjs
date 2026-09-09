@@ -157,3 +157,23 @@ console.log(`outcome-rule: OK. ${cases.length} cases, quorum ${QUORUM / 100}% ($
   if (bad) { console.error(`proposal-payload: ${bad} failure(s)`); process.exit(1); }
   console.log("proposal-payload: OK. strict JSON, escaping and address handling asserted.");
 }
+
+// THE DISCUSSION LINK. Mandatory, and "any https URL" was too weak a test: a link back to the
+// portal passed, which is self-referential and gives a reader nothing.
+{
+  const pp = await import(new URL("../src/lib/proposal-payload.ts", import.meta.url).href);
+  let bad = 0;
+  const ok = (name, cond) => { if (!cond) bad++; console.log(`  ${cond ? "ok  " : "FAIL"} url: ${name}`); };
+  ok("accepts a forum thread", pp.checkForumUrl("https://forum.flare.network/t/x/577") === null);
+  ok("accepts www.", pp.checkForumUrl("https://www.forum.flare.network/t/x") === null);
+  ok("rejects the portal itself",
+     pp.checkForumUrl("https://portal.flare.network/managementProposal/view/13-0x1e91") === "notForum");
+  ok("rejects another host", pp.checkForumUrl("https://example.com/thread") === "notForum");
+  ok("rejects empty", pp.checkForumUrl("   ") === "empty");
+  ok("rejects a non-url", pp.checkForumUrl("forum.flare.network/t/x") === "notUrl");
+  ok("rejects javascript:", pp.checkForumUrl("javascript:alert(1)") === "notUrl");
+  ok("title bounds are sane", pp.TITLE_MAX === 80 && pp.TITLE_MIN === 3);
+  ok("description bounds are sane", pp.DESCRIPTION_MAX === 500 && pp.DESCRIPTION_MIN === 20);
+  if (bad) { console.error(`proposal-url: ${bad} failure(s)`); process.exit(1); }
+  console.log("proposal-url: OK. discussion link must be a forum thread.");
+}

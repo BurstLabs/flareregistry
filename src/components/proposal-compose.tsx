@@ -3,8 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAccount, useSwitchChain, useWriteContract, usePublicClient } from "wagmi";
 import { useApp } from "@/components/providers";
-import { isHttpUrl } from "@/lib/validation";
-import { buildProposalPayload, isAddress } from "@/lib/proposal-payload";
+import {
+  buildProposalPayload,
+  isAddress,
+  checkForumUrl,
+  TITLE_MAX,
+  TITLE_MIN,
+  DESCRIPTION_MAX,
+  DESCRIPTION_MIN,
+  PROPOSAL_FORUM_HOST,
+} from "@/lib/proposal-payload";
 
 // SUBMITTING A PROPOSAL. The most consequential thing this site does.
 //
@@ -123,10 +131,15 @@ export function ProposalCompose({ contract }: { contract: string }) {
   // good subject, and refusing it would make the manual field useless exactly when it is needed.
   const subjectKnown =
     subjectWellFormed && subjects.some((x) => x.address === trimmedSubject.toLowerCase());
+  const urlProblem = checkForumUrl(url);
+  const titleLen = title.trim().length;
+  const descLen = description.trim().length;
   const ready =
-    title.trim().length >= 3 &&
-    description.trim().length >= 10 &&
-    isHttpUrl(url.trim()) &&
+    titleLen >= TITLE_MIN &&
+    titleLen <= TITLE_MAX &&
+    descLen >= DESCRIPTION_MIN &&
+    descLen <= DESCRIPTION_MAX &&
+    urlProblem === null &&
     (trimmedSubject === "" || subjectWellFormed) &&
     ack;
 
@@ -284,9 +297,12 @@ export function ProposalCompose({ contract }: { contract: string }) {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              maxLength={120}
+              maxLength={TITLE_MAX}
               className="mt-1 block w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
             />
+            <span className="mt-1 block text-[11px] text-faint">
+              {t("prop.new.counter", { n: titleLen, max: TITLE_MAX })}
+            </span>
           </label>
 
           <label className="block">
@@ -295,21 +311,28 @@ export function ProposalCompose({ contract }: { contract: string }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              maxLength={1000}
+              maxLength={DESCRIPTION_MAX}
               className="mt-1 block w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
             />
+            <span className="mt-1 block text-[11px] text-faint">
+              {t("prop.new.counter", { n: descLen, max: DESCRIPTION_MAX })}
+            </span>
           </label>
 
           <label className="block">
-            <span className="text-xs text-muted">{t("prop.new.url")}</span>
+            <span className="text-xs text-muted">{t("prop.new.url", { host: PROPOSAL_FORUM_HOST })}</span>
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://forum.flare.network/t/..."
               className="mt-1 block w-full rounded border border-themed bg-elev px-3 py-2 text-sm"
             />
-            {url.trim() && !isHttpUrl(url.trim()) && (
-              <span className="mt-1 block text-[11px] text-flare">{t("prop.new.urlBad")}</span>
+            {url.trim() && urlProblem !== null && (
+              <span className="mt-1 block text-[11px] text-flare">
+                {t(urlProblem === "notForum" ? "prop.new.urlNotForum" : "prop.new.urlBad", {
+                  host: PROPOSAL_FORUM_HOST,
+                })}
+              </span>
             )}
           </label>
 
