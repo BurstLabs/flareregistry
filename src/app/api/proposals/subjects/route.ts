@@ -24,6 +24,11 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const [entities, addresses] = await Promise.all([
     prisma.providerOnchain.findMany({
+      // FLARE ONLY. The Management Group and its proposals are Flare's, and every existing proposal
+      // names a Flare identity. Including Songbird put 79 extra entities in the list and made 48
+      // operator names appear TWICE under different addresses, which on a form whose whole job is
+      // naming the right party is the error it exists to prevent.
+      where: { network: "flare" },
       select: {
         network: true,
         voter: true,
