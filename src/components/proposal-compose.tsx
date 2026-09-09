@@ -43,7 +43,10 @@ export function ProposalCompose({ contract }: { contract: string }) {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient({ chainId: FLARE_CHAIN_ID });
 
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  // undefined = not asked yet, null = the read failed, boolean = the contract answered. Collapsing
+  // the first two told a member their eligibility check had FAILED during the moment it was still
+  // in flight, which is a different and more alarming claim than "one moment".
+  const [allowed, setAllowed] = useState<boolean | null | undefined>(undefined);
   const [fee, setFee] = useState<bigint | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [open, setOpen] = useState(false);
@@ -64,9 +67,10 @@ export function ProposalCompose({ contract }: { contract: string }) {
   useEffect(() => {
     let off = false;
     if (!isConnected || !address || !publicClient) {
-      setAllowed(null);
+      setAllowed(undefined);
       return;
     }
+    setAllowed(undefined);
     (async () => {
       try {
         const [can, f] = await Promise.all([
@@ -186,7 +190,9 @@ export function ProposalCompose({ contract }: { contract: string }) {
         ? t("prop.new.needMember", { address: shortAddr(address) })
         : allowed === null
           ? t("prop.new.checkFailed")
-          : null;
+          : allowed === undefined
+            ? t("prop.new.checking2")
+            : null;
 
   if (blocked) {
     return (
