@@ -74,7 +74,7 @@ export interface MgProposalView extends MgProposal {
   quorumNeeded: number;
   quorumMet: boolean;
   majorityMet: boolean;
-  outcome: "open" | "pending" | "accepted" | "rejected" | "noQuorum";
+  outcome: "open" | "pending" | "accepted" | "closed";
   portalUrl: string;
 }
 
@@ -169,11 +169,17 @@ export async function fetchMgProposals(): Promise<MgProposal[]> {
 }
 
 /**
- * Label a proposal from its clock and its votes, never from the contract's state enum.
+ * Label a proposal, and refuse to apply TODAY's quorum to a vote held months ago.
  *
- * The enum's values are not documented anywhere we control and only two of them have been observed
- * in the wild, so mapping the rest would be guesswork printed as fact. Times and vote counts are
- * unambiguous and are what the thresholds are actually applied to.
+ * The quorum is a share of the group, and the group changes size: it was 48 members three weeks ago
+ * and is 49 now. The contract does not record how many were eligible when a given proposal ran, so
+ * for anything already decided we have no honest denominator. Printing "47 of the 33 votes needed"
+ * against an April vote is both bad arithmetic and bad English.
+ *
+ * So the quorum bar is computed only while a proposal is OPEN, where today's group is the group
+ * that has to turn out. A decided proposal is labelled ACCEPTED only on the contract's own state
+ * value 4, which has been cross-checked against the portal for all eleven of them, and otherwise
+ * just CLOSED. Vague and true beats precise and wrong, and the portal is one click away.
  */
 export function deriveOutcome(
   p: MgProposal, memberCount: number, now: Date,
@@ -185,11 +191,10 @@ export function deriveOutcome(
   const quorumMet = cast >= quorumNeeded;
   const majorityMet = cast > 0 && p.votesFor * 10000 >= majorityBips * cast;
   const open = now >= start && now < end;
+  // 4 is the only decided value observed on chain, and it matched "Accepted" on the portal for
+  // every proposal carrying it. Anything else decided is reported without a claim about why.
   const outcome: MgProposalView["outcome"] =
-    now < start ? "pending"
-      : open ? "open"
-        : !quorumMet ? "noQuorum"
-          : majorityMet ? "accepted" : "rejected";
+    now < start ? "pending" : open ? "open" : p.chainState === 4 ? "accepted" : "closed";
   return {
     ...p, open, quorumNeeded, quorumMet, majorityMet, outcome,
     portalUrl: `${PORTAL_BASE}/${p.id}-0x1e91a59aac440d7eca5ebf58d85903cdb0021812`,

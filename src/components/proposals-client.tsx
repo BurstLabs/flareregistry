@@ -82,10 +82,16 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           <p className="text-xs text-muted">
             {t("prop.tally", { for: p.votesFor, against: p.votesAgainst })}
           </p>
-          <Bar cast={cast} needed={p.quorumNeeded} />
-          <p className="mt-1 text-[11px] text-faint">
-            {t("prop.quorum", { cast, needed: p.quorumNeeded, members: data.memberCount })}
-          </p>
+          {/* Only while it is running. The quorum is a share of the CURRENT group, and applying
+              today's bar to a vote held in April would be arithmetic about the wrong denominator. */}
+          {p.outcome === "open" && (
+            <>
+              <Bar cast={cast} needed={p.quorumNeeded} />
+              <p className="mt-1 text-[11px] text-faint">
+                {t("prop.quorum", { cast, needed: p.quorumNeeded, members: data.memberCount })}
+              </p>
+            </>
+          )}
         </div>
 
         <p className="mt-2 text-[11px] text-faint">
