@@ -184,7 +184,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
             type="button"
             onClick={() => setPage((n) => Math.max(1, n - 1))}
             disabled={current === 1}
-            className="rounded-lg border border-themed px-3 py-1.5 text-xs text-muted hover:text-beacon disabled:opacity-40"
+            className="min-h-[44px] rounded-lg border border-themed px-4 text-xs text-muted hover:text-beacon disabled:opacity-40"
           >
             {t("prop.prev")}
           </button>
@@ -194,7 +194,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
               type="button"
               onClick={() => setPage(n)}
               aria-current={n === current ? "page" : undefined}
-              className={`rounded-lg border px-3 py-1.5 text-xs ${
+              className={`min-h-[44px] min-w-[44px] rounded-lg border px-3 text-xs ${
                 n === current
                   ? "border-beacon bg-beacon/15 text-beacon"
                   : "border-themed text-muted hover:text-beacon"
@@ -207,7 +207,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
             type="button"
             onClick={() => setPage((n) => Math.min(pages, n + 1))}
             disabled={current === pages}
-            className="rounded-lg border border-themed px-3 py-1.5 text-xs text-muted hover:text-beacon disabled:opacity-40"
+            className="min-h-[44px] rounded-lg border border-themed px-4 text-xs text-muted hover:text-beacon disabled:opacity-40"
           >
             {t("prop.next")}
           </button>
