@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAccount, useSwitchChain, useWriteContract, usePublicClient } from "wagmi";
 import { useApp } from "@/components/providers";
 import { isHttpUrl } from "@/lib/validation";
+import { buildProposalPayload, isAddress } from "@/lib/proposal-payload";
 
 // SUBMITTING A PROPOSAL. The most consequential thing this site does.
 //
@@ -29,25 +30,6 @@ const proposeAbi = [
 ] as const;
 
 type Subject = { name: string; address: string; network: string; listed: boolean };
-
-/**
- * The exact string that goes on chain.
- *
- * STRICT JSON. Proposals 1 to 11 are valid JSON and only the two typed by hand into the portal use
- * single quotes, so this is the established convention as well as the instruction. JSON.stringify
- * also escapes quotes and newlines in whatever the member typed, which hand-typing does not: an
- * apostrophe in a description is exactly how the older entries became unparseable.
- */
-export function buildProposalPayload(f: {
-  title: string; address: string; description: string; url: string;
-}): string {
-  return JSON.stringify({
-    name: f.title.trim(),
-    address: f.address.trim(),
-    description: f.description.trim(),
-    url: f.url.trim(),
-  });
-}
 
 export function ProposalCompose({ contract }: { contract: string }) {
   const { t } = useApp();
@@ -117,9 +99,8 @@ export function ProposalCompose({ contract }: { contract: string }) {
   const payload = useMemo(
     () =>
       buildProposalPayload({
-        // Lowercased so a hand-typed address cannot differ from the picked one by case alone.
         title,
-        address: /^0x[0-9a-fA-F]{40}$/.test(subject.trim()) ? subject.trim().toLowerCase() : subject,
+        address: subject,
         description,
         url,
       }),
@@ -127,7 +108,7 @@ export function ProposalCompose({ contract }: { contract: string }) {
   );
   const feeFlr = fee != null ? (Number(fee) / 1e18).toLocaleString() : "…";
   const trimmedSubject = subject.trim();
-  const subjectWellFormed = /^0x[0-9a-fA-F]{40}$/.test(trimmedSubject);
+  const subjectWellFormed = isAddress(trimmedSubject);
   // A typed address that matches no entity we know of is the case the picker existed to prevent, so
   // it is called out. NOT blocked: a brand new registration we have not ingested yet is a perfectly
   // good subject, and refusing it would make the manual field useless exactly when it is needed.
