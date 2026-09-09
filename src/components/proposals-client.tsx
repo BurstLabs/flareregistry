@@ -1,6 +1,9 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers";
+import { ProposalVote } from "@/components/proposal-vote";
 import { safeExternalUrl } from "@/lib/validation";
 import type { MgProposalView } from "@/lib/mg-proposals";
 
@@ -34,6 +37,8 @@ function Bar({ cast, needed }: { cast: number; needed: number }) {
 
 export function ProposalsClient({ data }: { data: Payload | null }) {
   const { t } = useApp();
+  const router = useRouter();
+  const [page, setPage] = useState(1);
 
   if (!data) {
     return (
@@ -44,8 +49,14 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
     );
   }
 
-  const open = data.proposals.filter((p) => p.outcome === "open" || p.outcome === "pending");
-  const decided = data.proposals.filter((p) => p.outcome !== "open" && p.outcome !== "pending");
+  // ONE list, newest first, paged. The open ones are the newest by definition, so they sit at the
+  // top of page 1 without needing a section of their own.
+  const PER_PAGE = 16;
+  const pages = Math.max(1, Math.ceil(data.proposals.length / PER_PAGE));
+  const slice = useMemo(
+    () => data.proposals.slice((page - 1) * PER_PAGE, page * PER_PAGE),
+    [data.proposals, page]
+  );
 
   const card = (p: MgProposalView) => {
     const cast = p.votesFor + p.votesAgainst;
@@ -107,6 +118,12 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
             : t("prop.closed", { date: p.voteEndAt.slice(0, 16).replace("T", " ") })}
         </p>
 
+        {/* Voting happens here for an open proposal; the portal link stays for everything else it
+            offers. Only the member's own wallet can sign it. */}
+        {p.outcome === "open" && (
+          <ProposalVote proposalId={p.id} contract={p.contract} onVoted={() => router.refresh()} />
+        )}
+
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
           <a
             href={p.portalUrl}
@@ -147,18 +164,45 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           this site is not part of it. */}
       <p className="mt-2 text-xs text-faint">{t("prop.readOnly")}</p>
 
-      <h2 className="mb-2 mt-8 text-lg font-semibold">{t("prop.openH")}</h2>
-      {open.length === 0 ? (
-        <p className="text-sm text-faint">{t("prop.noneOpen")}</p>
-      ) : (
-        <ul className="space-y-4">{open.map(card)}</ul>
-      )}
+      <p className="mb-2 mt-8 text-xs text-faint">
+        {t("prop.count", { total: data.proposals.length, page, pages })}
+      </p>
+      <ul className="space-y-4">{slice.map(card)}</ul>
 
-      <h2 className="mb-2 mt-8 text-lg font-semibold">{t("prop.decidedH")}</h2>
-      {decided.length === 0 ? (
-        <p className="text-sm text-faint">{t("prop.noneDecided")}</p>
-      ) : (
-        <ul className="space-y-4">{decided.map(card)}</ul>
+      {pages > 1 && (
+        <nav className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((n) => Math.max(1, n - 1))}
+            disabled={page === 1}
+            className="rounded-lg border border-themed px-3 py-1.5 text-xs text-muted hover:text-beacon disabled:opacity-40"
+          >
+            {t("prop.prev")}
+          </button>
+          {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setPage(n)}
+              aria-current={n === page ? "page" : undefined}
+              className={`rounded-lg border px-3 py-1.5 text-xs ${
+                n === page
+                  ? "border-beacon bg-beacon/15 text-beacon"
+                  : "border-themed text-muted hover:text-beacon"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setPage((n) => Math.min(pages, n + 1))}
+            disabled={page === pages}
+            className="rounded-lg border border-themed px-3 py-1.5 text-xs text-muted hover:text-beacon disabled:opacity-40"
+          >
+            {t("prop.next")}
+          </button>
+        </nav>
       )}
     </div>
   );
