@@ -46,6 +46,7 @@ export function ProposalVote({
   const [eligible, setEligible] = useState<boolean | null>(null);
   const [already, setAlready] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<"for" | "against" | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
 
@@ -93,13 +94,31 @@ export function ProposalVote({
       // The vote lives on Flare. A member connected to Songbird would otherwise get an opaque
       // wallet error, or worse, a transaction sent to the wrong chain.
       if (chainId !== FLARE_CHAIN_ID) await switchChainAsync({ chainId: FLARE_CHAIN_ID });
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         address: contract as `0x${string}`,
         abi: voteAbi,
         functionName: "castVote",
         args: [BigInt(proposalId), support],
         chainId: FLARE_CHAIN_ID,
       });
+      // WAIT FOR THE CHAIN, do not congratulate on submission.
+      //
+      // writeContractAsync resolves as soon as the wallet BROADCASTS, carrying only a hash. A
+      // transaction can still revert after that: the window closes, the member turns out not to be
+      // on the register, someone else's state moves. Reporting "your vote is recorded" at that
+      // point is the worst lie this page could tell, because the member then does not vote again
+      // and the proposal quietly misses the quorum this whole page exists to protect.
+      setConfirming(true);
+      if (!publicClient) {
+        // No reader for Flare means we cannot confirm. Say so rather than assume it worked.
+        setErr(t("prop.voteUnconfirmed"));
+        return;
+      }
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") {
+        setErr(t("prop.voteReverted"));
+        return;
+      }
       setDone(true);
       onVoted();
     } catch (e) {
@@ -108,6 +127,7 @@ export function ProposalVote({
       setErr(/user rejected|denied|rejected the request/i.test(m) ? "" : m.slice(0, 160));
     } finally {
       setBusy(null);
+      setConfirming(false);
     }
   }
 
@@ -130,7 +150,7 @@ export function ProposalVote({
           disabled={busy !== null}
           className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-500/20 disabled:opacity-50 dark:text-emerald-300"
         >
-          {busy === "for" ? t("prop.voting") : t("prop.voteFor")}
+          {busy === "for" ? t(confirming ? "prop.confirming" : "prop.voting") : t("prop.voteFor")}
         </button>
         <button
           type="button"
@@ -138,7 +158,7 @@ export function ProposalVote({
           disabled={busy !== null}
           className="rounded-lg border border-flare/50 bg-flare/10 px-3 py-1.5 text-xs font-medium text-flare hover:bg-flare/20 disabled:opacity-50"
         >
-          {busy === "against" ? t("prop.voting") : t("prop.voteAgainst")}
+          {busy === "against" ? t(confirming ? "prop.confirming" : "prop.voting") : t("prop.voteAgainst")}
         </button>
       </div>
       <p className="mt-1.5 text-[11px] text-faint">{t("prop.voteFinal")}</p>

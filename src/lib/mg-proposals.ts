@@ -203,11 +203,28 @@ function readProposalInfo(words: readonly bigint[]): {
 }
 
 let cache: { at: number; data: MgProposal[] } | null = null;
+// SHARED so concurrent cold requests do not each walk the chain. The page is force-dynamic and
+// linked from the nav, so a cache miss can be hit by several visitors at once; without this each
+// one fired its own ~180 RPC calls at the public Flare endpoint. Measured cold: 10.7 seconds.
+let inFlight: Promise<MgProposal[]> | null = null;
 const TTL_MS = 120_000;
 
 /** Every proposal across every deployment, newest first. Cached briefly; this is ~44 reads. */
 export async function fetchMgProposals(): Promise<MgProposal[]> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
+  if (inFlight) return inFlight;
+  inFlight = loadAllProposals()
+    .then((data) => {
+      cache = { at: Date.now(), data };
+      return data;
+    })
+    .finally(() => {
+      inFlight = null;
+    });
+  return inFlight;
+}
+
+async function loadAllProposals(): Promise<MgProposal[]> {
   const client = createPublicClient({ transport: http(FLARE_RPC) });
 
   const current = await Promise.all(
@@ -225,47 +242,71 @@ export async function fetchMgProposals(): Promise<MgProposal[]> {
     ...HISTORIC_POLLING_CONTRACTS,
   ];
 
-  const out: MgProposal[] = [];
-  for (const address of contracts) {
-    // No enumeration function exists, so ids are walked from 1. getProposalInfo does NOT revert for
-    // an unused id, it returns zeros, so an unset vote window is the end marker; walking until it
-    // throws invented a hundred empty proposals.
-    for (let id = 1; id < 300; id++) {
-      let words: readonly bigint[];
-      try {
-        words = (await client.readContract({
-          address, abi: pollingAbi, functionName: "getProposalInfo", args: [BigInt(id)],
-        })) as readonly bigint[];
-      } catch {
-        break; // reverted: no such id on this deployment
-      }
-      const info = readProposalInfo(words);
-      if (!info) break; // an unused id returns zeros rather than reverting
-      const { proposer, startTs, endTs } = info;
-      const [raw, votes, chainState] = await Promise.all([
-        client.readContract({ address, abi: pollingAbi, functionName: "getProposalDescription", args: [BigInt(id)] }).catch(() => "") as Promise<string>,
-        client.readContract({ address, abi: pollingAbi, functionName: "getProposalVotes", args: [BigInt(id)] }).catch(() => [0n, 0n] as const) as Promise<readonly [bigint, bigint]>,
-        client.readContract({ address, abi: pollingAbi, functionName: "state", args: [BigInt(id)] }).catch(() => 0) as Promise<number>,
-      ]);
-      const parsed = parseProposalDescription(raw);
-      out.push({
-        id, ...parsed, raw,
-        contract: address.toLowerCase(),
-        proposer,
-        voteStartAt: new Date(Number(startTs) * 1000).toISOString(),
-        voteEndAt: new Date(Number(endTs) * 1000).toISOString(),
-        votesFor: Number(votes[0]),
-        votesAgainst: Number(votes[1]),
-        chainState: Number(chainState),
-      });
-    }
-  }
+  const perContract = await Promise.all(contracts.map((address) => readContract(client, address)));
+  const out = perContract.flat();
   // Newest first ACROSS deployments. Ids are only meaningful within one contract, so the vote
   // window is the only ordering that means anything here.
   out.sort((a, b) => b.voteStartAt.localeCompare(a.voteStartAt));
-  cache = { at: Date.now(), data: out };
   return out;
 }
+
+/** One deployment's proposals. Ids are probed in batches; a gap ends the walk. */
+async function readContract(
+  client: ReturnType<typeof createPublicClient>,
+  address: Address
+): Promise<MgProposal[]> {
+  // BATCHED. No enumeration function exists, so ids are walked from 1, but walking them ONE AT A
+  // TIME cost 10.7 seconds cold across the four deployments: roughly 180 sequential round trips to
+  // a public RPC. Ids are dense and start at 1, so a batch can be probed at once and the walk stops
+  // at the first gap. getProposalInfo does NOT revert for an unused id, it returns zeros, so an
+  // unset vote window is the end marker rather than a thrown error.
+  const BATCH = 10;
+  const MAX_ID = 500; // a guard against an infinite walk, not an expected limit
+  const out: MgProposal[] = [];
+
+  for (let base = 1; base <= MAX_ID; base += BATCH) {
+    const ids = Array.from({ length: BATCH }, (_, k) => base + k);
+    const infos = await Promise.all(
+      ids.map((id) =>
+        client
+          .readContract({ address, abi: pollingAbi, functionName: "getProposalInfo", args: [BigInt(id)] })
+          .then((w) => readProposalInfo(w as readonly bigint[]))
+          .catch(() => null)
+      )
+    );
+    const live = ids.filter((_, i) => infos[i] !== null);
+    const details = await Promise.all(
+      live.map(async (id) => {
+        const [raw, votes, chainState] = await Promise.all([
+          client.readContract({ address, abi: pollingAbi, functionName: "getProposalDescription", args: [BigInt(id)] }).catch(() => "") as Promise<string>,
+          client.readContract({ address, abi: pollingAbi, functionName: "getProposalVotes", args: [BigInt(id)] }).catch(() => [0n, 0n] as const) as Promise<readonly [bigint, bigint]>,
+          client.readContract({ address, abi: pollingAbi, functionName: "state", args: [BigInt(id)] }).catch(() => 0) as Promise<number>,
+        ]);
+        return { id, raw, votes, chainState };
+      })
+    );
+    for (const d of details) {
+      const info = infos[ids.indexOf(d.id)]!;
+      out.push({
+        id: d.id,
+        ...parseProposalDescription(d.raw),
+        raw: d.raw,
+        contract: address.toLowerCase(),
+        proposer: info.proposer,
+        voteStartAt: new Date(Number(info.startTs) * 1000).toISOString(),
+        voteEndAt: new Date(Number(info.endTs) * 1000).toISOString(),
+        votesFor: Number(d.votes[0]),
+        votesAgainst: Number(d.votes[1]),
+        chainState: Number(d.chainState),
+      });
+    }
+    // A gap inside the batch means the end: ids are assigned sequentially and never reused.
+    if (live.length < ids.length) break;
+  }
+  out.sort((a, b) => b.id - a.id);
+  return out;
+}
+
 
 /**
  * Label a proposal, and refuse to apply TODAY's quorum to a vote held months ago.
