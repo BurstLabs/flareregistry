@@ -16,6 +16,8 @@ interface Payload {
   memberCount: number;
   /** The deployment a NEW proposal goes to; historic ones are read-only. */
   currentContract: string | null;
+  /** What the signed-in viewer may do, so the first paint is already correct. */
+  viewer: { address: string; canPropose: boolean; votedIds: string[] } | null;
   proposals: MgProposalView[];
 }
 
@@ -133,7 +135,12 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
         {/* Voting happens here for an open proposal; the portal link stays for everything else it
             offers. Only the member's own wallet can sign it. */}
         {p.outcome === "open" && (
-          <ProposalVote proposalId={p.id} contract={p.contract} onVoted={() => router.refresh()} />
+          <ProposalVote
+            proposalId={p.id}
+            contract={p.contract}
+            seed={data.viewer}
+            onVoted={() => router.refresh()}
+          />
         )}
 
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
@@ -178,7 +185,9 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
 
       {/* Only rendered for an address the contract says may propose; it returns null otherwise, so
           nobody else learns the form exists. New proposals always go to the CURRENT deployment. */}
-      {data.currentContract && <ProposalCompose contract={data.currentContract} />}
+      {data.currentContract && (
+        <ProposalCompose contract={data.currentContract} seed={data.viewer} />
+      )}
 
       <p className="mb-2 mt-8 text-xs text-faint">
         {t("prop.count", { total: data.proposals.length, page: current, pages })}

@@ -377,3 +377,50 @@ export async function currentPollingContract(): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * What the SIGNED-IN viewer may do, resolved on the server so the page paints its final state.
+ *
+ * Without this the client rendered optimistically and then corrected itself: vote buttons appeared
+ * for a moment and vanished once the eligibility read landed, and the proposal form sat grey saying
+ * it was still checking. A control that appears and then withdraws is worse than one that arrives a
+ * moment late, because the reader has already started moving towards it.
+ *
+ * Keyed to the session address. The client only trusts this when the wallet actually connected
+ * matches, so a stale or mismatched session cannot grant anyone a button they should not have.
+ */
+export async function viewerProposalState(
+  viewer: string | null,
+  openProposals: { id: number; contract: string }[]
+): Promise<{ address: string; canPropose: boolean; votedIds: string[] } | null> {
+  if (!viewer) return null;
+  try {
+    const client = createPublicClient({ transport: http(FLARE_RPC) });
+    const current = await currentPollingContract();
+    const canPropose = current
+      ? ((await client.readContract({
+          address: current as Address, abi: pollingAbi, functionName: "canPropose", args: [viewer as Address],
+        })) as boolean)
+      : false;
+    const voted = await Promise.all(
+      openProposals.map(async (p) => {
+        try {
+          const has = (await client.readContract({
+            address: p.contract as Address, abi: pollingAbi, functionName: "hasVoted",
+            args: [BigInt(p.id), viewer as Address],
+          })) as boolean;
+          return has ? `${p.contract}:${p.id}` : null;
+        } catch {
+          return null;
+        }
+      })
+    );
+    return {
+      address: viewer.toLowerCase(),
+      canPropose,
+      votedIds: voted.filter((v): v is string => v !== null),
+    };
+  } catch {
+    return null;
+  }
+}
