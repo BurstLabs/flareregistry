@@ -358,3 +358,22 @@ export async function fetchMgProposalSettings(): Promise<{
   ]);
   return { thresholdBips: Number(t), majorityBips: Number(m), feeWei: f.toString() };
 }
+
+/**
+ * The deployment a NEW proposal goes to.
+ *
+ * Always resolved from the registry rather than pinned: the retired contracts are read-only history
+ * and nothing should ever be submitted to one.
+ */
+export async function currentPollingContract(): Promise<string | null> {
+  try {
+    const client = createPublicClient({ transport: http(FLARE_RPC) });
+    const a = (await client.readContract({
+      address: CONTRACT_REGISTRY, abi: registryAbi,
+      functionName: "getContractAddressByName", args: ["PollingManagementGroup"],
+    })) as Address;
+    return a && a !== "0x0000000000000000000000000000000000000000" ? a : null;
+  } catch {
+    return null;
+  }
+}

@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { fetchMgProposals, fetchMgProposalSettings, deriveOutcome } from "@/lib/mg-proposals";
+import {
+  fetchMgProposals,
+  fetchMgProposalSettings,
+  deriveOutcome,
+  currentPollingContract,
+} from "@/lib/mg-proposals";
 import { loadMembers } from "@/lib/governance";
 import { ProposalsClient } from "@/components/proposals-client";
 
@@ -26,15 +31,17 @@ export default async function ProposalsPage() {
   // are no proposals".
   let payload = null;
   try {
-    const [settings, proposals, members] = await Promise.all([
+    const [settings, proposals, members, currentContract] = await Promise.all([
       fetchMgProposalSettings(),
       fetchMgProposals(),
       loadMembers(),
+      currentPollingContract(),
     ]);
     const now = new Date();
     payload = {
       settings,
       memberCount: members.memberCount,
+      currentContract,
       proposals: proposals.map((p) =>
         deriveOutcome(p, members.memberCount, now, settings.thresholdBips, settings.majorityBips)
       ),
