@@ -108,7 +108,7 @@ export function MgRemovablePanel({
                   <span className="block text-[11px] text-faint">{ground}</span>
                 </span>
               </span>
-              <MgRemoveButton identity={m.addr} compact />
+              <MgRemoveButton identity={m.addr} variant="compact" />
             </li>
           );
         })}
