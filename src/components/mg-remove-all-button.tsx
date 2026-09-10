@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { encodeFunctionData } from "viem";
 import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from "wagmi";
 import { openWallet } from "@/lib/appkit";
+import { markMgRemoved } from "@/lib/mg-removed";
 import { useApp } from "./providers";
 
 const FLARE_CHAIN_ID = 14;
@@ -149,7 +150,7 @@ export function MgRemoveAllButton({
 
       // COUNTED FROM THE CHAIN. With allowFailure the batch reports success even if every inner
       // call reverted, so the only honest number is how many of the targets are no longer members.
-      let gone = 0;
+      const gone: string[] = [];
       await Promise.all(
         targets.map(async (m) => {
           try {
@@ -157,14 +158,18 @@ export function MgRemoveAllButton({
               address: POLLING_MANAGEMENT_GROUP, abi: IS_MEMBER_ABI,
               functionName: "isMember", args: [m.addr as `0x${string}`],
             });
-            if (!still) gone++;
+            if (!still) gone.push(m.addr);
           } catch {
             // A failed read must not be counted as a removal.
           }
         })
       );
-      setRemoved(gone);
+      setRemoved(gone.length);
       setPhase("done");
+      // WHICH ones, not how many, because the rest of the page acts per address: the panel drops
+      // these rows and their chips on every roster card below turn into receipts, now rather than
+      // whenever the refresh below gets back. A partial batch marks only the ones that went.
+      markMgRemoved(gone.map((addr) => ({ addr, txHash: hash })));
 
       // The page renders from our database, which the eligibility cron refreshes every six hours.
       // Best effort: the transaction has already succeeded, so a failed refresh is not a failure.
@@ -174,6 +179,9 @@ export function MgRemoveAllButton({
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ voter: m.addr }),
+            // Bounded. These run six at a time and each re-reads the chain, and the router refresh
+            // below waits for the slowest of them; one stalled endpoint must not hold the page.
+            signal: AbortSignal.timeout(20_000),
           }).catch(() => {})
         )
       );
