@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers";
 import { ProposalVote } from "@/components/proposal-vote";
 import { ProposalCompose } from "@/components/proposal-compose";
+import { ProposalRoster, type MemberRef, type ParticipationRef } from "@/components/proposal-roster";
 import { safeExternalUrl } from "@/lib/validation";
 import type { MgProposalView } from "@/lib/mg-proposals";
 
-// The reader half of /proposals. Everything it shows was read from PollingManagementGroup; nothing
-// here builds a transaction. Voting happens on Flare's own portal, which we link to.
+// The reader half of /proposals. Everything it shows was read from PollingManagementGroup: the
+// proposals and tallies from its functions, and who voted and when from its VoteCast and creation
+// events. Members vote and propose from here, each signed by their own wallet.
 
 interface Payload {
   settings: { thresholdBips: number; majorityBips: number; feeWei: string };
@@ -19,6 +21,12 @@ interface Payload {
   /** What the signed-in viewer may do, so the first paint is already correct. */
   viewer: { address: string; canPropose: boolean; votedIds: string[] } | null;
   proposals: MgProposalView[];
+  /** The server's clock at render, so the timeline paints identically on both sides. */
+  nowMs: number;
+  /** The union of every member seen, interned; participation refers to it by index. */
+  members: MemberRef[];
+  /** Keyed `${contract}:${id}`. Absent for a proposal whose events we could not read. */
+  participation: Record<string, ParticipationRef>;
 }
 
 /** Whole hours left, or null once the window has closed. */
@@ -69,6 +77,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
   const card = (p: MgProposalView) => {
     const cast = p.votesFor + p.votesAgainst;
     const left = hoursLeft(p.voteEndAt);
+    const part = data.participation[`${p.contract}:${p.id}`];
     return (
       // KEYED BY CONTRACT AND ID. Ids restart at 1 on every deployment, so id alone collides across
       // the four of them: React then reconciled a new page against stale cards and page two rendered
@@ -114,13 +123,20 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           <p className="text-xs text-muted">
             {t("prop.tally", { for: p.votesFor, against: p.votesAgainst })}
           </p>
-          {/* Only while it is running. The quorum is a share of the CURRENT group, and applying
-              today's bar to a vote held in April would be arithmetic about the wrong denominator. */}
-          {p.outcome === "open" && (
+          {/* Shown whenever the denominator is the right one. That used to mean "only while it is
+              running", because today's group is the wrong denominator for a vote held in April; it
+              now also covers every proposal whose creation event gave us the group it actually
+              faced, which is all of them we could read. */}
+          {p.quorumKnown && (
             <>
               <Bar cast={cast} needed={p.quorumNeeded} />
               <p className="mt-1 text-[11px] text-faint">
-                {t("prop.quorum", { cast, needed: p.quorumNeeded, members: data.memberCount })}
+                {/* "43 of the 37 votes needed for quorum" is only good English while the number is
+                    still short of the bar. Now that the bar is shown on decided proposals too, most
+                    of which cleared it comfortably, the cleared case needs its own sentence. */}
+                {p.quorumMet
+                  ? t("prop.quorumMet", { cast, needed: p.quorumNeeded, members: p.eligibleCount })
+                  : t("prop.quorum", { cast, needed: p.quorumNeeded, members: p.eligibleCount })}
               </p>
             </>
           )}
@@ -131,6 +147,21 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
             ? t("prop.closesIn", { hours: left, date: p.voteEndAt.slice(0, 16).replace("T", " ") })
             : t("prop.closed", { date: p.voteEndAt.slice(0, 16).replace("T", " ") })}
         </p>
+
+        {/* WHO. Rendered for any proposal whose events we read, open or decided: while it is
+            running the useful half is the members still missing, and afterwards it is the record
+            of who turned out. */}
+        {part && (
+          <ProposalRoster
+            part={part}
+            members={data.members}
+            quorumNeeded={p.quorumNeeded}
+            voteStartAt={p.voteStartAt}
+            voteEndAt={p.voteEndAt}
+            nowMs={data.nowMs}
+            open={p.outcome === "open"}
+          />
+        )}
 
         {/* Voting happens here for an open proposal; the portal link stays for everything else it
             offers. Only the member's own wallet can sign it. */}
