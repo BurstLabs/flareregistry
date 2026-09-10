@@ -57,16 +57,24 @@ function utcStamp(at: number): string {
  * failed.
  */
 function Timeline({
-  votes, eligible, quorumNeeded, startMs, endMs, now,
+  votes, members, eligible, quorumNeeded, startMs, endMs, now,
 }: {
-  votes: VoteRef[]; eligible: number; quorumNeeded: number;
+  votes: VoteRef[]; members: MemberRef[]; eligible: number; quorumNeeded: number;
   startMs: number; endMs: number; now: number;
 }) {
   const { t } = useApp();
-  const W = 600, H = 150;
-  const L = 6, R = W - 6, TOP = 14, BASE = H - 26;
+  const W = 600, H = 240;
+  const L = 6, R = W - 6, TOP = 18, BASE = H - 26;
+  /** Marker radius. Every vote is a provider logo at this size, so it has to stay recognisable. */
+  const LOGO_R = 7;
   const span = Math.max(1, endMs - startMs);
-  const maxY = Math.max(1, eligible);
+  // THE TOP OF THE BOX. The whole eligible group was the honest scale while each vote was a 3px
+  // dot, but a vote is now a 14px logo, and 49 members across the plot left the ones who voted in
+  // the same hour piled on top of each other. Scaling to the BAR, or to turnout once it passes the
+  // bar, roughly halves that crowding without the failure the group scale was protecting against:
+  // a proposal that fell short still draws a curve that stops visibly below the quorum line,
+  // because the line is what the axis is pinned to. Headroom so the last logo is never clipped.
+  const maxY = Math.max(1, Math.max(quorumNeeded, votes.length) * 1.15);
 
   const x = (ms: number) => L + ((Math.min(Math.max(ms, startMs), endMs) - startMs) / span) * (R - L);
   const y = (n: number) => BASE - (n / maxY) * (BASE - TOP);
@@ -101,6 +109,12 @@ function Timeline({
       className="mt-3 block h-auto w-full"
     >
       <defs>
+        {/* objectBoundingBox units, so this ONE path clips every logo to a circle inscribed in
+            whatever box it is applied to. No per-marker clipPath and no id collisions between
+            cards. */}
+        <clipPath id="logo-clip" clipPathUnits="objectBoundingBox">
+          <circle cx="0.5" cy="0.5" r="0.5" />
+        </clipPath>
         <linearGradient id={`g-${uid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={stroke} stopOpacity="0.28" />
           <stop offset="100%" stopColor={stroke} stopOpacity="0.02" />
@@ -133,15 +147,50 @@ function Timeline({
       <path d={area} fill={`url(#g-${uid})`} />
       <path d={d} fill="none" stroke={stroke} strokeWidth="1.75" strokeLinejoin="round" />
 
-      {pts.map((p, i) => (
-        <circle key={i} cx={p.px} cy={p.py} r="2.6" fill={stroke}>
-          <title>
-            {t("prop.roster.dot", {
-              n: p.n, hours: hoursInto(p.v.t, startMs).toFixed(1), date: utcStamp(p.v.t),
-            })}
-          </title>
-        </circle>
-      ))}
+      {/* EACH VOTE IS THE PROVIDER WHO CAST IT. Drawn in time order, so where several members vote
+          within minutes of each other the later logos overlap the earlier ones the way a stack of
+          avatars does, which reads as the cluster it is. A member we have no logo for keeps a plain
+          dot rather than a placeholder box. */}
+      {pts.map((p, i) => {
+        const m = members[p.v.m];
+        const label = t("prop.roster.dot", {
+          name: m?.name ?? shortAddr(m?.addr ?? ""),
+          hours: hoursInto(p.v.t, startMs).toFixed(1),
+          date: utcStamp(p.v.t),
+        });
+        if (!m?.logoURI) {
+          return (
+            <circle key={i} cx={p.px} cy={p.py} r="3" fill={stroke}>
+              <title>{label}</title>
+            </circle>
+          );
+        }
+        return (
+          // Hover scales the marker up in place. Where several members voted minutes apart their
+          // logos genuinely do overlap, and SVG paints later siblings on top with no way to
+          // reorder on hover, so growing the one under the cursor is what makes a pile explorable.
+          <g key={i} className="origin-center transition-transform duration-100 hover:scale-[1.7]"
+             style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+            {/* The ring is what separates one logo from the one it overlaps, and it carries the
+                for/against colour that the bare logo cannot. */}
+            <circle cx={p.px} cy={p.py} r={LOGO_R + 0.9} fill="rgb(var(--bg-elev))" />
+            <image
+              href={m.logoURI}
+              x={p.px - LOGO_R} y={p.py - LOGO_R}
+              width={LOGO_R * 2} height={LOGO_R * 2}
+              preserveAspectRatio="xMidYMid slice"
+              clipPath="url(#logo-clip)"
+            />
+            <circle
+              cx={p.px} cy={p.py} r={LOGO_R}
+              fill="none" strokeWidth="1.2"
+              stroke={p.v.f ? "rgb(16 185 129)" : "rgb(244 63 94)"}
+              strokeOpacity="0.9"
+            />
+            <title>{label}</title>
+          </g>
+        );
+      })}
 
       {/* Where the clock has got to, on a vote that is still running. */}
       {running && now > startMs && (
@@ -293,6 +342,7 @@ export function ProposalRoster({
         <div className="mt-1">
           <Timeline
             votes={part.votes}
+            members={members}
             eligible={eligible}
             quorumNeeded={quorumNeeded}
             startMs={startMs}
