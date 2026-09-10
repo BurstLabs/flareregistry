@@ -45,7 +45,14 @@ const ABI = [
 
 type Phase = "idle" | "confirm" | "checking" | "sending" | "mining" | "done" | "error";
 
-export function MgRemoveButton({ identity }: { identity: string }) {
+export function MgRemoveButton({
+  identity,
+  compact = false,
+}: {
+  identity: string;
+  /** Row-sized, for a list that already states the grounds beside every name. */
+  compact?: boolean;
+}) {
   const { t } = useApp();
   const router = useRouter();
   const { address, isConnected } = useAccount();
@@ -141,7 +148,7 @@ export function MgRemoveButton({ identity }: { identity: string }) {
 
   if (phase === "done") {
     return (
-      <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
+      <p className={`text-emerald-600 dark:text-emerald-400 ${compact ? "text-xs" : "mt-3 text-sm"}`}>
         {t("mg.removed")}
         {txHash && (
           <>
@@ -162,16 +169,19 @@ export function MgRemoveButton({ identity }: { identity: string }) {
 
   const busy = phase === "checking" || phase === "sending" || phase === "mining";
 
+  const size = compact
+    ? "rounded px-2 py-1 text-[11px] font-medium"
+    : "rounded-lg px-4 py-2 text-sm font-medium";
   return (
-    <div className="mt-3">
+    <div className={compact ? "" : "mt-3"}>
       <button
         type="button"
         onClick={run}
         disabled={busy}
         className={
           phase === "confirm"
-            ? "rounded-lg bg-flare px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            : "rounded-lg border border-flare/60 px-4 py-2 text-sm font-medium text-flare disabled:opacity-50"
+            ? `${size} bg-flare text-white disabled:opacity-50`
+            : `${size} border border-flare/60 text-flare disabled:opacity-50`
         }
       >
         {phase === "mining"
@@ -180,7 +190,10 @@ export function MgRemoveButton({ identity }: { identity: string }) {
             ? t("mg.joining")
             : phase === "confirm"
               ? t("mg.removeConfirm")
-              : t("mg.remove")}
+              : // A row in a list that already names the group needs the verb, not the sentence.
+                compact
+                ? t("mg.removeShort")
+                : t("mg.remove")}
       </button>
       {phase === "confirm" && (
         <button
@@ -191,8 +204,9 @@ export function MgRemoveButton({ identity }: { identity: string }) {
           {t("mg.cancel")}
         </button>
       )}
-      <p className="mt-2 text-xs text-faint">{t("mg.removeNote")}</p>
-      {err && <p className="mt-2 text-xs text-flare">{err}</p>}
+      {/* The grounds are already beside the name in a list; only the standalone button needs this. */}
+      {!compact && <p className="mt-2 text-xs text-faint">{t("mg.removeNote")}</p>}
+      {err && <p className={`text-flare ${compact ? "mt-1 text-[11px]" : "mt-2 text-xs"}`}>{err}</p>}
     </div>
   );
 }

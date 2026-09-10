@@ -13,6 +13,7 @@ import {
   NEW_PROVIDER_WINDOW_DAYS,
 } from "@/lib/governance";
 import { ProviderDetailClient, type DetailData } from "@/components/provider-detail-client";
+import { fetchRemovableMemberViews } from "@/lib/mg-votes";
 
 export const dynamic = "force-dynamic";
 
@@ -138,6 +139,14 @@ export default async function ProviderDetail({
           relevantProposals: flareEntity.mgRelevantProposals,
           missedVotesLimit: flareEntity.mgMissedVotesLimit,
           epochsSinceReward: flareEntity.mgEpochsSinceReward,
+          // THE WHOLE REMOVABLE SET, not just this provider's own standing. Removal is
+          // permissionless, so the useful thing to put in front of a reader who is already looking
+          // at the group is every member a stranger could remove today, this page's subject
+          // included. Own try/catch: a sidebar fact must not cost the page.
+          removableAll: await fetchRemovableMemberViews().catch(() => []),
+          groupSize: await prisma.providerOnchain.count({
+            where: { network: "flare", managementGroup: true },
+          }),
         }
       : null;
 

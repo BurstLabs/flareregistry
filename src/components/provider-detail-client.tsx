@@ -20,6 +20,7 @@ import { ManageListingButton } from "./manage-listing-button";
 import { OwnerNotices } from "./owner-notices";
 import { MgJoinButton } from "./mg-join-button";
 import { MgRemoveButton } from "./mg-remove-button";
+import { MgRemovablePanel, type RemovableMemberView } from "./mg-removable-panel";
 import { TelegramPanel } from "./telegram-panel";
 
 export interface DetailData {
@@ -124,6 +125,10 @@ export interface DetailData {
     checkedEpoch: number | null;
     checkedAt: string | null;
     removable: boolean | null;
+    /** Every member the contract would remove today, group-wide. */
+    removableAll?: RemovableMemberView[];
+    /** Current size of the Management Group, for what the removals do to the quorum. */
+    groupSize?: number;
     removeReason: string | null;
     missedVotes: number | null;
     relevantProposals: number | null;
@@ -757,6 +762,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
               </p>
             )}
           </div>
+
+          {/* The rest of the removable set, under this provider's own standing. Same panel as
+              /proposals: removal is permissionless, so who else is exposed is as much a fact about
+              the group as this member's own line above. */}
+          <MgRemovablePanel
+            members={d.mg.removableAll ?? []}
+            memberCount={d.mg.groupSize ?? 0}
+            highlight={d.mg.identity}
+          />
         </section>
       )}
 

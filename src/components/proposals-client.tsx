@@ -6,6 +6,7 @@ import { useApp } from "@/components/providers";
 import { ProposalVote } from "@/components/proposal-vote";
 import { ProposalCompose } from "@/components/proposal-compose";
 import { ProposalRoster, type MemberRef, type ParticipationRef } from "@/components/proposal-roster";
+import { MgRemovablePanel, type RemovableMemberView } from "@/components/mg-removable-panel";
 import { safeExternalUrl } from "@/lib/validation";
 import type { MgProposalView } from "@/lib/mg-proposals";
 
@@ -23,6 +24,8 @@ interface Payload {
   proposals: MgProposalView[];
   /** The server's clock at render, so the timeline paints identically on both sides. */
   nowMs: number;
+  /** Current members that removeMember would accept today. Empty is the normal case. */
+  removable: RemovableMemberView[];
   /** The union of every member seen, interned; participation refers to it by index. */
   members: MemberRef[];
   /** Keyed `${contract}:${id}`. Absent for a proposal whose events we could not read. */
@@ -73,6 +76,9 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
     () => data.proposals.slice((current - 1) * PER_PAGE, current * PER_PAGE),
     [data.proposals, current]
   );
+
+  // Built once, not per card: the same set is tested against every roster row on the page.
+  const removableSet = new Set(data.removable.map((m) => m.addr));
 
   const card = (p: MgProposalView) => {
     const cast = p.votesFor + p.votesAgainst;
@@ -155,6 +161,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           <ProposalRoster
             part={part}
             members={data.members}
+            removable={removableSet}
             quorumNeeded={p.quorumNeeded}
             voteStartAt={p.voteStartAt}
             voteEndAt={p.voteEndAt}
@@ -213,6 +220,11 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
       {/* Said plainly, because the whole page is about a vote and a reader is entitled to know that
           this site is not part of it. */}
       <p className="mt-2 text-xs text-faint">{t("prop.readOnly")}</p>
+
+      {/* Removal standing sits ABOVE the proposal list on purpose. It is the same subject the list
+          is about, the group deciding these votes, and a member who has stopped turning up is
+          exactly what the rosters below keep showing. */}
+      <MgRemovablePanel members={data.removable} memberCount={data.memberCount} />
 
       {/* Only rendered for an address the contract says may propose; it returns null otherwise, so
           nobody else learns the form exists. New proposals always go to the CURRENT deployment. */}
