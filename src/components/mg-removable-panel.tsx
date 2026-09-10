@@ -11,6 +11,7 @@
 // spelled out per member rather than summarised, since "removable" on its own invites the reader to
 // assume misconduct, and missing two of the last four decided proposals is not that.
 
+import { useState } from "react";
 import { useApp } from "./providers";
 import { MgRemoveButton } from "./mg-remove-button";
 import { MgRemoveAllButton } from "./mg-remove-all-button";
@@ -43,6 +44,10 @@ export function MgRemovablePanel({
   highlight?: string;
 }) {
   const { t } = useApp();
+  // COLLAPSED BY DEFAULT. Seven members with their grounds is a tall block, and on /proposals it sits
+  // above the proposals themselves, which are what the page is for. The heading carries the fact and
+  // the batch button stays reachable; only the per-member rows fold away.
+  const [shown, setShown] = useState(false);
   if (!members.length) return null;
 
   const after = Math.max(0, memberCount - members.length);
@@ -54,7 +59,18 @@ export function MgRemovablePanel({
       </h2>
       <p className="mt-1.5 text-xs text-muted">{t("mg.removableIntro")}</p>
 
-      <ul className="mt-4 space-y-2.5">
+      <button
+        type="button"
+        onClick={() => setShown((v) => !v)}
+        aria-expanded={shown}
+        className="mt-3 flex min-h-[32px] items-center gap-1.5 text-xs text-flare hover:underline"
+      >
+        <span>{shown ? t("mg.removableHide") : t("mg.removableShow", { count: members.length })}</span>
+        <span aria-hidden="true">{shown ? "▴" : "▾"}</span>
+      </button>
+
+      {shown && (
+      <ul className="mt-3 space-y-2.5">
         {members.map((m) => {
           const ground =
             m.reason === "chilled"
@@ -97,11 +113,12 @@ export function MgRemovablePanel({
           );
         })}
       </ul>
+      )}
 
       {/* Only worth offering for more than one. For a single member the button above IS the batch,
           and a second control that does the same thing is noise. */}
       {members.length > 1 && (
-        <div className="mt-4 border-t border-themed pt-3">
+        <div className={shown ? "mt-4 border-t border-themed pt-3" : "mt-1"}>
           <MgRemoveAllButton targets={members.map((m) => ({ addr: m.addr, name: m.name }))} />
         </div>
       )}
