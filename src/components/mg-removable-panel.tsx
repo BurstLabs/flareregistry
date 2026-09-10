@@ -10,9 +10,17 @@
 // Each member carries their own button and the set carries one for all of them. The grounds are
 // spelled out per member rather than summarised, since "removable" on its own invites the reader to
 // assume misconduct, and missing two of the last four decided proposals is not that.
+//
+// WHAT IT SHOWS AFTER A REMOVAL is the other half of the job. The list comes from the database, and
+// the database learns about a removal a moment later, so for that moment the panel would go on
+// offering members who are already gone, under a heading counting them. It reads the session's own
+// removals instead and answers from those immediately: rows fall away, the count and the quorum
+// arithmetic follow, and when nothing is left the panel becomes the receipt rather than vanishing
+// with it.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApp } from "./providers";
+import { useMgRemovals } from "@/lib/mg-removed";
 import { MgRemoveButton } from "./mg-remove-button";
 import { MgRemoveAllButton } from "./mg-remove-all-button";
 
@@ -32,6 +40,9 @@ function shortAddr(a: string): string {
   return `${a.slice(0, 6)}...${a.slice(-4)}`;
 }
 
+/** The contract's threshold, 6600 BIPS, rounded up exactly as mulDivRoundUp does. */
+const quorumFor = (members: number) => Math.ceil(0.66 * members);
+
 export function MgRemovablePanel({
   members,
   memberCount,
@@ -48,14 +59,61 @@ export function MgRemovablePanel({
   // above the proposals themselves, which are what the page is for. The heading carries the fact and
   // the batch button stays reachable; only the per-member rows fold away.
   const [shown, setShown] = useState(false);
-  if (!members.length) return null;
+  const removals = useMgRemovals();
 
-  const after = Math.max(0, memberCount - members.length);
+  // EVERYONE THIS PANEL HAS EVER OFFERED. The server list empties out from under it on the refresh
+  // that follows a removal, and the receipt has to outlive that: a confirmation that disappears the
+  // instant it is earned is indistinguishable from nothing having happened.
+  const offered = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const m of members) offered.current.add(m.addr);
+  }, [members]);
+
+  const known = new Set([...offered.current, ...members.map((m) => m.addr)]);
+  const removedHere = [...removals.values()]
+    .filter((r) => known.has(r.addr))
+    .sort((a, b) => (b.at ?? 0) - (a.at ?? 0));
+  const remaining = members.filter((m) => !removals.has(m.addr));
+
+  if (!members.length && !removedHere.length) return null;
+
+  // The group is smaller than the server said by exactly what this session removed.
+  const groupNow = Math.max(0, memberCount - removedHere.length);
+  const after = Math.max(0, groupNow - remaining.length);
+  const receiptTx = removedHere.find((r) => r.txHash)?.txHash ?? null;
+
+  // NOTHING LEFT TO OFFER, because this session removed it all. Six rows of spent buttons under a
+  // heading reading "0 of the 43" would be a worse answer than the one sentence that is now true.
+  if (!remaining.length) {
+    return (
+      <section className="mt-6 rounded-xl border border-emerald-500/40 bg-emerald-500/[0.04] p-5">
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          {t("mg.removeAllDone", { count: removedHere.length })}
+          {receiptTx && (
+            <>
+              {" "}
+              <a
+                className="underline"
+                href={`https://flare-explorer.flare.network/tx/${receiptTx}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("mg.viewTx")}
+              </a>
+            </>
+          )}
+        </p>
+        <p className="mt-2 text-[11px] text-faint">
+          {t("mg.removableEffectDone", { to: groupNow, quorumTo: quorumFor(groupNow) })}
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-6 rounded-xl border border-flare/40 bg-flare/[0.04] p-5">
       <h2 className="text-sm font-semibold text-flare">
-        {t("mg.removableH", { count: members.length, members: memberCount })}
+        {t("mg.removableH", { count: remaining.length, members: groupNow })}
       </h2>
       <p className="mt-1.5 text-xs text-muted">{t("mg.removableIntro")}</p>
 
@@ -65,7 +123,7 @@ export function MgRemovablePanel({
         aria-expanded={shown}
         className="mt-3 flex min-h-[32px] items-center gap-1.5 text-xs text-flare hover:underline"
       >
-        <span>{shown ? t("mg.removableHide") : t("mg.removableShow", { count: members.length })}</span>
+        <span>{shown ? t("mg.removableHide") : t("mg.removableShow", { count: remaining.length })}</span>
         <span aria-hidden="true">{shown ? "▴" : "▾"}</span>
       </button>
 
@@ -84,10 +142,16 @@ export function MgRemovablePanel({
                     })
                   : "";
           const isSelf = highlight && m.addr === highlight.toLowerCase();
+          // Already gone: the row stays as its own receipt, faded, with the button that did it now
+          // reading "Removed". Dropping it outright would leave the reader to work out which of six
+          // names is missing.
+          const isGone = removals.has(m.addr);
           return (
             <li
               key={m.addr}
-              className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-themed pt-2.5 first:border-0 first:pt-0"
+              className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-themed pt-2.5 first:border-0 first:pt-0 ${
+                isGone ? "opacity-60" : ""
+              }`}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2">
                 {m.logoURI ? (
@@ -116,10 +180,11 @@ export function MgRemovablePanel({
       )}
 
       {/* Only worth offering for more than one. For a single member the button above IS the batch,
-          and a second control that does the same thing is noise. */}
-      {members.length > 1 && (
+          and a second control that does the same thing is noise. Targets are what is LEFT: a batch
+          that re-sent a removal already made would spend gas on a call the contract reverts. */}
+      {remaining.length > 1 && (
         <div className={shown ? "mt-4 border-t border-themed pt-3" : "mt-1"}>
-          <MgRemoveAllButton targets={members.map((m) => ({ addr: m.addr, name: m.name }))} />
+          <MgRemoveAllButton targets={remaining.map((m) => ({ addr: m.addr, name: m.name }))} />
         </div>
       )}
 
@@ -129,10 +194,10 @@ export function MgRemovablePanel({
           created afterwards. */}
       <p className="mt-3 text-[11px] text-faint">
         {t("mg.removableEffect", {
-          from: memberCount,
+          from: groupNow,
           to: after,
-          quorumFrom: Math.ceil(0.66 * memberCount),
-          quorumTo: Math.ceil(0.66 * after),
+          quorumFrom: quorumFor(groupNow),
+          quorumTo: quorumFor(after),
         })}
       </p>
     </section>

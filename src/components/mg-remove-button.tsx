@@ -28,6 +28,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from "wagmi";
 import { openWallet } from "@/lib/appkit";
+import { markMgRemoved, useMgRemovals } from "@/lib/mg-removed";
 import { useApp } from "./providers";
 
 const FLARE_CHAIN_ID = 14;
@@ -72,6 +73,10 @@ export function MgRemoveButton({
   const [phase, setPhase] = useState<Phase>("idle");
   const [err, setErr] = useState("");
   const [txHash, setTxHash] = useState<string | null>(null);
+  // Someone else on this page may have removed them: the batch button evicts several at once, and
+  // this member's chip on a roster card knows nothing about that click.
+  const removals = useMgRemovals();
+  const record = removals.get(identity.toLowerCase());
 
   async function run() {
     setErr("");
@@ -130,6 +135,9 @@ export function MgRemoveButton({
         return;
       }
       setPhase("done");
+      // Tell the rest of the page before the server does. Its own chips and rows for this member
+      // are elsewhere in the tree and would otherwise go on offering an eviction already made.
+      markMgRemoved([{ addr: identity, txHash: hash }]);
       // The page renders from our database, which the crons refresh hourly at best. Without this the
       // removal lands on-chain and the listing goes on showing the member, and the button, for up to
       // an hour. Best-effort: the transaction has already succeeded, so a failed refresh must not be
@@ -138,6 +146,9 @@ export function MgRemoveButton({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ voter: identity }),
+        // Bounded, because the refresh re-reads the chain and the router refresh below waits on it.
+        // The page is already correct without it; what it must not do is hang on a slow endpoint.
+        signal: AbortSignal.timeout(20_000),
       }).catch(() => {});
       router.refresh();
     } catch (e) {
@@ -155,7 +166,10 @@ export function MgRemoveButton({
   }
 
   const busy = phase === "checking" || phase === "sending" || phase === "mining";
-  const explorerTx = txHash ? `https://flare-explorer.flare.network/tx/${txHash}` : null;
+  // Mid-flight beats the record: a button that is already mining says so until it knows the answer.
+  const gone = phase === "done" || (!!record && !busy);
+  const shownTx = txHash ?? record?.txHash ?? null;
+  const explorerTx = shownTx ? `https://flare-explorer.flare.network/tx/${shownTx}` : null;
 
   // THE CHIP. Sized and coloured exactly like the static badge it replaces, because it sits in a
   // roster row next to the for/against chips and must not shout over them. Every state has to fit
@@ -163,7 +177,7 @@ export function MgRemoveButton({
   // detail moves into the title.
   if (variant === "chip") {
     const chip = "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium";
-    if (phase === "done") {
+    if (gone) {
       return (
         <span className={`${chip} bg-emerald-500/15 text-emerald-600 dark:text-emerald-300`} title={t("mg.removed")}>
           {explorerTx ? (
@@ -229,16 +243,16 @@ export function MgRemoveButton({
 
   const compact = variant === "compact";
 
-  if (phase === "done") {
+  if (gone) {
     return (
       <p className={`text-emerald-600 dark:text-emerald-400 ${compact ? "text-xs" : "mt-3 text-sm"}`}>
         {t("mg.removed")}
-        {txHash && (
+        {explorerTx && (
           <>
             {" "}
             <a
               className="underline"
-              href={explorerTx!}
+              href={explorerTx}
               target="_blank"
               rel="noopener noreferrer"
             >
