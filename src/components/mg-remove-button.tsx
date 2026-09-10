@@ -45,13 +45,21 @@ const ABI = [
 
 type Phase = "idle" | "confirm" | "checking" | "sending" | "mining" | "done" | "error";
 
+/**
+ * - `full`   the standalone button, with the note that explains what removal means.
+ * - `compact` row-sized, for a list that already states the grounds beside every name.
+ * - `chip`   the roster badge itself: the same "Removable" chip that marks a name in a proposal
+ *            roster, made pressable. It states a fact and offers the action that fact implies, in
+ *            the one place a reader meets the fact.
+ */
+export type MgRemoveVariant = "full" | "compact" | "chip";
+
 export function MgRemoveButton({
   identity,
-  compact = false,
+  variant = "full",
 }: {
   identity: string;
-  /** Row-sized, for a list that already states the grounds beside every name. */
-  compact?: boolean;
+  variant?: MgRemoveVariant;
 }) {
   const { t } = useApp();
   const router = useRouter();
@@ -146,6 +154,81 @@ export function MgRemoveButton({
     }
   }
 
+  const busy = phase === "checking" || phase === "sending" || phase === "mining";
+  const explorerTx = txHash ? `https://flare-explorer.flare.network/tx/${txHash}` : null;
+
+  // THE CHIP. Sized and coloured exactly like the static badge it replaces, because it sits in a
+  // roster row next to the for/against chips and must not shout over them. Every state has to fit
+  // in that badge, so the long labels the other variants use are swapped for one-word ones and the
+  // detail moves into the title.
+  if (variant === "chip") {
+    const chip = "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium";
+    if (phase === "done") {
+      return (
+        <span className={`${chip} bg-emerald-500/15 text-emerald-600 dark:text-emerald-300`} title={t("mg.removed")}>
+          {explorerTx ? (
+            <a href={explorerTx} target="_blank" rel="noopener noreferrer" className="underline">
+              {t("mg.removedShort")}
+            </a>
+          ) : (
+            t("mg.removedShort")
+          )}
+        </span>
+      );
+    }
+    return (
+      <span className="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          onClick={run}
+          disabled={busy}
+          // Named for what pressing it does, but ONLY while the visible label is a state rather
+          // than an action: an aria-label wins over the text, so leaving it on would read the armed
+          // chip as "Remove from Management Group" and hide the fact that the next press commits.
+          aria-label={phase === "idle" || phase === "error" ? t("mg.remove") : undefined}
+          // Idle: what the badge always said. Armed: what the next click does. Failed: the
+          // contract's own words, which are usually "cannot remove member".
+          title={phase === "error" ? err : t("mg.removable")}
+          className={
+            phase === "confirm"
+              ? `${chip} bg-flare text-white disabled:opacity-50`
+              : phase === "error"
+                ? `${chip} bg-rose-500/15 text-rose-600 hover:bg-rose-500/25 dark:text-rose-300`
+                : `${chip} bg-flare/15 text-flare hover:bg-flare/30 disabled:opacity-50`
+          }
+        >
+          {busy
+            ? t("mg.removeBusy")
+            : phase === "confirm"
+              ? t("mg.removeConfirm")
+              : phase === "error"
+                ? t("mg.removeFailedShort")
+                : // The label the badge carries when it is only stating the fact.
+                  t("prop.roster.removable")}
+        </button>
+        {/* The reason lives in the title, which a screen reader may never speak. */}
+        {phase === "error" && err && (
+          <span role="alert" className="sr-only">
+            {err}
+          </span>
+        )}
+        {phase === "confirm" && (
+          <button
+            type="button"
+            onClick={() => setPhase("idle")}
+            aria-label={t("mg.cancel")}
+            title={t("mg.cancel")}
+            className="shrink-0 px-0.5 text-[10px] leading-none text-faint hover:text-fg"
+          >
+            <span aria-hidden="true">✕</span>
+          </button>
+        )}
+      </span>
+    );
+  }
+
+  const compact = variant === "compact";
+
   if (phase === "done") {
     return (
       <p className={`text-emerald-600 dark:text-emerald-400 ${compact ? "text-xs" : "mt-3 text-sm"}`}>
@@ -155,7 +238,7 @@ export function MgRemoveButton({
             {" "}
             <a
               className="underline"
-              href={`https://flare-explorer.flare.network/tx/${txHash}`}
+              href={explorerTx!}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -166,8 +249,6 @@ export function MgRemoveButton({
       </p>
     );
   }
-
-  const busy = phase === "checking" || phase === "sending" || phase === "mining";
 
   const size = compact
     ? "rounded px-2 py-1 text-[11px] font-medium"

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/providers";
+import { MgRemoveButton } from "@/components/mg-remove-button";
 
 // WHO voted, and WHEN, for one proposal.
 //
@@ -217,7 +218,12 @@ function MemberRow({
   m, vote, startMs, removable,
 }: {
   m: MemberRef | undefined; vote?: VoteRef; startMs: number;
-  /** Marked, not actioned. The button lives once at the top of the page, not 44 times. */
+  /**
+   * The badge IS the button. Removal is permissionless, so the reader who has just found the name
+   * that did not vote is exactly the person who can act on it, and sending them back up the page to
+   * the panel to find the same name again was a step that bought nothing. The contract is still the
+   * guard, and the two-step confirm still stands between a stray click and an eviction.
+   */
   removable?: boolean;
 }) {
   const { t } = useApp();
@@ -244,11 +250,7 @@ function MemberRow({
       ) : (
         <span className="flex min-w-0 flex-1 items-center gap-2 text-muted">{body}</span>
       )}
-      {removable && (
-        <span className="shrink-0 rounded bg-flare/15 px-1.5 py-0.5 text-[10px] font-medium text-flare">
-          {t("prop.roster.removable")}
-        </span>
-      )}
+      {removable && <MgRemoveButton identity={m.addr} variant="chip" />}
       {vote && (
         <span className="flex shrink-0 items-center gap-1.5">
           <span className="tabular-nums text-[11px] text-faint" title={utcStamp(vote.t)}>
