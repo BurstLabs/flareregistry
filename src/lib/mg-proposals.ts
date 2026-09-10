@@ -75,8 +75,12 @@ export interface MgProposal {
 
 export interface MgProposalView extends MgProposal {
   open: boolean;
-  /** Votes needed for the turnout floor, given the group size when read. */
+  /** Votes needed for the turnout floor, against eligibleCount. */
   quorumNeeded: number;
+  /** How many members were entitled to vote: the creation snapshot where we have one. */
+  eligibleCount: number;
+  /** Whether quorumNeeded rests on the right denominator and may therefore be shown. */
+  quorumKnown: boolean;
   quorumMet: boolean;
   majorityMet: boolean;
   outcome: "open" | "pending" | "accepted" | "closed";
@@ -309,27 +313,39 @@ async function readContract(
 
 
 /**
- * Label a proposal, and refuse to apply TODAY's quorum to a vote held months ago.
+ * Label a proposal against the group that actually had to turn out for it.
  *
- * The quorum is a share of the group, and the group changes size: it was 48 members three weeks ago
- * and is 49 now. The contract does not record how many were eligible when a given proposal ran, so
- * for anything already decided we have no honest denominator. Printing "47 of the 33 votes needed"
- * against an April vote is both bad arithmetic and bad English.
+ * This function used to say the contract "does not record how many were eligible when a given
+ * proposal ran, so for anything already decided we have no honest denominator", and it therefore
+ * printed no quorum bar on a decided proposal. That was true of the contract's FUNCTIONS and false
+ * of its LOGS. Every deployment emits its creation event with the full `eligibleMembers` array and
+ * the `thresholdConditionBIPS` and `majorityConditionBIPS` in force at the time, so the honest
+ * denominator was on chain all along. src/lib/mg-votes.ts reads it.
  *
- * So the quorum bar is computed only while a proposal is OPEN, where today's group is the group
- * that has to turn out. A decided proposal is labelled ACCEPTED only on the contract's own state
- * value 4, which has been cross-checked against the portal for all eleven of them, and otherwise
- * just CLOSED. Vague and true beats precise and wrong, and the portal is one click away.
+ * So `snapshot`, when supplied, is the group as it stood at creation and takes precedence over
+ * every live figure. It is not a refinement: the two differ TODAY. The group has 50 members as this
+ * is written and the two open proposals were created with 49, because someone joined after they
+ * opened and cannot vote on them. Counting them in the denominator would understate turnout against
+ * a bar they can never help clear.
+ *
+ * Without a snapshot the behaviour is unchanged and deliberately conservative: today's group for an
+ * open vote, and no bar at all for a decided one, because applying today's quorum to an April vote
+ * is arithmetic about the wrong denominator. A decided proposal is labelled ACCEPTED only on the
+ * contract's own state value 4, cross-checked against the portal, and otherwise just CLOSED.
  */
 export function deriveOutcome(
   p: MgProposal, memberCount: number, now: Date,
-  thresholdBips: number, majorityBips: number
+  thresholdBips: number, majorityBips: number,
+  snapshot?: { eligible: number; thresholdBips: number; majorityBips: number } | null
 ): MgProposalView {
   const start = new Date(p.voteStartAt), end = new Date(p.voteEndAt);
-  const quorumNeeded = Math.ceil((thresholdBips / 10000) * memberCount);
+  const eligibleCount = snapshot?.eligible ?? memberCount;
+  const threshold = snapshot?.thresholdBips ?? thresholdBips;
+  const majority = snapshot?.majorityBips ?? majorityBips;
+  const quorumNeeded = Math.ceil((threshold / 10000) * eligibleCount);
   const cast = p.votesFor + p.votesAgainst;
   const quorumMet = cast >= quorumNeeded;
-  const majorityMet = cast > 0 && p.votesFor * 10000 >= majorityBips * cast;
+  const majorityMet = cast > 0 && p.votesFor * 10000 >= majority * cast;
   const open = now >= start && now < end;
   // 4 is the only decided value observed on chain, and it matched "Accepted" on the portal for
   // every proposal carrying it. Anything else decided is reported without a claim about why.
@@ -337,6 +353,10 @@ export function deriveOutcome(
     now < start ? "pending" : open ? "open" : p.chainState === 4 ? "accepted" : "closed";
   return {
     ...p, open, quorumNeeded, quorumMet, majorityMet, outcome,
+    eligibleCount,
+    // Only a snapshot lets a DECIDED proposal be measured honestly. Without one the card shows no
+    // bar rather than one built on today's group.
+    quorumKnown: !!snapshot || open,
     // Keyed by id AND contract, because ids restart on each deployment.
     portalUrl: `${PORTAL_BASE}/${p.id}-${p.contract}`,
   };
