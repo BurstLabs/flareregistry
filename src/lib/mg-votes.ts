@@ -345,3 +345,85 @@ export async function resolveMembers(addresses: string[]): Promise<Map<string, M
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Members the group may currently evict
+// ---------------------------------------------------------------------------
+
+/**
+ * A current member whom `PollingManagementGroup.removeMember` would accept today.
+ *
+ * Removal is PERMISSIONLESS. Read from the contract source rather than assumed: removeMember takes
+ * one address, requires only that it is a current member, and then removes it if any one of three
+ * grounds holds. It never looks at msg.sender, which is why anyone can call it for anyone, and why
+ * the batch in mg-remove-all-button can route the same calls through Multicall3.
+ *
+ * The flags come from `scripts/ingest-mg-eligibility.mjs`, which SIMULATES the call rather than
+ * reimplementing the three grounds, and stores the contract's verbatim verdict in mgRemoveVerdict.
+ * The cron runs every six hours, so this is a candidate list and not an authority: every button
+ * built on it simulates again immediately before sending.
+ */
+export interface RemovableMember {
+  addr: string;
+  /** chilled | no-rewards | non-participation, as classified by the ingest. */
+  reason: string | null;
+  missedVotes: number | null;
+  relevantProposals: number | null;
+  missedVotesLimit: number | null;
+  epochsSinceReward: number | null;
+}
+
+export async function fetchRemovableMembers(): Promise<RemovableMember[]> {
+  const rows = await prisma.providerOnchain.findMany({
+    // managementGroup TRUE is load-bearing, not belt and braces: removeMember reverts for anyone
+    // who is not a current member, and a stale mgRemovable on a departed entity would otherwise
+    // offer a button that can only fail.
+    where: { network: "flare", managementGroup: true, mgRemovable: true },
+    select: {
+      voter: true, mgRemoveReason: true, mgMissedVotes: true,
+      mgRelevantProposals: true, mgMissedVotesLimit: true, mgEpochsSinceReward: true,
+    },
+  });
+  // Deduplicated by voter. One entity can hold more than one row here, and offering the same
+  // member twice in a batch would send a second call that reverts on the first one's success.
+  const seen = new Set<string>();
+  const out: RemovableMember[] = [];
+  for (const r of rows) {
+    const addr = r.voter.toLowerCase();
+    if (seen.has(addr)) continue;
+    seen.add(addr);
+    out.push({
+      addr,
+      reason: r.mgRemoveReason,
+      missedVotes: r.mgMissedVotes,
+      relevantProposals: r.mgRelevantProposals,
+      missedVotesLimit: r.mgMissedVotesLimit,
+      epochsSinceReward: r.mgEpochsSinceReward,
+    });
+  }
+  return out;
+}
+
+/** A removable member with their listing attached, ready for MgRemovablePanel. */
+export interface RemovableMemberView extends RemovableMember {
+  name: string | null;
+  logoURI: string | null;
+  href: string | null;
+}
+
+/**
+ * The removable set, named. Both /proposals and the provider page show the same panel, so the join
+ * lives here rather than being done twice slightly differently.
+ */
+export async function fetchRemovableMemberViews(): Promise<RemovableMemberView[]> {
+  const removable = await fetchRemovableMembers();
+  if (!removable.length) return [];
+  const refs = await resolveMembers(removable.map((m) => m.addr));
+  return removable
+    .map((m) => {
+      const ref = refs.get(m.addr);
+      return { ...m, name: ref?.name ?? null, logoURI: ref?.logoURI ?? null, href: ref?.href ?? null };
+    })
+    // Named first and alphabetical, so the list reads as businesses rather than as a hex dump.
+    .sort((a, b) => (a.name ?? "￿").localeCompare(b.name ?? "￿"));
+}

@@ -7,7 +7,9 @@ import {
   viewerProposalState,
 } from "@/lib/mg-proposals";
 import { loadMembers } from "@/lib/governance";
-import { fetchParticipation, participationKey, resolveMembers } from "@/lib/mg-votes";
+import {
+  fetchParticipation, participationKey, resolveMembers, fetchRemovableMemberViews,
+} from "@/lib/mg-votes";
 import { ProposalsClient } from "@/components/proposals-client";
 
 // /proposals - Flare's own Management Group proposals, read from PollingManagementGroup.
@@ -115,6 +117,9 @@ export default async function ProposalsPage() {
       // server HTML than in the first client render, which React reports as a hydration mismatch and
       // does not patch up. The page is force-dynamic, so this is at most a second old.
       nowMs: now.getTime(),
+      // Members any stranger could remove from the group today. Its own try/catch: this is a
+      // sidebar fact, and a failure to read it must not cost the page its proposals.
+      removable: await fetchRemovableMemberViews().catch(() => []),
       members: memberList,
       participation: byProposal,
     };

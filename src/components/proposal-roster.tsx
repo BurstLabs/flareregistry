@@ -213,7 +213,13 @@ function Timeline({
 }
 
 /** One member, named where we can name them. */
-function MemberRow({ m, vote, startMs }: { m: MemberRef | undefined; vote?: VoteRef; startMs: number }) {
+function MemberRow({
+  m, vote, startMs, removable,
+}: {
+  m: MemberRef | undefined; vote?: VoteRef; startMs: number;
+  /** Marked, not actioned. The button lives once at the top of the page, not 44 times. */
+  removable?: boolean;
+}) {
   const { t } = useApp();
   if (!m) return null;
   const body = (
@@ -238,6 +244,11 @@ function MemberRow({ m, vote, startMs }: { m: MemberRef | undefined; vote?: Vote
       ) : (
         <span className="flex min-w-0 flex-1 items-center gap-2 text-muted">{body}</span>
       )}
+      {removable && (
+        <span className="shrink-0 rounded bg-flare/15 px-1.5 py-0.5 text-[10px] font-medium text-flare">
+          {t("prop.roster.removable")}
+        </span>
+      )}
       {vote && (
         <span className="flex shrink-0 items-center gap-1.5">
           <span className="tabular-nums text-[11px] text-faint" title={utcStamp(vote.t)}>
@@ -259,10 +270,12 @@ function MemberRow({ m, vote, startMs }: { m: MemberRef | undefined; vote?: Vote
 }
 
 export function ProposalRoster({
-  part, members, quorumNeeded, voteStartAt, voteEndAt, nowMs, open,
+  part, members, removable, quorumNeeded, voteStartAt, voteEndAt, nowMs, open,
 }: {
   part: ParticipationRef;
   members: MemberRef[];
+  /** Lowercased addresses the contract would remove today. */
+  removable: Set<string>;
   quorumNeeded: number;
   voteStartAt: string;
   voteEndAt: string;
@@ -357,7 +370,10 @@ export function ProposalRoster({
               </p>
               <ul className="space-y-1.5">
                 {voted.map(({ m, v }, i) => (
-                  <MemberRow key={`${m}-${i}`} m={members[m]} vote={v} startMs={startMs} />
+                  <MemberRow
+                    key={`${m}-${i}`} m={members[m]} vote={v} startMs={startMs}
+                    removable={open && removable.has(members[m]?.addr ?? "")}
+                  />
                 ))}
               </ul>
             </div>
@@ -370,7 +386,13 @@ export function ProposalRoster({
               {absent.length ? (
                 <ul className="space-y-1.5">
                   {absent.map((m) => (
-                    <MemberRow key={m} m={members[m]} startMs={startMs} />
+                    <MemberRow
+                      key={m} m={members[m]} startMs={startMs}
+                      // OPEN PROPOSALS ONLY. Removability is a fact about the member TODAY, and a
+                      // chip beside a name in a roster from 2024 would read as a fact about that
+                      // vote. On a live one the two are the same moment.
+                      removable={open && removable.has(members[m]?.addr ?? "")}
+                    />
                   ))}
                 </ul>
               ) : (
