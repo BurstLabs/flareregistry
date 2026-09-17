@@ -122,9 +122,11 @@ export function ProposalCriteria({
 
   return (
     <div className="mt-3 rounded-lg border border-themed p-3">
-      <p className="text-[11px] text-faint">
-        <span className="font-medium uppercase tracking-wide">{t("prop.crit.h")}</span>{" "}
-        <span>{t("prop.crit.both")}</span>
+      {/* Label then statement, set apart by tone and a real gap: run together in one colour they
+          read as a single lumpy sentence. */}
+      <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[11px]">
+        <span className="font-medium uppercase tracking-wide text-faint">{t("prop.crit.h")}</span>
+        <span className="text-muted">{t("prop.crit.both")}</span>
       </p>
       <div className="mt-2.5 grid gap-x-6 gap-y-3.5 sm:grid-cols-2">
         <Condition
