@@ -706,7 +706,20 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   <span className="text-amber-500 dark:text-amber-400">⏳</span>
                   <span className="text-muted">
                     {d.mg.blockReason === "recently-removed" && d.mg.blockedUntil
-                      ? t("mg.blockedRemoved", { date: moment(d.mg.blockedUntil)! })
+                      ? // The removal timer is one gate of three. Where another still binds, the date
+                        // alone reads as a release date, so the later gate is stated beside it.
+                        `${t("mg.blockedRemoved", { date: moment(d.mg.blockedUntil)! })}${
+                          d.mg.epochsRemaining != null && d.mg.epochsRemaining > 0
+                            ? ` ${
+                                day(d.mg.eligibleEstimatedAt)
+                                  ? t("mg.eligibleInDated", {
+                                      epochs: d.mg.epochsRemaining,
+                                      date: day(d.mg.eligibleEstimatedAt)!,
+                                    })
+                                  : t("mg.eligibleIn", { epochs: d.mg.epochsRemaining })
+                              }`
+                            : ""
+                        }`
                       : d.mg.blockReason === "delegation-address"
                         ? t("mg.blockedDelegation")
                         : d.mg.blockReason === "chilled" && d.mg.epochsRemaining != null
