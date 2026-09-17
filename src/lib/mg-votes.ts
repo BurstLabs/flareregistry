@@ -201,10 +201,26 @@ async function loadContract(address: string): Promise<Map<number, ProposalPartic
 // three full sweeps of four deployments. 60 seconds rather than the proposal list's 120, because
 // the only thing here that moves is a vote arriving during an open window, and being a minute stale
 // about the very number a member is watching is the one staleness this page cannot afford.
-
+//
+// SERVED STALE WHILE IT REVALIDATES, because the sweep is expensive and somebody was paying for it.
+// Measured on the box: the sweep is 28 paged explorer requests carrying 20,828 log rows and takes
+// 5.6 seconds, while the rest of the page takes about 0.2. Under a plain TTL the first request to
+// arrive after each expiry waited for all of it, so /proposals served 0.15s to everyone except one
+// visitor a minute, who got 5 to 8 seconds. Sampled at 4-second intervals it is unmistakable:
+// 0.15, 0.15, 0.20, 4.96, 0.14, ... 0.13, 7.61, 0.15.
+//
+// Nobody waits now. An expired cache is returned as it stands and the sweep runs behind it, so the
+// worst case is a roster one cycle older than it might have been. That is safe by this page's own
+// design: /proposals reconciles every tally with the contract's own numbers, which are read on the
+// RPC in 0.17s and are NOT served stale, and it takes the higher count per side, so a lagging log
+// sweep can only ever under-report WHO voted, never the count. A vote is final once cast, so the
+// roster catches up on the next cycle and never has to walk anything back.
 const TTL_MS = 60_000;
+/** After a failed sweep, wait this long before the next request may start another. */
+const FAIL_COOLDOWN_MS = 15_000;
 let cache: { at: number; data: Map<string, ProposalParticipation> } | null = null;
 let inFlight: Promise<Map<string, ProposalParticipation>> | null = null;
+let cooldownUntil = 0;
 
 async function loadAll(contracts: string[]): Promise<Map<string, ProposalParticipation>> {
   const merged = new Map<string, ProposalParticipation>();
@@ -220,21 +236,41 @@ async function loadAll(contracts: string[]): Promise<Map<string, ProposalPartici
   return merged;
 }
 
-/** Participation for every proposal on every deployment, keyed `${contract}:${id}`. */
-export async function fetchParticipation(
-  contracts: string[]
-): Promise<Map<string, ProposalParticipation>> {
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.data;
-  if (inFlight) return inFlight;
-  inFlight = loadAll(contracts)
+function startSweep(contracts: string[]): Promise<Map<string, ProposalParticipation>> {
+  const p = loadAll(contracts)
     .then((data) => {
       cache = { at: Date.now(), data };
       return data;
     })
+    .catch((err) => {
+      // A failure must not turn into a sweep per request against an explorer already in trouble.
+      cooldownUntil = Date.now() + FAIL_COOLDOWN_MS;
+      // Keep serving what we have. With nothing to serve, the caller has to hear about it: the
+      // page catches this and renders the proposals without their rosters.
+      if (cache) return cache.data;
+      throw err;
+    })
     .finally(() => {
       inFlight = null;
     });
-  return inFlight;
+  inFlight = p;
+  return p;
+}
+
+/** Participation for every proposal on every deployment, keyed `${contract}:${id}`. */
+export async function fetchParticipation(
+  contracts: string[]
+): Promise<Map<string, ProposalParticipation>> {
+  if (cache) {
+    // Expired only means "start the next sweep", never "make this visitor wait for it".
+    if (Date.now() - cache.at >= TTL_MS && !inFlight && Date.now() >= cooldownUntil) {
+      void startSweep(contracts);
+    }
+    return cache.data;
+  }
+  // Cold, which is once per process rather than once a minute. There is nothing to serve, so this
+  // request does have to wait for the sweep.
+  return inFlight ?? startSweep(contracts);
 }
 
 // ---------------------------------------------------------------------------
