@@ -1302,11 +1302,12 @@ model CorrelationSnapshot {
 // returns 0 for every one of them. Reading the live contract would therefore report "never chilled"
 // about entities that were demonstrably chilled, which is worse than not reporting at all.
 //
-// The durable record is the LOG. Four contract generations have carried a chill mechanism and two
-// of them fired: VoterWhitelister 0x072A1996 (15 chills, 2023-06 to 2024-03) and VoterRegistry
-// 0x2580 (6 chills, all in one transaction on 2025-12-18). The event signature also changed between
-// VoterRegistry generations, uint256 to uint32, so the two have different topic0 values and a scan
-// for one silently misses the other.
+// The durable record is the LOG. Four contract generations have carried a chill mechanism and three
+// of them have fired: VoterWhitelister 0x072A1996 (15 chills, 2023-06 to 2024-03), VoterRegistry
+// 0x2580 (6 chills, all in one transaction on 2025-12-18) and the current VoterRegistry 0xA480
+// (12 chills, one transaction on 2026-09-17, six entities and their delegation addresses, until
+// reward epoch 436). The event signature also changed between VoterRegistry generations, uint256 to
+// uint32, so the two have different topic0 values and a scan for one silently misses the other.
 model ProviderChill {
   id          String   @id @default(cuid())
   network     String
