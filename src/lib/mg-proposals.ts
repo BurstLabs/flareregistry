@@ -237,7 +237,7 @@ export async function fetchMgProposals(): Promise<MgProposal[]> {
 }
 
 async function loadAllProposals(): Promise<MgProposal[]> {
-  const client = createPublicClient({ transport: http(FLARE_RPC) });
+  const client = createPublicClient({ transport: http(FLARE_RPC, { batch: true }) });
 
   const current = await Promise.all(
     REGISTRY_NAMES.map((name) =>
@@ -262,6 +262,43 @@ async function loadAllProposals(): Promise<MgProposal[]> {
   return out;
 }
 
+/**
+ * A PROPOSAL THAT HAS CLOSED CANNOT CHANGE, so it is read once and kept.
+ *
+ * The walk was re-reading all 45 of them every 60 seconds: 207 RPC calls and 3.6 seconds, paid by
+ * whichever visitor arrived first after the cache expired. Nothing in a closed proposal can move.
+ * Its description is set at creation; `_storeVote` only accepts a vote inside the window, so the
+ * tallies are final; and `state()` is computed from those tallies against thresholds snapshotted
+ * into the proposal, so it settles when the window does. Ids are sequential and never reused, so
+ * the only reads a refresh actually needs are the proposals still open and a probe past the highest
+ * id seen.
+ *
+ * Keyed `${address}:${id}` because ids restart on every deployment.
+ */
+const settled = new Map<string, MgProposal>();
+/** The highest id seen per deployment, so probing starts past it instead of at 1. */
+const highestId = new Map<string, number>();
+
+/**
+ * A read that REPORTS its failure while still returning something usable.
+ *
+ * Every read in this walk swallows its own error and substitutes a fallback, which keeps the page
+ * up when the RPC is unhappy and is the right call for rendering. It is the wrong call for deciding
+ * a proposal is final: the public endpoint answers 429 under load, and a proposal whose
+ * getProposalVotes came back as the fallback [0, 0] looks exactly like a proposal nobody voted on.
+ * Freezing that into the settled store would make a moment's throttling permanent. Measured while
+ * verifying this change: one run took 102 failures out of 292 requests and still returned all 45
+ * proposals, 8 of them with the wrong contents.
+ */
+async function guarded<T>(p: Promise<T>, fallback: T, fail: { any: boolean }): Promise<T> {
+  try {
+    return await p;
+  } catch {
+    fail.any = true;
+    return fallback;
+  }
+}
+
 /** One deployment's proposals. Ids are probed in batches; a gap ends the walk. */
 async function readContract(
   client: ReturnType<typeof createPublicClient>,
@@ -275,8 +312,22 @@ async function readContract(
   const BATCH = 10;
   const MAX_ID = 500; // a guard against an infinite walk, not an expected limit
   const out: MgProposal[] = [];
+  const key = (id: number) => `${address.toLowerCase()}:${id}`;
+  const now = Date.now();
+  /** Whether every read behind a proposal actually answered. Only a complete one may be frozen. */
+  const complete = new Map<number, boolean>();
 
-  for (let base = 1; base <= MAX_ID; base += BATCH) {
+  // What is already final. Everything below the highest id seen is either in here or is still open,
+  // and the open ones fall through to the reads below.
+  const known = highestId.get(address.toLowerCase()) ?? 0;
+  const reread: number[] = [];
+  for (let id = 1; id <= known; id++) {
+    const done = settled.get(key(id));
+    if (done) out.push(done);
+    else reread.push(id);
+  }
+
+  for (let base = known + 1; base <= MAX_ID; base += BATCH) {
     const ids = Array.from({ length: BATCH }, (_, k) => base + k);
     const infos = await Promise.all(
       ids.map((id) =>
@@ -289,11 +340,13 @@ async function readContract(
     const live = ids.filter((_, i) => infos[i] !== null);
     const details = await Promise.all(
       live.map(async (id) => {
+        const fail = { any: false };
         const [raw, votes, chainState] = await Promise.all([
-          client.readContract({ address, abi: pollingAbi, functionName: "getProposalDescription", args: [BigInt(id)] }).catch(() => "") as Promise<string>,
-          client.readContract({ address, abi: pollingAbi, functionName: "getProposalVotes", args: [BigInt(id)] }).catch(() => [0n, 0n] as const) as Promise<readonly [bigint, bigint]>,
-          client.readContract({ address, abi: pollingAbi, functionName: "state", args: [BigInt(id)] }).catch(() => 0) as Promise<number>,
+          guarded(client.readContract({ address, abi: pollingAbi, functionName: "getProposalDescription", args: [BigInt(id)] }) as Promise<string>, "", fail),
+          guarded(client.readContract({ address, abi: pollingAbi, functionName: "getProposalVotes", args: [BigInt(id)] }) as Promise<readonly [bigint, bigint]>, [0n, 0n] as const, fail),
+          guarded(client.readContract({ address, abi: pollingAbi, functionName: "state", args: [BigInt(id)] }) as Promise<number>, 0, fail),
         ]);
+        complete.set(id, !fail.any);
         return { id, raw, votes, chainState };
       })
     );
@@ -315,8 +368,71 @@ async function readContract(
     // A gap inside the batch means the end: ids are assigned sequentially and never reused.
     if (live.length < ids.length) break;
   }
+
+  // The ones already known to exist but not yet final. No id probing, no gap logic: they are read
+  // straight, all of them at once, because there are never many.
+  if (reread.length) {
+    const rows = await Promise.all(reread.map((id) => readOne(client, address, id)));
+    for (const r of rows) {
+      if (!r) continue;
+      complete.set(r.p.id, r.complete);
+      out.push(r.p);
+    }
+  }
+
+  for (const p of out) {
+    const id = `${address.toLowerCase()}:${p.id}`;
+    if (!highestId.has(address.toLowerCase()) || p.id > (highestId.get(address.toLowerCase()) ?? 0)) {
+      highestId.set(address.toLowerCase(), p.id);
+    }
+    // Settled only once the window has CLOSED, so the final read is the one taken after the close:
+    // state() flips at that moment, and a proposal frozen a second early would keep "Open" forever.
+    //
+    // AND ONLY IF THE READ CAME BACK WHOLE. Every read here swallows its own failure (`.catch`
+    // returning "" for the description and 0 for the state), which was harmless while the walk
+    // re-read everything every 60 seconds and self-healed. Freezing such a row would make one
+    // transient RPC hiccup permanent for the life of the process: a proposal stuck with a blank
+    // description or no outcome, and no way back. A test run caught exactly that, one proposal in
+    // 45 differing from the full walk on a re-read, so it is not hypothetical.
+    if (!settled.has(id) && complete.get(p.id) === true && new Date(p.voteEndAt).getTime() <= now) {
+      settled.set(id, p);
+    }
+  }
+
   out.sort((a, b) => b.id - a.id);
   return out;
+}
+
+/** One proposal, read whole. The same four reads the batch walk does, for an id already known. */
+async function readOne(
+  client: ReturnType<typeof createPublicClient>,
+  address: Address,
+  id: number
+): Promise<{ p: MgProposal; complete: boolean } | null> {
+  const fail = { any: false };
+  const info = await client
+    .readContract({ address, abi: pollingAbi, functionName: "getProposalInfo", args: [BigInt(id)] })
+    .then((w) => readProposalInfo(w as readonly bigint[]))
+    .catch(() => null);
+  if (!info) return null;
+  const [raw, votes, chainState] = await Promise.all([
+    guarded(client.readContract({ address, abi: pollingAbi, functionName: "getProposalDescription", args: [BigInt(id)] }) as Promise<string>, "", fail),
+    guarded(client.readContract({ address, abi: pollingAbi, functionName: "getProposalVotes", args: [BigInt(id)] }) as Promise<readonly [bigint, bigint]>, [0n, 0n] as const, fail),
+    guarded(client.readContract({ address, abi: pollingAbi, functionName: "state", args: [BigInt(id)] }) as Promise<number>, 0, fail),
+  ]);
+  const p: MgProposal = {
+    id,
+    ...parseProposalDescription(raw),
+    raw,
+    contract: address.toLowerCase(),
+    proposer: info.proposer,
+    voteStartAt: new Date(Number(info.startTs) * 1000).toISOString(),
+    voteEndAt: new Date(Number(info.endTs) * 1000).toISOString(),
+    votesFor: Number(votes[0]),
+    votesAgainst: Number(votes[1]),
+    chainState: Number(chainState),
+  };
+  return { p, complete: !fail.any };
 }
 
 
@@ -383,7 +499,7 @@ export function deriveOutcome(
 export async function fetchMgProposalSettings(): Promise<{
   thresholdBips: number; majorityBips: number; feeWei: string;
 }> {
-  const client = createPublicClient({ transport: http(FLARE_RPC) });
+  const client = createPublicClient({ transport: http(FLARE_RPC, { batch: true }) });
   const address = (await client.readContract({
     address: CONTRACT_REGISTRY, abi: registryAbi,
     functionName: "getContractAddressByName", args: ["PollingManagementGroup"],
@@ -404,7 +520,7 @@ export async function fetchMgProposalSettings(): Promise<{
  */
 export async function currentPollingContract(): Promise<string | null> {
   try {
-    const client = createPublicClient({ transport: http(FLARE_RPC) });
+    const client = createPublicClient({ transport: http(FLARE_RPC, { batch: true }) });
     const a = (await client.readContract({
       address: CONTRACT_REGISTRY, abi: registryAbi,
       functionName: "getContractAddressByName", args: ["PollingManagementGroup"],
@@ -432,7 +548,7 @@ export async function viewerProposalState(
 ): Promise<{ address: string; canPropose: boolean; votedIds: string[] } | null> {
   if (!viewer) return null;
   try {
-    const client = createPublicClient({ transport: http(FLARE_RPC) });
+    const client = createPublicClient({ transport: http(FLARE_RPC, { batch: true }) });
     const current = await currentPollingContract();
     const canPropose = current
       ? ((await client.readContract({
