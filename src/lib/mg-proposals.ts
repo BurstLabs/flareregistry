@@ -211,7 +211,10 @@ let cache: { at: number; data: MgProposal[] } | null = null;
 // linked from the nav, so a cache miss can be hit by several visitors at once; without this each
 // one fired its own ~180 RPC calls at the public Flare endpoint. Measured cold: 10.7 seconds.
 let inFlight: Promise<MgProposal[]> | null = null;
-const TTL_MS = 120_000;
+// Matched to mg-votes' TTL. These two modules describe the same votes and are rendered side by
+// side, so different lifetimes guarantee they disagree for part of every cycle. The reconciliation
+// in /proposals covers the remaining skew; this keeps the window small rather than relying on it.
+const TTL_MS = 60_000;
 
 /** Every proposal across every deployment, newest first. Cached briefly; this is ~44 reads. */
 export async function fetchMgProposals(): Promise<MgProposal[]> {

@@ -61,8 +61,28 @@ export default async function ProposalsPage() {
     const shown = proposals.map((p) => {
       const part = participation.get(participationKey(p.contract, p.id));
       const r = part?.roster;
+
+      // RECONCILE THE TWO SOURCES OF THE SAME FACT.
+      //
+      // The tally comes from the contract via fetchMgProposals (120s cache) and the roster from the
+      // block explorer's VoteCast logs via fetchParticipation (60s cache). They are cached
+      // independently, so one render can pair a two-minute-old tally with a one-second-old roster,
+      // and the card then says "0 in favour, 0 against" directly above "1 voted · For". That is what
+      // a member sees in the minute after casting their own vote, which is the worst possible moment
+      // to look unreliable.
+      //
+      // Taking the higher count per side is safe because a vote is FINAL: _storeVote requires
+      // !hasVoted[voter] and reverts with "vote already cast", so neither total can ever fall and
+      // whichever source knows about more votes is simply the fresher one.
+      const fromLogs = part?.votes ?? [];
+      const merged = {
+        ...p,
+        votesFor: Math.max(p.votesFor, fromLogs.filter((v) => v.inFavour).length),
+        votesAgainst: Math.max(p.votesAgainst, fromLogs.filter((v) => !v.inFavour).length),
+      };
+
       return deriveOutcome(
-        p, members.memberCount, now, settings.thresholdBips, settings.majorityBips,
+        merged, members.memberCount, now, settings.thresholdBips, settings.majorityBips,
         r ? { eligible: r.eligible.length, thresholdBips: r.thresholdBips, majorityBips: r.majorityBips } : null
       );
     });
