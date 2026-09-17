@@ -58,8 +58,10 @@ const SOURCES = [
     chain: "flare",
     label: "VoterRegistry gen-2 (current)",
     address: "0xA480457953Af3583E54DCd630b219353B8FC9Af7",
-    // Same event, uint32 instead of uint256, so a DIFFERENT topic0. No occurrences yet, but it is
-    // where any future chill will land and leaving it out would re-create the original blind spot.
+    // Same event, uint32 instead of uint256, so a DIFFERENT topic0. This is where the chills of
+    // 2026-09-17 landed, twelve in one governance call, and they are the reason this source was
+    // written before it had ever fired: a scan built only from the generations that had fired would
+    // have missed them exactly as the original blind spot missed the 2025 ones.
     topic0: "0x23a1b7932916d24f6177b7f7282bb925e3733697d5699c07e0372cd149696345",
     fromBlock: 65_000_000,
     decode: (log) => ({
