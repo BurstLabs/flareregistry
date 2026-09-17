@@ -80,6 +80,8 @@ export function MgRemovablePanel({
   // The group is smaller than the server said by exactly what this session removed.
   const groupNow = Math.max(0, memberCount - removedHere.length);
   const after = Math.max(0, groupNow - remaining.length);
+  const quorumNow = quorumFor(groupNow);
+  const quorumAfter = quorumFor(after);
   const receiptTx = removedHere.find((r) => r.txHash)?.txHash ?? null;
 
   // NOTHING LEFT TO OFFER, because this session removed it all. Six rows of spent buttons under a
@@ -123,7 +125,13 @@ export function MgRemovablePanel({
         aria-expanded={shown}
         className="mt-3 flex min-h-[32px] items-center gap-1.5 text-xs text-flare hover:underline"
       >
-        <span>{shown ? t("mg.removableHide") : t("mg.removableShow", { count: remaining.length })}</span>
+        <span>
+          {shown
+            ? t("mg.removableHide")
+            : remaining.length === 1
+              ? t("mg.removableShowOne")
+              : t("mg.removableShow", { count: remaining.length })}
+        </span>
         <span aria-hidden="true">{shown ? "▴" : "▾"}</span>
       </button>
 
@@ -193,12 +201,18 @@ export function MgRemovablePanel({
           cannot move the bar on a vote that is already open and does move it for every proposal
           created afterwards. */}
       <p className="mt-3 text-[11px] text-faint">
-        {t("mg.removableEffect", {
-          from: groupNow,
-          to: after,
-          quorumFrom: quorumFor(groupNow),
-          quorumTo: quorumFor(after),
-        })}
+        {/* A SMALLER GROUP IS NOT ALWAYS A SMALLER BAR. The quorum is a ceiling of a fraction, so it
+            sits still across most single removals: 66% of 42 and of 41 both round up to 28. Stating
+            that as "from 28 votes to 28" reads as a bug in the arithmetic rather than as the fact it
+            is, which is that this particular removal costs the group nothing. */}
+        {quorumNow === quorumAfter
+          ? t("mg.removableEffectSame", { from: groupNow, to: after, quorum: quorumNow })
+          : t("mg.removableEffect", {
+              from: groupNow,
+              to: after,
+              quorumFrom: quorumNow,
+              quorumTo: quorumAfter,
+            })}
       </p>
     </section>
   );
