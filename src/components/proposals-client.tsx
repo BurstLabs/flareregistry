@@ -6,6 +6,7 @@ import { useApp } from "@/components/providers";
 import { ProposalVote } from "@/components/proposal-vote";
 import { ProposalCompose } from "@/components/proposal-compose";
 import { ProposalRoster, type MemberRef, type ParticipationRef } from "@/components/proposal-roster";
+import { ProposalCriteria } from "@/components/proposal-criteria";
 import { MgRemovablePanel, type RemovableMemberView } from "@/components/mg-removable-panel";
 import { safeExternalUrl } from "@/lib/validation";
 import type { MgProposalView } from "@/lib/mg-proposals";
@@ -38,19 +39,6 @@ function hoursLeft(endIso: string): number | null {
   return ms > 0 ? Math.floor(ms / 3_600_000) : null;
 }
 
-function Bar({ cast, needed }: { cast: number; needed: number }) {
-  const pct = needed > 0 ? Math.min(100, (cast / needed) * 100) : 0;
-  const met = cast >= needed;
-  return (
-    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
-      <div
-        className={`h-full rounded-full ${met ? "bg-emerald-500/70" : "bg-amber-500/70"}`}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
-}
-
 export function ProposalsClient({ data }: { data: Payload | null }) {
   const { t } = useApp();
   const router = useRouter();
@@ -81,7 +69,6 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
   const removableSet = new Set(data.removable.map((m) => m.addr));
 
   const card = (p: MgProposalView) => {
-    const cast = p.votesFor + p.votesAgainst;
     const left = hoursLeft(p.voteEndAt);
     const part = data.participation[`${p.contract}:${p.id}`];
     return (
@@ -129,22 +116,23 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           <p className="text-xs text-muted">
             {t("prop.tally", { for: p.votesFor, against: p.votesAgainst })}
           </p>
-          {/* Shown whenever the denominator is the right one. That used to mean "only while it is
-              running", because today's group is the wrong denominator for a vote held in April; it
-              now also covers every proposal whose creation event gave us the group it actually
-              faced, which is all of them we could read. */}
+          {/* BOTH CONDITIONS, or neither. Shown whenever the denominator is the right one: today's
+              group is the wrong one for a vote held in April, so this needs the eligible count the
+              creation event recorded, which we have for every proposal we could read. Without it
+              the card keeps the tally and says nothing it cannot support. */}
           {p.quorumKnown && (
-            <>
-              <Bar cast={cast} needed={p.quorumNeeded} />
-              <p className="mt-1 text-[11px] text-faint">
-                {/* "43 of the 37 votes needed for quorum" is only good English while the number is
-                    still short of the bar. Now that the bar is shown on decided proposals too, most
-                    of which cleared it comfortably, the cleared case needs its own sentence. */}
-                {p.quorumMet
-                  ? t("prop.quorumMet", { cast, needed: p.quorumNeeded, members: p.eligibleCount })
-                  : t("prop.quorum", { cast, needed: p.quorumNeeded, members: p.eligibleCount })}
-              </p>
-            </>
+            <ProposalCriteria
+              votesFor={p.votesFor}
+              votesAgainst={p.votesAgainst}
+              eligibleCount={p.eligibleCount}
+              quorumNeeded={p.quorumNeeded}
+              quorumMet={p.quorumMet}
+              majorityNeeded={p.majorityNeeded}
+              majorityMet={p.majorityMet}
+              thresholdBips={p.thresholdBips}
+              majorityBips={p.majorityBips}
+              decided={p.outcome !== "open" && p.outcome !== "pending"}
+            />
           )}
         </div>
 

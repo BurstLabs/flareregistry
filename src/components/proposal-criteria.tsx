@@ -1,0 +1,155 @@
+"use client";
+
+// THE TWO TESTS A PROPOSAL HAS TO PASS, drawn the way the contract applies them.
+//
+// PollingManagementGroup._proposalSucceeded runs exactly two checks and defeats a proposal that
+// fails either one (read from the verified source, 2026-09-17):
+//
+//   for + against  >=  ceil(thresholdConditionBIPS x noOfEligibleMembers / 10000)   turnout
+//   for            >   floor(majorityConditionBIPS x (for + against) / 10000)       majority
+//
+// Both are percentages, and they are percentages of DIFFERENT DENOMINATORS. That is the thing
+// readers get wrong, and a single bar cannot express it: the first is a share of everyone entitled
+// to vote, the second a share of only those who did. Two bars, each against its own bar, is what
+// makes the difference survive being looked at quickly.
+//
+// It is also the question this page exists to ask. The Management Group hardly ever disagrees; it
+// fails to turn up. A card whose majority bar is full while its turnout bar falls short says that
+// about the proposal in front of the reader, rather than in the abstract at the top of the page.
+//
+// Every figure here is the proposal's OWN: the conditions and the eligible count are snapshotted
+// into it at creation, so a vote held in April is measured against the group and the thresholds
+// that April actually faced.
+
+import { useApp } from "./providers";
+
+type Status = "met" | "metSoFar" | "notYet" | "notMet";
+
+const pct = (n: number, d: number) => (d > 0 ? (n / d) * 100 : 0);
+/**
+ * One decimal at most, and no trailing zero: the bars people are comparing read "87.8% / 66%", not
+ * "87.8% / 66.0%". Formatted rather than localised on purpose, because this renders on both sides
+ * of hydration and a comma decimal on one of them is a mismatch.
+ */
+const fmt = (n: number) => `${Math.round(n * 10) / 10}%`;
+
+function StatusChip({ status }: { status: Status }) {
+  const { t } = useApp();
+  const tone =
+    status === "met" || status === "metSoFar"
+      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
+      : status === "notYet"
+        ? "bg-amber-500/15 text-amber-600 dark:text-amber-300"
+        : "bg-rose-500/15 text-rose-600 dark:text-rose-300";
+  return (
+    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${tone}`}>
+      {t(`prop.crit.${status}`)}
+    </span>
+  );
+}
+
+function Condition({
+  title, rule, status, value, need, count,
+}: {
+  title: string;
+  rule: string;
+  status: Status;
+  /** Where the proposal stands, as a share of this condition's own denominator. */
+  value: number;
+  /** The share it has to reach. */
+  need: number;
+  /** The same thing in whole votes, which is what a member actually counts in. */
+  count: string;
+}) {
+  const fill = need > 0 ? Math.min(100, (value / need) * 100) : 0;
+  const bar =
+    status === "met" || status === "metSoFar"
+      ? "bg-emerald-500/70"
+      : status === "notYet"
+        ? "bg-amber-500/70"
+        : "bg-rose-500/70";
+  return (
+    <div className="min-w-0">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="truncate text-xs font-medium text-fg">{title}</p>
+        <StatusChip status={status} />
+      </div>
+      <p className="mt-0.5 text-[11px] leading-snug text-faint">{rule}</p>
+      <p className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-2 text-[11px] tabular-nums">
+        <span>
+          <span className="text-xs font-medium text-fg">{fmt(value)}</span>
+          <span className="text-faint"> / {fmt(need)}</span>
+        </span>
+        <span className="text-faint">{count}</span>
+      </p>
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+        <div className={`h-full rounded-full ${bar}`} style={{ width: `${fill}%` }} />
+      </div>
+    </div>
+  );
+}
+
+export function ProposalCriteria({
+  votesFor, votesAgainst, eligibleCount, quorumNeeded, quorumMet,
+  majorityNeeded, majorityMet, thresholdBips, majorityBips, decided,
+}: {
+  votesFor: number;
+  votesAgainst: number;
+  eligibleCount: number;
+  quorumNeeded: number;
+  quorumMet: boolean;
+  majorityNeeded: number;
+  majorityMet: boolean;
+  thresholdBips: number;
+  majorityBips: number;
+  /** A closed vote states a verdict; a running one can only report where it has got to. */
+  decided: boolean;
+}) {
+  const { t } = useApp();
+  const cast = votesFor + votesAgainst;
+
+  // TURNOUT ONLY RISES, so a quorum that has been reached is reached for good and says so while the
+  // vote is still running. Support does not: a majority that holds today can be gone by the close,
+  // which is why it gets its own hedged label rather than borrowing the quorum's.
+  const quorumStatus: Status = quorumMet ? "met" : decided ? "notMet" : "notYet";
+  const majorityStatus: Status = majorityMet
+    ? decided
+      ? "met"
+      : "metSoFar"
+    : decided
+      ? "notMet"
+      : "notYet";
+
+  return (
+    <div className="mt-3 rounded-lg border border-themed p-3">
+      <p className="text-[11px] text-faint">
+        <span className="font-medium uppercase tracking-wide">{t("prop.crit.h")}</span>{" "}
+        <span>{t("prop.crit.both")}</span>
+      </p>
+      <div className="mt-2.5 grid gap-x-6 gap-y-3.5 sm:grid-cols-2">
+        <Condition
+          title={t("prop.crit.quorumH")}
+          rule={t("prop.crit.quorumRule", { pct: thresholdBips / 100, members: eligibleCount })}
+          status={quorumStatus}
+          value={pct(cast, eligibleCount)}
+          need={thresholdBips / 100}
+          count={t("prop.crit.quorumCount", { cast, needed: quorumNeeded })}
+        />
+        <Condition
+          title={t("prop.crit.majorityH")}
+          rule={t("prop.crit.majorityRule", { pct: majorityBips / 100 })}
+          status={majorityStatus}
+          value={pct(votesFor, cast)}
+          need={majorityBips / 100}
+          // Before anyone has voted there is no "needed" to state: the bar moves with every vote
+          // cast, since it is a share of them.
+          count={
+            cast > 0
+              ? t("prop.crit.majorityCount", { for: votesFor, needed: majorityNeeded })
+              : t("prop.crit.noVotes")
+          }
+        />
+      </div>
+    </div>
+  );
+}

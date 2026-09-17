@@ -82,7 +82,12 @@ export interface MgProposalView extends MgProposal {
   /** Whether quorumNeeded rests on the right denominator and may therefore be shown. */
   quorumKnown: boolean;
   quorumMet: boolean;
+  /** Votes in favour needed to clear the majority bar, given the votes cast so far. */
+  majorityNeeded: number;
   majorityMet: boolean;
+  /** The proposal's OWN conditions, snapshotted at creation, not today's settings. */
+  thresholdBips: number;
+  majorityBips: number;
   outcome: "open" | "pending" | "accepted" | "closed";
   portalUrl: string;
 }
@@ -348,15 +353,24 @@ export function deriveOutcome(
   const quorumNeeded = Math.ceil((threshold / 10000) * eligibleCount);
   const cast = p.votesFor + p.votesAgainst;
   const quorumMet = cast >= quorumNeeded;
-  const majorityMet = cast > 0 && p.votesFor * 10000 >= majority * cast;
+  // STRICTLY more than the share, and the share is FLOORED. _proposalSucceeded, from the verified
+  // source, defeats a proposal when
+  //     forVotePower <= majorityConditionBIPS.mulDiv(forVotePower + againstVotePower, MAX_BIPS)
+  // with mulDiv rounding down, so the votes needed are floor(majority * cast / 10000) + 1. The test
+  // here used to read `votesFor * 10000 >= majority * cast`, which is "at least half" and differs
+  // from the contract at exactly the tie: 20 for and 20 against passed it and is a defeat on chain.
+  const majorityNeeded = Math.floor((majority * cast) / 10000) + 1;
+  const majorityMet = cast > 0 && p.votesFor >= majorityNeeded;
   const open = now >= start && now < end;
   // 4 is the only decided value observed on chain, and it matched "Accepted" on the portal for
   // every proposal carrying it. Anything else decided is reported without a claim about why.
   const outcome: MgProposalView["outcome"] =
     now < start ? "pending" : open ? "open" : p.chainState === 4 ? "accepted" : "closed";
   return {
-    ...p, open, quorumNeeded, quorumMet, majorityMet, outcome,
+    ...p, open, quorumNeeded, quorumMet, majorityNeeded, majorityMet, outcome,
     eligibleCount,
+    thresholdBips: threshold,
+    majorityBips: majority,
     // Only a snapshot lets a DECIDED proposal be measured honestly. Without one the card shows no
     // bar rather than one built on today's group.
     quorumKnown: !!snapshot || open,
