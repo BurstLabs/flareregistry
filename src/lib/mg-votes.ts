@@ -83,25 +83,46 @@ interface ExplorerLog {
 }
 
 /**
- * Every log of one topic from one contract, paged.
+ * Every log of one topic from one contract since a given block, paged BY BLOCK RANGE.
  *
- * The explorer caps a response at 1,000 entries and PollingFtso alone has more VoteCast logs than
- * that, so a single unpaged call silently truncates the oldest deployment's votes. Paging stops at
- * the first short page, and hard-stops at 20 pages so a misbehaving endpoint cannot spin forever.
+ * THE `page` PARAMETER DOES NOTHING ON THIS ENDPOINT. It is accepted and ignored: page 1, page 2 and
+ * page 20 of the retired PollingFtso's VoteCast logs are byte for byte the same 1,000 rows, checked
+ * against the live explorer. The loop that used to live here asked for twenty of them, so it
+ *
+ *   - pulled the same 1,000 rows twenty times, 14 MB per sweep of pure duplication,
+ *   - never saw a short page, so it always ran all twenty rounds,
+ *   - inserted every one of those votes twenty times, which is why /proposals showed "1080 in
+ *     favour" on proposals where 54 members voted, every inflated tally an exact multiple of 20,
+ *   - and still MISSED 41 votes, because the real total is 1,041 and it never got past the first
+ *     thousand.
+ *
+ * The cap is on rows per response, so the way past it is to move the window: take the highest block
+ * the response reached and ask again from there. That block is re-read, deliberately, because a
+ * block can hold several of these and stopping one past it would drop the rest; the merge is
+ * idempotent, so reading it twice costs nothing. If the window cannot advance at all, one block
+ * holds a full page by itself and we stop rather than spin.
  */
-async function fetchLogs(address: string, topic0: string): Promise<ExplorerLog[]> {
+async function fetchLogs(address: string, topic0: string, fromBlock: number): Promise<ExplorerLog[]> {
   const out: ExplorerLog[] = [];
   const OFFSET = 1000;
-  for (let page = 1; page <= 20; page++) {
+  let cursor = fromBlock;
+  for (let round = 1; round <= 40; round++) {
     const url =
-      `${EXPLORER_API}?module=logs&action=getLogs&fromBlock=1&toBlock=latest` +
-      `&address=${address}&topic0=${topic0}&page=${page}&offset=${OFFSET}`;
+      `${EXPLORER_API}?module=logs&action=getLogs&fromBlock=${cursor}&toBlock=latest` +
+      `&address=${address}&topic0=${topic0}&page=1&offset=${OFFSET}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
     if (!res.ok) throw new Error(`explorer ${res.status}`);
     const json = (await res.json()) as { status: string; result?: ExplorerLog[] };
     const rows = Array.isArray(json.result) ? json.result : [];
     out.push(...rows);
     if (rows.length < OFFSET) break;
+    let furthest = cursor;
+    for (const r of rows) {
+      const b = Number(BigInt(r.blockNumber));
+      if (b > furthest) furthest = b;
+    }
+    if (furthest <= cursor) break;
+    cursor = furthest;
   }
   return out;
 }
@@ -165,29 +186,85 @@ function decodeCreated(log: ExplorerLog): { id: number; roster: MgRoster } | nul
   return null;
 }
 
+/**
+ * WHAT HAS ALREADY BEEN READ, per deployment, so a refresh only has to ask for what is new.
+ *
+ * Re-reading from block 1 every time cost 28 paged requests and 20,828 rows, 15 MB decoded, per
+ * sweep, and 95% of it was one scan: VoteCast on the retired PollingFtso, twenty full pages of
+ * history that has not changed since 2025. Asking for the tail instead collapses that to nine
+ * requests, most of them a 52-byte "no logs found" in about 0.2s, all measured against the live
+ * explorer before this was written.
+ *
+ * Held per process rather than in Postgres. A restart pays for one full read, which is the same
+ * thing it paid for before on every single sweep.
+ */
+const scanned = new Map<string, { upTo: number; data: Map<number, ProposalParticipation> }>();
+
+/**
+ * How far back before the high-water mark each refresh re-reads.
+ *
+ * Not paranoia: the explorer indexes a block some time after the chain has it, so a scan that
+ * started exactly where the last one stopped would step over anything indexed in between and never
+ * look again. Flare blocks are about 1.8 seconds, so 300 blocks is roughly nine minutes of slack
+ * against a 60-second refresh. Re-reading it is free because merging is idempotent: a proposal's
+ * roster is set from its creation log, and a member can vote at most once per proposal, which the
+ * contract enforces with `!hasVoted[voter]`.
+ */
+const OVERLAP_BLOCKS = 300;
+
 /** Participation for every proposal on one deployment, keyed by id. */
 async function loadContract(address: string): Promise<Map<number, ProposalParticipation>> {
+  const prev = scanned.get(address);
+  const from = prev ? Math.max(1, prev.upTo - OVERLAP_BLOCKS) : 1;
+
   const [voteLogs, mgCreated, ftsoCreated] = await Promise.all([
-    fetchLogs(address, TOPIC_VOTE_CAST),
-    fetchLogs(address, TOPIC_MG_CREATED),
-    fetchLogs(address, TOPIC_FTSO_CREATED),
+    fetchLogs(address, TOPIC_VOTE_CAST, from),
+    fetchLogs(address, TOPIC_MG_CREATED, from),
+    fetchLogs(address, TOPIC_FTSO_CREATED, from),
   ]);
 
+  // COPIED, NOT MUTATED. The previous map is what /proposals is rendering from while this runs in
+  // the background, and a render that iterated a votes array mid-merge would paint a roster nobody
+  // ever voted into. Copy, merge, then publish the copy.
   const out = new Map<number, ProposalParticipation>();
+  for (const [id, e] of prev?.data ?? []) out.set(id, { roster: e.roster, votes: [...e.votes] });
+
   const entry = (id: number) => {
     let e = out.get(id);
     if (!e) { e = { roster: null, votes: [] }; out.set(id, e); }
     return e;
   };
+  // Who is already recorded, per proposal. A Set rather than scanning the array per vote: the first
+  // read of a process merges 20,000 of them, and `votes.some()` inside that loop is quadratic.
+  const voted = new Map<number, Set<string>>();
+  for (const [id, e] of out) voted.set(id, new Set(e.votes.map((v) => v.voter)));
+
   for (const log of [...mgCreated, ...ftsoCreated]) {
     const d = decodeCreated(log);
     if (d) entry(d.id).roster = d.roster;
   }
+  const touched = new Set<number>();
   for (const log of voteLogs) {
     const d = decodeVoteCast(log);
-    if (d) entry(d.id).votes.push(d.vote);
+    if (!d) continue;
+    let seen = voted.get(d.id);
+    if (!seen) { seen = new Set(); voted.set(d.id, seen); }
+    if (seen.has(d.vote.voter)) continue;
+    seen.add(d.vote.voter);
+    entry(d.id).votes.push(d.vote);
+    touched.add(d.id);
   }
-  for (const e of out.values()) e.votes.sort((a, b) => a.at - b.at);
+  for (const id of touched) out.get(id)!.votes.sort((a, b) => a.at - b.at);
+
+  // The furthest block this deployment has been read to. Only ever forwards, and only over logs
+  // that actually arrived: a refresh that returns nothing leaves the mark where it was, so the
+  // next one asks the same question rather than skipping the gap.
+  let upTo = prev?.upTo ?? 0;
+  for (const log of [...voteLogs, ...mgCreated, ...ftsoCreated]) {
+    const b = Number(BigInt(log.blockNumber));
+    if (Number.isFinite(b) && b > upTo) upTo = b;
+  }
+  scanned.set(address, { upTo, data: out });
   return out;
 }
 
@@ -228,7 +305,14 @@ async function loadAll(contracts: string[]): Promise<Map<string, ProposalPartici
     // One failing deployment must not blank the other three. An empty map for that contract
     // degrades to "no participation data for these proposals", which the UI renders as a hidden
     // section rather than as a wrong roster.
-    contracts.map((c) => loadContract(c).catch(() => new Map<number, ProposalParticipation>()))
+    // A failure keeps whatever that deployment was last read to rather than dropping to empty: the
+    // rosters we already have are still true, and blanking them would hide a section over one bad
+    // response. With nothing read yet it is empty, which the UI renders as no roster at all.
+    contracts.map((c) =>
+      loadContract(c).catch(
+        () => scanned.get(c)?.data ?? new Map<number, ProposalParticipation>()
+      )
+    )
   );
   contracts.forEach((c, i) => {
     for (const [id, p] of perContract[i]) merged.set(participationKey(c, id), p);
