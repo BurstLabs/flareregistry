@@ -111,22 +111,43 @@ const SOURCES = [
   },
 ];
 
+// PAGED BY BLOCK RANGE, because this endpoint caps a response at 1,000 rows and its `page`
+// parameter does nothing: it is accepted and ignored, so asking for page 2 returns page 1 again.
+// (Proven on the Flare explorer 2026-09-17, where /proposals had been re-reading the same thousand
+// VoteCast rows twenty times and still missing the 41 past the cap.) No chill source is anywhere
+// near 1,000 today, the largest being 25, so this changes nothing now and is here so that a future
+// mass chill is not silently truncated to its first thousand.
 async function fetchLogs(src) {
-  const url =
-    `${EXPLORER[src.chain]}?module=logs&action=getLogs&fromBlock=${src.fromBlock}` +
-    `&toBlock=99999999&address=${src.address}&topic0=${src.topic0}`;
-  const res = await fetch(url, {
-    headers: { "user-agent": "Mozilla/5.0" },
-    signal: AbortSignal.timeout(120_000),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const body = await res.json();
-  // status "0" with "No logs found" is a legitimate empty result, not a failure.
-  if (!Array.isArray(body.result)) {
-    if (String(body.message ?? "").toLowerCase().includes("no logs")) return [];
-    throw new Error(`unexpected body: ${JSON.stringify(body).slice(0, 160)}`);
+  const out = [];
+  let cursor = src.fromBlock;
+  for (let round = 1; round <= 40; round++) {
+    const url =
+      `${EXPLORER[src.chain]}?module=logs&action=getLogs&fromBlock=${cursor}` +
+      `&toBlock=99999999&address=${src.address}&topic0=${src.topic0}&page=1&offset=1000`;
+    const res = await fetch(url, {
+      headers: { "user-agent": "Mozilla/5.0" },
+      signal: AbortSignal.timeout(120_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = await res.json();
+    // status "0" with "No logs found" is a legitimate empty result, not a failure.
+    if (!Array.isArray(body.result)) {
+      if (String(body.message ?? "").toLowerCase().includes("no logs")) break;
+      throw new Error(`unexpected body: ${JSON.stringify(body).slice(0, 160)}`);
+    }
+    out.push(...body.result);
+    if (body.result.length < 1000) break;
+    // Move the window to the furthest block reached and re-read that block: it may hold several,
+    // and the writer upserts on (network, beneficiary, txHash), so reading one twice costs nothing.
+    let furthest = cursor;
+    for (const log of body.result) {
+      const b = Number(BigInt(log.blockNumber));
+      if (b > furthest) furthest = b;
+    }
+    if (furthest <= cursor) break;
+    cursor = furthest;
   }
-  return body.result;
+  return out;
 }
 
 /** Block timestamp, so a chill can be shown with a date rather than only an epoch number. */
