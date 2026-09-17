@@ -417,10 +417,15 @@ function decodeAddressArray(hex) {
       blockReason = "delegation-address";
     } else if (removedUntilTs > Date.now() / 1000) {
       // A time-based gate, and one a departing member usually hits with a FULL reward streak, so the
-      // epoch countdown here is legitimately 0. Publishing that 0 would read as "eligible now" while
-      // the contract goes on refusing. The honest answer is the date the timer expires.
+      // epoch countdown is then legitimately 0. Publishing that 0 would read as "eligible now" while
+      // the contract goes on refusing, so in that case the date the timer expires is the whole answer.
+      //
+      // But the timer is only ONE of three gates, and where another also binds the date alone is
+      // actively misleading: a provider whose streak is 5 of 20 cannot rejoin when the timer expires,
+      // it has another fifteen epochs to serve. Keep the countdown wherever it is non-zero, so the
+      // page can say which gate is really in front.
       blockReason = "recently-removed";
-      epochsRemaining = null;
+      if (epochsRemaining === 0) epochsRemaining = null;
     } else if (chillEpochsLeft > 0) {
       blockReason = "chilled";
     } else if (rewardEpochsLeft > 0) {
