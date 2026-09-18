@@ -69,6 +69,16 @@ export interface MgProposal {
   votesAgainst: number;
   /** Raw contract state, carried but never used to label anything. See deriveOutcome. */
   chainState: number;
+  /**
+   * TRUE for an ordinary proposal, FALSE for a REJECTION vote, which inverts everything.
+   *
+   * `_proposalSucceeded` returns `!_proposal.accept` when a condition fails and takes its majority
+   * from `accept ? forVotePower : againstVotePower`. So on a rejection vote the proposal stands
+   * unless the group both turns out AND votes against: missing quorum is how it PASSES, and the
+   * side that has to clear 50% is the votes against. Ten of the twenty-one Management Group
+   * proposals are this kind, including one that passed with no votes at all.
+   */
+  accept: boolean;
   /** Which deployment this id belongs to. Ids restart per contract, so this is half the key. */
   contract: string;
 }
@@ -82,7 +92,10 @@ export interface MgProposalView extends MgProposal {
   /** Whether quorumNeeded rests on the right denominator and may therefore be shown. */
   quorumKnown: boolean;
   quorumMet: boolean;
-  /** Votes in favour needed to clear the majority bar, given the votes cast so far. */
+  /**
+   * Votes needed on the DECIDING side to clear the majority bar, given the votes cast so far.
+   * That is votes in favour on an ordinary proposal and votes against on a rejection vote.
+   */
   majorityNeeded: number;
   majorityMet: boolean;
   /** The proposal's OWN conditions, snapshotted at creation, not today's settings. */
@@ -176,7 +189,7 @@ const HISTORIC_POLLING_CONTRACTS: Address[] = [
 const REGISTRY_NAMES = ["PollingManagementGroup", "PollingFtso"];
 
 /**
- * Pull proposer and vote window out of getProposalInfo WITHOUT pinning a tuple.
+ * Pull proposer, vote window and the ACCEPT FLAG out of getProposalInfo WITHOUT pinning a tuple.
  *
  * The two generations of this contract return different things from the same function name. The
  * current one gives (uint256, address, bool, start, end); the retired PollingFtso gives
@@ -188,16 +201,23 @@ const REGISTRY_NAMES = ["PollingManagementGroup", "PollingFtso"];
  * word that fits in 20 bytes without being a timestamp is the proposer. Ugly, and much harder to
  * break than a guessed ABI: a third generation with yet another layout still reads correctly as
  * long as it returns these values at all.
+ *
+ * `accept` is read the same way. In the Management Group shape it is the word immediately before
+ * the vote window, and a bool is 0 or 1, which nothing else in either layout looks like: PollingFtso
+ * has the PROPOSER there, a 20-byte number. The guard is that a proposer was found elsewhere, so a
+ * hypothetical zero-address proposer cannot be mistaken for `accept = false`. PollingFtso has no
+ * such field at all (its source does not contain the word), and its success test is the plain form,
+ * so defaulting to true is correct there rather than merely safe.
  */
 function readProposalInfo(words: readonly bigint[]): {
-  proposer: string; startTs: bigint; endTs: bigint;
+  proposer: string; startTs: bigint; endTs: bigint; accept: boolean;
 } | null {
   const LOW = 1_400_000_000n; // 2014, before any of this existed
   const HIGH = 4_000_000_000n; // 2096
-  let startTs = 0n, endTs = 0n;
+  let startTs = 0n, endTs = 0n, startAt = -1;
   for (let i = 0; i + 1 < words.length; i++) {
     const a = words[i], b = words[i + 1];
-    if (a >= LOW && a <= HIGH && b > a && b <= HIGH) { startTs = a; endTs = b; break; }
+    if (a >= LOW && a <= HIGH && b > a && b <= HIGH) { startTs = a; endTs = b; startAt = i; break; }
   }
   if (startTs === 0n) return null;
   const MAX_ADDR = (1n << 160n) - 1n;
@@ -208,7 +228,12 @@ function readProposalInfo(words: readonly bigint[]): {
       break;
     }
   }
-  return { proposer, startTs, endTs };
+  const flag = startAt > 0 ? words[startAt - 1] : null;
+  const accept =
+    proposer !== "0x0000000000000000000000000000000000000000" && (flag === 0n || flag === 1n)
+      ? flag === 1n
+      : true;
+  return { proposer, startTs, endTs, accept };
 }
 
 let cache: { at: number; data: MgProposal[] } | null = null;
@@ -363,6 +388,7 @@ async function readContract(
         votesFor: Number(d.votes[0]),
         votesAgainst: Number(d.votes[1]),
         chainState: Number(d.chainState),
+        accept: info.accept,
       });
     }
     // A gap inside the batch means the end: ids are assigned sequentially and never reused.
@@ -431,6 +457,7 @@ async function readOne(
     votesFor: Number(votes[0]),
     votesAgainst: Number(votes[1]),
     chainState: Number(chainState),
+    accept: info.accept,
   };
   return { p, complete: !fail.any };
 }
@@ -469,14 +496,18 @@ export function deriveOutcome(
   const quorumNeeded = Math.ceil((threshold / 10000) * eligibleCount);
   const cast = p.votesFor + p.votesAgainst;
   const quorumMet = cast >= quorumNeeded;
-  // STRICTLY more than the share, and the share is FLOORED. _proposalSucceeded, from the verified
-  // source, defeats a proposal when
-  //     forVotePower <= majorityConditionBIPS.mulDiv(forVotePower + againstVotePower, MAX_BIPS)
-  // with mulDiv rounding down, so the votes needed are floor(majority * cast / 10000) + 1. The test
-  // here used to read `votesFor * 10000 >= majority * cast`, which is "at least half" and differs
-  // from the contract at exactly the tie: 20 for and 20 against passed it and is a defeat on chain.
+  // WHICH SIDE HAS TO CLEAR THE BAR depends on the kind of proposal. _proposalSucceeded reads
+  //     (_proposal.accept ? forVotePower : againstVotePower)
+  //         <= majorityConditionBIPS.mulDiv(forVotePower + againstVotePower, MAX_BIPS)
+  // so an ordinary proposal needs votes FOR and a rejection vote is defeated by votes AGAINST.
+  // Measuring the for side on a rejection vote was wrong on half the Management Group's proposals.
+  const decidingVotes = p.accept ? p.votesFor : p.votesAgainst;
+  // STRICTLY more than the share, and the share is FLOORED: `<=` is a defeat and mulDiv rounds
+  // down, so the votes needed are floor(majority * cast / 10000) + 1. This test once read
+  // `votesFor * 10000 >= majority * cast`, which is "at least half" and differs from the contract
+  // at exactly the tie: 20 for and 20 against passed it and is a defeat on chain.
   const majorityNeeded = Math.floor((majority * cast) / 10000) + 1;
-  const majorityMet = cast > 0 && p.votesFor >= majorityNeeded;
+  const majorityMet = cast > 0 && decidingVotes >= majorityNeeded;
   const open = now >= start && now < end;
   // 4 is the only decided value observed on chain, and it matched "Accepted" on the portal for
   // every proposal carrying it. Anything else decided is reported without a claim about why.
