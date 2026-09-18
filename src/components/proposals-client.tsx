@@ -116,7 +116,13 @@ function ProposalBody({
 
       <div className="mt-3">
         <p className="text-xs text-muted">
-          {t("prop.tally", { for: p.votesFor, against: p.votesAgainst })}
+          {p.votePowerTally
+            ? t("prop.tallyPower", {
+                // Whole units, formatted without a locale so the server and client agree.
+                for: Math.round(p.votesFor / 1e18),
+                against: Math.round(p.votesAgainst / 1e18),
+              })
+            : t("prop.tally", { for: p.votesFor, against: p.votesAgainst })}
         </p>
         {/* BOTH CONDITIONS, or neither. Shown whenever the denominator is the right one: today's
             group is the wrong one for a vote held in April, so this needs the eligible count the
