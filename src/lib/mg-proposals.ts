@@ -466,6 +466,24 @@ async function readOne(
 
 
 /**
+ * Open, pending, accepted or closed.
+ *
+ * Exported because the voting record labels proposals too and there must be exactly one place that
+ * decides what a proposal's state is called. 4 is the only decided value observed on chain, and it
+ * matched "Accepted" on the portal for every proposal carrying it; anything else decided is
+ * reported without a claim about why.
+ */
+export function outcomeOf(
+  p: { voteStartAt: string; voteEndAt: string; chainState: number },
+  now: Date
+): MgProposalView["outcome"] {
+  const start = new Date(p.voteStartAt), end = new Date(p.voteEndAt);
+  if (now < start) return "pending";
+  if (now < end) return "open";
+  return p.chainState === 4 ? "accepted" : "closed";
+}
+
+/**
  * Label a proposal against the group that actually had to turn out for it.
  *
  * This function used to say the contract "does not record how many were eligible when a given
@@ -517,10 +535,7 @@ export function deriveOutcome(
   const majorityNeeded = Math.floor((majority * cast) / 10000) + 1;
   const majorityMet = cast > 0 && decidingVotes >= majorityNeeded;
   const open = now >= start && now < end;
-  // 4 is the only decided value observed on chain, and it matched "Accepted" on the portal for
-  // every proposal carrying it. Anything else decided is reported without a claim about why.
-  const outcome: MgProposalView["outcome"] =
-    now < start ? "pending" : open ? "open" : p.chainState === 4 ? "accepted" : "closed";
+  const outcome = outcomeOf(p, now);
   return {
     ...p, open, quorumNeeded, quorumMet, majorityNeeded, majorityMet, outcome, votePowerTally,
     eligibleCount,

@@ -27,6 +27,7 @@
 
 import { getAddress, decodeAbiParameters, createPublicClient, http, type Address } from "viem";
 import { prisma } from "@/lib/db";
+import { fetchMgProposals, outcomeOf, type MgProposalView } from "./mg-proposals";
 
 const EXPLORER_API = process.env.FLARE_EXPLORER_API ?? "https://flare-explorer.flare.network/api";
 const FLARE_RPC = process.env.FLARE_RPC_URL ?? "https://flare-api.flare.network/ext/C/rpc";
@@ -546,4 +547,83 @@ export async function fetchRemovableMemberViews(): Promise<RemovableMemberView[]
     })
     // Named first and alphabetical, so the list reads as businesses rather than as a hex dump.
     .sort((a, b) => (a.name ?? "￿").localeCompare(b.name ?? "￿"));
+}
+
+
+// ---------------------------------------------------------------------------
+// One provider's voting record
+// ---------------------------------------------------------------------------
+//
+// PER ENTITY, NEVER PER ADDRESS, and that is the whole difficulty. The two polling generations
+// identify a member by DIFFERENT ROLE ADDRESSES: PollingManagementGroup lists identity addresses
+// and PollingFtso listed delegation addresses. Their rosters therefore share not one address in
+// common (checked: 62 and 58 members, zero overlap), and a record matched on the identity address
+// alone would report that every provider sat out the entire FTSO era. They are the same providers.
+//
+// So the caller passes every address the entity holds and a proposal counts as theirs if ANY of
+// them is in its snapshot. The same set catches a vote cast through a proxy, which would otherwise
+// read as an absence.
+//
+// A proposal with no creation event gives no snapshot, and without a snapshot there is no way to
+// say whether this provider was entitled to vote. Those are skipped rather than counted as either
+// attendance or absence.
+
+
+export interface VotingRecordRow {
+  /** `${contract}:${id}`, which is also the fragment /proposals uses. */
+  key: string;
+  contract: string;
+  id: number;
+  name: string | null;
+  voteStartAt: string;
+  voteEndAt: string;
+  outcome: MgProposalView["outcome"];
+  /** null where they did not vote at all. */
+  inFavour: boolean | null;
+  /** Hours after the window opened, when the vote was cast. */
+  hoursIn: number | null;
+}
+
+export interface VotingRecord {
+  /** Newest first, which is how the page reads it. */
+  rows: VotingRecordRow[];
+  eligible: number;
+  voted: number;
+}
+
+export async function fetchVotingRecord(addresses: string[]): Promise<VotingRecord> {
+  const mine = new Set(addresses.filter(Boolean).map((a) => a.toLowerCase()));
+  if (!mine.size) return { rows: [], eligible: 0, voted: 0 };
+
+  const proposals = await fetchMgProposals();
+  const participation = await fetchParticipation([
+    ...new Set(proposals.map((p) => p.contract)),
+  ]);
+  const now = new Date();
+
+  const rows: VotingRecordRow[] = [];
+  for (const p of proposals) {
+    const part = participation.get(participationKey(p.contract, p.id));
+    if (!part?.roster) continue;
+    if (!part.roster.eligible.some((a) => mine.has(a))) continue;
+    const vote = part.votes.find((v) => mine.has(v.voter)) ?? null;
+    const startMs = new Date(p.voteStartAt).getTime();
+    rows.push({
+      key: participationKey(p.contract, p.id),
+      contract: p.contract,
+      id: p.id,
+      name: p.name,
+      voteStartAt: p.voteStartAt,
+      voteEndAt: p.voteEndAt,
+      outcome: outcomeOf(p, now),
+      inFavour: vote ? vote.inFavour : null,
+      hoursIn: vote ? Math.max(0, (vote.at * 1000 - startMs) / 3_600_000) : null,
+    });
+  }
+  rows.sort((a, b) => b.voteEndAt.localeCompare(a.voteEndAt));
+  return {
+    rows,
+    eligible: rows.length,
+    voted: rows.filter((r) => r.inFavour !== null).length,
+  };
 }
