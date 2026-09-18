@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/components/providers";
 import { ProposalVote } from "@/components/proposal-vote";
@@ -261,20 +261,29 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
   // A LINK TO ONE PROPOSAL has to open it, not just scroll near it, because a decided proposal is
   // one collapsed line and landing on a line nobody asked for reads as a broken link. Runs once:
   // after that the fragment is written by expanding, and re-reading it would fight the reader.
+  const pendingScroll = useRef<string | null>(null);
   useEffect(() => {
     const hash = window.location.hash.replace(/^#/, "");
     if (!hash || !data) return;
     const hit = data.proposals.find((p) => anchorFor(p) === hash);
     if (!hit) return;
     setExpanded((s) => new Set(s).add(`${hit.contract}:${hit.id}`));
-    // After paint, so the element exists to scroll to.
-    const id = window.setTimeout(
-      () => document.getElementById(hash)?.scrollIntoView({ block: "start" }),
-      0
-    );
-    return () => window.clearTimeout(id);
+    pendingScroll.current = hash;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // SCROLLED AFTER THE EXPANSION HAS PAINTED, not in the same tick as asking for it. Scrolling to
+  // a row that is still one line puts the viewport where that line used to be, and the card then
+  // unfolds somewhere else. No dependency array on purpose: it runs after every render and clears
+  // itself the first time the element is actually there.
+  useEffect(() => {
+    const id = pendingScroll.current;
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    pendingScroll.current = null;
+    el.scrollIntoView({ block: "start" });
+  });
 
   const removableSet = useMemo(
     // Built once, not per card: the same set is tested against every roster row on the page.
