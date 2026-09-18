@@ -633,3 +633,131 @@ export async function fetchVotingRecord(addresses: string[]): Promise<VotingReco
     voted: rows.filter((r) => r.inFavour !== null).length,
   };
 }
+
+
+// ---------------------------------------------------------------------------
+// Turnout across the whole group
+// ---------------------------------------------------------------------------
+//
+// The same computation as one provider's record, transposed: every entity that ever appeared in a
+// roster, against every proposal, in one matrix. It is the page's own argument stated plainly, and
+// it is what the removable panel is implicitly about.
+//
+// Entity-keyed for the reason the single record is: the two generations name members by different
+// role addresses, so an address-keyed table would split most providers into two rows that each look
+// like a partial attender.
+
+export type TurnoutCell = "for" | "against" | "missed" | "n/a";
+
+export interface TurnoutRow {
+  /** The entity's identity address where we could resolve one, else the address as seen. */
+  addr: string;
+  name: string | null;
+  logoURI: string | null;
+  /** Our own directory page, when the provider is listed. */
+  href: string | null;
+  eligible: number;
+  voted: number;
+  /** One cell per proposal, oldest first, aligned across every row. */
+  cells: TurnoutCell[];
+}
+
+export interface Turnout {
+  /** Oldest first, matching the cells. */
+  proposals: { key: string; contract: string; id: number; name: string | null; voteEndAt: string }[];
+  rows: TurnoutRow[];
+}
+
+export async function fetchTurnout(): Promise<Turnout> {
+  const proposals = await fetchMgProposals();
+  const participation = await fetchParticipation([
+    ...new Set(proposals.map((p) => p.contract)),
+  ]);
+
+  // Only proposals we can say something about: a creation snapshot, or votes, or both.
+  const shown = proposals
+    .filter((p) => {
+      const part = participation.get(participationKey(p.contract, p.id));
+      return !!part && (!!part.roster || part.votes.length > 0);
+    })
+    .sort((a, b) => a.voteEndAt.localeCompare(b.voteEndAt));
+
+  const seen = new Set<string>();
+  for (const p of shown) {
+    const part = participation.get(participationKey(p.contract, p.id))!;
+    for (const a of part.roster?.eligible ?? []) seen.add(a);
+    for (const v of part.votes) seen.add(v.voter);
+  }
+  const addresses = [...seen];
+
+  // EVERY ROLE ADDRESS FOLDED ONTO ITS ENTITY. Without this the FTSO era and the Management Group
+  // era produce two rows for the same provider, each apparently absent from the other's proposals.
+  const entities = await prisma.providerOnchain.findMany({
+    where: {
+      network: "flare",
+      OR: [
+        { voter: { in: addresses } },
+        { delegationAddress: { in: addresses } },
+        { submitAddress: { in: addresses } },
+        { submitSignaturesAddress: { in: addresses } },
+        { signingPolicyAddress: { in: addresses } },
+      ],
+    },
+    select: {
+      voter: true, delegationAddress: true, submitAddress: true,
+      submitSignaturesAddress: true, signingPolicyAddress: true,
+    },
+  });
+  const entityOf = new Map<string, string>();
+  for (const e of entities) {
+    for (const a of [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]) {
+      if (a) entityOf.set(a.toLowerCase(), e.voter.toLowerCase());
+    }
+  }
+  // An address we cannot place is its own entity rather than being dropped: better a row keyed by a
+  // hex address than a member missing from the group's record.
+  const keyOf = (a: string) => entityOf.get(a) ?? a;
+
+  const rows = new Map<string, { eligible: Set<number>; cast: Map<number, boolean> }>();
+  shown.forEach((p, i) => {
+    const part = participation.get(participationKey(p.contract, p.id))!;
+    const touch = (k: string) => {
+      let r = rows.get(k);
+      if (!r) { r = { eligible: new Set(), cast: new Map() }; rows.set(k, r); }
+      return r;
+    };
+    for (const a of part.roster?.eligible ?? []) touch(keyOf(a)).eligible.add(i);
+    for (const v of part.votes) {
+      const r = touch(keyOf(v.voter));
+      r.eligible.add(i); // voting proves eligibility, as in fetchVotingRecord
+      r.cast.set(i, v.inFavour);
+    }
+  });
+
+  const refs = await resolveMembers([...rows.keys()]);
+  const out: TurnoutRow[] = [...rows.entries()].map(([addr, r]) => {
+    const ref = refs.get(addr);
+    return {
+      addr,
+      name: ref?.name ?? null,
+      logoURI: ref?.logoURI ?? null,
+      href: ref?.href ?? null,
+      eligible: r.eligible.size,
+      voted: r.cast.size,
+      cells: shown.map((_, i) =>
+        !r.eligible.has(i) ? "n/a" : !r.cast.has(i) ? "missed" : r.cast.get(i) ? "for" : "against"
+      ),
+    };
+  });
+
+  return {
+    proposals: shown.map((p) => ({
+      key: participationKey(p.contract, p.id),
+      contract: p.contract,
+      id: p.id,
+      name: p.name,
+      voteEndAt: p.voteEndAt,
+    })),
+    rows: out,
+  };
+}

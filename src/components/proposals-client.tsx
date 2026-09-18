@@ -379,6 +379,13 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
       {/* Said plainly, because the whole page is about a vote and a reader is entitled to know that
           this site is not part of it. */}
       <p className="mt-2 text-xs text-faint">{t("prop.readOnly")}</p>
+      {/* The rosters below answer "who voted on THIS", one proposal at a time. The other question a
+          reader arrives with is "who turns up at all", which is the same data transposed. */}
+      <p className="mt-2 text-xs">
+        <a href="/proposals/turnout" className="text-beacon hover:underline">
+          {t("prop.turnoutLink")}
+        </a>
+      </p>
 
       {/* Removal standing sits ABOVE the proposal list on purpose. It is the same subject the list
           is about, the group deciding these votes, and a member who has stopped turning up is
