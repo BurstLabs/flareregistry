@@ -30,12 +30,12 @@ const CELL: Record<TurnoutCell, string> = {
 
 function Strip({ row, proposals }: { row: TurnoutRow; proposals: Turnout["proposals"] }) {
   return (
-    <span className="flex flex-wrap gap-[2px]">
+    <span className="flex gap-[2px] whitespace-nowrap">
       {row.cells.map((c, i) => (
         <span
           key={i}
           title={`${proposals[i]?.voteEndAt.slice(0, 10)} ${proposals[i]?.name ?? ""}`}
-          className={`h-3 w-[5px] rounded-[1px] ${CELL[c]}`}
+          className={`h-3 w-[4px] shrink-0 rounded-[1px] ${CELL[c]}`}
         />
       ))}
     </span>
@@ -44,7 +44,7 @@ function Strip({ row, proposals }: { row: TurnoutRow; proposals: Turnout["propos
 
 export function TurnoutTable({ data }: { data: Turnout | null }) {
   const { t } = useApp();
-  const [sort, setSort] = useState<SortKey>("rate");
+  const [sort, setSort] = useState<SortKey>("eligible");
   const [desc, setDesc] = useState(true);
   const [query, setQuery] = useState("");
 
@@ -58,7 +58,8 @@ export function TurnoutTable({ data }: { data: Turnout | null }) {
     const dir = desc ? -1 : 1;
     return [...filtered].sort((a, b) => {
       if (sort === "name") return dir * (a.name ?? a.addr).localeCompare(b.name ?? b.addr);
-      if (sort === "eligible") return dir * (a.eligible - b.eligible);
+      // Within an equal record length, the one who turned up more often goes first.
+      if (sort === "eligible") return dir * (a.eligible - b.eligible || rate(a) - rate(b));
       if (sort === "voted") return dir * (a.voted - b.voted);
       // Ties on rate go to the one with more proposals behind it: 3 of 3 is not 44 of 44.
       return dir * (rate(a) - rate(b) || a.eligible - b.eligible);
@@ -123,14 +124,15 @@ export function TurnoutTable({ data }: { data: Turnout | null }) {
 
       {/* The matrix is wider than a phone and must not squash: it scrolls on its own. */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-xs">
+        <table className="w-full min-w-[900px] text-xs">
           <thead className="border-b border-themed text-faint">
             <tr>
               {header("name", t("turnout.col.provider"))}
               {header("voted", t("turnout.col.voted"), "w-[1%] whitespace-nowrap pl-3")}
               {header("eligible", t("turnout.col.eligible"), "w-[1%] whitespace-nowrap pl-3")}
               {header("rate", t("turnout.col.rate"), "w-[1%] whitespace-nowrap pl-3")}
-              <th scope="col" className="w-[1%] py-2 pl-4 text-left font-medium">
+              {/* Sized for the matrix rather than for the words, so the cells never wrap. */}
+              <th scope="col" className="w-[320px] py-2 pl-4 text-left font-medium">
                 {t("turnout.col.record")}
               </th>
             </tr>
