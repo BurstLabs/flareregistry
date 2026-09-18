@@ -604,9 +604,15 @@ export async function fetchVotingRecord(addresses: string[]): Promise<VotingReco
   const rows: VotingRecordRow[] = [];
   for (const p of proposals) {
     const part = participation.get(participationKey(p.contract, p.id));
-    if (!part?.roster) continue;
-    if (!part.roster.eligible.some((a) => mine.has(a))) continue;
+    if (!part) continue;
     const vote = part.votes.find((v) => mine.has(v.voter)) ?? null;
+    // A CAST VOTE IS ITSELF PROOF OF ELIGIBILITY, and a stronger one than the snapshot: _castVote
+    // requires proposal.isEligible[voter]. So a proposal counts when the roster names them OR when
+    // they voted in it. Without both, a proposal whose creation event we could not read drops out
+    // of the record entirely, including the vote they cast in it: checking this provider against
+    // the raw logs turned up 36 votes where the page said 35, and the missing one was exactly that.
+    const inRoster = part.roster?.eligible.some((a) => mine.has(a)) ?? false;
+    if (!inRoster && !vote) continue;
     const startMs = new Date(p.voteStartAt).getTime();
     rows.push({
       key: participationKey(p.contract, p.id),
