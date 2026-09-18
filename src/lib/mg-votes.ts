@@ -28,6 +28,7 @@
 import { getAddress, decodeAbiParameters, createPublicClient, http, type Address } from "viem";
 import { prisma } from "@/lib/db";
 import { fetchMgProposals, outcomeOf, type MgProposalView } from "./mg-proposals";
+import { isProtectedMember } from "./protected-members";
 
 const EXPLORER_API = process.env.FLARE_EXPLORER_API ?? "https://flare-explorer.flare.network/api";
 const FLARE_RPC = process.env.FLARE_RPC_URL ?? "https://flare-api.flare.network/ext/C/rpc";
@@ -513,6 +514,11 @@ export async function fetchRemovableMembers(): Promise<RemovableMember[]> {
     const addr = r.voter.toLowerCase();
     if (seen.has(addr)) continue;
     seen.add(addr);
+    // Members this deployment declines to offer, dropped here rather than at each surface: the
+    // panel, its heading count, its batch and the roster chips on /proposals all read this one list,
+    // so the filter belongs in front of all four. See protected-members for what it does and does not
+    // do.
+    if (isProtectedMember(addr)) continue;
     out.push({
       addr,
       reason: r.mgRemoveReason,

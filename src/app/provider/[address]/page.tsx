@@ -14,6 +14,7 @@ import {
 } from "@/lib/governance";
 import { ProviderDetailClient, type DetailData } from "@/components/provider-detail-client";
 import { fetchRemovableMemberViews, fetchVotingRecord } from "@/lib/mg-votes";
+import { isProtectedMember } from "@/lib/protected-members";
 
 export const dynamic = "force-dynamic";
 
@@ -133,8 +134,12 @@ export default async function ProviderDetail({
           checkedEpoch: flareEntity.mgCheckedEpoch,
           checkedAt: flareEntity.mgCheckedAt?.toISOString() ?? null,
           // Removal standing. Only meaningful for a sitting member; null everywhere else.
-          removable: flareEntity.mgRemovable,
-          removeReason: flareEntity.mgRemoveReason,
+          // A listed member reads as not removable HERE TOO, not only in the panel: this flag is
+          // what puts the warning and the button on the provider's own page, and leaving it true
+          // would offer from one page exactly what the other declines to. The participation margin
+          // below it is untouched, so the standing the member needs to act on is still stated.
+          removable: isProtectedMember(flareEntity.voter) ? false : flareEntity.mgRemovable,
+          removeReason: isProtectedMember(flareEntity.voter) ? null : flareEntity.mgRemoveReason,
           missedVotes: flareEntity.mgMissedVotes,
           relevantProposals: flareEntity.mgRelevantProposals,
           missedVotesLimit: flareEntity.mgMissedVotesLimit,
