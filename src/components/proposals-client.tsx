@@ -134,6 +134,7 @@ function ProposalBody({
             thresholdBips={p.thresholdBips}
             majorityBips={p.majorityBips}
             decided={p.outcome !== "open" && p.outcome !== "pending"}
+            accept={p.accept}
           />
         )}
       </div>
