@@ -282,7 +282,14 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
     const el = document.getElementById(id);
     if (!el) return;
     pendingScroll.current = null;
-    el.scrollIntoView({ block: "start" });
+    // UNDER THE STICKY HEADER, not under the top of the window. scrollIntoView puts the row's top
+    // at the viewport's top, where the header is already sitting, so the title and outcome scrolled
+    // out of sight and the link landed on the middle of the card. The header is measured rather
+    // than assumed, because its height changes with the viewport.
+    const header = document.querySelector("header");
+    const clear = (header instanceof HTMLElement ? header.offsetHeight : 0) + 12;
+    const top = el.getBoundingClientRect().top + window.scrollY - clear;
+    window.scrollTo({ top: Math.max(0, top) });
   });
 
   const removableSet = useMemo(
@@ -391,7 +398,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
             <li
               key={`${p.contract}:${p.id}`}
               id={anchorFor(p)}
-              className="surface scroll-mt-4 rounded-xl border border-themed p-5 text-sm"
+              className="surface scroll-mt-20 rounded-xl border border-themed p-5 text-sm"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span className="font-medium text-fg">
@@ -446,7 +453,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
               // KEYED BY CONTRACT AND ID. Ids restart at 1 on every deployment, so id alone collides
               // across the four of them, and React then reconciles one proposal's card against
               // another's.
-              <li key={key} id={anchorFor(p)} className="scroll-mt-4 border-b border-themed">
+              <li key={key} id={anchorFor(p)} className="scroll-mt-20 border-b border-themed">
                 <button
                   type="button"
                   onClick={() => toggle(p)}
