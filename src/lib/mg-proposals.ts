@@ -92,6 +92,8 @@ export interface MgProposalView extends MgProposal {
   /** Whether quorumNeeded rests on the right denominator and may therefore be shown. */
   quorumKnown: boolean;
   quorumMet: boolean;
+  /** True where the tally is weighted vote power rather than one vote per member. */
+  votePowerTally: boolean;
   /**
    * Votes needed on the DECIDING side to clear the majority bar, given the votes cast so far.
    * That is votes in favour on an ordinary proposal and votes against on a rejection vote.
@@ -502,6 +504,12 @@ export function deriveOutcome(
   // so an ordinary proposal needs votes FOR and a rejection vote is defeated by votes AGAINST.
   // Measuring the for side on a rejection vote was wrong on half the Management Group's proposals.
   const decidingVotes = p.accept ? p.votesFor : p.votesAgainst;
+  // ONE DEPLOYMENT COUNTED VOTE POWER, not members. The newest PollingFtso holds a single proposal
+  // from December 2024 whose tally is 2.35e21, which is wei-scale WNat rather than anything a
+  // member count could reach, and its card rendered that verbatim: "2.3543083879755077e+21 in
+  // favour". No member count comes near ten thousand, so the two are told apart by size, and the
+  // card says which kind of number it is showing rather than pretending they are comparable.
+  const votePowerTally = cast > 10_000;
   // STRICTLY more than the share, and the share is FLOORED: `<=` is a defeat and mulDiv rounds
   // down, so the votes needed are floor(majority * cast / 10000) + 1. This test once read
   // `votesFor * 10000 >= majority * cast`, which is "at least half" and differs from the contract
@@ -514,7 +522,7 @@ export function deriveOutcome(
   const outcome: MgProposalView["outcome"] =
     now < start ? "pending" : open ? "open" : p.chainState === 4 ? "accepted" : "closed";
   return {
-    ...p, open, quorumNeeded, quorumMet, majorityNeeded, majorityMet, outcome,
+    ...p, open, quorumNeeded, quorumMet, majorityNeeded, majorityMet, outcome, votePowerTally,
     eligibleCount,
     thresholdBips: threshold,
     majorityBips: majority,
