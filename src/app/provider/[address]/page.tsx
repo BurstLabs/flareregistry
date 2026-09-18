@@ -13,7 +13,7 @@ import {
   NEW_PROVIDER_WINDOW_DAYS,
 } from "@/lib/governance";
 import { ProviderDetailClient, type DetailData } from "@/components/provider-detail-client";
-import { fetchRemovableMemberViews } from "@/lib/mg-votes";
+import { fetchRemovableMemberViews, fetchVotingRecord } from "@/lib/mg-votes";
 
 export const dynamic = "force-dynamic";
 
@@ -147,6 +147,20 @@ export default async function ProviderDetail({
           groupSize: await prisma.providerOnchain.count({
             where: { network: "flare", managementGroup: true },
           }),
+          // THE RECORD ITSELF, not just the count of what it missed. Every address the entity
+          // holds is passed, because the two polling generations key members by different roles
+          // and a proxy can cast the vote: matching on the identity address alone would report a
+          // provider absent from proposals it actually voted in. Own try/catch, like the rest of
+          // this panel: the record is worth having and worth nothing at the cost of the page.
+          record: await fetchVotingRecord(
+            [
+              flareEntity.voter,
+              flareEntity.delegationAddress,
+              flareEntity.submitAddress,
+              flareEntity.submitSignaturesAddress,
+              flareEntity.signingPolicyAddress,
+            ].filter((a): a is string => !!a)
+          ).catch(() => null),
         }
       : null;
 

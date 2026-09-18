@@ -20,6 +20,7 @@ import { ManageListingButton } from "./manage-listing-button";
 import { OwnerNotices } from "./owner-notices";
 import { MgJoinButton } from "./mg-join-button";
 import { MgRemoveButton } from "./mg-remove-button";
+import { MgVotingRecord, type VotingRecordView } from "./mg-voting-record";
 import { MgRemovablePanel, type RemovableMemberView } from "./mg-removable-panel";
 import { TelegramPanel } from "./telegram-panel";
 
@@ -134,6 +135,8 @@ export interface DetailData {
     relevantProposals: number | null;
     missedVotesLimit: number | null;
     epochsSinceReward: number | null;
+    /** Proposal by proposal: what this entity was eligible for and how it voted. */
+    record?: VotingRecordView | null;
   } | null;
   // Composite reputation over Flare's own measurements. Weights are published and versioned; scoring
   // is absolute rather than relative, so no provider's figure moves when a competitor's does.
@@ -691,6 +694,7 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                       })}
                     </p>
                   )}
+
               </>
             ) : d.mg.eligible ? (
               <>
@@ -764,6 +768,10 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 )}
               </>
             )}
+            {/* The record sits under every membership state, not only under "member". A provider
+                that was removed, or that left, still voted in the proposals it was eligible for,
+                and that history is the part worth keeping. */}
+            {d.mg.record && <MgVotingRecord record={d.mg.record} />}
             {d.mg.checkedEpoch != null && (
               <p className="mt-3 text-xs text-faint">
                 {moment(d.mg.checkedAt)
