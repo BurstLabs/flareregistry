@@ -43,10 +43,51 @@ interface Payload {
   participation: Record<string, ParticipationRef>;
 }
 
-/** Whole hours left, or null once the window has closed. */
-function hoursLeft(endIso: string): number | null {
-  const ms = new Date(endIso).getTime() - Date.now();
-  return ms > 0 ? Math.floor(ms / 3_600_000) : null;
+const MINUTE_MS = 60_000;
+const HOUR_MS = 3_600_000;
+
+/**
+ * The countdown, in the coarsest unit that still says something.
+ *
+ * Hours stop saying anything below one of them. "Closes in about 0 hours" was how this page reported
+ * the last fifty-nine minutes of a vote, which is precisely the hour in which the number is worth
+ * reading: a member deciding whether there is still time to sign has to be told minutes.
+ *
+ * The unit is returned as a KEY rather than a number and a noun, because this file has no
+ * pluralisation and the boundary cases are where that shows. "1 hours" and "1 minutes" can only be
+ * avoided with a string per case, so one and many are separate keys, as they are elsewhere here.
+ */
+function closesIn(endIso: string, nowMs: number): { key: string; vars: Record<string, string | number> } | null {
+  const ms = new Date(endIso).getTime() - nowMs;
+  if (ms <= 0) return null;
+  if (ms >= 2 * HOUR_MS) return { key: "prop.closesIn", vars: { hours: Math.floor(ms / HOUR_MS) } };
+  if (ms >= HOUR_MS) return { key: "prop.closesInHour", vars: {} };
+  if (ms >= 2 * MINUTE_MS) return { key: "prop.closesInMinutes", vars: { minutes: Math.floor(ms / MINUTE_MS) } };
+  if (ms >= MINUTE_MS) return { key: "prop.closesInMinute", vars: {} };
+  return { key: "prop.closesUnderMinute", vars: {} };
+}
+
+/**
+ * A clock that runs only while an open proposal is on screen.
+ *
+ * Minutes have to tick in a way hours never had to. An hours figure is stale for an hour before it
+ * misleads anyone; a minutes figure left in an open tab is wrong within the minute, and wrong about
+ * the one thing the reader came to it for.
+ *
+ * Seeded from the SERVER's clock rather than from Date.now(), because this component is rendered on
+ * the server too and a countdown that disagrees with itself across hydration is a React mismatch on
+ * every open proposal. The client's own clock is adopted in the effect, which runs only in the
+ * browser.
+ */
+function useNow(serverNowMs: number, ticking: boolean): number {
+  const [now, setNow] = useState(serverNowMs);
+  useEffect(() => {
+    setNow(Date.now());
+    if (!ticking) return;
+    const id = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(id);
+  }, [ticking]);
+  return now;
 }
 
 /**
@@ -93,7 +134,9 @@ function ProposalBody({
   onVoted: () => void;
 }) {
   const { t } = useApp();
-  const left = hoursLeft(p.voteEndAt);
+  // Only an open vote has anything to count down, so only an open vote pays for an interval.
+  const now = useNow(data.nowMs, p.outcome === "open");
+  const left = closesIn(p.voteEndAt, now);
   const part = data.participation[`${p.contract}:${p.id}`];
 
   return (
@@ -147,7 +190,7 @@ function ProposalBody({
 
       <p className="mt-2 text-[11px] text-faint">
         {p.outcome === "open" && left !== null
-          ? t("prop.closesIn", { hours: left, date: p.voteEndAt.slice(0, 16).replace("T", " ") })
+          ? t(left.key, { ...left.vars, date: p.voteEndAt.slice(0, 16).replace("T", " ") })
           : t("prop.closed", { date: p.voteEndAt.slice(0, 16).replace("T", " ") })}
       </p>
 
