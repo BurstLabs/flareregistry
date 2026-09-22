@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-09-22T09:47:02.495Z",
+  "timestamp": "2026-09-22T10:17:05.182Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -3717,6 +3717,60 @@
     },
     {
       "chainId": 14,
+      "name": "G1Flare818",
+      "description": "Sovereign, self-hosted Flare validator and FTSO/FDC data provider. Own node, own data pipeline, own history, no shared infrastructure. Run by a solo operator focused on uptime and honest data. 818 = Deuteronomy 8:18.",
+      "url": "https://g1flare.com",
+      "address": "0xC8142E2b2f6f8Adfd34d8e6735F389667F9E2C0a",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "0",
+        "votePowerCapped": "0",
+        "feedCount": 62,
+        "lastEpoch": 434,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x5e53FA91aD7ce06b1510f03bFaAC3Ba77558Ded8",
+          "submit": "0x66Ad76a46C55348d93A5dBb4716bAD7fa1878222",
+          "submitSignatures": "0x09213f362e106a6ce31C51ca3fd42738327b5773",
+          "signingPolicy": "0x297A6cc26880b83835084f9418D968c350f9E0A4",
+          "delegation": "0xC8142E2b2f6f8Adfd34d8e6735F389667F9E2C0a"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-53Yqr6UiB8KYKj3HFadr27va9zLNkypmc",
+            "feePercent": 20,
+            "uptimePercent": 99.9967,
+            "connected": true,
+            "weight": "3812379999966250",
+            "selfBond": "3049000000000000",
+            "delegatedWeight": "763379999966250",
+            "delegatorCount": 3
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "open-source",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-09-21T16:18:52.326Z",
+          "lastSubmittedEpoch": 434,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
       "name": "HEWG",
       "description": "HEWG strikes to provide best FTSO price data.",
       "url": "https://hewg.org",
@@ -4445,7 +4499,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 434,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -8362,7 +8416,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 434,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
