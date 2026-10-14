@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdmin, getAdminAddress } from "@/lib/admin";
 import { toPublicConsumer } from "@/lib/consumers";
+import { consumerFields, CONSUMER_STATUSES } from "@/lib/consumer-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +39,31 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json({ queue });
+  // EVERY LISTING, not only the ones awaiting a decision.
+  //
+  // The queue above empties the moment the last submission is reviewed, and for most of this
+  // directory's life that is its normal state: four approved listings and nothing to review. Until
+  // now that left the tab reading "Nothing to review" with no way to reach the four, so a typo in a
+  // live blurb could only be fixed by someone submitting a public edit proposal against it and an
+  // admin then approving their own suggestion.
+  //
+  // Includes rejected rows deliberately. They are kept for the record rather than deleted, and the
+  // only way back from a mistaken rejection is to see the row and set it approved.
+  const all = await prisma.consumer.findMany({ orderBy: [{ status: "asc" }, { name: "asc" }] });
+  const listings = all.map((c) => ({
+    ...toPublicConsumer(c),
+    // Admin-only fields, never part of the public shape.
+    contactEmail: c.contactEmail,
+    status: c.status,
+    submittedAt: c.submittedAt,
+    reviewedAt: c.reviewedAt,
+    reviewedBy: c.reviewedBy,
+    // A proposal in flight against this row. Worth flagging in the editor: approving it later
+    // overwrites whatever the admin saves here.
+    hasPending: c.pendingChanges != null,
+  }));
+
+  return NextResponse.json({ queue, listings });
 }
 
 // PATCH /api/admin/consumers  { id, action: "approve" | "reject" }
@@ -115,4 +141,57 @@ export async function PATCH(req: NextRequest) {
     data: { status: "rejected", pendingKind: null, reviewedAt: now, reviewedBy: admin },
   });
   return NextResponse.json({ ok: true, action, kind: "new", by: admin });
+}
+
+
+// PUT /api/admin/consumers  { id, status, name, url, category, blurb, logoURL, contactEmail }
+//
+// Edit a listing in place. This is the admin's own hand on the row, distinct from PATCH above, which
+// only ever accepts or discards what somebody else proposed.
+//
+// Validated with the SAME field rules as the public submit form (lib/consumer-schema): an admin
+// typing into this editor is still writing to the showcase, and a logo URL that points at a web page
+// rather than an image breaks the card either way. The one thing the public form cannot set is
+// `status`, which is what makes this also the unpublish and the un-reject.
+//
+// A pending proposal against the row is left ALONE rather than cleared. The two are independent: the
+// proposal is still somebody's suggestion and still deserves a yes or no. The editor warns that
+// approving it afterwards will overwrite what was saved here.
+const editSchema = z.object({
+  id: z.string().min(1).max(40),
+  status: z.enum(CONSUMER_STATUSES),
+  ...consumerFields,
+});
+
+export async function PUT(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+  const admin = await getAdminAddress();
+
+  const parsed = editSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+  const d = parsed.data;
+
+  const existing = await prisma.consumer.findUnique({ where: { id: d.id } });
+  if (!existing) return NextResponse.json({ error: "consumer not found" }, { status: 404 });
+
+  const updated = await prisma.consumer.update({
+    where: { id: d.id },
+    data: {
+      name: d.name,
+      url: d.url,
+      category: d.category,
+      blurb: d.blurb,
+      // Empty string means "clear it", which is how the form sends a field the admin emptied.
+      logoURL: d.logoURL ? d.logoURL : null,
+      contactEmail: d.contactEmail ? d.contactEmail : null,
+      status: d.status,
+      reviewedAt: new Date(),
+      reviewedBy: admin,
+    },
+  });
+
+  return NextResponse.json({ ok: true, id: updated.id, status: updated.status, by: admin });
 }
