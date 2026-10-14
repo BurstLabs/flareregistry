@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
-import { isClean } from "@/lib/content-filter";
-import { CONSUMER_CATEGORIES, toPublicConsumer } from "@/lib/consumers";
+import { toPublicConsumer } from "@/lib/consumers";
+import { consumerFields } from "@/lib/consumer-schema";
 import { sendConsumerSubmissionNotice } from "@/lib/mailer";
 
 export const dynamic = "force-dynamic";
@@ -21,42 +21,9 @@ export async function GET() {
 // A submission is either a NEW listing or an EDIT proposal against an existing approved one. Both land
 // in the moderation queue; nothing goes live without an admin approving it. Edits never touch the live
 // row - the proposed values are stashed in pendingChanges until approval.
-const CLEAN = "contains inappropriate language; please revise";
-// Only http(s) URLs, and reject anything with credentials or that isn't a real absolute URL.
-const httpUrl = z
-  .string()
-  .trim()
-  .max(300)
-  .refine((s) => {
-    try {
-      const u = new URL(s);
-      return (u.protocol === "https:" || u.protocol === "http:") && !u.username && !u.password;
-    } catch {
-      return false;
-    }
-  }, "must be a valid http(s) URL");
-
-// A logo URL must point at an image file, not a web page. We can't fetch it to check content-type at
-// submit time, so require the path to end in a known image extension (query string/# allowed). This
-// rejects the common mistake of pasting the site homepage (e.g. https://example.com/) into the field.
-const imageUrl = httpUrl.refine((s) => {
-  try {
-    return /\.(png|jpe?g|svg|webp|gif|avif)$/i.test(new URL(s).pathname);
-  } catch {
-    return false;
-  }
-}, "logo must be a direct link to an image (.png, .jpg, .svg, .webp, .gif, .avif)");
-
 const baseFields = {
-  name: z.string().trim().min(1).max(80).refine(isClean, CLEAN),
-  url: httpUrl,
-  category: z.enum(CONSUMER_CATEGORIES),
-  blurb: z.string().trim().min(1).max(1000).refine(isClean, CLEAN),
-  // Optional external https logo IMAGE URL (must end in an image extension). No git-CDN upload for
-  // consumers in v1.
-  logoURL: imageUrl.optional().or(z.literal("")),
-  // Optional private contact for follow-up; never shown publicly.
-  contactEmail: z.string().trim().email().max(160).optional().or(z.literal("")),
+  // The listing's own fields live in lib/consumer-schema so the admin editor validates identically.
+  ...consumerFields,
   // Honeypot: a hidden field real users never fill. It must PASS schema validation (any string) so a
   // bot that fills it is not handed a 400 that reveals the trap; the handler drops it silently below.
   website: z.string().max(200).optional(),

@@ -10,6 +10,7 @@ import {
   PATTERN_STRONG,
   PATTERN_CANDIDATE,
 } from "@/lib/detection";
+import { CONSUMER_CATEGORIES } from "@/lib/consumers";
 
 // Operator-only admin dashboard. English-only (internal tool, not a user-facing page). Access is
 // gated by ADMIN_ADDRESSES: sign in with an allowlisted wallet (reusing the SIWE flow) to unlock it.
@@ -1731,12 +1732,15 @@ function ImportsTab() {
 
 function ConsumersTab() {
   const [rows, setRows] = useState<any[]>([]);
+  const [listings, setListings] = useState<any[]>([]);
+  const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState("");
   const load = useCallback(async () => {
     const r = await fetch("/api/admin/consumers");
     const b = await r.json();
     setRows(b.queue ?? []);
+    setListings(b.listings ?? []);
   }, []);
   useEffect(() => {
     load();
@@ -1832,6 +1836,225 @@ function ConsumersTab() {
           </ul>
         )}
       </Card>
+
+      {/* EVERY LISTING, with the editor.
+          The queue above is empty most of the time, which used to mean this whole tab was. A live
+          listing could not be touched from here at all: fixing a typo in an approved blurb meant
+          submitting a public edit proposal against it and then approving your own suggestion. */}
+      <div className="mb-2 mt-6 flex items-center justify-between text-xs text-muted">
+        <span className="font-semibold text-fg">All powered-by listings</span>
+        <span>{listings.length} total</span>
+      </div>
+      <Card>
+        {listings.length === 0 ? (
+          <p className="text-sm text-muted">No listings yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {listings.map((c) => (
+              <li key={c.id} className="border-t border-themed/50 pt-3 first:border-0 first:pt-0">
+                {editing === c.id ? (
+                  <ConsumerEditor
+                    c={c}
+                    onCancel={() => setEditing(null)}
+                    onSaved={(m) => {
+                      setEditing(null);
+                      setMsg(m);
+                      load();
+                    }}
+                  />
+                ) : (
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="flex min-w-0 items-start gap-2">
+                      {c.logoURL ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.logoURL} alt="" className="mt-0.5 h-6 w-6 shrink-0 rounded object-cover" />
+                      ) : (
+                        <span className="mt-0.5 h-6 w-6 shrink-0 rounded bg-black/10 dark:bg-white/10" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-sm font-medium">{c.name}</span>
+                          <Chip tone="grey">{c.category}</Chip>
+                          <Chip tone={c.status === "approved" ? "green" : c.status === "pending" ? "amber" : "red"}>
+                            {c.status}
+                          </Chip>
+                          {/* A proposal is still in the queue for this row. Saying so here matters:
+                              approving it later overwrites whatever is saved from this editor. */}
+                          {c.hasPending && <Chip tone="amber">edit proposed</Chip>}
+                        </div>
+                        <a
+                          href={c.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block truncate text-xs text-beacon hover:underline"
+                        >
+                          {c.url}
+                        </a>
+                        <p className="mt-0.5 line-clamp-2 text-xs text-muted">{c.blurb}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setMsg("");
+                        setEditing(c.id);
+                      }}
+                      className="rounded bg-beacon/15 px-2.5 py-1 text-xs text-beacon"
+                    >
+                      edit
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/**
+ * The admin's own hand on a listing, as opposed to accepting somebody else's proposal.
+ *
+ * Status is a field here rather than a pair of buttons because all three transitions are things an
+ * admin wants: unpublish a listing whose product went dark (approved -> pending), take one down
+ * (-> rejected), and put back one that was rejected by mistake. Only "approved" shows on /powered-by.
+ *
+ * The server re-validates with the same rules as the public form, so the failure this reports is the
+ * real one. Field errors come back from zod's flatten(); they are rendered rather than swallowed,
+ * because "Failed." on a 300-character URL limit is a puzzle rather than a message.
+ */
+function ConsumerEditor({
+  c,
+  onCancel,
+  onSaved,
+}: {
+  c: any;
+  onCancel: () => void;
+  onSaved: (msg: string) => void;
+}) {
+  const [f, setF] = useState({
+    name: c.name ?? "",
+    url: c.url ?? "",
+    category: c.category ?? "other",
+    blurb: c.blurb ?? "",
+    logoURL: c.logoURL ?? "",
+    contactEmail: c.contactEmail ?? "",
+    status: c.status ?? "pending",
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  async function save() {
+    setBusy(true);
+    setErr("");
+    try {
+      const r = await fetch("/api/admin/consumers", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: c.id, ...f }),
+      });
+      const b = await r.json();
+      if (r.ok) {
+        onSaved(`Saved "${f.name}".`);
+        return;
+      }
+      // zod flatten(): { formErrors: [], fieldErrors: { url: ["..."] } }. Name the field that failed.
+      const fe = b?.error?.fieldErrors;
+      setErr(
+        fe && typeof fe === "object"
+          ? Object.entries(fe)
+              .map(([k, v]) => `${k}: ${(v as string[]).join(", ")}`)
+              .join(" | ")
+          : typeof b?.error === "string"
+            ? b.error
+            : "Failed."
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-0.5 block text-[10px] uppercase text-faint">Name</span>
+          <input className={inputCls} value={f.name} onChange={(e) => set("name", e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="mb-0.5 block text-[10px] uppercase text-faint">URL</span>
+          <input className={inputCls} value={f.url} onChange={(e) => set("url", e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="mb-0.5 block text-[10px] uppercase text-faint">Category</span>
+          <select className={inputCls} value={f.category} onChange={(e) => set("category", e.target.value)}>
+            {CONSUMER_CATEGORIES.map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-0.5 block text-[10px] uppercase text-faint">
+            Status {f.status !== "approved" && "(hidden from /powered-by)"}
+          </span>
+          <select className={inputCls} value={f.status} onChange={(e) => set("status", e.target.value)}>
+            <option value="approved">approved</option>
+            <option value="pending">pending</option>
+            <option value="rejected">rejected</option>
+          </select>
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="mb-0.5 block text-[10px] uppercase text-faint">Blurb</span>
+          <textarea
+            rows={3}
+            className={inputCls}
+            value={f.blurb}
+            onChange={(e) => set("blurb", e.target.value)}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-0.5 block text-[10px] uppercase text-faint">
+            Logo URL (direct image link)
+          </span>
+          <input className={inputCls} value={f.logoURL} onChange={(e) => set("logoURL", e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="mb-0.5 block text-[10px] uppercase text-faint">Contact email (private)</span>
+          <input
+            className={inputCls}
+            value={f.contactEmail}
+            onChange={(e) => set("contactEmail", e.target.value)}
+          />
+        </label>
+      </div>
+      {c.hasPending && (
+        <p className="text-[11px] text-amber-500">
+          A submitted edit is still waiting in the queue above. Approving it will overwrite what you
+          save here.
+        </p>
+      )}
+      {err && <p className="text-[11px] text-flare">{err}</p>}
+      <div className="flex items-center gap-2 text-xs">
+        <button
+          onClick={save}
+          disabled={busy}
+          className="rounded bg-emerald-500/15 px-2.5 py-1 text-emerald-400 disabled:opacity-50"
+        >
+          {busy ? "…" : "save"}
+        </button>
+        <button onClick={onCancel} disabled={busy} className="rounded bg-black/10 px-2.5 py-1 text-muted dark:bg-white/10">
+          cancel
+        </button>
+        {c.reviewedBy && (
+          <span className="text-faint">
+            last touched by {String(c.reviewedBy).slice(0, 10)}…
+          </span>
+        )}
+      </div>
     </div>
   );
 }
