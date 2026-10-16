@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-10-16T22:47:02.801Z",
+  "timestamp": "2026-10-16T23:21:21.851Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1898,6 +1898,60 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.498Z",
+          "lastSubmittedEpoch": 441,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "D20 Oracle",
+      "description": "Independent FTSO and FDC provider on Flare. Own price engine, private node, self-hosted FDC verifiers.",
+      "url": "https://d20oracle.com",
+      "address": "0xaF7c10dCF8fBA62b29230052AF0be80936c10af3",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "0",
+        "votePowerCapped": "0",
+        "feedCount": 62,
+        "lastEpoch": 441,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "1695066680933188715654",
+        "entity": {
+          "identity": "0x3d41aBB8C783339dbeF77235606B5acb4D619a1d",
+          "submit": "0xDf53bdCb3f3aeB796ce2d13eb0bBba52fD3b86F6",
+          "submitSignatures": "0xB70fF4B75815AA073e0381E35008146e459b22A2",
+          "signingPolicy": "0xE5774ba1B4799DB5189607a94916a77043908440",
+          "delegation": "0xaF7c10dCF8fBA62b29230052AF0be80936c10af3"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-HSyEhNxm57xaYi4FWL5jbjgrSpR5HDv8",
+            "feePercent": 20,
+            "uptimePercent": 99.9678,
+            "connected": true,
+            "weight": "17807824090000000",
+            "selfBond": "5000000000000000",
+            "delegatedWeight": "12807824090000000",
+            "delegatorCount": 12
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-10-16T10:18:29.655Z",
           "lastSubmittedEpoch": 441,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -4499,7 +4553,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 441,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -8416,7 +8470,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 441,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
