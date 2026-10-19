@@ -55,6 +55,8 @@ export function DirectoryClient({
   total,
   qualifiedCount,
   showAll,
+  showReview,
+  reviewCount,
   viewerIsMember,
   initialPending,
   initialOpen,
@@ -63,6 +65,10 @@ export function DirectoryClient({
   total: number;
   qualifiedCount: number;
   showAll: boolean;
+  /** The "in a review window right now" view. Mutually exclusive with showAll. */
+  showReview: boolean;
+  /** How many providers are in a window, for the link's count and the empty state. */
+  reviewCount: number;
   /** Resolved on the server from the session, so a member's badges are in the first paint. */
   viewerIsMember: boolean;
   initialPending: ConductDirectoryView["pending"];
@@ -285,7 +291,11 @@ export function DirectoryClient({
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-xl font-semibold">
               {filtered.length}{" "}
-              {showAll ? t("home.providers") : t("home.qualifiedProviders")}
+              {showAll
+                ? t("home.providers")
+                : showReview
+                  ? t("home.underReviewProviders")
+                  : t("home.qualifiedProviders")}
             </h2>
             <Link
               href="/powered-by"
@@ -295,16 +305,32 @@ export function DirectoryClient({
               {t("nav.poweredBy")}
             </Link>
           </div>
-          {total > qualifiedCount && (
-            <Link
-              href={showAll ? "/" : "/?show=all"}
-              className="text-sm text-muted underline-offset-2 hover:text-beacon hover:underline"
-            >
-              {showAll
-                ? `${t("home.showQualifiedOnly")} (${qualifiedCount})`
-                : `${t("home.showAll")} (${total})`}
-            </Link>
-          )}
+          {/* THE OTHER VIEWS, one link each, current one omitted. Written as a list rather than
+              as nested ternaries: there are three views now, and the two-view version was already a
+              conditional href inside a conditional label. "Under review" is offered only when
+              something is in a window, since a link reading "(0)" invites a click onto an empty
+              page. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {[
+              { key: "qualified", href: "/", label: `${t("home.showQualifiedOnly")} (${qualifiedCount})`, on: !showAll && !showReview, amber: false },
+              { key: "review", href: "/?show=review", label: `⏳ ${t("home.showUnderReview")} (${reviewCount})`, on: showReview, amber: true, hide: reviewCount === 0 },
+              { key: "all", href: "/?show=all", label: `${t("home.showAll")} (${total})`, on: showAll, amber: false, hide: total <= qualifiedCount },
+            ]
+              .filter((v) => !v.on && !v.hide)
+              .map((v) => (
+                <Link
+                  key={v.key}
+                  href={v.href}
+                  className={
+                    v.amber
+                      ? "text-sm text-amber-600 underline-offset-2 hover:underline dark:text-amber-400"
+                      : "text-sm text-muted underline-offset-2 hover:text-beacon hover:underline"
+                  }
+                >
+                  {v.label}
+                </Link>
+              ))}
+          </div>
         </div>
 
         <div className="mb-5 flex flex-col gap-3 sm:flex-row">
