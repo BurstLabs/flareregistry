@@ -28,7 +28,16 @@ export default async function Home({
 }: {
   searchParams: Promise<{ show?: string }>;
 }) {
-  const showAll = (await searchParams)?.show === "all";
+  // THREE VIEWS, not two.
+  //
+  // "all" existed so nothing could be hidden, but it answers the wrong question for the one reader
+  // who most needs an answer: somebody asking which providers are in a review window RIGHT NOW. A
+  // held provider is by definition not qualified, so the default view never shows it, and finding it
+  // under "all" meant scrolling 105 rows looking for an amber clock. The window is the whole point of
+  // the hold, and it was the one thing the directory could not be asked about.
+  const showParam = (await searchParams)?.show;
+  const showAll = showParam === "all";
+  const showReview = showParam === "review";
 
   const all = await prisma.provider.findMany({
     // Exclude archived (departed/unmatched) providers from the directory - they live only on the
@@ -120,9 +129,16 @@ export default async function Home({
   const qualifiedCount = listable.filter(
     (p) => isQualified(p.id) && !isSuspended(p.id) && !isOnchainOnly(p)
   ).length;
+  // Everything inside a review window: the new-provider clock, the new-claim clock, or a live
+  // governance case. Chain-only listings are excluded because their clock decides nothing (they are
+  // unclaimed and never auto-list), so calling them "under review" would pad the number with rows
+  // nobody is reviewing.
+  const underReview = listable.filter((p) => held(p.id) && !isOnchainOnly(p));
   const shown = showAll
     ? listable
-    : listable.filter((p) => isQualified(p.id) && !isSuspended(p.id) && !isOnchainOnly(p));
+    : showReview
+      ? underReview
+      : listable.filter((p) => isQualified(p.id) && !isSuspended(p.id) && !isOnchainOnly(p));
 
   const metrics = await metricsForProviders(shown);
 
@@ -272,6 +288,8 @@ export default async function Home({
       initialPending={initialPending}
       initialOpen={initialOpen}
       showAll={showAll}
+      showReview={showReview}
+      reviewCount={underReview.length}
     />
   );
 }
