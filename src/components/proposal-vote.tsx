@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAccount, useSwitchChain, useWriteContract, usePublicClient } from "wagmi";
 import { useApp } from "@/components/providers";
+import { markMgVoted, votedKey } from "@/lib/mg-voted";
 
 // CASTING A VOTE. The first thing this site has ever asked a wallet to sign that is not a login.
 //
@@ -129,6 +130,16 @@ export function ProposalVote({
       if (receipt.status !== "success") {
         setErr(t("prop.voteReverted"));
         return;
+      }
+      // CONFIRMED, so the roster may be told. Its sweep is served stale for up to a minute and the
+      // explorer indexes on its own schedule, so without this the member reads "Your vote is
+      // recorded" directly above their own name under "not yet voted".
+      if (address) {
+        markMgVoted({
+          key: votedKey(contract, proposalId),
+          addr: address,
+          inFavour: support === SUPPORT_FOR,
+        });
       }
       setDone(true);
       onVoted();
