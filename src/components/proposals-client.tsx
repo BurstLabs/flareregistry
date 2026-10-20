@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAccount } from "wagmi";
 import { useApp } from "@/components/providers";
 import { ProposalVote } from "@/components/proposal-vote";
 import { ProposalCompose } from "@/components/proposal-compose";
@@ -134,6 +135,19 @@ function ProposalBody({
   onVoted: () => void;
 }) {
   const { t } = useApp();
+  const { address } = useAccount();
+  // THE CONTRACT'S OWN ANSWER FOR THE SIGNED-IN MEMBER, trusted on exactly the condition the vote
+  // button trusts it on: the wallet connected now is the one the server resolved. A stale session
+  // must not move somebody else's name into the voted column.
+  //
+  // votedIds is read straight off the RPC per open proposal, so unlike the roster's explorer sweep
+  // it is never stale and it survives a reload. That is the whole point of reading it here: the
+  // session store knows only about votes cast through this tab.
+  const viewer = useMemo(() => {
+    const seed = data.viewer;
+    if (!seed || !address || seed.address !== address.toLowerCase()) return null;
+    return { addr: seed.address, voted: new Set(seed.votedIds.map((k) => k.toLowerCase())) };
+  }, [data.viewer, address]);
   // Only an open vote has anything to count down, so only an open vote pays for an interval.
   const now = useNow(data.nowMs, p.outcome === "open");
   const left = closesIn(p.voteEndAt, now);
@@ -201,6 +215,8 @@ function ProposalBody({
         <ProposalRoster
           part={part}
           partKey={`${p.contract.toLowerCase()}:${p.id}`}
+          viewerAddr={viewer?.addr ?? null}
+          viewerVoted={!!viewer?.voted.has(`${p.contract.toLowerCase()}:${p.id}`)}
           members={data.members}
           removable={removableSet}
           quorumNeeded={p.quorumNeeded}

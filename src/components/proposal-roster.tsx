@@ -23,11 +23,18 @@ export interface MemberRef {
   href: string | null;
 }
 
-/** Interned: `m` indexes the shared member list, `t` is unix seconds, `f` is "in favour". */
+/**
+ * Interned: `m` indexes the shared member list, `t` is unix seconds, `f` is "in favour".
+ *
+ * `f` is NULL where the vote is known but the side is not. The contract reports `hasVoted` and
+ * nothing else: no getter on PollingManagementGroup returns which way a member voted, and the side
+ * lives only in the VoteCast logs that the explorer sweep reads. So between casting a vote and the
+ * sweep catching up, "voted" is a fact and "for" is not, and the row says the one it can stand up.
+ */
 export interface VoteRef {
   m: number;
-  f: boolean;
-  t: number;
+  f: boolean | null;
+  t: number | null;
 }
 
 export interface ParticipationRef {
@@ -59,12 +66,17 @@ function utcStamp(at: number): string {
  * failed.
  */
 function Timeline({
-  votes, members, eligible, quorumNeeded, startMs, endMs, now,
+  votes: allVotes, members, eligible, quorumNeeded, startMs, endMs, now,
 }: {
   votes: VoteRef[]; members: MemberRef[]; eligible: number; quorumNeeded: number;
   startMs: number; endMs: number; now: number;
 }) {
   const { t } = useApp();
+  // TIMED VOTES ONLY. A vote known from the contract rather than from a log has no block behind it,
+  // and this plot's whole axis is when. Placing an untimed vote anywhere on it would be inventing
+  // the one value the chart exists to show; it is counted in the roster beside this and arrives
+  // here with its real timestamp once the sweep catches up.
+  const votes = allVotes.filter((v) => v.t != null);
   const W = 600, H = 240;
   const L = 6, R = W - 6, TOP = 18, BASE = H - 26;
   /** Marker radius. Every vote is a provider logo at this size, so it has to stay recognisable. */
@@ -83,7 +95,7 @@ function Timeline({
 
   // Monotone step: turnout only ever rises, so each vote is a vertical then a horizontal.
   const pts: { px: number; py: number; v: VoteRef; n: number }[] = votes.map((v, i) => ({
-    px: x(v.t * 1000), py: y(i + 1), v, n: i + 1,
+    px: x((v.t as number) * 1000), py: y(i + 1), v, n: i + 1,
   }));
   let d = `M ${L} ${y(0)}`;
   for (const p of pts) d += ` L ${p.px} ${y(p.n - 1)} L ${p.px} ${p.py}`;
@@ -157,8 +169,8 @@ function Timeline({
         const m = members[p.v.m];
         const label = t("prop.roster.dot", {
           name: m?.name ?? shortAddr(m?.addr ?? ""),
-          hours: hoursInto(p.v.t, startMs).toFixed(1),
-          date: utcStamp(p.v.t),
+          hours: hoursInto(p.v.t as number, startMs).toFixed(1),
+          date: utcStamp(p.v.t as number),
         });
         if (!m?.logoURI) {
           return (
@@ -186,7 +198,13 @@ function Timeline({
             <circle
               cx={p.px} cy={p.py} r={LOGO_R}
               fill="none" strokeWidth="1.2"
-              stroke={p.v.f ? "rgb(16 185 129)" : "rgb(244 63 94)"}
+              stroke={
+                p.v.f === null
+                  ? "rgb(148 163 184)"
+                  : p.v.f
+                    ? "rgb(16 185 129)"
+                    : "rgb(244 63 94)"
+              }
               strokeOpacity="0.9"
             />
             <title>{label}</title>
@@ -254,17 +272,27 @@ function MemberRow({
       {removable && <MgRemoveButton identity={m.addr} variant="chip" />}
       {vote && (
         <span className="flex shrink-0 items-center gap-1.5">
-          <span className="tabular-nums text-[11px] text-faint" title={utcStamp(vote.t)}>
-            {t("prop.roster.at", { hours: hoursInto(vote.t, startMs).toFixed(1) })}
-          </span>
+          {/* No timestamp either when the vote came from the contract rather than from a log:
+              hasVoted carries no block, and "+0.0h" would be a figure we invented. */}
+          {vote.t != null && (
+            <span className="tabular-nums text-[11px] text-faint" title={utcStamp(vote.t)}>
+              {t("prop.roster.at", { hours: hoursInto(vote.t, startMs).toFixed(1) })}
+            </span>
+          )}
           <span
             className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-              vote.f
-                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
-                : "bg-rose-500/15 text-rose-600 dark:text-rose-300"
+              vote.f === null
+                ? "bg-black/10 text-muted dark:bg-white/10"
+                : vote.f
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
+                  : "bg-rose-500/15 text-rose-600 dark:text-rose-300"
             }`}
           >
-            {vote.f ? t("prop.roster.for") : t("prop.roster.against")}
+            {vote.f === null
+              ? t("prop.roster.voted")
+              : vote.f
+                ? t("prop.roster.for")
+                : t("prop.roster.against")}
           </span>
         </span>
       )}
@@ -274,10 +302,15 @@ function MemberRow({
 
 export function ProposalRoster({
   part, members, removable, quorumNeeded, voteStartAt, voteEndAt, nowMs, open, partKey,
+  viewerAddr, viewerVoted,
 }: {
   part: ParticipationRef;
   /** `${contract}:${id}`, so a vote cast in this session can be matched to this proposal. */
   partKey: string;
+  /** The connected member, lowercased, where the server resolved them and the wallet agrees. */
+  viewerAddr?: string | null;
+  /** The CONTRACT's own hasVoted for that member on this proposal. Read fresh on every load. */
+  viewerVoted?: boolean;
   members: MemberRef[];
   /** Lowercased addresses the contract would remove today. */
   removable: Set<string>;
@@ -329,6 +362,27 @@ export function ProposalRoster({
       ownVotes.push(ref);
     }
 
+    // AND THE CONTRACT'S OWN ANSWER, which is the one that survives a reload.
+    //
+    // The store above only knows about votes cast through this page in this tab. It is empty after
+    // a browser refresh, and it never sees a vote cast on Flare's portal or from another device.
+    // Both of those left a member reading "Your vote is recorded", which comes from the contract,
+    // directly above a roster that still had them absent, which comes from the explorer. Same
+    // contradiction, different route to it.
+    //
+    // hasVoted is already read per open proposal for the signed-in member, straight off the RPC and
+    // not through the sweep's cache, so this costs nothing new. The side is unavailable: no getter
+    // returns it, so the row shows that they voted without claiming which way, and the sweep fills
+    // that in within the minute.
+    if (viewerVoted && viewerAddr) {
+      const m = members.findIndex((mm) => mm?.addr?.toLowerCase() === viewerAddr);
+      if (m >= 0 && all.includes(m) && !byMember.has(m)) {
+        const ref: VoteRef = { m, f: null, t: null };
+        byMember.set(m, ref);
+        ownVotes.push(ref);
+      }
+    }
+
     // Appended rather than sorted in: this vote is the newest by construction, and the voted
     // column is in the order the votes arrived.
     const allVotes = ownVotes.length ? [...part.votes, ...ownVotes] : part.votes;
@@ -339,7 +393,7 @@ export function ProposalRoster({
       // Ticks follow the roster order so the strip is stable between renders, not the vote order.
       ticks: all.map((m) => byMember.get(m) ?? null),
     };
-  }, [part, mine, partKey, members]);
+  }, [part, mine, partKey, members, viewerAddr, viewerVoted]);
 
   const cast = allVotes.length;
   const eligible = ticks.length;
@@ -357,9 +411,11 @@ export function ProposalRoster({
             className={`h-3 w-[6px] rounded-[1px] ${
               v === null
                 ? "bg-black/10 dark:bg-white/10"
-                : v.f
-                  ? "bg-emerald-500/80"
-                  : "bg-rose-500/80"
+                : v.f === null
+                  ? "bg-muted/60"
+                  : v.f
+                    ? "bg-emerald-500/80"
+                    : "bg-rose-500/80"
             }`}
           />
         ))}
