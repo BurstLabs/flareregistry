@@ -37,30 +37,114 @@ export function apportionWhole(values: number[], target: number): number[] {
 }
 
 /**
- * The same apportionment, but no cell may exceed its own ceiling.
+ * The same apportionment, but no cell may exceed its own ceiling, and the leftover units go where
+ * they keep each row's NUMBER agreeing with its own BAR.
  *
- * The provider page prints two columns for each component, the points earned and the points
- * available, and each was apportioned INDEPENDENTLY: points to the displayed base score, maxima to
- * 100. Both columns summed correctly and neither was wrong on its own, but the two roundings do not
- * have to agree, so a component sitting at full marks could be handed a rounding unit in one column
- * and docked one in the other. The published page showed "Implementation independence ... 6 / 5
- * pts", six points out of a possible five.
+ * Two bugs live here, and they are the same bug pointing in opposite directions.
  *
- * On a page whose entire claim is that the figure can be recomputed from published inputs, a cell
- * that scores more than its own maximum is worse than a rounding error: it is the reader's first
- * reason to stop trusting the arithmetic, and they would be right.
+ * The first: the provider page prints two columns per component, points earned and points available,
+ * and each was apportioned INDEPENDENTLY. Both columns summed correctly and neither was wrong alone,
+ * but the two roundings need not agree, so a component at full marks could gain a unit in one column
+ * and lose one in the other. The page showed "Implementation independence ... 6 / 5 pts".
  *
- * Caps are respected first and the remainder is handed to whichever cells still have headroom, so
- * the column still sums exactly to the target.
+ * The second, which the ceiling alone did not catch: a row can be printed far BELOW its bar. Validator
+ * uptime at 99.91% showed "3 / 4 pts", which reads as 75%. Its true value was 3.396 points out of a
+ * true maximum of 3.399, the two differing by exactly the 0.09% of uptime missed. The maximum column
+ * had a spare unit and rounded 3.399 up to 4; the points column's spare units went to rows with larger
+ * discarded fractions and 3.396 floored to 3. Nothing was wrong with either column's arithmetic. The
+ * row was simply unreadable, and on a page whose claim is that the figure can be recomputed, a full
+ * bar beside "3 / 4" is the reader's first reason to stop trusting it.
+ *
+ * So the remainder is no longer handed out by largest discarded fraction. It goes to whichever
+ * placement leaves the WORST row misstating its own bar by as little as possible, ties broken by the
+ * total misstatement across all rows. On the figures that produced "3 / 4" that moves validator uptime
+ * to 4 / 4 (bar 99.91%, off by 0.1pp) and the worst row in the table from 24.9pp out to 8.0pp.
+ *
+ * Someone still absorbs the rounding: the units are whole and the column must total the score. The
+ * choice is only ever WHERE, and sending it to the row it distorts least is the one answer a reader
+ * can check against the bar in front of them.
+ *
+ * `ratios` is what each bar draws. Omit it and the old largest-remainder behaviour is used, which is
+ * right for a column with no bars beside it.
  */
-export function apportionCapped(values: number[], target: number, caps: number[]): number[] {
+export function apportionCapped(
+  values: number[],
+  target: number,
+  caps: number[],
+  ratios?: number[]
+): number[] {
   const out = values.map((v, i) => Math.min(Math.floor(v + 1e-9), caps[i]));
   let left = Math.round(target) - out.reduce((a, b) => a + b, 0);
   const byFrac = values
     .map((v, i) => ({ i, frac: v - Math.floor(v + 1e-9) }))
     .sort((a, b) => b.frac - a.frac || a.i - b.i);
-  // Hand out the remainder, skipping anything already at its ceiling. Repeated passes because a
-  // skipped cell must not consume the unit it could not take.
+
+  // Overshoot from floating-point noise: take units back from whoever gained least, as before.
+  if (left < 0) {
+    for (let k = byFrac.length - 1; k >= 0 && left < 0; k--, left++) out[byFrac[k].i]--;
+    return out;
+  }
+  if (left === 0) return out;
+
+  if (ratios) {
+    // How far a row's printed fraction sits from the fraction its bar draws, in percentage points.
+    const gaps = (cells: number[]) =>
+      cells.map((v, i) => (caps[i] ? Math.abs(v / caps[i] - ratios[i]) * 100 : 0));
+    const cost = (cells: number[]) => {
+      const g = gaps(cells);
+      return { worst: Math.max(...g), total: g.reduce((a, b) => a + b, 0) };
+    };
+
+    // Every way to place the leftover units within the headroom, scored exactly. The search is
+    // tiny by construction: flooring loses under one unit per row, so `left` is always smaller
+    // than the number of rows, and there are six of those. The budget is a guard against a future
+    // caller with a wider table, not a live concern; it falls through to the greedy pass below.
+    let best: { cells: number[]; worst: number; total: number } | null = null;
+    let budget = 20_000;
+    const cur = [...out];
+    const place = (i: number, rem: number) => {
+      if (budget-- <= 0) return;
+      if (i === cur.length) {
+        if (rem !== 0) return;
+        const c = cost(cur);
+        if (!best || c.worst < best.worst - 1e-9 || (Math.abs(c.worst - best.worst) <= 1e-9 && c.total < best.total - 1e-9)) {
+          best = { cells: [...cur], ...c };
+        }
+        return;
+      }
+      const room = Math.min(rem, caps[i] - cur[i]);
+      for (let add = 0; add <= room; add++) {
+        cur[i] += add;
+        place(i + 1, rem - add);
+        cur[i] -= add;
+      }
+    };
+    place(0, left);
+    if (best) return (best as { cells: number[] }).cells;
+
+    // Budget exhausted: greedy, one unit at a time to whichever placement most reduces the worst row.
+    while (left > 0) {
+      let pick = -1;
+      let pickCost: { worst: number; total: number } | null = null;
+      for (let i = 0; i < out.length; i++) {
+        if (out[i] >= caps[i]) continue;
+        out[i]++;
+        const c = cost(out);
+        out[i]--;
+        if (!pickCost || c.worst < pickCost.worst - 1e-9 || (Math.abs(c.worst - pickCost.worst) <= 1e-9 && c.total < pickCost.total - 1e-9)) {
+          pickCost = c;
+          pick = i;
+        }
+      }
+      if (pick < 0) break; // every row at its ceiling
+      out[pick]++;
+      left--;
+    }
+    return out;
+  }
+
+  // No bars to agree with: largest remainder, skipping anything already at its ceiling. Repeated
+  // passes because a skipped cell must not consume the unit it could not take.
   let progress = true;
   while (left > 0 && progress) {
     progress = false;
@@ -73,7 +157,6 @@ export function apportionCapped(values: number[], target: number, caps: number[]
       }
     }
   }
-  for (let k = byFrac.length - 1; k >= 0 && left < 0; k--, left++) out[byFrac[k].i]--;
   return out;
 }
 

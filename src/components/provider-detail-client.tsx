@@ -1112,10 +1112,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   // columns rounded apart and a component at full marks printed more points than it
                   // could possibly earn.
                   const shownMax = apportionWhole(comps.map((c) => c.weight * scale), 100);
+                  // The ratios are passed so the rounding can keep each row's number next to its own
+                  // bar. Without them a row at 99.91% printed "3 / 4 pts"; see apportionCapped.
                   const shownPoints = apportionCapped(
                     comps.map((c) => c.points * scale),
                     displayScore(d.reputation!.baseScore),
-                    shownMax
+                    shownMax,
+                    comps.map((c) => c.ratio)
                   );
                   return (
                     <ul className="mt-4 space-y-3">
