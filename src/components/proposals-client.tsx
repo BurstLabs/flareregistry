@@ -200,6 +200,7 @@ function ProposalBody({
       {part && (
         <ProposalRoster
           part={part}
+          partKey={`${p.contract.toLowerCase()}:${p.id}`}
           members={data.members}
           removable={removableSet}
           quorumNeeded={p.quorumNeeded}
@@ -345,6 +346,47 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
     () => (data?.proposals ?? []).filter((p) => p.outcome === "open" || p.outcome === "pending"),
     [data?.proposals]
   );
+  // THE ROSTER KEEPS ITSELF CURRENT WHILE A WINDOW IS RUNNING.
+  //
+  // Votes arrive from other members over hours, and the page was a photograph: a member watching a
+  // vote they care about had to reload to learn anything had changed. The session's own vote is
+  // handled separately and instantly by mg-voted; this is for everybody else's.
+  //
+  // Sixty seconds because that is the participation cache's TTL, so a faster poll could only
+  // re-render the same sweep. It costs the server nothing extra: an expired cache is served as it
+  // stands and the sweep runs behind it, so a refresh is the 0.2s page rather than the 5.6s one.
+  //
+  // ONLY WHILE THE TAB IS VISIBLE, and nothing is polled once every proposal is decided. A roster
+  // that will not change again is not worth a request a minute from a tab nobody is looking at.
+  const hasOpen = open.length > 0;
+  useEffect(() => {
+    if (!hasOpen) return;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+    const start = () => {
+      if (timer || document.visibilityState !== "visible") return;
+      timer = setInterval(() => router.refresh(), 60_000);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        // Catch up on whatever arrived while the tab was hidden, then resume.
+        router.refresh();
+        start();
+      } else {
+        stop();
+      }
+    };
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [hasOpen, router]);
+
   const decided = useMemo(
     () => (data?.proposals ?? []).filter((p) => p.outcome !== "open" && p.outcome !== "pending"),
     [data?.proposals]

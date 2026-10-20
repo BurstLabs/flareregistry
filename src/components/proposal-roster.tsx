@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/providers";
 import { MgRemoveButton } from "@/components/mg-remove-button";
+import { useMgVotes } from "@/lib/mg-voted";
 
 // WHO voted, and WHEN, for one proposal.
 //
@@ -272,9 +273,11 @@ function MemberRow({
 }
 
 export function ProposalRoster({
-  part, members, removable, quorumNeeded, voteStartAt, voteEndAt, nowMs, open,
+  part, members, removable, quorumNeeded, voteStartAt, voteEndAt, nowMs, open, partKey,
 }: {
   part: ParticipationRef;
+  /** `${contract}:${id}`, so a vote cast in this session can be matched to this proposal. */
+  partKey: string;
   members: MemberRef[];
   /** Lowercased addresses the contract would remove today. */
   removable: Set<string>;
@@ -296,7 +299,11 @@ export function ProposalRoster({
   const startMs = new Date(voteStartAt).getTime();
   const endMs = new Date(voteEndAt).getTime();
 
-  const { voted, absent, ticks } = useMemo(() => {
+  // Votes this session cast and the explorer sweep has not picked up yet. Confirmed on chain
+  // before they were written, so they are early rather than speculative.
+  const mine = useMgVotes();
+
+  const { voted, absent, ticks, allVotes } = useMemo(() => {
     const byMember = new Map<number, VoteRef>();
     for (const v of part.votes) byMember.set(v.m, v);
     // Eligibility is the snapshot, but a vote from outside it still counts and is still shown.
@@ -305,15 +312,36 @@ export function ProposalRoster({
       : [...new Set(part.votes.map((v) => v.m))];
     const extra = part.votes.map((v) => v.m).filter((m) => !roster.includes(m));
     const all = [...roster, ...new Set(extra)];
+
+    // MERGE THIS SESSION'S OWN VOTES, for this proposal only.
+    //
+    // Matched by address against the member list, and added ONLY where that member is on this
+    // roster and the sweep has not already reported them. A vote from an address the roster does
+    // not know is left alone rather than invented into the list: the eligible set is the
+    // contract's own snapshot, and a name this page never had is not ours to add.
+    const ownVotes: VoteRef[] = [];
+    for (const v of mine.values()) {
+      if (v.key !== partKey) continue;
+      const m = members.findIndex((mm) => mm?.addr?.toLowerCase() === v.addr);
+      if (m < 0 || !all.includes(m) || byMember.has(m)) continue;
+      const ref: VoteRef = { m, f: v.inFavour, t: v.t };
+      byMember.set(m, ref);
+      ownVotes.push(ref);
+    }
+
+    // Appended rather than sorted in: this vote is the newest by construction, and the voted
+    // column is in the order the votes arrived.
+    const allVotes = ownVotes.length ? [...part.votes, ...ownVotes] : part.votes;
     return {
-      voted: part.votes.map((v) => ({ m: v.m, v })),
+      allVotes,
+      voted: allVotes.map((v) => ({ m: v.m, v })),
       absent: all.filter((m) => !byMember.has(m)),
       // Ticks follow the roster order so the strip is stable between renders, not the vote order.
       ticks: all.map((m) => byMember.get(m) ?? null),
     };
-  }, [part]);
+  }, [part, mine, partKey, members]);
 
-  const cast = part.votes.length;
+  const cast = allVotes.length;
   const eligible = ticks.length;
   if (!eligible) return null;
 
@@ -356,7 +384,7 @@ export function ProposalRoster({
       {shown && (
         <div className="mt-1">
           <Timeline
-            votes={part.votes}
+            votes={allVotes}
             members={members}
             eligible={eligible}
             quorumNeeded={quorumNeeded}
