@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "@/components/providers";
 import { MgRemoveButton } from "@/components/mg-remove-button";
 import { useMgVotes } from "@/lib/mg-voted";
+import { entityKey, type HistoryCell } from "@/lib/member-history";
 
 // WHO voted, and WHEN, for one proposal.
 //
@@ -232,11 +233,61 @@ function Timeline({
   );
 }
 
+/**
+ * A MEMBER'S RECENT RECORD, as a strip of squares beside their name.
+ *
+ * Oldest on the left, so a member who stopped turning up reads as colour fading to hollow. Every
+ * row covers the SAME proposals, so the strips can be read down the column as well as across.
+ *
+ * Each square carries the proposal's own name in its tooltip, because a square on its own says
+ * "something happened here" and the reader's next question is always which vote it was.
+ *
+ * TITLE RATHER THAN A CUSTOM TOOLTIP, deliberately. It is the one hover that works on a touch
+ * device's long-press, survives the row scrolling under it, and needs no portal, no positioning and
+ * no state. A prettier tooltip here would be a worse one.
+ */
+function HistoryStrip({ cells }: { cells: HistoryCell[] }) {
+  const { t } = useApp();
+  if (!cells.length) return null;
+  return (
+    <span className="flex shrink-0 items-center gap-[2px]" aria-hidden="true">
+      {cells.map((c) => {
+        const name = c.name ?? t("prop.roster.unnamedProposal");
+        const verdict = !c.eligible
+          ? t("prop.roster.notEligible")
+          : c.inFavour === null
+            ? t("prop.roster.didNotVote")
+            : c.inFavour
+              ? t("prop.roster.for")
+              : t("prop.roster.against");
+        const when = c.hoursIn != null ? ` (+${c.hoursIn.toFixed(1)}h)` : "";
+        return (
+          <span
+            key={c.key}
+            title={`${name} — ${verdict}${when}`}
+            className={`h-3 w-[5px] rounded-[1px] ${
+              !c.eligible
+                ? "bg-black/[0.06] dark:bg-white/[0.06]"
+                : c.inFavour === null
+                  ? "bg-black/20 dark:bg-white/20"
+                  : c.inFavour
+                    ? "bg-emerald-500/80"
+                    : "bg-rose-500/80"
+            }`}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
 /** One member, named where we can name them. */
 function MemberRow({
-  m, vote, startMs, removable,
+  m, vote, startMs, removable, history,
 }: {
   m: MemberRef | undefined; vote?: VoteRef; startMs: number;
+  /** This member's recent record, already folded onto their entity. */
+  history?: HistoryCell[];
   /**
    * The badge IS the button. Removal is permissionless, so the reader who has just found the name
    * that did not vote is exactly the person who can act on it, and sending them back up the page to
@@ -269,6 +320,7 @@ function MemberRow({
       ) : (
         <span className="flex min-w-0 flex-1 items-center gap-2 text-muted">{body}</span>
       )}
+      {history && history.length > 0 && <HistoryStrip cells={history} />}
       {removable && <MgRemoveButton identity={m.addr} variant="chip" />}
       {vote && (
         <span className="flex shrink-0 items-center gap-1.5">
@@ -302,7 +354,7 @@ function MemberRow({
 
 export function ProposalRoster({
   part, members, removable, quorumNeeded, voteStartAt, voteEndAt, nowMs, open, partKey,
-  viewerAddr, viewerVoted,
+  viewerAddr, viewerVoted, history,
 }: {
   part: ParticipationRef;
   /** `${contract}:${id}`, so a vote cast in this session can be matched to this proposal. */
@@ -311,6 +363,8 @@ export function ProposalRoster({
   viewerAddr?: string | null;
   /** The CONTRACT's own hasVoted for that member on this proposal. Read fresh on every load. */
   viewerVoted?: boolean;
+  /** Recent record per entity key, shared by every roster on the page. */
+  history?: Map<string, HistoryCell[]>;
   members: MemberRef[];
   /** Lowercased addresses the contract would remove today. */
   removable: Set<string>;
@@ -323,6 +377,10 @@ export function ProposalRoster({
   open: boolean;
 }) {
   const { t } = useApp();
+  const historyFor = (m: MemberRef | undefined) => {
+    const k = entityKey(m);
+    return k ? history?.get(k) : undefined;
+  };
   // OPEN PROPOSALS START EXPANDED. That is the whole point of the feature: while the window is
   // running the names still missing are the actionable thing, and putting them behind a click
   // hides them from exactly the person who came to find them. Decided proposals start collapsed,
@@ -458,6 +516,7 @@ export function ProposalRoster({
                 {voted.map(({ m, v }, i) => (
                   <MemberRow
                     key={`${m}-${i}`} m={members[m]} vote={v} startMs={startMs}
+                    history={historyFor(members[m])}
                     removable={open && removable.has(members[m]?.addr ?? "")}
                   />
                 ))}
@@ -474,6 +533,7 @@ export function ProposalRoster({
                   {absent.map((m) => (
                     <MemberRow
                       key={m} m={members[m]} startMs={startMs}
+                      history={historyFor(members[m])}
                       // OPEN PROPOSALS ONLY. Removability is a fact about the member TODAY, and a
                       // chip beside a name in a roster from 2024 would read as a fact about that
                       // vote. On a live one the two are the same moment.
