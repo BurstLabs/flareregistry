@@ -9,6 +9,7 @@ import { ProposalCompose } from "@/components/proposal-compose";
 import { ProposalRoster, type MemberRef, type ParticipationRef } from "@/components/proposal-roster";
 import { ProposalCriteria } from "@/components/proposal-criteria";
 import { MgRemovablePanel, type RemovableMemberView } from "@/components/mg-removable-panel";
+import { ProposalWatchForm } from "@/components/proposal-watch-form";
 import { safeExternalUrl } from "@/lib/validation";
 import type { MgProposalView } from "@/lib/mg-proposals";
 
@@ -607,6 +608,11 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           {decided.length ? t("prop.filter.noMatch") : t("prop.noneDecided")}
         </p>
       )}
+
+      {/* THE OPT-IN, last on the page. Someone who has just read the open votes can decide whether
+          they want telling about the next one; someone who has just arrived is being asked for an
+          email address before the page has shown them anything. */}
+      <ProposalWatchForm />
     </div>
   );
 }
