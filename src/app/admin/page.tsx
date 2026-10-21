@@ -24,6 +24,7 @@ type Tab =
   | "conduct"
   | "reports"
   | "consumers"
+  | "alerts"
   | "detection"
   | "telegram"
   | "system";
@@ -162,6 +163,7 @@ export default function AdminPage() {
     { id: "conduct", label: "Conduct" },
     { id: "reports", label: "Logo reports" },
     { id: "consumers", label: "Consumers" },
+    { id: "alerts", label: "Proposal alerts" },
     { id: "telegram", label: "Telegram" },
     { id: "system", label: "System" },
   ];
@@ -210,6 +212,7 @@ export default function AdminPage() {
         {tab === "conduct" && <ConductTab />}
         {tab === "reports" && <ReportsTab onChanged={loadCounts} />}
         {tab === "consumers" && <ConsumersTab />}
+        {tab === "alerts" && <ProposalAlertsTab />}
         {tab === "telegram" && <TelegramTab />}
         {tab === "system" && <SystemTab />}
       </div>
@@ -2054,6 +2057,168 @@ function ConsumerEditor({
             last touched by {String(c.reviewedBy).slice(0, 10)}…
           </span>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * WHO IS SUBSCRIBED TO THE PROPOSAL ALERTS, AND HOW MUCH ROOM IS LEFT TODAY.
+ *
+ * The quota panel leads, because it is the thing that fails silently. Subscriber mail runs on a
+ * capped plan: past the cap sends are simply refused, nobody hears about a proposal, and the only
+ * symptom is an absence. There is an operator warning for that, but a warning arrives once and this
+ * is somewhere to look before it does.
+ *
+ * Unconfirmed rows are shown rather than hidden. An address that signed up and never followed the
+ * link is not a subscriber and is never mailed, but it is the single most useful signal that the
+ * confirmation mail is landing in spam, which is invisible from anywhere else.
+ */
+function ProposalAlertsTab() {
+  const [d, setD] = useState<any>(null);
+  const [busy, setBusy] = useState("");
+  const [msg, setMsg] = useState("");
+  const load = useCallback(async () => {
+    const r = await fetch("/api/admin/proposal-alerts");
+    setD(await r.json());
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function remove(id: string, email: string) {
+    if (!confirm(`Remove ${email} from the proposal alerts? This is what their own unsubscribe link does.`)) return;
+    setBusy(id);
+    setMsg("");
+    try {
+      const r = await fetch("/api/admin/proposal-alerts", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      setMsg(r.ok ? `Removed ${email}.` : "Failed.");
+      if (r.ok) load();
+    } finally {
+      setBusy("");
+    }
+  }
+
+  if (!d) return <p className="text-sm text-muted">Loading…</p>;
+  const q = d.quota ?? {};
+  const watches: any[] = d.watches ?? [];
+  const confirmed = watches.filter((w) => w.confirmed).length;
+  // Amber once the day is past the point the operator warning fires, red once anything has failed:
+  // by then subscribers have already stopped being told.
+  const tone = q.failedToday > 0 ? "red" : q.sentToday >= q.warnAt ? "amber" : "green";
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <div className="mb-2 flex items-center justify-between text-xs text-muted">
+          <span className="font-semibold text-fg">Today&apos;s subscriber email</span>
+          <span>{msg}</span>
+        </div>
+        <Card>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            <span>
+              <span className="text-2xl font-bold">{q.sentToday}</span>
+              <span className="text-faint"> / {q.cap} sent</span>
+            </span>
+            <Chip tone={tone}>
+              {q.failedToday > 0
+                ? `${q.failedToday} failed today`
+                : q.sentToday >= q.warnAt
+                  ? `past the ${q.warnAt} warning line`
+                  : "within limits"}
+            </Chip>
+            <span className="text-xs text-muted">{q.headroom} messages of headroom left</span>
+          </div>
+          {/* A failed alert is never retried: each is claimed before it is sent, so the proposal it
+              covered will not be attempted again for that subscriber. Worth saying here rather than
+              leaving an admin to infer it from a counter. */}
+          {q.failedToday > 0 && (
+            <p className="mt-2 text-[11px] text-flare">
+              Failed alerts are not retried. Those subscribers will not be told about the proposals
+              involved.
+            </p>
+          )}
+          {(d.warnings ?? []).length > 0 && (
+            <p className="mt-2 text-[11px] text-faint">
+              Operator warned on: {(d.warnings ?? []).map((w: any) => w.day).join(", ")}
+            </p>
+          )}
+        </Card>
+      </div>
+
+      <div>
+        <div className="mb-2 flex items-center justify-between text-xs text-muted">
+          <span className="font-semibold text-fg">Subscribers</span>
+          <span>
+            {confirmed} confirmed, {watches.length - confirmed} awaiting confirmation
+          </span>
+        </div>
+        <Card>
+          {watches.length === 0 ? (
+            <p className="text-sm text-muted">Nobody has subscribed yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {watches.map((w) => (
+                <li
+                  key={w.id}
+                  className="flex flex-wrap items-center justify-between gap-2 border-t border-themed/50 pt-2 first:border-0 first:pt-0"
+                >
+                  <span className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="text-sm">{w.email}</span>
+                    <Chip tone={w.confirmed ? "green" : "amber"}>
+                      {w.confirmed ? "confirmed" : "unconfirmed"}
+                    </Chip>
+                    {w.halfway && <Chip tone="grey">halfway reminders</Chip>}
+                    <span className="text-[11px] text-faint">
+                      {w._count?.notices ?? 0} alerts · joined{" "}
+                      {new Date(w.createdAt).toISOString().slice(0, 10)}
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => remove(w.id, w.email)}
+                    disabled={!!busy}
+                    className="rounded bg-flare/15 px-2.5 py-1 text-xs text-flare disabled:opacity-50"
+                  >
+                    {busy === w.id ? "…" : "remove"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {/* No "add subscriber" control, and that is deliberate. Everyone here typed their address
+              into the public form and then followed a link sent to it; an address an admin typed in
+              has consented to nothing. */}
+          <p className="mt-3 text-[11px] text-faint">
+            Addresses can only be added by the person who owns them, through the form on /proposals.
+          </p>
+        </Card>
+      </div>
+
+      <div>
+        <div className="mb-2 text-xs font-semibold text-fg">Recently sent</div>
+        <Card>
+          {(d.recent ?? []).length === 0 ? (
+            <p className="text-sm text-muted">Nothing has been sent yet.</p>
+          ) : (
+            <ul className="space-y-1 text-xs">
+              {(d.recent ?? []).map((n: any, i: number) => (
+                <li key={i} className="flex flex-wrap items-center gap-2">
+                  <Chip tone={n.status === "sent" ? "green" : "red"}>{n.status}</Chip>
+                  <Chip tone="grey">{n.kind}</Chip>
+                  <span className="text-muted">{n.watch?.email ?? "(removed)"}</span>
+                  <span className="font-mono text-[11px] text-faint">{n.proposalKey}</span>
+                  <span className="text-[11px] text-faint">
+                    {new Date(n.sentAt).toISOString().slice(0, 16).replace("T", " ")} UTC
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
     </div>
   );
