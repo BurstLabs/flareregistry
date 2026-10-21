@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useApp } from "@/components/providers";
 import { MgRemoveButton } from "@/components/mg-remove-button";
 import { useMgVotes } from "@/lib/mg-voted";
@@ -234,51 +234,119 @@ function Timeline({
 }
 
 /**
- * A MEMBER'S RECENT RECORD, as a strip of squares beside their name.
+ * A STRIP OF TICKS THAT CAN TELL YOU WHAT EACH ONE IS.
  *
- * Oldest on the left, so a member who stopped turning up reads as colour fading to hollow. Every
- * row covers the SAME proposals, so the strips can be read down the column as well as across.
+ * Shared by the two strips on this page, which want the same behaviour and label different things:
+ * the card strip is one tick per member and names the provider, the row strip is one tick per
+ * proposal and names the vote.
  *
- * Each square carries the proposal's own name in its tooltip, because a square on its own says
- * "something happened here" and the reader's next question is always which vote it was.
+ * NOT A TITLE ATTRIBUTE, which is what the row strip shipped with and what had to be replaced. A
+ * native tooltip waits for the pointer to come to rest and will not re-arm when the pointer moves
+ * straight from one adjacent element to the next. On a row of five-pixel targets two pixels apart
+ * that means it appears if you approach slowly and stop, and otherwise never, which is exactly how
+ * it behaved. This one appears on the first pointer event and follows the pointer along the strip.
  *
- * TITLE RATHER THAN A CUSTOM TOOLTIP, deliberately. It is the one hover that works on a touch
- * device's long-press, survives the row scrolling under it, and needs no portal, no positioning and
- * no state. A prettier tooltip here would be a worse one.
+ * POSITIONED FROM THE ELEMENT, not from index arithmetic, because the card strip WRAPS onto several
+ * lines at fifty members and computed offsets would put the label on the wrong row entirely.
+ *
+ * Clamped at both ends against the container, since these sit in a two-column grid and a label
+ * centred on the last tick of the right-hand column would hang off the card.
+ */
+function TickStrip({
+  items,
+  tick,
+  wrap,
+}: {
+  items: { key: string; className: string; label: string }[];
+  /** Tick geometry: [width, height, gap] in px. */
+  tick: [number, number, number];
+  wrap?: boolean;
+}) {
+  const [hv, setHv] = useState<{ i: number; x: number; y: number } | null>(null);
+  const box = useRef<HTMLSpanElement | null>(null);
+  const [w, h, gap] = tick;
+  if (!items.length) return null;
+
+  const width = box.current?.clientWidth ?? 0;
+  // Which edge the label hangs from, so it never leaves the card.
+  const anchor =
+    hv === null ? "mid" : hv.x < 70 ? "start" : width && hv.x > width - 70 ? "end" : "mid";
+
+  return (
+    <span
+      ref={box}
+      className={`relative flex items-center ${wrap ? "flex-wrap" : "shrink-0"}`}
+      style={{ gap }}
+      onPointerLeave={() => setHv(null)}
+    >
+      {items.map((it, i) => (
+        <span
+          key={it.key}
+          onPointerEnter={(e) => {
+            const el = e.currentTarget;
+            setHv({ i, x: el.offsetLeft + el.offsetWidth / 2, y: el.offsetTop });
+          }}
+          // Touch: a tap arrives as pointerdown, and without this the strip is inert on a phone.
+          onPointerDown={(e) => {
+            const el = e.currentTarget;
+            setHv({ i, x: el.offsetLeft + el.offsetWidth / 2, y: el.offsetTop });
+          }}
+          style={{ width: w, height: h }}
+          className={`rounded-[1px] transition-opacity ${
+            hv !== null && hv.i !== i ? "opacity-40" : "opacity-100"
+          } ${it.className}`}
+        />
+      ))}
+      {hv !== null && (
+        <span
+          style={{
+            top: hv.y,
+            ...(anchor === "start" ? { left: 0 } : anchor === "end" ? { right: 0 } : { left: hv.x }),
+          }}
+          className={`pointer-events-none absolute z-30 max-w-[260px] -translate-y-full truncate whitespace-nowrap rounded border border-themed bg-elev px-2 py-1 text-[11px] font-normal text-fg shadow-lg ${
+            anchor === "mid" ? "-translate-x-1/2" : ""
+          }`}
+        >
+          {items[hv.i].label}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * A member's recent record, beside their name. Oldest on the left, so somebody who stopped turning
+ * up reads as colour fading out, and every row covers the SAME proposals so the strips can be read
+ * down a column as well as across.
+ *
+ * Deliberately quiet: at full strength a dozen saturated ticks on every row out-shouted the names
+ * they belong to, and the names are what the roster is for. Faded colour, a shorter tick, and the
+ * un-hovered ones dimming when one is picked out.
  */
 function HistoryStrip({ cells }: { cells: HistoryCell[] }) {
   const { t } = useApp();
-  if (!cells.length) return null;
-  return (
-    <span className="flex shrink-0 items-center gap-[2px]" aria-hidden="true">
-      {cells.map((c) => {
-        const name = c.name ?? t("prop.roster.unnamedProposal");
-        const verdict = !c.eligible
-          ? t("prop.roster.notEligible")
-          : c.inFavour === null
-            ? t("prop.roster.didNotVote")
-            : c.inFavour
-              ? t("prop.roster.for")
-              : t("prop.roster.against");
-        const when = c.hoursIn != null ? ` (+${c.hoursIn.toFixed(1)}h)` : "";
-        return (
-          <span
-            key={c.key}
-            title={`${name} — ${verdict}${when}`}
-            className={`h-3 w-[5px] rounded-[1px] ${
-              !c.eligible
-                ? "bg-black/[0.06] dark:bg-white/[0.06]"
-                : c.inFavour === null
-                  ? "bg-black/20 dark:bg-white/20"
-                  : c.inFavour
-                    ? "bg-emerald-500/80"
-                    : "bg-rose-500/80"
-            }`}
-          />
-        );
-      })}
-    </span>
-  );
+  const items = cells.map((c) => {
+    const name = c.name ?? t("prop.roster.unnamedProposal");
+    const verdict = !c.eligible
+      ? t("prop.roster.notEligible")
+      : c.inFavour === null
+        ? t("prop.roster.didNotVote")
+        : c.inFavour
+          ? t("prop.roster.for")
+          : t("prop.roster.against");
+    return {
+      key: c.key,
+      label: `${name} · ${verdict}${c.hoursIn != null ? ` +${c.hoursIn.toFixed(1)}h` : ""}`,
+      className: !c.eligible
+        ? "bg-black/[0.07] dark:bg-white/[0.07]"
+        : c.inFavour === null
+          ? "bg-black/15 dark:bg-white/[0.18]"
+          : c.inFavour
+            ? "bg-emerald-500/50"
+            : "bg-rose-500/55",
+    };
+  });
+  return <TickStrip items={items} tick={[4, 11, 2]} />;
 }
 
 /** One member, named where we can name them. */
@@ -449,7 +517,9 @@ export function ProposalRoster({
       voted: allVotes.map((v) => ({ m: v.m, v })),
       absent: all.filter((m) => !byMember.has(m)),
       // Ticks follow the roster order so the strip is stable between renders, not the vote order.
-      ticks: all.map((m) => byMember.get(m) ?? null),
+      // The member index rides along: the strip names the provider, and a bare VoteRef cannot say
+      // who did not vote, which is half of what the strip shows.
+      ticks: all.map((m) => ({ m, v: byMember.get(m) ?? null })),
     };
   }, [part, mine, partKey, members, viewerAddr, viewerVoted]);
 
@@ -461,23 +531,41 @@ export function ProposalRoster({
     <div className="mt-3 border-t border-themed pt-3">
       {/* THE STRIP. One tick per eligible member: filled where they voted, hollow where they have
           not. It reads as a progress bar from across the room and as a count on inspection, and it
-          is the only part of this that every card carries. */}
-      <div className="flex flex-wrap gap-[3px]" aria-hidden="true">
-        {ticks.map((v, i) => (
-          <span
-            key={i}
-            className={`h-3 w-[6px] rounded-[1px] ${
+          is the only part of this that every card carries.
+          Each tick now names its member on hover. It was the one place on the page showing fifty
+          providers while saying which none of them were, and the roster below it is two clicks and
+          a scroll away from answering that. */}
+      <TickStrip
+        wrap
+        tick={[6, 12, 3]}
+        items={ticks.map(({ m, v }, i) => {
+          const who = members[m];
+          const name = who?.name ?? (who ? shortAddr(who.addr) : t("prop.roster.unknownMember"));
+          const verdict =
+            v === null
+              ? open
+                ? t("prop.roster.notYetVoted")
+                : t("prop.roster.didNotVote")
+              : v.f === null
+                ? t("prop.roster.voted")
+                : v.f
+                  ? t("prop.roster.for")
+                  : t("prop.roster.against");
+          const when = v && v.t != null ? ` +${hoursInto(v.t, startMs).toFixed(1)}h` : "";
+          return {
+            key: `${m}-${i}`,
+            label: `${name} · ${verdict}${when}`,
+            className:
               v === null
                 ? "bg-black/10 dark:bg-white/10"
                 : v.f === null
                   ? "bg-muted/60"
                   : v.f
                     ? "bg-emerald-500/80"
-                    : "bg-rose-500/80"
-            }`}
-          />
-        ))}
-      </div>
+                    : "bg-rose-500/80",
+          };
+        })}
+      />
 
       <button
         type="button"
