@@ -6,7 +6,13 @@ import { useAccount } from "wagmi";
 import { useApp } from "@/components/providers";
 import { ProposalVote } from "@/components/proposal-vote";
 import { ProposalCompose } from "@/components/proposal-compose";
-import { ProposalRoster, type MemberRef, type ParticipationRef } from "@/components/proposal-roster";
+import {
+  ProposalRoster,
+  LabelledTicks,
+  memberTickLabel,
+  type MemberRef,
+  type ParticipationRef,
+} from "@/components/proposal-roster";
 import { ProposalCriteria } from "@/components/proposal-criteria";
 import { MgRemovablePanel, type RemovableMemberView } from "@/components/mg-removable-panel";
 import { ProposalWatchForm } from "@/components/proposal-watch-form";
@@ -279,22 +285,43 @@ function ProposalBody({
  * forty-four, and without it the rows are a table of names. Suppressed once a row is open, because
  * the roster inside repeats it at full size.
  */
-function TickStrip({ part }: { part: ParticipationRef }) {
+function TickStrip({
+  part,
+  members,
+  voteStartAt,
+}: {
+  part: ParticipationRef;
+  members: MemberRef[];
+  voteStartAt: string;
+}) {
+  const { t } = useApp();
   const byMember = new Map(part.votes.map((v) => [v.m, v]));
   const roster = part.eligible.length ? part.eligible : part.votes.map((v) => v.m);
+  const startMs = new Date(voteStartAt).getTime();
+  // Same ticks as before, now saying who each one is. A collapsed row shows fifty providers and
+  // used to name none of them, and this row is collapsed precisely because the reader has not
+  // opened the roster that would answer it.
+  //
+  // `open` is false here by construction: this strip is only drawn for a DECIDED proposal, so a
+  // blank tick is somebody who did not vote rather than somebody who still might.
   return (
-    <div className="flex flex-wrap gap-[2px] pb-2.5" aria-hidden="true">
-      {roster.map((m, i) => {
-        const v = byMember.get(m);
-        return (
-          <span
-            key={i}
-            className={`h-2 w-[4px] rounded-[1px] ${
-              !v ? "bg-black/10 dark:bg-white/10" : v.f ? "bg-emerald-500/60" : "bg-rose-500/60"
-            }`}
-          />
-        );
-      })}
+    <div className="pb-2.5">
+      <LabelledTicks
+        wrap
+        tick={[4, 8, 2]}
+        items={roster.map((m, i) => {
+          const v = byMember.get(m);
+          return {
+            key: `${m}-${i}`,
+            label: memberTickLabel(t, members[m], v ?? null, startMs, false),
+            className: !v
+              ? "bg-black/10 dark:bg-white/10"
+              : v.f
+                ? "bg-emerald-500/60"
+                : "bg-rose-500/60",
+          };
+        })}
+      />
     </div>
   );
 }
@@ -623,7 +650,9 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
                     />
                   </div>
                 )}
-                {!isOpen && part && <TickStrip part={part} />}
+                {!isOpen && part && (
+                  <TickStrip part={part} members={data.members} voteStartAt={p.voteStartAt} />
+                )}
               </li>
             );
           })}
