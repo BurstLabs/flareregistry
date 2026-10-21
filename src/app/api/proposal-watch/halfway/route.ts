@@ -25,5 +25,13 @@ export async function GET(req: NextRequest) {
   }
   // The destination states which way it now is, so a prefetch that lands here without the reader
   // seeing it still leaves a page that tells them the truth when they do arrive.
-  return NextResponse.redirect(`${base}/proposals/reminders?on=${on === "1" ? "1" : "0"}`);
+  //
+  // THE TOKEN GOES WITH IT so that page can offer the opposite. Someone who has just turned the
+  // reminders off, and meant to, is finished; someone who mis-clicked is standing on a page that
+  // tells them what happened and gives them no way to undo it, and the only other route back is to
+  // wait for the next alert email to arrive carrying the reverse link. The token was already in
+  // their inbox, so carrying it one hop further reveals nothing new.
+  const t = encodeURIComponent(token);
+  const now = on === "1" ? "1" : "0";
+  return NextResponse.redirect(`${base}/proposals/reminders?on=${now}&token=${t}`);
 }
