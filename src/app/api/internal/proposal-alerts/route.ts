@@ -28,9 +28,15 @@ export const maxDuration = 300;
 // tick until it stops crashing. Losing a message is recoverable by looking at the page; being
 // mailed the same proposal nine times is how a sending domain ends up in spam folders.
 //
-// NOTHING RETROSPECTIVE. A subscriber is only ever told about proposals that opened AFTER they
-// confirmed. Without that, the first run after anyone subscribes mails them every open proposal at
-// once, which reads as a mistake and is the first thing they would unsubscribe from.
+// NOTHING RETROSPECTIVE, FOR "NEW" ONLY. A subscriber is not told a proposal is new when it opened
+// before they signed up: the first run after anyone subscribes would otherwise mail them every open
+// proposal at once, which reads as a mistake and is the first thing they would unsubscribe from.
+//
+// THE HALFWAY NUDGE IS EXEMPT, deliberately. A vote that is open, past its midpoint and short of
+// quorum is exactly the one a new subscriber can still do something about, and withholding it to be
+// tidy about "retrospective" would mean the feature stays silent in the one situation it exists for.
+// Bounded by how many proposals are open at once, which is a handful, and only ever one per
+// proposal per subscriber.
 export async function POST(req: NextRequest) {
   const denied = requireInternalAuth(req);
   if (denied) return denied;
@@ -61,11 +67,12 @@ export async function POST(req: NextRequest) {
       for (const p of due[kind]) {
         const key = proposalNoticeKey(p.contract, p.id);
         if (already.has(`${key}|${kind}`)) continue;
-        // Opened before this address confirmed: not theirs to be told about. Recorded as sent so a
-        // backlog is skipped once rather than reconsidered on every tick forever.
+        // Opened before this address confirmed. For "new" that is not theirs to be told about, and
+        // it is recorded as sent so the backlog is skipped once rather than reconsidered forever.
+        // For "halfway" it is sent anyway: see the note above.
         const openedBefore =
           !!w.confirmedAt && new Date(p.voteStartAt).getTime() < w.confirmedAt.getTime();
-        if (openedBefore) {
+        if (kind === "new" && openedBefore) {
           await claimNotice(w.id, key, kind);
           continue;
         }
