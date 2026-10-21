@@ -379,43 +379,65 @@ function MemberRow({
       </span>
     </>
   );
+  // THREE CELLS OF A SHARED GRID, not a flex line.
+  //
+  // The strip used to sit before a tail whose width was whatever that row's tail happened to
+  // contain, so a row ending "Against" started its strip further left than one ending "For", and
+  // "Removable" pushed it further still. Strips stacked in a column are read against each other,
+  // and ragged ones cannot be read at all.
+  //
+  // A hand-tuned fixed width was the first fix and it was wrong: "Against" is "En contra" in
+  // Spanish and "Dagegen" in German, the remove chip relabels itself as it arms, and any of those
+  // overflowing the slot brings the misalignment straight back for whoever is reading in that
+  // language. Grid columns size themselves to the widest cell IN THE WHOLE LIST, so every row
+  // agrees by construction and no number has to be guessed.
+  //
+  // `contents` makes the li itself disappear as a box so its three children become the grid items.
+  // All three are always rendered, empty where there is nothing, because a row short of a cell
+  // would shift every cell after it.
   return (
-    <li className="flex items-center gap-2 text-xs">
+    <li className="contents text-xs">
       {m.href ? (
-        <a href={`/provider/${m.href}`} className="flex min-w-0 flex-1 items-center gap-2 text-muted hover:text-beacon">
+        <a href={`/provider/${m.href}`} className="flex min-w-0 items-center gap-2 text-muted hover:text-beacon">
           {body}
         </a>
       ) : (
-        <span className="flex min-w-0 flex-1 items-center gap-2 text-muted">{body}</span>
+        <span className="flex min-w-0 items-center gap-2 text-muted">{body}</span>
       )}
-      {history && history.length > 0 && <HistoryStrip cells={history} />}
-      {removable && <MgRemoveButton identity={m.addr} variant="chip" />}
-      {vote && (
-        <span className="flex shrink-0 items-center gap-1.5">
-          {/* No timestamp either when the vote came from the contract rather than from a log:
-              hasVoted carries no block, and "+0.0h" would be a figure we invented. */}
-          {vote.t != null && (
-            <span className="tabular-nums text-[11px] text-faint" title={utcStamp(vote.t)}>
-              {t("prop.roster.at", { hours: hoursInto(vote.t, startMs).toFixed(1) })}
-            </span>
-          )}
-          <span
-            className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-              vote.f === null
-                ? "bg-black/10 text-muted dark:bg-white/10"
+
+      <span className="flex items-center justify-end">
+        {history && history.length > 0 ? <HistoryStrip cells={history} /> : null}
+      </span>
+
+      <span className="flex items-center justify-end gap-1.5">
+        {removable && <MgRemoveButton identity={m.addr} variant="chip" />}
+        {vote && (
+          <>
+            {/* No timestamp when the vote came from the contract rather than from a log: hasVoted
+                carries no block, and "+0.0h" would be a figure we invented. */}
+            {vote.t != null && (
+              <span className="tabular-nums text-[11px] text-faint" title={utcStamp(vote.t)}>
+                {t("prop.roster.at", { hours: hoursInto(vote.t, startMs).toFixed(1) })}
+              </span>
+            )}
+            <span
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                vote.f === null
+                  ? "bg-black/10 text-muted dark:bg-white/10"
+                  : vote.f
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
+                    : "bg-rose-500/15 text-rose-600 dark:text-rose-300"
+              }`}
+            >
+              {vote.f === null
+                ? t("prop.roster.voted")
                 : vote.f
-                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
-                  : "bg-rose-500/15 text-rose-600 dark:text-rose-300"
-            }`}
-          >
-            {vote.f === null
-              ? t("prop.roster.voted")
-              : vote.f
-                ? t("prop.roster.for")
-                : t("prop.roster.against")}
-          </span>
-        </span>
-      )}
+                  ? t("prop.roster.for")
+                  : t("prop.roster.against")}
+            </span>
+          </>
+        )}
+      </span>
     </li>
   );
 }
@@ -600,7 +622,9 @@ export function ProposalRoster({
               <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-faint">
                 {t("prop.roster.votedH", { n: voted.length })}
               </p>
-              <ul className="space-y-1.5">
+              {/* The grid the rows are cells of: name takes what is left, the strip and the tail
+                  each size to the widest in the column. See the note in MemberRow. */}
+              <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1.5">
                 {voted.map(({ m, v }, i) => (
                   <MemberRow
                     key={`${m}-${i}`} m={members[m]} vote={v} startMs={startMs}
@@ -617,7 +641,7 @@ export function ProposalRoster({
                   : t("prop.roster.absentH", { n: absent.length })}
               </p>
               {absent.length ? (
-                <ul className="space-y-1.5">
+                <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1.5">
                   {absent.map((m) => (
                     <MemberRow
                       key={m} m={members[m]} startMs={startMs}
