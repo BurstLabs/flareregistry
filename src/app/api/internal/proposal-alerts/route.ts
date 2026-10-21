@@ -6,6 +6,8 @@ import {
   claimNotice,
   dueProposals,
   proposalNoticeKey,
+  settleNotice,
+  warnIfMailQuotaLow,
   type NoticeKind,
 } from "@/lib/proposal-watch";
 import { sendProposalAlert, publicMailerConfigured } from "@/lib/mailer";
@@ -73,7 +75,7 @@ export async function POST(req: NextRequest) {
         const openedBefore =
           !!w.confirmedAt && new Date(p.voteStartAt).getTime() < w.confirmedAt.getTime();
         if (kind === "new" && openedBefore) {
-          await claimNotice(w.id, key, kind);
+          await claimNotice(w.id, key, kind, "skipped");
           continue;
         }
         // Claim first: see the note above on why this order and not the other.
@@ -89,8 +91,10 @@ export async function POST(req: NextRequest) {
             halfway: w.halfway,
             token: w.token,
           });
+          await settleNotice(w.id, key, kind, "sent");
           sent++;
         } catch (e) {
+          await settleNotice(w.id, key, kind, "failed");
           failed++;
           // One bad address must not stop the list. The claim stays, so a permanently broken
           // address is not retried on every tick; the log is where that shows up.
@@ -103,5 +107,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, watches: watches.length, sent, failed });
+  // Running out of room, or already refused. Told to the operator over a different provider, at
+  // most once a day. Never allowed to fail the run: the alarm is not more important than the job.
+  const warned = await warnIfMailQuotaLow(now).catch(() => false);
+
+  return NextResponse.json({ ok: true, watches: watches.length, sent, failed, warned });
 }

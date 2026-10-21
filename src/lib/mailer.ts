@@ -377,6 +377,57 @@ export async function sendProposalAlert(opts: {
 
 
 /**
+ * Tell the OPERATOR that subscriber mail is running out of room for the day.
+ *
+ * SENT OVER THE OPERATOR TRANSPORT, not the subscriber one, and that is the whole point rather than
+ * a detail. The thing being reported is that the Resend path is at or near its limit, so a warning
+ * that travelled the same path would be refused by exactly the condition it exists to report, and
+ * the first anyone would know is that subscribers had quietly stopped hearing about proposals.
+ * Zoho is a different account, a different provider and a different quota.
+ *
+ * Best-effort and never thrown into the caller: the alert job must not fail because the alarm about
+ * it could not be delivered.
+ */
+export async function sendMailQuotaWarning(opts: {
+  sent: number;
+  failed: number;
+  cap: number;
+}): Promise<void> {
+  // THROWS rather than returning quietly when the operator transport is not configured. Every other
+  // sender here no-ops on missing config, which is right for mail that is merely useful. This one is
+  // an alarm: a silent no-op would let the caller record the day as warned and move on, which is
+  // exactly the failure this warning exists to prevent, one level up.
+  if (!(SMTP_HOST && SMTP_USER && SMTP_PASS && CONTACT_TO)) {
+    throw new Error("operator SMTP is not configured, cannot send the mail quota warning");
+  }
+  const lines = [
+    `Flare Registry subscriber email is near or over its daily limit.`,
+    ``,
+    `  sent today   : ${opts.sent}`,
+    `  failed today : ${opts.failed}`,
+    `  daily cap    : ${opts.cap} (Resend free tier)`,
+    ``,
+    opts.failed > 0
+      ? `Sends are ALREADY FAILING. Subscribers are not receiving proposal alerts right now.`
+      : `Nothing has failed yet, but the remaining headroom is ${Math.max(0, opts.cap - opts.sent)} messages.`,
+    ``,
+    `A failed alert is not retried: each one is claimed before it is sent, so the proposal it`,
+    `covered will not be attempted again for that subscriber. Raising the Resend plan, or lowering`,
+    `the number of subscribers, are the two ways out.`,
+    ``,
+    `This warning is sent at most once a day, over the operator SMTP rather than Resend, so that it`,
+    `still arrives when Resend is the thing that is broken.`,
+  ];
+  await getTransport().sendMail({
+    from: SMTP_FROM,
+    to: CONTACT_TO,
+    subject: `Flare Registry: subscriber email at ${opts.sent}/${opts.cap} today`,
+    text: lines.join("\n"),
+  });
+}
+
+
+/**
  * Governance notice to a provider that a conduct case has been opened against them.
  *
  * SUPPLEMENTARY, not primary. Claiming a listing is a wallet signature and the Provider model has
