@@ -17,7 +17,9 @@ export function ProposalWatchForm() {
   const [email, setEmail] = useState("");
   const [halfway, setHalfway] = useState(true);
   const [website, setWebsite] = useState(""); // honeypot
-  const [state, setState] = useState<"idle" | "busy" | "sent" | "err">("idle");
+  // "sent" = a confirmation is on its way. "updated" = the address was already confirmed and only
+  // its preferences changed. Telling those apart matters: see the note on the success panel.
+  const [state, setState] = useState<"idle" | "busy" | "sent" | "updated" | "err">("idle");
   const [msg, setMsg] = useState("");
 
   async function submit(e: React.FormEvent) {
@@ -32,7 +34,12 @@ export function ProposalWatchForm() {
       });
       const b = await r.json().catch(() => ({}));
       if (r.ok) {
-        setState("sent");
+        // `pending` is false when the address was already confirmed: the server updated the halfway
+        // preference and sent nothing. Saying "check your email" there is a straight lie, and the
+        // worst kind, because the reader waits for a message that is never coming. This is also the
+        // path someone uses to turn the halfway reminders back ON from the page, so it has to say
+        // plainly that it worked.
+        setState(b?.pending === false ? "updated" : "sent");
         return;
       }
       setState("err");
@@ -46,10 +53,12 @@ export function ProposalWatchForm() {
   // The success copy says CHECK YOUR EMAIL rather than "subscribed", because nothing is subscribed
   // yet and telling someone they are signed up when they are one click short of it is how a
   // double opt-in quietly becomes no opt-in at all.
-  if (state === "sent") {
+  if (state === "sent" || state === "updated") {
     return (
       <section className="mt-8 rounded-xl border border-emerald-500/40 bg-emerald-500/[0.04] p-5">
-        <p className="text-sm text-emerald-600 dark:text-emerald-400">{t("propWatch.check")}</p>
+        <p className="text-sm text-emerald-600 dark:text-emerald-400">
+          {state === "updated" ? t("propWatch.updated") : t("propWatch.check")}
+        </p>
       </section>
     );
   }
