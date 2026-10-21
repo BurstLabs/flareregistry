@@ -10,6 +10,7 @@ import { ProposalRoster, type MemberRef, type ParticipationRef } from "@/compone
 import { ProposalCriteria } from "@/components/proposal-criteria";
 import { MgRemovablePanel, type RemovableMemberView } from "@/components/mg-removable-panel";
 import { ProposalWatchForm } from "@/components/proposal-watch-form";
+import { buildMemberHistory, type HistoryCell } from "@/lib/member-history";
 import { safeExternalUrl } from "@/lib/validation";
 import type { MgProposalView } from "@/lib/mg-proposals";
 
@@ -128,12 +129,14 @@ function OutcomeChip({ outcome }: { outcome: MgProposalView["outcome"] }) {
  * is the whole reason the rows can afford to be one line.
  */
 function ProposalBody({
-  p, data, removableSet, onVoted,
+  p, data, removableSet, onVoted, memberHistory,
 }: {
   p: MgProposalView;
   data: Payload;
   removableSet: Set<string>;
   onVoted: () => void;
+  /** Built once for the page; see the note where it is computed. */
+  memberHistory: Map<string, HistoryCell[]>;
 }) {
   const { t } = useApp();
   const { address } = useAccount();
@@ -216,6 +219,7 @@ function ProposalBody({
         <ProposalRoster
           part={part}
           partKey={`${p.contract.toLowerCase()}:${p.id}`}
+          history={memberHistory}
           viewerAddr={viewer?.addr ?? null}
           viewerVoted={!!viewer?.voted.has(`${p.contract.toLowerCase()}:${p.id}`)}
           members={data.members}
@@ -352,6 +356,19 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
     const top = el.getBoundingClientRect().top + window.scrollY - clear;
     window.scrollTo({ top: Math.max(0, top) });
   });
+
+  // THE RECENT RECORD FOR EVERY MEMBER, built once for the page rather than per proposal card.
+  //
+  // There are forty-five cards and the input is the same payload every time, so doing this inside
+  // the roster would rebuild the identical map forty-five times on every render. It is also the
+  // only place that has every proposal at once, which is what a history needs.
+  const memberHistory = useMemo(
+    () =>
+      data
+        ? buildMemberHistory(data.proposals, data.participation, data.members).cells
+        : new Map<string, HistoryCell[]>(),
+    [data]
+  );
 
   const removableSet = useMemo(
     // Built once, not per card: the same set is tested against every roster row on the page.
@@ -525,6 +542,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
                 p={p}
                 data={data}
                 removableSet={removableSet}
+                memberHistory={memberHistory}
                 onVoted={() => router.refresh()}
               />
             </li>
@@ -600,6 +618,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
                       p={p}
                       data={data}
                       removableSet={removableSet}
+                      memberHistory={memberHistory}
                       onVoted={() => router.refresh()}
                     />
                   </div>
