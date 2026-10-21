@@ -1454,8 +1454,28 @@ model ProposalNotice {
   proposalKey String
   /// "new" (the window opened) | "halfway" (half of it has gone).
   kind        String
+  /// What became of the claim: "sent" | "failed" | "skipped" (a backlog proposal that predates the
+  /// subscriber). All three keep the row, because the row is what stops the job reconsidering this
+  /// pairing forever; the status is what tells a sent message apart from one that never went, which
+  /// is the difference the daily quota count turns on.
+  status      String        @default("claimed")
   sentAt      DateTime      @default(now())
 
   @@unique([watchId, proposalKey, kind])
   @@index([proposalKey])
+}
+
+// ONE WARNING A DAY WHEN SUBSCRIBER MAIL IS RUNNING OUT OF ROOM.
+//
+// Resend's free tier is 100 messages a day, and the failure mode is silent: sends start being
+// refused and subscribers simply stop hearing about proposals. The operator has to be told, and told
+// once rather than on every cron tick, so the day is the key and the unique index is the lock.
+model MailQuotaWarning {
+  id     String   @id @default(cuid())
+  /// The UTC day this warning covers, "YYYY-MM-DD".
+  day    String   @unique
+  /// How many subscriber messages had gone that day when the warning fired.
+  sent   Int
+  failed Int      @default(0)
+  sentAt DateTime @default(now())
 }

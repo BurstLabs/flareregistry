@@ -92,6 +92,16 @@ export async function activeWatches() {
   });
 }
 
+/** Resend's free tier. Override if the plan changes; the warning threshold follows it. */
+export const DAILY_MAIL_CAP = Number(process.env.SUBSCRIBER_MAIL_DAILY_CAP || 100);
+/** Warn the operator once the day's sends reach this share of the cap. */
+export const MAIL_WARN_AT = 0.8;
+
+/** Start of the current UTC day, which is the window Resend counts in. */
+export function utcDayKey(now: Date): string {
+  return now.toISOString().slice(0, 10);
+}
+
 /**
  * Record that a notice was sent, and say whether this call is the one that recorded it.
  *
@@ -103,12 +113,72 @@ export async function activeWatches() {
 export async function claimNotice(
   watchId: string,
   proposalKey: string,
-  kind: NoticeKind
+  kind: NoticeKind,
+  status: "claimed" | "skipped" = "claimed"
 ): Promise<boolean> {
   try {
-    await prisma.proposalNotice.create({ data: { watchId, proposalKey, kind } });
+    await prisma.proposalNotice.create({ data: { watchId, proposalKey, kind, status } });
     return true;
   } catch {
+    return false;
+  }
+}
+
+/** Mark how a claimed notice actually ended up, which is what the daily count reads. */
+export async function settleNotice(
+  watchId: string,
+  proposalKey: string,
+  kind: NoticeKind,
+  status: "sent" | "failed"
+): Promise<void> {
+  await prisma.proposalNotice.updateMany({
+    where: { watchId, proposalKey, kind },
+    data: { status },
+  });
+}
+
+/**
+ * Warn the operator, at most once a day, when subscriber mail is near or over its daily cap.
+ *
+ * The day row is claimed BEFORE the warning is sent, for the same reason every alert is: the unique
+ * index is what makes "once a day" true across overlapping runs, and a warning that is sent first
+ * and recorded second is a warning that repeats on every tick if the recording fails.
+ *
+ * Counts only what actually went out. Claims recorded as "skipped" are backlog proposals nobody was
+ * mailed about, and counting them would raise a false alarm the first time a subscriber signs up.
+ */
+export async function warnIfMailQuotaLow(now: Date = new Date()): Promise<boolean> {
+  const dayStart = new Date(`${utcDayKey(now)}T00:00:00.000Z`);
+  const [sent, failed] = await Promise.all([
+    prisma.proposalNotice.count({ where: { status: "sent", sentAt: { gte: dayStart } } }),
+    prisma.proposalNotice.count({ where: { status: "failed", sentAt: { gte: dayStart } } }),
+  ]);
+  // Either running out, or already failing. The second matters more: by then subscribers have
+  // silently stopped hearing about proposals.
+  if (failed === 0 && sent < DAILY_MAIL_CAP * MAIL_WARN_AT) return false;
+
+  const day = utcDayKey(now);
+  let claim;
+  try {
+    claim = await prisma.mailQuotaWarning.create({ data: { day, sent, failed } });
+  } catch {
+    return false; // another run already warned today
+  }
+
+  // AND RELEASE THE DAY IF THE WARNING DOES NOT GO.
+  //
+  // Claiming first is what stops a warning per cron tick. But this is an alarm, and an alarm that
+  // marks itself delivered and then fails to ring is worse than no alarm: found in testing, where
+  // the day was claimed by a process with no operator SMTP configured and the warning was never
+  // sent again, that day or ever. So a failed send gives the day back and the next tick, ten
+  // minutes later, tries again.
+  const { sendMailQuotaWarning } = await import("./mailer");
+  try {
+    await sendMailQuotaWarning({ sent, failed, cap: DAILY_MAIL_CAP });
+    return true;
+  } catch (e) {
+    await prisma.mailQuotaWarning.delete({ where: { id: claim.id } }).catch(() => {});
+    console.error("[proposal-alerts] quota warning failed:", e instanceof Error ? e.message : e);
     return false;
   }
 }
