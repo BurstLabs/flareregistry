@@ -50,7 +50,7 @@ model Provider {
   //
   // Null for rows that predate this and for listings where the two are the same; readers fall back
   // to createdAt, so nothing depends on the backfill having reached everything.
-  firstSeenAt DateTime?
+  firstSeenAt       DateTime?
   // WHAT THIS LISTING WAS IMMEDIATELY BEFORE ITS OWNER CLAIMED IT, because claiming overwrites
   // `source` with "submitted" and the previous value is otherwise lost.
   //
@@ -1407,4 +1407,55 @@ model ProviderCaseAudit {
   createdAt DateTime @default(now())
 
   @@index([caseId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Management Group proposal alerts
+// ---------------------------------------------------------------------------
+//
+// Wallet-less, opt-in email for the /proposals feed: tell me when a new Management Group proposal
+// opens, and optionally again when half its voting window has gone. Modelled on ProviderWatch, which
+// solved the same problem for one provider under review, and different from it in one way that
+// matters: a watch here is on the FEED rather than on a row, so there is no event that ends it and
+// nothing to shred on a timer. It lasts until the subscriber says otherwise, which is why every mail
+// carries its own unsubscribe.
+model ProposalWatch {
+  id        String  @id @default(cuid())
+  // Lowercased. One subscription per address for the whole feed, so a re-subscribe updates rather
+  // than duplicating and nobody can be signed up twice by accident.
+  email     String  @unique
+  // Double opt-in: nothing is ever sent to an address that has not followed the confirm link. The
+  // address is typed by a stranger into a public form, so it is not ours to mail until it answers.
+  confirmed Boolean @default(false)
+  // Also mail at the midpoint of a voting window. Off unless asked for: the whole point of a second
+  // message is that it is a nudge, and a nudge nobody opted into is just more mail.
+  halfway   Boolean @default(false)
+  // Random URL-safe token behind the confirm link, the unsubscribe link and the halfway toggle. One
+  // value for all three, as ProviderWatch does: it identifies the row and the row is the secret.
+  token     String  @unique
+
+  notices ProposalNotice[]
+
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
+}
+
+// WHAT HAS ALREADY BEEN SENT, so the job can run as often as it likes.
+//
+// The sender is a cron with no memory of its own, and the alternative to this table is a timestamp
+// cursor, which loses every race it meets: a proposal created while the sweep is mid-flight is
+// either sent twice or never. A row per (subscriber, proposal, kind) with a unique index makes a
+// duplicate send a database error rather than a judgement call, and the job can be re-run freely.
+model ProposalNotice {
+  id          String        @id @default(cuid())
+  watchId     String
+  watch       ProposalWatch @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  /// `${contract}:${proposalId}`, the same key /proposals uses everywhere else.
+  proposalKey String
+  /// "new" (the window opened) | "halfway" (half of it has gone).
+  kind        String
+  sentAt      DateTime      @default(now())
+
+  @@unique([watchId, proposalKey, kind])
+  @@index([proposalKey])
 }
