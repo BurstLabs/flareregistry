@@ -392,9 +392,9 @@ function MemberRow({
   // language. Grid columns size themselves to the widest cell IN THE WHOLE LIST, so every row
   // agrees by construction and no number has to be guessed.
   //
-  // `contents` makes the li itself disappear as a box so its three children become the grid items.
-  // All three are always rendered, empty where there is nothing, because a row short of a cell
-  // would shift every cell after it.
+  // `contents` makes the li itself disappear as a box so its four children become the grid items.
+  // All four are always rendered, empty where there is nothing, because a row short of a cell would
+  // shift every cell after it.
   return (
     <li className="contents text-xs">
       {m.href ? (
@@ -409,33 +409,38 @@ function MemberRow({
         {history && history.length > 0 ? <HistoryStrip cells={history} /> : null}
       </span>
 
-      <span className="flex items-center justify-end gap-1.5">
+      {/* The time gets its OWN column, so the hours align with each other instead of being pushed
+          around by the width of the chip beside them: "+1.4h" next to "For" and "+33.8h" next to
+          "Against" otherwise start at four different places down one list. Right-aligned and
+          tabular, so the decimal point lines up too. */}
+      <span className="whitespace-nowrap text-right tabular-nums text-[11px] text-faint">
+        {/* No timestamp when the vote came from the contract rather than from a log: hasVoted
+            carries no block, and "+0.0h" would be a figure we invented. */}
+        {vote?.t != null ? (
+          <span title={utcStamp(vote.t)}>
+            {t("prop.roster.at", { hours: hoursInto(vote.t, startMs).toFixed(1) })}
+          </span>
+        ) : null}
+      </span>
+
+      <span className="flex items-center justify-end">
         {removable && <MgRemoveButton identity={m.addr} variant="chip" />}
         {vote && (
-          <>
-            {/* No timestamp when the vote came from the contract rather than from a log: hasVoted
-                carries no block, and "+0.0h" would be a figure we invented. */}
-            {vote.t != null && (
-              <span className="tabular-nums text-[11px] text-faint" title={utcStamp(vote.t)}>
-                {t("prop.roster.at", { hours: hoursInto(vote.t, startMs).toFixed(1) })}
-              </span>
-            )}
-            <span
-              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                vote.f === null
-                  ? "bg-black/10 text-muted dark:bg-white/10"
-                  : vote.f
-                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
-                    : "bg-rose-500/15 text-rose-600 dark:text-rose-300"
-              }`}
-            >
-              {vote.f === null
-                ? t("prop.roster.voted")
+          <span
+            className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+              vote.f === null
+                ? "bg-black/10 text-muted dark:bg-white/10"
                 : vote.f
-                  ? t("prop.roster.for")
-                  : t("prop.roster.against")}
-            </span>
-          </>
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300"
+                  : "bg-rose-500/15 text-rose-600 dark:text-rose-300"
+            }`}
+          >
+            {vote.f === null
+              ? t("prop.roster.voted")
+              : vote.f
+                ? t("prop.roster.for")
+                : t("prop.roster.against")}
+          </span>
         )}
       </span>
     </li>
@@ -622,9 +627,9 @@ export function ProposalRoster({
               <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-faint">
                 {t("prop.roster.votedH", { n: voted.length })}
               </p>
-              {/* The grid the rows are cells of: name takes what is left, the strip and the tail
-                  each size to the widest in the column. See the note in MemberRow. */}
-              <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1.5">
+              {/* The grid the rows are cells of: name takes what is left; strip, time and chip
+                  each size to the widest in their own column. See the note in MemberRow. */}
+              <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 gap-y-1.5">
                 {voted.map(({ m, v }, i) => (
                   <MemberRow
                     key={`${m}-${i}`} m={members[m]} vote={v} startMs={startMs}
@@ -641,7 +646,7 @@ export function ProposalRoster({
                   : t("prop.roster.absentH", { n: absent.length })}
               </p>
               {absent.length ? (
-                <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1.5">
+                <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 gap-y-1.5">
                   {absent.map((m) => (
                     <MemberRow
                       key={m} m={members[m]} startMs={startMs}
