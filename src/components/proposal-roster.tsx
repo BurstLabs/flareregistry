@@ -252,7 +252,7 @@ function Timeline({
  * Clamped at both ends against the container, since these sit in a two-column grid and a label
  * centred on the last tick of the right-hand column would hang off the card.
  */
-function TickStrip({
+export function LabelledTicks({
   items,
   tick,
   wrap,
@@ -315,6 +315,33 @@ function TickStrip({
 }
 
 /**
+ * The label for one member's tick: who they are, what they did, and when.
+ *
+ * Exported because the card strip and the collapsed-row strip on /proposals both draw one tick per
+ * member and both have to answer the same question on hover. Two copies would drift.
+ */
+export function memberTickLabel(
+  t: (k: string, v?: Record<string, string | number>) => string,
+  m: MemberRef | undefined,
+  v: { f: boolean | null; t: number | null } | null | undefined,
+  startMs: number,
+  open: boolean
+): string {
+  const name = m?.name ?? (m ? shortAddr(m.addr) : t("prop.roster.unknownMember"));
+  const verdict = !v
+    ? open
+      ? t("prop.roster.notYetVoted")
+      : t("prop.roster.didNotVote")
+    : v.f === null
+      ? t("prop.roster.voted")
+      : v.f
+        ? t("prop.roster.for")
+        : t("prop.roster.against");
+  const when = v && v.t != null ? ` +${hoursInto(v.t, startMs).toFixed(1)}h` : "";
+  return `${name} · ${verdict}${when}`;
+}
+
+/**
  * A member's recent record, beside their name. Oldest on the left, so somebody who stopped turning
  * up reads as colour fading out, and every row covers the SAME proposals so the strips can be read
  * down a column as well as across.
@@ -346,7 +373,7 @@ function HistoryStrip({ cells }: { cells: HistoryCell[] }) {
             : "bg-rose-500/55",
     };
   });
-  return <TickStrip items={items} tick={[4, 11, 2]} />;
+  return <LabelledTicks items={items} tick={[4, 11, 2]} />;
 }
 
 /** One member, named where we can name them. */
@@ -562,26 +589,13 @@ export function ProposalRoster({
           Each tick now names its member on hover. It was the one place on the page showing fifty
           providers while saying which none of them were, and the roster below it is two clicks and
           a scroll away from answering that. */}
-      <TickStrip
+      <LabelledTicks
         wrap
         tick={[6, 12, 3]}
         items={ticks.map(({ m, v }, i) => {
-          const who = members[m];
-          const name = who?.name ?? (who ? shortAddr(who.addr) : t("prop.roster.unknownMember"));
-          const verdict =
-            v === null
-              ? open
-                ? t("prop.roster.notYetVoted")
-                : t("prop.roster.didNotVote")
-              : v.f === null
-                ? t("prop.roster.voted")
-                : v.f
-                  ? t("prop.roster.for")
-                  : t("prop.roster.against");
-          const when = v && v.t != null ? ` +${hoursInto(v.t, startMs).toFixed(1)}h` : "";
           return {
             key: `${m}-${i}`,
-            label: `${name} · ${verdict}${when}`,
+            label: memberTickLabel(t, members[m], v, startMs, open),
             className:
               v === null
                 ? "bg-black/10 dark:bg-white/10"
