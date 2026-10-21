@@ -48,14 +48,14 @@ export function ProposalWatchForm() {
   // double opt-in quietly becomes no opt-in at all.
   if (state === "sent") {
     return (
-      <section className="mt-10 rounded-xl border border-emerald-500/40 bg-emerald-500/[0.04] p-5">
+      <section className="mt-8 rounded-xl border border-emerald-500/40 bg-emerald-500/[0.04] p-5">
         <p className="text-sm text-emerald-600 dark:text-emerald-400">{t("propWatch.check")}</p>
       </section>
     );
   }
 
   return (
-    <section className="surface mt-10 rounded-xl border p-5">
+    <section className="surface mt-8 rounded-xl border p-5">
       <h2 className="text-sm font-semibold">{t("propWatch.title")}</h2>
       <p className="mt-1.5 text-xs text-muted">{t("propWatch.intro")}</p>
       <form onSubmit={submit} className="mt-3 space-y-3">
