@@ -500,6 +500,12 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
         <ProposalCompose contract={data.currentContract} seed={data.viewer} />
       )}
 
+      {/* THE OPT-IN, directly above the open votes rather than at the foot of the page. What it is
+          offering is a message about the next one of these, so it reads as an answer to the list
+          that follows it. At the bottom it sat under forty-five decided proposals, where nobody
+          looking for an open vote ever scrolls. */}
+      <ProposalWatchForm />
+
       <h2 className="mb-2 mt-8 text-sm font-semibold text-fg">{t("prop.openH")}</h2>
       {open.length ? (
         <ul className="space-y-4">
@@ -608,11 +614,6 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
           {decided.length ? t("prop.filter.noMatch") : t("prop.noneDecided")}
         </p>
       )}
-
-      {/* THE OPT-IN, last on the page. Someone who has just read the open votes can decide whether
-          they want telling about the next one; someone who has just arrived is being asked for an
-          email address before the page has shown them anything. */}
-      <ProposalWatchForm />
     </div>
   );
 }
