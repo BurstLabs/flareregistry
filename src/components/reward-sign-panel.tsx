@@ -309,7 +309,11 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
 
       {/* Collapsed by default: a hundred names is the answer to a question most readers have not
           asked yet, and the bar above is what they came for. */}
-      <RewardRoster roster={pending.roster} weightTotal={pending.weightTotal} />
+      <RewardRoster
+        roster={pending.roster}
+        weightTotal={pending.weightTotal}
+        epoch={pending.rewardEpochId}
+      />
     </section>
   );
 }
