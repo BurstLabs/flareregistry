@@ -94,7 +94,11 @@ export function RewardRoster({
   weightTotal: number;
 }) {
   const { t } = useApp();
-  const [shown, setShown] = useState(false);
+  // OPEN BY DEFAULT. The names are the actionable half of this page: a percentage says the epoch is
+  // stuck, the list says who to ask. Putting that behind a click hid it from the person most likely
+  // to act on it, which is the same mistake the proposal rosters made before open ones were
+  // expanded on arrival.
+  const [shown, setShown] = useState(true);
   if (!roster.length) return null;
 
   // Heaviest first within each column. The question a reader has while an epoch is stuck is which

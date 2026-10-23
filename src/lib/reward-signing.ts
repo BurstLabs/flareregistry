@@ -56,6 +56,9 @@ export const fsmAbi = [
     inputs: [], outputs: [{ type: "uint24" }] },
   // Only answers for a SETTLED epoch: it requires rewardsHash to be set. That is exactly why the
   // pending epoch's signers have to be recovered from signatures instead.
+  { type: "function", name: "getRewardsSignInfo", stateMutability: "view",
+    inputs: [{ type: "uint24" }],
+    outputs: [{ type: "uint64" }, { type: "uint64" }, { type: "uint64" }, { type: "uint64" }] },
   { type: "function", name: "getVoterRewardsSignInfo", stateMutability: "view",
     inputs: [{ type: "uint24" }, { type: "address" }],
     outputs: [{ type: "uint64" }, { type: "uint64" }] },
@@ -86,6 +89,9 @@ const rewardManagerAbi = [
   { type: "function", name: "rewardManagerId", stateMutability: "view",
     inputs: [], outputs: [{ type: "uint256" }] },
 ] as const;
+
+/** A scan of this epoch's signatures: who signed, and which root each endorsed. */
+export type SignedScan = { signers: string[]; byHash: Record<string, number> };
 
 export interface PendingRewardEpoch {
   rewardEpochId: number;
@@ -139,6 +145,24 @@ export interface PendingRewardEpoch {
   weightTotal: number;
   /** Every registered provider, named, with whether they have signed and their recent record. */
   roster: RewardSignerRow[];
+  /**
+   * WHAT THE CHAIN ALREADY SAYS ABOUT THIS ROOT, which is the only independent check this page has.
+   *
+   * The root being offered for signature comes from a file fetched over the network. If that file
+   * were ever wrong, through a compromised repo, a bug in the publisher, or our own fetch landing
+   * somewhere stale, this page would be asking providers to sign the wrong distribution. That is
+   * not merely a wasted signature: signRewards accumulates weight PER MESSAGE HASH, so weight
+   * gathered behind a wrong root would settle a wrong distribution if it ever crossed the
+   * threshold. A page that can ask a hundred operators to sign at once is exactly the tool that
+   * would make that possible.
+   *
+   * So the root is corroborated against the signatures already on chain, which no attacker on our
+   * side of the wire can forge. `agreeing` signed the same root we are about to offer;
+   * `conflicting` signed a different one, and any conflict at all stops the page offering to sign.
+   */
+  corroboration: { agreeing: number; conflicting: number };
+  /** Unix seconds when signing opened, so the page can say how long this has been waiting. */
+  signStartTs: number;
   /** Contract addresses, so the client does not resolve them again. */
   systemsManager: Address;
   voterRegistry: Address;
@@ -234,7 +258,13 @@ export async function pendingRewardEpoch(): Promise<PendingRewardEpoch | null> {
 
     // Never allowed to cost the page: the scan is an explorer call and this is a progress figure,
     // not the thing the page is for.
-    const signedNow = await signedFor(fsm, e).catch(() => []);
+    const signInfo = (await c
+      .readContract({ address: fsm, abi: fsmAbi, functionName: "getRewardsSignInfo", args: [e] })
+      .catch(() => [0n, 0n, 0n, 0n] as const)) as readonly bigint[];
+    const scan: SignedScan = await signedFor(fsm, e).catch(
+      () => ({ signers: [], byHash: {} }) as SignedScan
+    );
+    const signedNow = scan.signers;
     const weightByAddr = new Map(
       aligned ? signers.map((a, i) => [a.toLowerCase(), Number(weights[i])] as const) : []
     );
@@ -260,6 +290,13 @@ export async function pendingRewardEpoch(): Promise<PendingRewardEpoch | null> {
       // button, and a database or RPC hiccup must not take the page down with it.
       // Imported here rather than at the top: reward-roster imports the ABIs from this module, and
       // a static cycle between the two resolves to undefined at module-init time.
+      signStartTs: Number(signInfo[0]),
+      corroboration: {
+        agreeing: scan.byHash[published.merkleRoot.toLowerCase()] ?? 0,
+        conflicting: Object.entries(scan.byHash)
+          .filter(([h]) => h !== published.merkleRoot.toLowerCase())
+          .reduce((a, [, n]) => a + n, 0),
+      },
       roster: await import("./reward-roster")
         .then((m) => m.rewardRoster(fsm, vr, e, signedNow))
         .catch(() => []),
@@ -299,11 +336,17 @@ const signRewardsAbi = [
   ], outputs: [] },
 ] as const;
 
-let signedCache: { at: number; epoch: number; data: string[] } | null = null;
-let signedInFlight: Promise<string[]> | null = null;
+let signedCache: { at: number; epoch: number; data: SignedScan } | null = null;
+let signedInFlight: Promise<SignedScan> | null = null;
 
-async function scanSigned(fsm: Address, epoch: number): Promise<string[]> {
+async function scanSigned(
+  fsm: Address,
+  epoch: number
+): Promise<{ signers: string[]; byHash: Record<string, number> }> {
   const out = new Set<string>();
+  // WHICH ROOT EACH SIGNATURE ENDORSED, which is the corroboration this page needs before it asks
+  // anybody to sign anything. See the note on `corroboration`.
+  const byHash: Record<string, number> = {};
   // Newest first, and stop as soon as a signRewards for an OLDER epoch appears: that is the start
   // of this epoch's signing window, and everything past it is a previous epoch's business. The page
   // cap is a backstop for the case where that marker never arrives.
@@ -313,7 +356,7 @@ async function scanSigned(fsm: Address, epoch: number): Promise<string[]> {
       .then((r) => (r.ok ? r.json() : { result: [] }))
       .then((j) => (Array.isArray(j?.result) ? j.result : []))
       .catch(() => []);
-    if (!rows.length) return [...out];
+    if (!rows.length) return { signers: [...out], byHash };
 
     let reachedOlder = false;
     for (const t of rows) {
@@ -339,6 +382,8 @@ async function scanSigned(fsm: Address, epoch: number): Promise<string[]> {
           signature: { v: BigInt(signature.v), r: signature.r, s: signature.s },
         });
         out.add(who.toLowerCase());
+        const hk = rewardsHash.toLowerCase();
+        byHash[hk] = (byHash[hk] ?? 0) + 1;
       } catch {
         // A call we cannot decode is not a signature we can attribute. Skipping one is right;
         // guessing at it would put a name on the page that nobody put there.
@@ -346,11 +391,11 @@ async function scanSigned(fsm: Address, epoch: number): Promise<string[]> {
     }
     if (reachedOlder || rows.length < 200) break;
   }
-  return [...out];
+  return { signers: [...out], byHash };
 }
 
 /** Signers of `epoch`, cached and served stale while it refreshes. */
-export async function signedFor(fsm: Address, epoch: number): Promise<string[]> {
+export async function signedFor(fsm: Address, epoch: number): Promise<SignedScan> {
   const fresh = signedCache && signedCache.epoch === epoch;
   if (fresh && Date.now() - signedCache!.at < SIGNED_TTL_MS) return signedCache!.data;
   if (fresh && !signedInFlight) {
