@@ -23,6 +23,7 @@ import {
 import { openWallet } from "@/lib/appkit";
 import { useApp } from "./providers";
 import { fsmAbi } from "@/lib/reward-signing";
+import { RewardRoster, type RewardSignerView } from "./reward-roster";
 
 const FLARE_CHAIN_ID = 14;
 
@@ -39,6 +40,8 @@ export interface PendingRewardView {
   weightSigned: number;
   weightThreshold: number;
   weightTotal: number;
+  /** Every registered provider, named, with their record. */
+  roster: RewardSignerView[];
   systemsManager: `0x${string}`;
   voterRegistry: `0x${string}`;
 }
@@ -244,6 +247,10 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
         </>
       )}
       {err && <p className="mt-2 text-[11px] text-flare">{err}</p>}
+
+      {/* Collapsed by default: a hundred names is the answer to a question most readers have not
+          asked yet, and the bar above is what they came for. */}
+      <RewardRoster roster={pending.roster} weightTotal={pending.weightTotal} />
     </section>
   );
 }

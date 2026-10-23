@@ -27,6 +27,9 @@
 // limit on who this page can help, and it is stated on the page rather than discovered at the point
 // of a failed transaction.
 
+// Type-only, so it does not create a runtime cycle with reward-roster (which imports the ABIs
+// from here). The implementation is imported lazily at the call site for the same reason.
+import type { RewardSignerRow } from "./reward-roster";
 import {
   createPublicClient, http, keccak256, encodeAbiParameters, decodeFunctionData,
   recoverAddress, hashMessage, type Address,
@@ -51,6 +54,11 @@ export const fsmAbi = [
     inputs: [{ type: "uint256" }], outputs: [{ type: "bytes32" }] },
   { type: "function", name: "signingPolicyThresholdPPM", stateMutability: "view",
     inputs: [], outputs: [{ type: "uint24" }] },
+  // Only answers for a SETTLED epoch: it requires rewardsHash to be set. That is exactly why the
+  // pending epoch's signers have to be recovered from signatures instead.
+  { type: "function", name: "getVoterRewardsSignInfo", stateMutability: "view",
+    inputs: [{ type: "uint24" }, { type: "address" }],
+    outputs: [{ type: "uint64" }, { type: "uint64" }] },
   { type: "function", name: "signRewards", stateMutability: "nonpayable",
     inputs: [
       { name: "_rewardEpochId", type: "uint24" },
@@ -129,6 +137,8 @@ export interface PendingRewardEpoch {
   weightSigned: number;
   weightThreshold: number;
   weightTotal: number;
+  /** Every registered provider, named, with whether they have signed and their recent record. */
+  roster: RewardSignerRow[];
   /** Contract addresses, so the client does not resolve them again. */
   systemsManager: Address;
   voterRegistry: Address;
@@ -246,6 +256,13 @@ export async function pendingRewardEpoch(): Promise<PendingRewardEpoch | null> {
       weightSigned,
       weightThreshold,
       weightTotal,
+      // Own catch: the roster is the useful half but it is still decoration next to the signing
+      // button, and a database or RPC hiccup must not take the page down with it.
+      // Imported here rather than at the top: reward-roster imports the ABIs from this module, and
+      // a static cycle between the two resolves to undefined at module-init time.
+      roster: await import("./reward-roster")
+        .then((m) => m.rewardRoster(fsm, vr, e, signedNow))
+        .catch(() => []),
       systemsManager: fsm,
       voterRegistry: vr,
     };
