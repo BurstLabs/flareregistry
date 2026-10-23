@@ -22,7 +22,7 @@ import {
 } from "wagmi";
 import { openWallet } from "@/lib/appkit";
 import { useApp } from "./providers";
-import { fsmAbi, voterRegistryAbi } from "@/lib/reward-signing";
+import { fsmAbi } from "@/lib/reward-signing";
 
 const FLARE_CHAIN_ID = 14;
 
@@ -32,6 +32,8 @@ export interface PendingRewardView {
   claims: { rewardManagerId: string; noOfWeightBasedClaims: string }[];
   messageHash: `0x${string}`;
   eligible: number;
+  /** Registered signing policy addresses for the epoch, lowercased. */
+  signers: string[];
   systemsManager: `0x${string}`;
   voterRegistry: `0x${string}`;
 }
@@ -65,22 +67,6 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
       if (!publicClient) {
         setPhase("error");
         setErr(t("rsign.noClient"));
-        return;
-      }
-
-      // IS THIS ADDRESS EVEN A SIGNER for that epoch? Asked before the wallet is bothered, because
-      // the alternative is a signature prompt followed by a revert, and the operator would have no
-      // idea which of the two addresses they were meant to be using.
-      setPhase("checking");
-      const [voter] = (await publicClient.readContract({
-        address: pending.voterRegistry,
-        abi: voterRegistryAbi,
-        functionName: "getVoterWithNormalisedWeight",
-        args: [pending.rewardEpochId, address],
-      })) as [string, number];
-      if (!voter || /^0x0{40}$/i.test(voter)) {
-        setPhase("error");
-        setErr(t("rsign.notSigner"));
         return;
       }
 
@@ -145,7 +131,11 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
     }
   }
 
-  const busy = phase === "checking" || phase === "signing" || phase === "sending" || phase === "mining";
+  const busy = phase === "signing" || phase === "sending" || phase === "mining";
+  // Known from the registered list, so it is answerable the moment a wallet connects rather than
+  // after a signature prompt. isSigner is undefined while no wallet is connected: unknown and
+  // "no" are different, and only one of them should discourage anybody.
+  const isSigner = isConnected && address ? pending.signers.includes(address.toLowerCase()) : undefined;
 
   return (
     <section className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/[0.04] p-5">
@@ -191,12 +181,10 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
         <>
           <button
             onClick={run}
-            disabled={busy}
+            disabled={busy || isSigner === false}
             className="mt-3 rounded bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-500/30 disabled:opacity-50 dark:text-amber-300"
           >
-            {phase === "checking"
-              ? t("rsign.checking")
-              : phase === "signing"
+            {phase === "signing"
                 ? t("rsign.signing")
                 : phase === "sending"
                   ? t("rsign.sending")
@@ -207,8 +195,12 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
                       : t("rsign.connect")}
           </button>
           {/* The address that has to sign is not the one a provider signs in with here, and that is
-              the single most likely reason this fails. Said before the attempt, not after. */}
-          <p className="mt-2 text-[11px] text-faint">{t("rsign.whoCanSign")}</p>
+              the single most likely reason this fails. Said before the attempt, not after: a
+              connected wallet that cannot sign is told so immediately, and the button is dead
+              rather than inviting a signature that could only be refused. */}
+          <p className={`mt-2 text-[11px] ${isSigner === false ? "text-flare" : "text-faint"}`}>
+            {isSigner === false ? t("rsign.notSigner") : t("rsign.whoCanSign")}
+          </p>
         </>
       )}
       {err && <p className="mt-2 text-[11px] text-flare">{err}</p>}

@@ -42,6 +42,7 @@ export function Header() {
     { href: "/reputation", label: t("nav.reputation") },
     { href: "/governance", label: t("nav.governance") },
     { href: "/proposals", label: t("nav.proposals") },
+    { href: "/rewards", label: t("nav.rewards") },
     { href: "/powered-by", label: t("nav.poweredBy") },
     { href: "/faq", label: t("nav.faq") },
     // The detection methodology moved to oracleindependence.com. The /detection route still 308s there
