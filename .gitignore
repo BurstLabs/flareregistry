@@ -14,3 +14,6 @@ docs/
 
 # Internal scratch
 todo.md
+
+# Written by deploy.sh to skip npm ci when the lockfile has not moved.
+.deploy-deps-hash
