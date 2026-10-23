@@ -185,7 +185,7 @@ export function RewardRoster({
   // column looked unsorted because, to the eye, it was: a run of identical percentages in no
   // discernible order. Ordering on the figure a reader can actually see is what makes the fee
   // column read as the tiebreak it is.
-  const shown = (r: RewardSignerView) =>
+  const shownPct = (r: RewardSignerView) =>
     weightTotal > 0 ? Math.round((r.weight / weightTotal) * 1000) / 10 : 0;
   const fee = (r: RewardSignerView) => {
     try {
@@ -195,7 +195,7 @@ export function RewardRoster({
     }
   };
   const by = (a: RewardSignerView, b: RewardSignerView) => {
-    const d = shown(b) - shown(a);
+    const d = shownPct(b) - shownPct(a);
     if (d !== 0) return d;
     const fa = fee(a);
     const fb = fee(b);
