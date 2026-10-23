@@ -120,6 +120,15 @@ export interface PendingRewardEpoch {
    */
   signers: string[];
   /**
+   * Normalised weight per signing policy address, straight off the register.
+   *
+   * Kept here rather than read off the roster, which is what it did first. The roster is built from
+   * the database for names, and a database that is down degrades it to an empty list; the weight
+   * bar then read 0% while forty-five providers had in fact signed. The progress figure is the one
+   * thing on this page that must not be wrong, so it depends only on the chain.
+   */
+  weightOf: Record<string, number>;
+  /**
    * Signing policy addresses that have already signed this epoch, lowercased.
    *
    * RECOVERED FROM THE SIGNATURES, not read from a getter and not taken from the transaction
@@ -210,30 +219,75 @@ async function resolve(name: string): Promise<Address> {
 // boundary: the current epoch, the hashes, the registers, the threshold. Sixty seconds is shorter
 // than the signature scan behind it, so nothing here is the stale part, and in-flight dedupe means
 // a cold cache under traffic does the work once rather than once per request.
-let pendingCache: { at: number; data: PendingRewardEpoch | null } | null = null;
-let pendingInFlight: Promise<PendingRewardEpoch | null> | null = null;
+/** The half that only changes on an epoch boundary. Everything derived from signatures is not here. */
+type StablePending = Omit<
+  PendingRewardEpoch,
+  "signed" | "weightSigned" | "corroboration" | "roster"
+> & { roster: Omit<RewardSignerRow, "signed">[] };
+
+let pendingCache: { at: number; data: StablePending | null } | null = null;
+let pendingInFlight: Promise<StablePending | null> | null = null;
 const PENDING_TTL_MS = 60_000;
 
+/**
+ * TWO CACHES, NEVER STACKED, and that distinction is the whole point of this shape.
+ *
+ * The first version cached the finished answer for sixty seconds on top of a signature scan that
+ * was itself two minutes stale and served stale while it refreshed. Those compose: a provider who
+ * signed could wait around four minutes to see it, and the first thing they would conclude is that
+ * the page is broken. Observed exactly that, within minutes of a provider signing.
+ *
+ * So the stable half, which only moves on an epoch boundary, is cached for a minute, and everything
+ * derived from signatures is recomputed on top of it from a scan with a thirty second life of its
+ * own. The worst case is now that scan's age instead of the sum of both.
+ */
 export async function pendingRewardEpoch(): Promise<PendingRewardEpoch | null> {
-  if (pendingCache && Date.now() - pendingCache.at < PENDING_TTL_MS) return pendingCache.data;
-  if (pendingInFlight) return pendingInFlight;
-  pendingInFlight = buildPending()
-    .then((d) => {
-      pendingCache = { at: Date.now(), data: d };
-      return d;
-    })
-    .catch((e) => {
-      // Serve the last good answer rather than blanking a page over one bad read.
-      if (pendingCache) return pendingCache.data;
-      throw e;
-    })
-    .finally(() => {
-      pendingInFlight = null;
-    });
-  return pendingInFlight;
+  let stable: StablePending | null;
+  if (pendingCache && Date.now() - pendingCache.at < PENDING_TTL_MS) {
+    stable = pendingCache.data;
+  } else {
+    pendingInFlight ??= buildPending()
+      .then((d) => {
+        pendingCache = { at: Date.now(), data: d };
+        return d;
+      })
+      .catch((e) => {
+        // Serve the last good answer rather than blanking a page over one bad read.
+        if (pendingCache) return pendingCache.data;
+        throw e;
+      })
+      .finally(() => {
+        pendingInFlight = null;
+      });
+    stable = await pendingInFlight;
+  }
+  if (!stable) return null;
+
+  const scan: SignedScan = await signedFor(
+    stable.systemsManager,
+    stable.rewardEpochId,
+    stable.signStartTs
+  ).catch(() => ({ signers: [], byHash: {} }) as SignedScan);
+
+  const signedSet = new Set(scan.signers.map((a) => a.toLowerCase()));
+  const weightOf = stable.weightOf;
+  const want = stable.rewardsHash.toLowerCase();
+
+  return {
+    ...stable,
+    signed: scan.signers,
+    weightSigned: [...signedSet].reduce((acc, a) => acc + (weightOf[a] ?? 0), 0),
+    corroboration: {
+      agreeing: scan.byHash[want] ?? 0,
+      conflicting: Object.entries(scan.byHash)
+        .filter(([h]) => h !== want)
+        .reduce((a, [, n]) => a + n, 0),
+    },
+    roster: stable.roster.map((r) => ({ ...r, signed: signedSet.has(r.signingAddress) })),
+  };
 }
 
-async function buildPending(): Promise<PendingRewardEpoch | null> {
+async function buildPending(): Promise<StablePending | null> {
   const c = client();
   const [fsm, vr, rm] = await Promise.all([
     resolve("FlareSystemsManager"), resolve("VoterRegistry"), resolve("RewardManager"),
@@ -309,10 +363,11 @@ async function buildPending(): Promise<PendingRewardEpoch | null> {
       messageHash: rewardsMessageHash(e, claims, published.merkleRoot),
       eligible: signers.length,
       signers: signers.map((a) => a.toLowerCase()),
+      weightOf: aligned
+        ? Object.fromEntries(signers.map((a, i) => [a.toLowerCase(), Number(weights[i])]))
+        : {},
       // Never allowed to cost the page: the scan is an explorer call and this is a progress figure,
       // not the thing the page is for.
-      signed: signedNow,
-      weightSigned,
       weightThreshold,
       weightTotal,
       // Own catch: the roster is the useful half but it is still decoration next to the signing
@@ -320,14 +375,9 @@ async function buildPending(): Promise<PendingRewardEpoch | null> {
       // Imported here rather than at the top: reward-roster imports the ABIs from this module, and
       // a static cycle between the two resolves to undefined at module-init time.
       signStartTs: Number(signInfo[0]),
-      corroboration: {
-        agreeing: scan.byHash[published.merkleRoot.toLowerCase()] ?? 0,
-        conflicting: Object.entries(scan.byHash)
-          .filter(([h]) => h !== published.merkleRoot.toLowerCase())
-          .reduce((a, [, n]) => a + n, 0),
-      },
+      // Signed flags are applied by the caller from a fresh scan; these rows carry everything else.
       roster: await import("./reward-roster")
-        .then((m) => m.rewardRoster(fsm, vr, e, signedNow))
+        .then((m) => m.rewardRoster(fsm, vr, e, []))
         .catch(() => []),
       systemsManager: fsm,
       voterRegistry: vr,
@@ -350,7 +400,10 @@ async function buildPending(): Promise<PendingRewardEpoch | null> {
 // the nav and nobody should be the one visitor a cycle who waits for a scan.
 
 const EXPLORER = process.env.FLARE_EXPLORER_API ?? "https://flare-explorer.flare.network/api";
-const SIGNED_TTL_MS = 120_000;
+// Short, because this is the number somebody checks straight after signing and a stale one reads
+// as "it did not work". Affordable now the scan stops at the start of the signing window rather
+// than reading its full page cap.
+const SIGNED_TTL_MS = 30_000;
 /** signRewards(uint24,(uint256,uint256)[],bytes32,(uint8,bytes32,bytes32)) */
 const SIGN_REWARDS_SELECTOR = "0xc00a1a97";
 
@@ -370,7 +423,9 @@ let signedInFlight: Promise<SignedScan> | null = null;
 
 async function scanSigned(
   fsm: Address,
-  epoch: number
+  epoch: number,
+  /** When signing opened. Everything older than this cannot be a signature for this epoch. */
+  sinceTs: number
 ): Promise<{ signers: string[]; byHash: Record<string, number> }> {
   const out = new Set<string>();
   // WHICH ROOT EACH SIGNATURE ENDORSED, which is the corroboration this page needs before it asks
@@ -381,7 +436,7 @@ async function scanSigned(
   // cap is a backstop for the case where that marker never arrives.
   for (let page = 1; page <= 6; page++) {
     const url = `${EXPLORER}?module=account&action=txlist&address=${fsm}&sort=desc&page=${page}&offset=200`;
-    const rows: { input?: string; isError?: string }[] = await fetch(url, { cache: "no-store" })
+    const rows: { input?: string; isError?: string; timeStamp?: string }[] = await fetch(url, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { result: [] }))
       .then((j) => (Array.isArray(j?.result) ? j.result : []))
       .catch(() => []);
@@ -389,6 +444,14 @@ async function scanSigned(
 
     let reachedOlder = false;
     for (const t of rows) {
+      // PAST THE START OF THE WINDOW, so nothing after this can belong to this epoch. The pages are
+      // newest-first and the contract sees unrelated traffic, so without this the scan always read
+      // its full cap: eighteen days of transactions to cover a signing window of about one. The
+      // timestamp is the real boundary; the page cap is only a backstop.
+      if (sinceTs && Number(t.timeStamp ?? 0) > 0 && Number(t.timeStamp) < sinceTs) {
+        reachedOlder = true;
+        break;
+      }
       const input = t.input ?? "";
       if (!input.startsWith(SIGN_REWARDS_SELECTOR)) continue;
       // A reverted transaction signed nothing.
@@ -424,11 +487,11 @@ async function scanSigned(
 }
 
 /** Signers of `epoch`, cached and served stale while it refreshes. */
-export async function signedFor(fsm: Address, epoch: number): Promise<SignedScan> {
+export async function signedFor(fsm: Address, epoch: number, sinceTs = 0): Promise<SignedScan> {
   const fresh = signedCache && signedCache.epoch === epoch;
   if (fresh && Date.now() - signedCache!.at < SIGNED_TTL_MS) return signedCache!.data;
   if (fresh && !signedInFlight) {
-    signedInFlight = scanSigned(fsm, epoch)
+    signedInFlight = scanSigned(fsm, epoch, sinceTs)
       .then((d) => { signedCache = { at: Date.now(), epoch, data: d }; return d; })
       .catch(() => signedCache!.data)
       .finally(() => { signedInFlight = null; });
@@ -436,7 +499,7 @@ export async function signedFor(fsm: Address, epoch: number): Promise<SignedScan
   }
   if (fresh) return signedCache!.data;
   // Cold, or a new epoch: there is nothing to serve, so this caller does wait.
-  signedInFlight ??= scanSigned(fsm, epoch)
+  signedInFlight ??= scanSigned(fsm, epoch, sinceTs)
     .then((d) => { signedCache = { at: Date.now(), epoch, data: d }; return d; })
     .finally(() => { signedInFlight = null; });
   return signedInFlight;
