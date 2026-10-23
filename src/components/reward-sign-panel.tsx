@@ -48,6 +48,16 @@ export interface PendingRewardView {
   voterRegistry: `0x${string}`;
 }
 
+/** Wei to FLR with thousands separators, for a figure a provider will compare against their own. */
+function flr(wei: string): string {
+  try {
+    const n = Number(BigInt(wei) / 10n ** 15n) / 1000;
+    return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  } catch {
+    return "—";
+  }
+}
+
 type Phase = "idle" | "checking" | "signing" | "sending" | "mining" | "done" | "error";
 
 export function RewardSignPanel({ pending }: { pending: PendingRewardView | null }) {
@@ -265,6 +275,17 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
                       ? t("rsign.sign")
                       : t("rsign.connect")}
           </button>
+          {/* WHAT THE EPOCH IS WORTH TO THEM, which is what makes a delay concrete. Fee and pool
+              kept apart: the pool is mostly their delegators' money. */}
+          {mine && (BigInt(mine.feeWei) > 0n || BigInt(mine.poolWei) > 0n) && (
+            <p className="mt-2 text-[11px] text-muted">
+              {t("rsign.yourRewards", {
+                fee: flr(mine.feeWei),
+                pool: flr(mine.poolWei),
+                epoch: pending.rewardEpochId,
+              })}
+            </p>
+          )}
           {/* The one fact a connected provider actually wants: what their own signature does. */}
           {mine && !mine.signed && (
             <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400">

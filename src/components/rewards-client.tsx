@@ -2,6 +2,7 @@
 
 import { useApp } from "./providers";
 import { RewardSignPanel, type PendingRewardView } from "./reward-sign-panel";
+import { RewardWatchForm } from "./reward-watch-form";
 
 export function RewardsClient({ pending }: { pending: PendingRewardView | null }) {
   const { t } = useApp();
@@ -22,6 +23,10 @@ export function RewardsClient({ pending }: { pending: PendingRewardView | null }
           <p className="text-sm text-muted">{t("rewards.nothing")}</p>
         </section>
       )}
+
+      {/* The page only helps providers who think to visit it, which is the same problem signing
+          has in the first place. */}
+      <RewardWatchForm />
 
       <section className="mt-8 text-xs leading-relaxed text-faint">
         <h2 className="mb-1.5 text-sm font-semibold text-fg">{t("rewards.howTitle")}</h2>

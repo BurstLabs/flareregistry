@@ -1430,6 +1430,11 @@ model ProposalWatch {
   // Also mail at the midpoint of a voting window. Off unless asked for: the whole point of a second
   // message is that it is a nudge, and a nudge nobody opted into is just more mail.
   halfway   Boolean @default(false)
+  // Also mail when a reward epoch is waiting for provider signatures. A separate opt-in from the
+  // proposal alerts, and off by default, because it is an OPERATOR concern: a delegator subscribed
+  // to proposals has nothing to do about an unsigned reward epoch, and mailing them about it is how
+  // a useful list becomes one people leave.
+  rewards   Boolean @default(false)
   // Random URL-safe token behind the confirm link, the unsubscribe link and the halfway toggle. One
   // value for all three, as ProviderWatch does: it identifies the row and the row is the secret.
   token     String  @unique

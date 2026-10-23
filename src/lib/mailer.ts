@@ -279,6 +279,49 @@ export async function sendWatchFlagNotice(opts: {
 // unsubscribe people answer with the spam button, and a spam complaint costs the sending domain far
 // more than the subscriber was worth.
 
+/**
+ * A reward epoch is waiting for signatures.
+ *
+ * Deliberately sparse. The recipient is an operator who needs to know an epoch is open and go and
+ * sign it; the page carries the hash, the roster and the arithmetic. Repeating a Merkle root in an
+ * email would invite somebody to compare it against the page by eye, which is not a check that
+ * catches anything and is exactly the habit a phishing message would exploit.
+ */
+export async function sendRewardSignAlert(opts: {
+  to: string;
+  epoch: number;
+  pct: number;
+  signed: number;
+  of: number;
+  token: string;
+  halfway: boolean;
+}): Promise<void> {
+  if (!publicMailerConfigured()) return;
+  const t = encodeURIComponent(opts.token);
+  const base = `${PUBLIC_BASE_URL}/api/proposal-watch`;
+  const text = [
+    `Flare reward epoch ${opts.epoch} is waiting for provider signatures.`,
+    ``,
+    `  ${opts.signed} of ${opts.of} registered providers have signed`,
+    `  ${opts.pct}% of the weight needed to settle the epoch`,
+    ``,
+    `Nothing is claimable, by anyone, until enough weight has signed.`,
+    `Sign it here: ${PUBLIC_BASE_URL}/rewards`,
+    ``,
+    `You are receiving this because you asked Flare Registry to tell you when a reward epoch needs`,
+    `signing. You can change that at any time:`,
+    ``,
+    `  Stop reward-signing alerts: ${base}/rewards-alerts?token=${t}&on=0`,
+    `  Unsubscribe from everything: ${base}/unsubscribe?token=${t}`,
+  ].join("\n");
+  await getPublicTransport().sendMail({
+    from: PUBLIC_FROM,
+    to: opts.to,
+    subject: `Reward epoch ${opts.epoch} needs your signature`,
+    text,
+  });
+}
+
 /** The footer every proposal alert ends with: leave, or change the midpoint reminder. */
 function proposalWatchFooter(token: string, halfway: boolean): string[] {
   const t = encodeURIComponent(token);

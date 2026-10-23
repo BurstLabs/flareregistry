@@ -21,11 +21,26 @@ export interface RewardSignerView {
   href: string | null;
   weight: number;
   signed: boolean;
+  feeWei: string;
+  poolWei: string;
   history: { epoch: number; signed: boolean | null }[];
 }
 
 function shortAddr(a: string): string {
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
+}
+
+/** Wei to a short FLR figure. Whole numbers: nobody reading a roster wants four decimal places. */
+function fmtFlr(wei: string): string {
+  let n = 0;
+  try {
+    n = Number(BigInt(wei) / 10n ** 15n) / 1000;
+  } catch {
+    return "—";
+  }
+  if (n <= 0) return "—";
+  if (n >= 1000) return `${Math.round(n / 1000)}k`;
+  return `${Math.round(n)}`;
 }
 
 function Row({ r, weightTotal }: { r: RewardSignerView; weightTotal: number }) {
@@ -82,6 +97,13 @@ function Row({ r, weightTotal }: { r: RewardSignerView; weightTotal: number }) {
       <span className="whitespace-nowrap text-right tabular-nums text-[11px] text-faint">
         {share >= 0.05 ? `${share.toFixed(1)}%` : "<0.1%"}
       </span>
+
+      {/* THEIR OWN FEE for this epoch, which is the number that makes the delay concrete. The
+          delegation pool is deliberately not added in: it is mostly their delegators' money and
+          summing the two would tell a provider they earned something they did not. */}
+      <span className="whitespace-nowrap text-right tabular-nums text-[11px] text-faint">
+        {fmtFlr(r.feeWei)}
+      </span>
     </li>
   );
 }
@@ -126,7 +148,7 @@ export function RewardRoster({
             <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-faint">
               {t("rroster.signedH", { n: signed.length })}
             </p>
-            <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1.5">
+            <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 gap-y-1.5">
               {signed.map((r) => (
                 <Row key={r.voter} r={r} weightTotal={weightTotal} />
               ))}
@@ -137,7 +159,7 @@ export function RewardRoster({
               {t("rroster.waitingH", { n: waiting.length })}
             </p>
             {waiting.length ? (
-              <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-1.5">
+              <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 gap-y-1.5">
                 {waiting.map((r) => (
                   <Row key={r.voter} r={r} weightTotal={weightTotal} />
                 ))}

@@ -8,7 +8,8 @@ import {
   warnIfMailQuotaLow,
   type NoticeKind,
 } from "./proposal-watch";
-import { sendProposalAlert, publicMailerConfigured } from "./mailer";
+import { sendProposalAlert, sendRewardSignAlert, publicMailerConfigured } from "./mailer";
+import { pendingRewardEpoch } from "./reward-signing";
 
 // RUNNING THE ALERT SWEEP.
 //
@@ -103,6 +104,51 @@ export async function runProposalAlerts(): Promise<{
         }
       }
     }
+  }
+
+  // REWARD-EPOCH SIGNING, for the subscribers who asked for it.
+  //
+  // One message per epoch per subscriber, claimed behind the same unique index as everything else
+  // here, so a cron that runs every ten minutes does not mail anybody every ten minutes. Keyed
+  // "reward:<epoch>" so it cannot collide with a proposal key, which is `${contract}:${id}`.
+  //
+  // Only while it is still PENDING: an epoch that settles between ticks needed nobody, and an alert
+  // about a job already done is the kind of mail that teaches people to ignore the next one.
+  try {
+    const rewardWatchers = watches.filter((w) => w.rewards);
+    if (rewardWatchers.length) {
+      const pending = await pendingRewardEpoch();
+      if (pending) {
+        const key = `reward:${pending.rewardEpochId}`;
+        const pct = pending.weightThreshold
+          ? Math.min(100, Math.round((pending.weightSigned / pending.weightThreshold) * 100))
+          : 0;
+        for (const w of rewardWatchers) {
+          if (w.notices.some((n) => n.proposalKey === key && n.kind === "reward")) continue;
+          if (!(await claimNotice(w.id, key, "reward" as NoticeKind))) continue;
+          try {
+            await sendRewardSignAlert({
+              to: w.email,
+              epoch: pending.rewardEpochId,
+              pct,
+              signed: pending.signed.length,
+              of: pending.eligible,
+              token: w.token,
+              halfway: w.halfway,
+            });
+            await settleNotice(w.id, key, "reward" as NoticeKind, "sent");
+            sent++;
+          } catch (e) {
+            await settleNotice(w.id, key, "reward" as NoticeKind, "failed");
+            failed++;
+            console.error(`[proposal-alerts] reward alert failed for ${w.email}:`, e instanceof Error ? e.message : e);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // The reward half must never take the proposal half down with it.
+    console.error("[proposal-alerts] reward sweep failed:", e instanceof Error ? e.message : e);
   }
 
   // Running out of room, or already refused. Told to the operator over a different provider, at
