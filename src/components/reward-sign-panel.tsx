@@ -42,6 +42,8 @@ export interface PendingRewardView {
   weightTotal: number;
   /** Every registered provider, named, with their record. */
   roster: RewardSignerView[];
+  corroboration: { agreeing: number; conflicting: number };
+  signStartTs: number;
   systemsManager: `0x${string}`;
   voterRegistry: `0x${string}`;
 }
@@ -148,6 +150,20 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
   // Progress against the BAR, not against the whole group. Signing is weighted and the threshold is
   // half the weight, so "46% of all weight" and "92% of the way there" are both true of the same
   // moment and only the second tells anyone whether to hurry.
+  // THE GATE. A conflict means signatures on chain endorse a different root from the one this page
+  // derived, and the page has no business asking anybody to sign until that is understood. Refusing
+  // is the safe failure: a missed signature costs a delay, a wrong one can settle a wrong
+  // distribution.
+  const conflicted = pending.corroboration.conflicting > 0;
+  // What this provider's own signature would do, which is the question they actually have.
+  const mine = isConnected && address
+    ? pending.roster.find((r) => r.signingAddress === address.toLowerCase())
+    : undefined;
+  const wouldSettle =
+    mine && !mine.signed && pending.weightSigned + mine.weight > pending.weightThreshold;
+  const hours = pending.signStartTs
+    ? Math.max(0, (Date.now() / 1000 - pending.signStartTs) / 3600)
+    : 0;
   const pct = pending.weightThreshold
     ? Math.min(100, (pending.weightSigned / pending.weightThreshold) * 100)
     : 0;
@@ -195,6 +211,11 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
               })}
             </span>
           </div>
+          <p className="mt-1 text-[11px] text-faint">
+            {t("rsign.openFor", { hours: hours.toFixed(0) })}
+            {pending.corroboration.agreeing > 0 &&
+              ` · ${t("rsign.corroborated", { n: pending.corroboration.agreeing })}`}
+          </p>
           <div className="mt-1 h-2 w-full rounded-full bg-black/10 ring-1 ring-inset ring-themed dark:bg-white/10">
             <div
               className={`h-2 rounded-full ${pct >= 100 ? "bg-emerald-500" : "bg-amber-500"}`}
@@ -204,7 +225,14 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
         </div>
       )}
 
-      {already && phase !== "done" ? (
+      {conflicted ? (
+        <p className="mt-3 text-sm text-flare">
+          {t("rsign.conflict", {
+            agreeing: pending.corroboration.agreeing,
+            conflicting: pending.corroboration.conflicting,
+          })}
+        </p>
+      ) : already && phase !== "done" ? (
         <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">{t("rsign.already")}</p>
       ) : phase === "done" ? (
         <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
@@ -237,6 +265,16 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
                       ? t("rsign.sign")
                       : t("rsign.connect")}
           </button>
+          {/* The one fact a connected provider actually wants: what their own signature does. */}
+          {mine && !mine.signed && (
+            <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400">
+              {wouldSettle
+                ? t("rsign.wouldSettle")
+                : t("rsign.yourWeight", {
+                    pct: ((mine.weight / Math.max(1, pending.weightTotal)) * 100).toFixed(1),
+                  })}
+            </p>
+          )}
           {/* The address that has to sign is not the one a provider signs in with here, and that is
               the single most likely reason this fails. Said before the attempt, not after: a
               connected wallet that cannot sign is told so immediately, and the button is dead
