@@ -34,6 +34,11 @@ export interface PendingRewardView {
   eligible: number;
   /** Registered signing policy addresses for the epoch, lowercased. */
   signers: string[];
+  /** Those that have already signed, lowercased. */
+  signed: string[];
+  weightSigned: number;
+  weightThreshold: number;
+  weightTotal: number;
   systemsManager: `0x${string}`;
   voterRegistry: `0x${string}`;
 }
@@ -136,6 +141,13 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
   // after a signature prompt. isSigner is undefined while no wallet is connected: unknown and
   // "no" are different, and only one of them should discourage anybody.
   const isSigner = isConnected && address ? pending.signers.includes(address.toLowerCase()) : undefined;
+  const already = isConnected && address ? pending.signed.includes(address.toLowerCase()) : false;
+  // Progress against the BAR, not against the whole group. Signing is weighted and the threshold is
+  // half the weight, so "46% of all weight" and "92% of the way there" are both true of the same
+  // moment and only the second tells anyone whether to hurry.
+  const pct = pending.weightThreshold
+    ? Math.min(100, (pending.weightSigned / pending.weightThreshold) * 100)
+    : 0;
 
   return (
     <section className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/[0.04] p-5">
@@ -163,7 +175,35 @@ export function RewardSignPanel({ pending }: { pending: PendingRewardView | null
         </div>
       </dl>
 
-      {phase === "done" ? (
+      {/* WHERE IT HAS GOT TO. The bar measures weight against the threshold, because that is the
+          thing that actually ends this; the share of the whole group is given beside it so the two
+          are not confused. */}
+      {pending.weightThreshold > 0 && (
+        <div className="mt-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-[11px]">
+            <span className="text-fg">
+              {t("rsign.progress", { pct: pct.toFixed(0) })}
+            </span>
+            <span className="text-faint">
+              {t("rsign.progressDetail", {
+                signed: pending.signed.length,
+                of: pending.eligible,
+                share: ((pending.weightSigned / Math.max(1, pending.weightTotal)) * 100).toFixed(0),
+              })}
+            </span>
+          </div>
+          <div className="mt-1 h-2 w-full rounded-full bg-black/10 ring-1 ring-inset ring-themed dark:bg-white/10">
+            <div
+              className={`h-2 rounded-full ${pct >= 100 ? "bg-emerald-500" : "bg-amber-500"}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {already && phase !== "done" ? (
+        <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">{t("rsign.already")}</p>
+      ) : phase === "done" ? (
         <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
           {t("rsign.done")}{" "}
           {txHash && (
