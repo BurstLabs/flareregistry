@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-10-23T19:47:02.994Z",
+  "timestamp": "2026-10-23T20:35:27.311Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -43,6 +43,60 @@
         },
         "qualification": {
           "qualifiedSince": "2026-07-13T16:18:09.642Z",
+          "lastSubmittedEpoch": 443,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "0x37b4035932f09c532fd10b887266fdd7249495b1",
+      "description": "",
+      "url": "",
+      "address": "0x37B4035932F09c532FD10b887266FdD7249495b1",
+      "logoURI": "https://flareregistry.com/logo-placeholder.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "160000000000000000000",
+        "votePowerCapped": "160000000000000000000",
+        "feedCount": 62,
+        "lastEpoch": 443,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x9e5Ef16D129beA89A5aB2A553392B75bd33268F0",
+          "submit": "0x32A68B0fCE21B23690bd315FfA93F8B7Cd9B7176",
+          "submitSignatures": "0x1bb56F4c872B59E51a59B20B6097CcF7cEe8ff2b",
+          "signingPolicy": "0x1978f7693Ae47BdC9336D311D055Fdf7c3cBA505",
+          "delegation": "0x37B4035932F09c532FD10b887266FdD7249495b1"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-3tx749xYxFY3q6jkH4msGnygsUVMqZJ8d",
+            "feePercent": 20,
+            "uptimePercent": 99.9879,
+            "connected": true,
+            "weight": "5051205640000000",
+            "selfBond": "5000000000000000",
+            "delegatedWeight": "51205640000000",
+            "delegatorCount": 1
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-10-23T10:18:31.494Z",
           "lastSubmittedEpoch": 443,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -4553,7 +4607,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 443,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -8416,7 +8470,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 443,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
