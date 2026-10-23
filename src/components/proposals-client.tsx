@@ -17,6 +17,7 @@ import { ProposalCriteria } from "@/components/proposal-criteria";
 import { MgRemovablePanel, type RemovableMemberView } from "@/components/mg-removable-panel";
 import { ProposalWatchForm } from "@/components/proposal-watch-form";
 import { buildMemberHistory, type HistoryCell } from "@/lib/member-history";
+import { RewardSignPanel, type PendingRewardView } from "@/components/reward-sign-panel";
 import { safeExternalUrl } from "@/lib/validation";
 import type { MgProposalView } from "@/lib/mg-proposals";
 
@@ -46,6 +47,8 @@ interface Payload {
   nowMs: number;
   /** Current members that removeMember would accept today. Empty is the normal case. */
   removable: RemovableMemberView[];
+  /** The reward epoch awaiting signatures, or null when there is nothing to sign. */
+  pendingReward: PendingRewardView | null;
   /** The union of every member seen, interned; participation refers to it by index. */
   members: MemberRef[];
   /** Keyed `${contract}:${id}`. Absent for a proposal whose events we could not read. */
@@ -536,6 +539,10 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
       {/* Removal standing sits ABOVE the proposal list on purpose. It is the same subject the list
           is about, the group deciding these votes, and a member who has stopped turning up is
           exactly what the rosters below keep showing. */}
+      {/* FIRST, above everything. It is the only thing on this page with a deadline attached to
+          somebody else's money: nothing is claimable by anyone until enough weight has signed. */}
+      <RewardSignPanel pending={data.pendingReward} />
+
       <MgRemovablePanel members={data.removable} memberCount={data.memberCount} />
 
       {/* Only rendered for an address the contract says may propose; it returns null otherwise, so
