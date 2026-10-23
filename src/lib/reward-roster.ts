@@ -230,3 +230,28 @@ async function publishedClaims(epoch: number): Promise<Map<string, Record<number
   claimsCache.set(epoch, out);
   return out;
 }
+
+
+/**
+ * THE RECORD WHEN THERE IS NOTHING TO SIGN, which is most of the time.
+ *
+ * An epoch is only signable for the hours between Flare publishing its distribution and the
+ * threshold being reached, so the overwhelming majority of visits land on "nothing pending" and
+ * used to find an empty page. Who signs reliably is a standing fact about a provider, not a fact
+ * about whichever epoch happens to be open, and it is worth showing either way.
+ *
+ * Built from the same cached rows as the live roster. `signed` here means "signed THAT epoch",
+ * taken from getVoterRewardsSignInfo, which answers exactly and cheaply once an epoch has settled.
+ */
+export async function settledRewardRoster(
+  fsm: Address,
+  vr: Address,
+  epoch: number
+): Promise<RewardSignerRow[]> {
+  const [rows, signedThen] = await Promise.all([
+    // Pass an empty signed list: the flags are replaced below from the settled getter.
+    rewardRoster(fsm, vr, epoch, []),
+    signedInSettled(fsm, vr, epoch),
+  ]);
+  return rows.map((r) => ({ ...r, signed: signedThen.get(r.voter) === true }));
+}

@@ -161,10 +161,13 @@ export function RewardRoster({
   roster,
   weightTotal,
   epoch,
+  settled,
 }: {
   roster: RewardSignerView[];
   weightTotal: number;
   epoch: number;
+  /** A finished epoch: the second column is "did not sign", not "not yet". */
+  settled?: boolean;
 }) {
   const { t } = useApp();
   // OPEN BY DEFAULT. The names are the actionable half of this page: a percentage says the epoch is
@@ -212,7 +215,11 @@ export function RewardRoster({
         aria-expanded={shown}
         className="flex min-h-[32px] items-center gap-1.5 text-xs text-muted hover:text-beacon"
       >
-        <span>{t("rroster.toggle", { signed: signed.length, waiting: waiting.length })}</span>
+        <span>
+          {settled
+            ? t("rroster.toggleSettled", { signed: signed.length, waiting: waiting.length })
+            : t("rroster.toggle", { signed: signed.length, waiting: waiting.length })}
+        </span>
         <span aria-hidden="true">{shown ? "▴" : "▾"}</span>
       </button>
 
@@ -231,7 +238,9 @@ export function RewardRoster({
           </div>
           <div>
             <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-faint">
-              {t("rroster.waitingH", { n: waiting.length })}
+              {settled
+                ? t("rroster.missedH", { n: waiting.length })
+                : t("rroster.waitingH", { n: waiting.length })}
             </p>
             {waiting.length ? (
               <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 gap-y-1.5">
