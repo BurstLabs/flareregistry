@@ -204,7 +204,36 @@ async function resolve(name: string): Promise<Address> {
  * otherwise: offering a button that can only revert is worse than offering nothing. Only a couple
  * of epochs are ever checked, since anything older has long since settled.
  */
+// THE WHOLE LOOKUP, CACHED AND DEDUPED.
+//
+// Every render was repeating about ten contract reads to re-derive facts that change on an epoch
+// boundary: the current epoch, the hashes, the registers, the threshold. Sixty seconds is shorter
+// than the signature scan behind it, so nothing here is the stale part, and in-flight dedupe means
+// a cold cache under traffic does the work once rather than once per request.
+let pendingCache: { at: number; data: PendingRewardEpoch | null } | null = null;
+let pendingInFlight: Promise<PendingRewardEpoch | null> | null = null;
+const PENDING_TTL_MS = 60_000;
+
 export async function pendingRewardEpoch(): Promise<PendingRewardEpoch | null> {
+  if (pendingCache && Date.now() - pendingCache.at < PENDING_TTL_MS) return pendingCache.data;
+  if (pendingInFlight) return pendingInFlight;
+  pendingInFlight = buildPending()
+    .then((d) => {
+      pendingCache = { at: Date.now(), data: d };
+      return d;
+    })
+    .catch((e) => {
+      // Serve the last good answer rather than blanking a page over one bad read.
+      if (pendingCache) return pendingCache.data;
+      throw e;
+    })
+    .finally(() => {
+      pendingInFlight = null;
+    });
+  return pendingInFlight;
+}
+
+async function buildPending(): Promise<PendingRewardEpoch | null> {
   const c = client();
   const [fsm, vr, rm] = await Promise.all([
     resolve("FlareSystemsManager"), resolve("VoterRegistry"), resolve("RewardManager"),

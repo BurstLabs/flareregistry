@@ -17,10 +17,12 @@
 // the key an operator actually has to find.
 
 import { createPublicClient, http, type Address } from "viem";
+import { prisma } from "./db";
 import { resolveMembers } from "./mg-votes";
 import { fsmAbi, voterRegistryAbi } from "./reward-signing";
 
 const RPC = process.env.FLARE_RPC_URL ?? "https://flare-api.flare.network/ext/C/rpc";
+const FSP_RAW = "https://raw.githubusercontent.com/flare-foundation/fsp-rewards/main/flare";
 /** How many settled epochs of record to show beside each name. */
 export const HISTORY_EPOCHS = 8;
 
@@ -39,6 +41,16 @@ export interface RewardSignerRow {
   signed: boolean;
   /** Oldest first. `signed` is null where they were not registered for that epoch. */
   history: { epoch: number; signed: boolean | null }[];
+  /**
+   * What this epoch is worth to them, in wei, from Flare's published claim list.
+   *
+   * `feeWei` is the provider's own cut, claimed against their IDENTITY address (claim type 1).
+   * `poolWei` is the WNAT reward paid to their DELEGATION address (type 2), which is the pool they
+   * share with their delegators rather than money of their own. Kept apart for that reason: adding
+   * them would tell a provider they earned a number that is mostly somebody else's.
+   */
+  feeWei: string;
+  poolWei: string;
 }
 
 const client = () => createPublicClient({ transport: http(RPC, { batch: true }) });
@@ -84,6 +96,11 @@ async function signedInSettled(fsm: Address, vr: Address, epoch: number): Promis
 // seconds a page load for an answer that was identical each time, so the expensive half is cached
 // and the signed flags are applied fresh on top of it.
 const rosterCache = new Map<number, { at: number; rows: Omit<RewardSignerRow, "signed">[] }>();
+// IN-FLIGHT DEDUPE. Without it, every request arriving on a cold cache runs the whole build at
+// once: two register reads, a walk back over settled epochs, eight batches of a hundred contract
+// calls and a database query, all producing the same answer. One does the work and the rest wait
+// on it.
+const rosterInFlight = new Map<number, Promise<Omit<RewardSignerRow, "signed">[]>>();
 const ROSTER_TTL_MS = 300_000;
 
 export async function rewardRoster(
@@ -97,6 +114,27 @@ export async function rewardRoster(
   if (cached && Date.now() - cached.at < ROSTER_TTL_MS) {
     return cached.rows.map((r) => ({ ...r, signed: signedSet.has(r.signingAddress) }));
   }
+  const inFlight = rosterInFlight.get(pendingEpoch);
+  if (inFlight) {
+    const rows = await inFlight;
+    return rows.map((r) => ({ ...r, signed: signedSet.has(r.signingAddress) }));
+  }
+  const build = buildRoster(fsm, vr, pendingEpoch)
+    .then((rows) => {
+      rosterCache.set(pendingEpoch, { at: Date.now(), rows });
+      return rows;
+    })
+    .finally(() => rosterInFlight.delete(pendingEpoch));
+  rosterInFlight.set(pendingEpoch, build);
+  const rows = await build;
+  return rows.map((r) => ({ ...r, signed: signedSet.has(r.signingAddress) }));
+}
+
+async function buildRoster(
+  fsm: Address,
+  vr: Address,
+  pendingEpoch: number
+): Promise<Omit<RewardSignerRow, "signed">[]> {
   const c = client();
   const [[voters, weights], signingAddrs] = await Promise.all([
     c.readContract({ address: vr, abi: voterRegistryAbi,
@@ -121,14 +159,22 @@ export async function rewardRoster(
   }
   history.reverse(); // oldest first, so the strip reads as a history
 
-  const [past, refs] = await Promise.all([
+  const [past, refs, claimsByBeneficiary, delegationOf] = await Promise.all([
     Promise.all(history.map((e) => signedInSettled(fsm, vr, e))),
     resolveMembers(voters.map((v) => v.toLowerCase())),
+    publishedClaims(pendingEpoch),
+    // The WNAT reward is paid to the DELEGATION address, not the identity one, so the mapping has
+    // to come from our own register of role addresses.
+    prisma.providerOnchain
+      .findMany({ where: { network: "flare" }, select: { voter: true, delegationAddress: true } })
+      .then((rows) => new Map(rows.map((r) => [r.voter.toLowerCase(), r.delegationAddress?.toLowerCase() ?? null])))
+      .catch(() => new Map<string, string | null>()),
   ]);
 
-  const rows: Omit<RewardSignerRow, "signed">[] = voters.map((v, i) => {
+  return voters.map((v, i) => {
     const voter = v.toLowerCase();
     const ref = refs.get(voter);
+    const deleg = delegationOf.get(voter);
     return {
       voter,
       signingAddress: signingAddrs[i].toLowerCase(),
@@ -141,8 +187,46 @@ export async function rewardRoster(
         // Absent from that epoch's register is "not registered", not "did not sign".
         signed: past[k].has(voter) ? past[k].get(voter)! : null,
       })),
+      feeWei: (claimsByBeneficiary.get(voter)?.[1] ?? 0n).toString(),
+      poolWei: (deleg ? (claimsByBeneficiary.get(deleg)?.[2] ?? 0n) : 0n).toString(),
     };
   });
-  rosterCache.set(pendingEpoch, { at: Date.now(), rows });
-  return rows.map((r) => ({ ...r, signed: signedSet.has(r.signingAddress) }));
+}
+
+
+// ---------------------------------------------------------------------------
+// What the epoch is worth, per beneficiary
+// ---------------------------------------------------------------------------
+//
+// Flare's published distribution lists every claim as { beneficiary, claimType, amount }. Cached
+// per epoch and never refetched: a published distribution does not change, and if it ever did the
+// corroboration check on the root is what would catch it.
+//
+// claimType 1 = FEE, paid to the identity address: the provider's own cut.
+// claimType 2 = WNAT, paid to the delegation address: the pool shared with delegators.
+// Types 0 and 3 (direct, and staking by node id) are not attributed here; the first is not a
+// provider reward and the second is keyed by node rather than by address.
+const claimsCache = new Map<number, Map<string, Record<number, bigint>>>();
+
+async function publishedClaims(epoch: number): Promise<Map<string, Record<number, bigint>>> {
+  const hit = claimsCache.get(epoch);
+  if (hit) return hit;
+  const out = new Map<string, Record<number, bigint>>();
+  try {
+    const data = await fetch(`${FSP_RAW}/${epoch}/reward-distribution-data.json`).then((r) =>
+      r.ok ? r.json() : null
+    );
+    for (const c of data?.rewardClaims ?? []) {
+      const b = c?.body;
+      if (!b?.beneficiary || b.amount == null) continue;
+      const key = String(b.beneficiary).toLowerCase();
+      const bucket = out.get(key) ?? {};
+      bucket[Number(b.claimType)] = (bucket[Number(b.claimType)] ?? 0n) + BigInt(b.amount);
+      out.set(key, bucket);
+    }
+  } catch {
+    // No claim data is a missing figure, not a wrong one: the rows render without it.
+  }
+  claimsCache.set(epoch, out);
+  return out;
 }

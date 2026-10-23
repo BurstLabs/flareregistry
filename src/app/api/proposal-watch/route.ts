@@ -16,6 +16,8 @@ export const dynamic = "force-dynamic";
 const schema = z.object({
   email: z.string().trim().email().max(160),
   halfway: z.boolean().optional(),
+  // Reward-epoch signing alerts, asked for from /rewards rather than /proposals.
+  rewards: z.boolean().optional(),
   // Honeypot: a hidden field real users never fill. It must PASS validation so a bot filling it is
   // not handed a 400 that reveals the trap; the handler drops it silently below.
   website: z.string().max(200).optional(),
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return apiError("WATCH_INVALID", "a valid email is required", 400);
   }
-  const { email, halfway, website } = parsed.data;
+  const { email, halfway, rewards, website } = parsed.data;
 
   // Honeypot tripped: report the same success a person gets, and persist nothing.
   if (website && website.trim() !== "") return NextResponse.json({ ok: true, pending: true });
@@ -48,8 +50,11 @@ export async function POST(req: NextRequest) {
   // the halfway preference, because a person re-submitting the form with the box in the other
   // position means it, and making them hunt for an old email to flip it would be absurd.
   if (existing?.confirmed) {
-    if (typeof halfway === "boolean" && halfway !== existing.halfway) {
-      await prisma.proposalWatch.update({ where: { id: existing.id }, data: { halfway } });
+    const changes: { halfway?: boolean; rewards?: boolean } = {};
+    if (typeof halfway === "boolean" && halfway !== existing.halfway) changes.halfway = halfway;
+    if (typeof rewards === "boolean" && rewards !== existing.rewards) changes.rewards = rewards;
+    if (Object.keys(changes).length) {
+      await prisma.proposalWatch.update({ where: { id: existing.id }, data: changes });
     }
     return NextResponse.json({ ok: true, pending: false });
   }
@@ -57,10 +62,10 @@ export async function POST(req: NextRequest) {
   const token = newProposalWatchToken();
   await prisma.proposalWatch.upsert({
     where: { email: to },
-    create: { email: to, halfway: halfway ?? false, token },
+    create: { email: to, halfway: halfway ?? false, rewards: rewards ?? false, token },
     // An unconfirmed re-subscribe rotates the token and re-sends, so a lost confirmation email is
     // recoverable by asking again rather than by waiting for anything to expire.
-    update: { halfway: halfway ?? false, token },
+    update: { halfway: halfway ?? false, rewards: rewards ?? false, token },
   });
 
   try {
