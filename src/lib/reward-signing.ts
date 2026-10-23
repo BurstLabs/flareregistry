@@ -60,9 +60,6 @@ export const fsmAbi = [
 ] as const;
 
 export const voterRegistryAbi = [
-  { type: "function", name: "getVoterWithNormalisedWeight", stateMutability: "view",
-    inputs: [{ type: "uint24" }, { type: "address" }],
-    outputs: [{ type: "address" }, { type: "uint16" }] },
   { type: "function", name: "getRegisteredSigningPolicyAddresses", stateMutability: "view",
     inputs: [{ type: "uint256" }], outputs: [{ type: "address[]" }] },
 ] as const;
@@ -87,6 +84,17 @@ export interface PendingRewardEpoch {
    * and is what the page says.
    */
   eligible: number;
+  /**
+   * The epoch's registered signing policy addresses, lowercased.
+   *
+   * Carried so the page can tell a visitor whether their connected wallet may sign WITHOUT calling
+   * the chain. getVoterWithNormalisedWeight looked like the natural check and is a trap: for an
+   * address that is not a signer it does not return a zero address, it REVERTS on
+   * `require(_voter != _signingPolicyAddress)`, so the obvious implementation showed a raw
+   * "execution reverted" blob to the one person it was supposed to be helping. A list membership
+   * test cannot fail, and it can answer before the wallet is touched instead of after.
+   */
+  signers: string[];
   /** Contract addresses, so the client does not resolve them again. */
   systemsManager: Address;
   voterRegistry: Address;
@@ -175,6 +183,7 @@ export async function pendingRewardEpoch(): Promise<PendingRewardEpoch | null> {
       })),
       messageHash: rewardsMessageHash(e, claims, published.merkleRoot),
       eligible: signers.length,
+      signers: signers.map((a) => a.toLowerCase()),
       systemsManager: fsm,
       voterRegistry: vr,
     };
