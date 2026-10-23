@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { pendingRewardEpoch } from "@/lib/reward-signing";
+import { pendingRewardEpoch, lastSettledRewardEpoch } from "@/lib/reward-signing";
 import { RewardsClient } from "@/components/rewards-client";
 
 // /rewards — the reward-epoch sign-off.
@@ -21,5 +21,8 @@ export default async function RewardsPage() {
   // Own try/catch: this reads Flare's published file over the network, and a GitHub hiccup should
   // leave a page that says so rather than a 500.
   const pending = await pendingRewardEpoch().catch(() => null);
-  return <RewardsClient pending={pending} />;
+  // Only when there is nothing to sign, which is most of the time: an epoch is signable for the
+  // hours between publication and the threshold, and the record is worth showing in between.
+  const settled = pending ? null : await lastSettledRewardEpoch().catch(() => null);
+  return <RewardsClient pending={pending} settled={settled} />;
 }

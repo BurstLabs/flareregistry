@@ -3,8 +3,21 @@
 import { useApp } from "./providers";
 import { RewardSignPanel, type PendingRewardView } from "./reward-sign-panel";
 import { RewardWatchForm } from "./reward-watch-form";
+import { RewardRoster, type RewardSignerView } from "./reward-roster";
 
-export function RewardsClient({ pending }: { pending: PendingRewardView | null }) {
+export interface SettledView {
+  rewardEpochId: number;
+  roster: RewardSignerView[];
+  weightTotal: number;
+}
+
+export function RewardsClient({
+  pending,
+  settled,
+}: {
+  pending: PendingRewardView | null;
+  settled: SettledView | null;
+}) {
   const { t } = useApp();
   return (
     <div>
@@ -19,9 +32,29 @@ export function RewardsClient({ pending }: { pending: PendingRewardView | null }
         // NOTHING PENDING IS THE NORMAL STATE and reads as a healthy one, not as an empty page.
         // An epoch is only signable for the hours between Flare publishing the distribution and
         // the signing threshold being reached, so most visits land here.
-        <section className="surface rounded-xl border p-5">
-          <p className="text-sm text-muted">{t("rewards.nothing")}</p>
-        </section>
+        <>
+          <section className="surface rounded-xl border p-5">
+            <p className="text-sm text-muted">{t("rewards.nothing")}</p>
+          </section>
+
+          {/* THE RECORD STILL STANDS. Who signs reliably is a fact about a provider rather than
+              about whichever epoch happens to be open, and leaving the page empty between epochs
+              threw it away for the majority of visits. */}
+          {settled && settled.roster.length > 0 && (
+            <section className="mt-6">
+              <h2 className="text-sm font-semibold">
+                {t("rewards.lastEpochH", { epoch: settled.rewardEpochId })}
+              </h2>
+              <p className="mt-1 text-xs text-muted">{t("rewards.lastEpochIntro")}</p>
+              <RewardRoster
+                roster={settled.roster}
+                weightTotal={settled.weightTotal}
+                epoch={settled.rewardEpochId}
+                settled
+              />
+            </section>
+          )}
+        </>
       )}
 
       {/* The page only helps providers who think to visit it, which is the same problem signing

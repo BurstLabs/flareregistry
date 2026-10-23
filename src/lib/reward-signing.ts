@@ -504,3 +504,63 @@ export async function signedFor(fsm: Address, epoch: number, sinceTs = 0): Promi
     .finally(() => { signedInFlight = null; });
   return signedInFlight;
 }
+
+
+// ---------------------------------------------------------------------------
+// The record, when nothing is pending
+// ---------------------------------------------------------------------------
+
+export interface SettledRewardView {
+  rewardEpochId: number;
+  roster: RewardSignerRow[];
+  weightTotal: number;
+}
+
+let settledCache: { at: number; data: SettledRewardView | null } | null = null;
+let settledInFlight: Promise<SettledRewardView | null> | null = null;
+const SETTLED_TTL_MS = 600_000;
+
+/**
+ * The most recently settled epoch and who signed it.
+ *
+ * Only consulted when nothing is pending, and cached for ten minutes because a settled epoch is
+ * finished: nothing about it will change again.
+ */
+export async function lastSettledRewardEpoch(): Promise<SettledRewardView | null> {
+  if (settledCache && Date.now() - settledCache.at < SETTLED_TTL_MS) return settledCache.data;
+  settledInFlight ??= (async () => {
+    const c = createPublicClient({ transport: http(RPC, { batch: true }) });
+    const [fsm, vr] = await Promise.all([resolve("FlareSystemsManager"), resolve("VoterRegistry")]);
+    const current = Number(
+      await c.readContract({ address: fsm, abi: fsmAbi, functionName: "getCurrentRewardEpochId" })
+    );
+    for (let e = current - 1; e >= current - 4 && e >= 0; e--) {
+      const h = (await c.readContract({
+        address: fsm, abi: fsmAbi, functionName: "rewardsHash", args: [BigInt(e)],
+      })) as string;
+      if (BigInt(h) === 0n) continue;
+      const [, weights] = (await c.readContract({
+        address: vr, abi: voterRegistryAbi,
+        functionName: "getRegisteredVotersAndNormalisedWeights", args: [BigInt(e)],
+      })) as readonly [readonly Address[], readonly number[]];
+      const roster = await import("./reward-roster")
+        .then((m) => m.settledRewardRoster(fsm, vr, e))
+        .catch(() => []);
+      return {
+        rewardEpochId: e,
+        roster,
+        weightTotal: weights.reduce((a, b) => a + Number(b), 0),
+      };
+    }
+    return null;
+  })()
+    .then((d) => {
+      settledCache = { at: Date.now(), data: d };
+      return d;
+    })
+    .catch(() => settledCache?.data ?? null)
+    .finally(() => {
+      settledInFlight = null;
+    });
+  return settledInFlight;
+}
