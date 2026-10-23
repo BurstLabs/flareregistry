@@ -43,7 +43,26 @@ function fmtFlr(wei: string): string {
   return `${Math.round(n)}`;
 }
 
-function Row({ r, weightTotal }: { r: RewardSignerView; weightTotal: number }) {
+/** The exact figure behind an abbreviated one, for the hover. */
+function exactFlr(wei: string): string {
+  try {
+    return (Number(BigInt(wei) / 10n ** 15n) / 1000).toLocaleString(undefined, {
+      maximumFractionDigits: 0,
+    });
+  } catch {
+    return "0";
+  }
+}
+
+function Row({
+  r,
+  weightTotal,
+  epoch,
+}: {
+  r: RewardSignerView;
+  weightTotal: number;
+  epoch: number;
+}) {
   const { t } = useApp();
   const share = weightTotal > 0 ? (r.weight / weightTotal) * 100 : 0;
   const body = (
@@ -94,15 +113,45 @@ function Row({ r, weightTotal }: { r: RewardSignerView; weightTotal: number }) {
 
       {/* Weight is why a name matters here: one provider holding 8% moves this more than twenty
           holding a tenth of a percent each. */}
-      <span className="whitespace-nowrap text-right tabular-nums text-[11px] text-faint">
+      {/* TITLE IS RIGHT HERE, unlike on the tick strips. This is one wide text target a pointer
+          comes to rest on, which is the case a native tooltip handles well; the strips are rows of
+          four-pixel squares, which is the case it handles not at all. */}
+      <span
+        title={t("rroster.weightTip", { weight: r.weight, total: weightTotal.toLocaleString() })}
+        className="whitespace-nowrap text-right tabular-nums text-[11px] text-faint"
+      >
         {share >= 0.05 ? `${share.toFixed(1)}%` : "<0.1%"}
       </span>
 
       {/* THEIR OWN FEE for this epoch, which is the number that makes the delay concrete. The
           delegation pool is deliberately not added in: it is mostly their delegators' money and
           summing the two would tell a provider they earned something they did not. */}
-      <span className="whitespace-nowrap text-right tabular-nums text-[11px] text-faint">
+      <span
+        title={
+          BigInt(r.feeWei || "0") > 0n
+            ? t("rroster.feeTip", { flr: exactFlr(r.feeWei), epoch })
+            : t("rroster.feeNone", { epoch })
+        }
+        className="whitespace-nowrap text-right tabular-nums text-[11px] text-faint"
+      >
         {fmtFlr(r.feeWei)}
+      </span>
+    </li>
+  );
+}
+
+/** Column headings, so the two numeric columns say what they are without anyone hovering. */
+function Head() {
+  const { t } = useApp();
+  return (
+    <li className="contents">
+      <span />
+      <span />
+      <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-faint">
+        {t("rroster.colWeight")}
+      </span>
+      <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-faint">
+        {t("rroster.colFee")}
       </span>
     </li>
   );
@@ -111,9 +160,11 @@ function Row({ r, weightTotal }: { r: RewardSignerView; weightTotal: number }) {
 export function RewardRoster({
   roster,
   weightTotal,
+  epoch,
 }: {
   roster: RewardSignerView[];
   weightTotal: number;
+  epoch: number;
 }) {
   const { t } = useApp();
   // OPEN BY DEFAULT. The names are the actionable half of this page: a percentage says the epoch is
@@ -149,8 +200,9 @@ export function RewardRoster({
               {t("rroster.signedH", { n: signed.length })}
             </p>
             <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 gap-y-1.5">
+              <Head />
               {signed.map((r) => (
-                <Row key={r.voter} r={r} weightTotal={weightTotal} />
+                <Row key={r.voter} r={r} weightTotal={weightTotal} epoch={epoch} />
               ))}
             </ul>
           </div>
@@ -160,8 +212,9 @@ export function RewardRoster({
             </p>
             {waiting.length ? (
               <ul className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-x-2 gap-y-1.5">
+                <Head />
                 {waiting.map((r) => (
-                  <Row key={r.voter} r={r} weightTotal={weightTotal} />
+                  <Row key={r.voter} r={r} weightTotal={weightTotal} epoch={epoch} />
                 ))}
               </ul>
             ) : (
