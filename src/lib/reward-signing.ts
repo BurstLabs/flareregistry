@@ -27,7 +27,10 @@
 // limit on who this page can help, and it is stated on the page rather than discovered at the point
 // of a failed transaction.
 
-import { createPublicClient, http, keccak256, encodeAbiParameters, type Address } from "viem";
+import {
+  createPublicClient, http, keccak256, encodeAbiParameters, decodeFunctionData,
+  recoverAddress, hashMessage, type Address,
+} from "viem";
 
 const RPC = process.env.FLARE_RPC_URL ?? "https://flare-api.flare.network/ext/C/rpc";
 const REGISTRY = "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019" as const;
@@ -46,6 +49,8 @@ export const fsmAbi = [
     inputs: [{ type: "uint256" }], outputs: [{ type: "bytes32" }] },
   { type: "function", name: "uptimeVoteHash", stateMutability: "view",
     inputs: [{ type: "uint256" }], outputs: [{ type: "bytes32" }] },
+  { type: "function", name: "signingPolicyThresholdPPM", stateMutability: "view",
+    inputs: [], outputs: [{ type: "uint24" }] },
   { type: "function", name: "signRewards", stateMutability: "nonpayable",
     inputs: [
       { name: "_rewardEpochId", type: "uint24" },
@@ -62,6 +67,11 @@ export const fsmAbi = [
 export const voterRegistryAbi = [
   { type: "function", name: "getRegisteredSigningPolicyAddresses", stateMutability: "view",
     inputs: [{ type: "uint256" }], outputs: [{ type: "address[]" }] },
+  // Index-aligned with the signing policy addresses above: both walk the same register, which is
+  // checked at runtime rather than trusted, because a silent misalignment would attribute each
+  // provider somebody else's weight.
+  { type: "function", name: "getRegisteredVotersAndNormalisedWeights", stateMutability: "view",
+    inputs: [{ type: "uint256" }], outputs: [{ type: "address[]" }, { type: "uint16[]" }] },
 ] as const;
 
 const rewardManagerAbi = [
@@ -95,6 +105,30 @@ export interface PendingRewardEpoch {
    * test cannot fail, and it can answer before the wallet is touched instead of after.
    */
   signers: string[];
+  /**
+   * Signing policy addresses that have already signed this epoch, lowercased.
+   *
+   * RECOVERED FROM THE SIGNATURES, not read from a getter and not taken from the transaction
+   * sender. getVoterRewardsSignInfo requires rewardsHash to be set, so it reverts for precisely the
+   * epoch anyone wants progress on. And the sender is not the signer: signRewards checks only the
+   * signature, so a provider's signature can be relayed by any address at all. Recovering is the
+   * only answer that is true in both cases, and it is proof rather than inference.
+   */
+  signed: string[];
+  /**
+   * SIGNING IS WEIGHTED, so a count of signers is not the progress anybody needs. The contract
+   * accumulates each signer's normalised weight and compares it to a threshold:
+   *
+   *   threshold      = ceil(normalisedWeightsSum * signingPolicyThresholdPPM / 1e6)
+   *   thresholdReached = accumulatedWeight + weight > threshold     (strictly greater)
+   *
+   * Transcribed from the contract rather than assumed, and checked against the live register: 43
+   * signers held 30,257 of the 32,744 needed, which is 92% of the way there on 46% of all weight.
+   * Those two numbers are very different, and the first is the one that decides anything.
+   */
+  weightSigned: number;
+  weightThreshold: number;
+  weightTotal: number;
   /** Contract addresses, so the client does not resolve them again. */
   systemsManager: Address;
   voterRegistry: Address;
@@ -169,10 +203,32 @@ export async function pendingRewardEpoch(): Promise<PendingRewardEpoch | null> {
       { rewardManagerId, noOfWeightBasedClaims: BigInt(published.noOfWeightBasedClaims) },
     ];
 
-    const signers = (await c.readContract({
-      address: vr, abi: voterRegistryAbi,
-      functionName: "getRegisteredSigningPolicyAddresses", args: [BigInt(e)],
-    })) as Address[];
+    const [signers, votersAndWeights, thresholdPPM] = await Promise.all([
+      c.readContract({ address: vr, abi: voterRegistryAbi,
+        functionName: "getRegisteredSigningPolicyAddresses", args: [BigInt(e)] }) as Promise<Address[]>,
+      c.readContract({ address: vr, abi: voterRegistryAbi,
+        functionName: "getRegisteredVotersAndNormalisedWeights", args: [BigInt(e)] }) as Promise<
+        readonly [readonly Address[], readonly number[]]
+      >,
+      c.readContract({ address: fsm, abi: fsmAbi, functionName: "signingPolicyThresholdPPM" }) as Promise<number>,
+    ]);
+    const weights = votersAndWeights[1];
+    // The two registers must line up or every weight is attributed to the wrong provider. Checked
+    // rather than trusted: on a mismatch the weight figures are dropped and the page shows the
+    // signer count alone, which is worse but is not wrong.
+    const aligned = weights.length === signers.length;
+    const weightTotal = aligned ? weights.reduce((a, b) => a + Number(b), 0) : 0;
+    const weightThreshold = aligned
+      ? Math.ceil((weightTotal * Number(thresholdPPM)) / 1_000_000)
+      : 0;
+
+    // Never allowed to cost the page: the scan is an explorer call and this is a progress figure,
+    // not the thing the page is for.
+    const signedNow = await signedFor(fsm, e).catch(() => []);
+    const weightByAddr = new Map(
+      aligned ? signers.map((a, i) => [a.toLowerCase(), Number(weights[i])] as const) : []
+    );
+    const weightSigned = signedNow.reduce((acc, a) => acc + (weightByAddr.get(a) ?? 0), 0);
 
     return {
       rewardEpochId: e,
@@ -184,9 +240,113 @@ export async function pendingRewardEpoch(): Promise<PendingRewardEpoch | null> {
       messageHash: rewardsMessageHash(e, claims, published.merkleRoot),
       eligible: signers.length,
       signers: signers.map((a) => a.toLowerCase()),
+      // Never allowed to cost the page: the scan is an explorer call and this is a progress figure,
+      // not the thing the page is for.
+      signed: signedNow,
+      weightSigned,
+      weightThreshold,
+      weightTotal,
       systemsManager: fsm,
       voterRegistry: vr,
     };
   }
   return null;
+}
+
+
+// ---------------------------------------------------------------------------
+// Who has already signed
+// ---------------------------------------------------------------------------
+//
+// Cached, because this is the expensive half of the page: several hundred transactions fetched to
+// answer a question about a few dozen signatures. Signatures trickle in over hours, so a couple of
+// minutes stale costs a reader nothing, and an epoch that has reached its threshold stops changing
+// altogether.
+//
+// Served stale while it refreshes, the same bargain fetchParticipation makes: the page is linked in
+// the nav and nobody should be the one visitor a cycle who waits for a scan.
+
+const EXPLORER = process.env.FLARE_EXPLORER_API ?? "https://flare-explorer.flare.network/api";
+const SIGNED_TTL_MS = 120_000;
+/** signRewards(uint24,(uint256,uint256)[],bytes32,(uint8,bytes32,bytes32)) */
+const SIGN_REWARDS_SELECTOR = "0xc00a1a97";
+
+const signRewardsAbi = [
+  { type: "function", name: "signRewards", stateMutability: "nonpayable", inputs: [
+    { name: "rewardEpochId", type: "uint24" },
+    { name: "claims", type: "tuple[]", components: [
+      { name: "rewardManagerId", type: "uint256" }, { name: "noOfWeightBasedClaims", type: "uint256" }] },
+    { name: "rewardsHash", type: "bytes32" },
+    { name: "signature", type: "tuple", components: [
+      { name: "v", type: "uint8" }, { name: "r", type: "bytes32" }, { name: "s", type: "bytes32" }] },
+  ], outputs: [] },
+] as const;
+
+let signedCache: { at: number; epoch: number; data: string[] } | null = null;
+let signedInFlight: Promise<string[]> | null = null;
+
+async function scanSigned(fsm: Address, epoch: number): Promise<string[]> {
+  const out = new Set<string>();
+  // Newest first, and stop as soon as a signRewards for an OLDER epoch appears: that is the start
+  // of this epoch's signing window, and everything past it is a previous epoch's business. The page
+  // cap is a backstop for the case where that marker never arrives.
+  for (let page = 1; page <= 6; page++) {
+    const url = `${EXPLORER}?module=account&action=txlist&address=${fsm}&sort=desc&page=${page}&offset=200`;
+    const rows: { input?: string; isError?: string }[] = await fetch(url, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { result: [] }))
+      .then((j) => (Array.isArray(j?.result) ? j.result : []))
+      .catch(() => []);
+    if (!rows.length) return [...out];
+
+    let reachedOlder = false;
+    for (const t of rows) {
+      const input = t.input ?? "";
+      if (!input.startsWith(SIGN_REWARDS_SELECTOR)) continue;
+      // A reverted transaction signed nothing.
+      if (t.isError === "1") continue;
+      try {
+        const { args } = decodeFunctionData({ abi: signRewardsAbi, data: input as `0x${string}` });
+        const [id, claims, rewardsHash, signature] = args as unknown as [
+          number,
+          { rewardManagerId: bigint; noOfWeightBasedClaims: bigint }[],
+          `0x${string}`,
+          { v: number; r: `0x${string}`; s: `0x${string}` },
+        ];
+        if (Number(id) !== epoch) {
+          if (Number(id) < epoch) reachedOlder = true;
+          continue;
+        }
+        const msg = rewardsMessageHash(Number(id), claims, rewardsHash);
+        const who = await recoverAddress({
+          hash: hashMessage({ raw: msg }),
+          signature: { v: BigInt(signature.v), r: signature.r, s: signature.s },
+        });
+        out.add(who.toLowerCase());
+      } catch {
+        // A call we cannot decode is not a signature we can attribute. Skipping one is right;
+        // guessing at it would put a name on the page that nobody put there.
+      }
+    }
+    if (reachedOlder || rows.length < 200) break;
+  }
+  return [...out];
+}
+
+/** Signers of `epoch`, cached and served stale while it refreshes. */
+export async function signedFor(fsm: Address, epoch: number): Promise<string[]> {
+  const fresh = signedCache && signedCache.epoch === epoch;
+  if (fresh && Date.now() - signedCache!.at < SIGNED_TTL_MS) return signedCache!.data;
+  if (fresh && !signedInFlight) {
+    signedInFlight = scanSigned(fsm, epoch)
+      .then((d) => { signedCache = { at: Date.now(), epoch, data: d }; return d; })
+      .catch(() => signedCache!.data)
+      .finally(() => { signedInFlight = null; });
+    return signedCache!.data; // expired, but nobody waits for the scan
+  }
+  if (fresh) return signedCache!.data;
+  // Cold, or a new epoch: there is nothing to serve, so this caller does wait.
+  signedInFlight ??= scanSigned(fsm, epoch)
+    .then((d) => { signedCache = { at: Date.now(), epoch, data: d }; return d; })
+    .finally(() => { signedInFlight = null; });
+  return signedInFlight;
 }
