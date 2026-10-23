@@ -174,10 +174,33 @@ export function RewardRoster({
   const [shown, setShown] = useState(true);
   if (!roster.length) return null;
 
-  // Heaviest first within each column. The question a reader has while an epoch is stuck is which
-  // missing signature would actually move it, and that is a question about weight, not about
-  // alphabetical order.
-  const by = (a: RewardSignerView, b: RewardSignerView) => b.weight - a.weight;
+  // Heaviest first within each column, then by what the epoch pays them. The question a reader has
+  // while an epoch is stuck is which missing signature would actually move it, which is a question
+  // about weight rather than about the alphabet.
+  //
+  // THE TIEBREAK IS ON THE DISPLAYED WEIGHT, not the raw one, and that is the whole point of it.
+  // Sorting by raw weight and breaking exact ties would have changed almost nothing: on the live
+  // register only three rows share an exact weight, while twenty-one groups covering ninety-three
+  // of the hundred rows share a weight once rounded to the one decimal the column shows. The
+  // column looked unsorted because, to the eye, it was: a run of identical percentages in no
+  // discernible order. Ordering on the figure a reader can actually see is what makes the fee
+  // column read as the tiebreak it is.
+  const shown = (r: RewardSignerView) =>
+    weightTotal > 0 ? Math.round((r.weight / weightTotal) * 1000) / 10 : 0;
+  const fee = (r: RewardSignerView) => {
+    try {
+      return BigInt(r.feeWei || "0");
+    } catch {
+      return 0n;
+    }
+  };
+  const by = (a: RewardSignerView, b: RewardSignerView) => {
+    const d = shown(b) - shown(a);
+    if (d !== 0) return d;
+    const fa = fee(a);
+    const fb = fee(b);
+    return fb > fa ? 1 : fb < fa ? -1 : 0;
+  };
   const signed = roster.filter((r) => r.signed).sort(by);
   const waiting = roster.filter((r) => !r.signed).sort(by);
 
