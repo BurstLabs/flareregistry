@@ -11,6 +11,7 @@ import {
   fetchParticipation, participationKey, resolveMembers, fetchRemovableMemberViews,
 } from "@/lib/mg-votes";
 import { ProposalsClient } from "@/components/proposals-client";
+import { pendingRewardEpoch } from "@/lib/reward-signing";
 
 // /proposals - Flare's own Management Group proposals, read from PollingManagementGroup.
 //
@@ -140,6 +141,10 @@ export default async function ProposalsPage() {
       // Members any stranger could remove from the group today. Its own try/catch: this is a
       // sidebar fact, and a failure to read it must not cost the page its proposals.
       removable: await fetchRemovableMemberViews().catch(() => []),
+      // THE REWARD SIGN-OFF, on the page a provider already opens to act on votes. Own try/catch:
+      // it reads Flare's published file over the network, and a GitHub hiccup must not cost the
+      // proposals page.
+      pendingReward: await pendingRewardEpoch().catch(() => null),
       members: memberList,
       participation: byProposal,
     };

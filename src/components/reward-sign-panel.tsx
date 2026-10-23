@@ -1,0 +1,217 @@
+"use client";
+
+// SIGN THE REWARD EPOCH, from the page rather than from a terminal.
+//
+// Nothing is claimable for anybody until enough weight has signed the published distribution, so
+// the whole network waits on a quorum of operators each remembering to run a command. Epoch 443 sat
+// unsigned for most of a day while this was written.
+//
+// WHO THIS CAN HELP, said plainly up front rather than discovered at a failed transaction: the
+// signature has to come from the epoch's SIGNING POLICY ADDRESS, which is not the identity address
+// a provider signs in with here, and which many operators keep on their server rather than in a
+// wallet. The panel checks the connected address against the register before offering anything, and
+// says why when it refuses.
+//
+// WAIT FOR THE CHAIN, never congratulate on submission. Same rule as the proposal vote button: a
+// transaction can revert after broadcast, and "signed" over a reverted transaction is the one lie
+// that would actually cost something here, because the operator then stops thinking about it.
+
+import { useState } from "react";
+import {
+  useAccount, useChainId, usePublicClient, useSignMessage, useSwitchChain, useWriteContract,
+} from "wagmi";
+import { openWallet } from "@/lib/appkit";
+import { useApp } from "./providers";
+import { fsmAbi, voterRegistryAbi } from "@/lib/reward-signing";
+
+const FLARE_CHAIN_ID = 14;
+
+export interface PendingRewardView {
+  rewardEpochId: number;
+  rewardsHash: `0x${string}`;
+  claims: { rewardManagerId: string; noOfWeightBasedClaims: string }[];
+  messageHash: `0x${string}`;
+  eligible: number;
+  systemsManager: `0x${string}`;
+  voterRegistry: `0x${string}`;
+}
+
+type Phase = "idle" | "checking" | "signing" | "sending" | "mining" | "done" | "error";
+
+export function RewardSignPanel({ pending }: { pending: PendingRewardView | null }) {
+  const { t } = useApp();
+  const { address, isConnected, chainId } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { signMessageAsync } = useSignMessage();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient({ chainId: FLARE_CHAIN_ID });
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [err, setErr] = useState("");
+  const [txHash, setTxHash] = useState<string | null>(null);
+
+  if (!pending) return null;
+
+  async function run() {
+    if (!pending) return;
+    setErr("");
+    try {
+      if (!isConnected || !address) {
+        await openWallet();
+        return;
+      }
+      // The vote lives on Flare. Enforced rather than requested: a signature produced against the
+      // wrong chain id is still a valid signature of the wrong thing.
+      if (chainId !== FLARE_CHAIN_ID) await switchChainAsync({ chainId: FLARE_CHAIN_ID });
+      if (!publicClient) {
+        setPhase("error");
+        setErr(t("rsign.noClient"));
+        return;
+      }
+
+      // IS THIS ADDRESS EVEN A SIGNER for that epoch? Asked before the wallet is bothered, because
+      // the alternative is a signature prompt followed by a revert, and the operator would have no
+      // idea which of the two addresses they were meant to be using.
+      setPhase("checking");
+      const [voter] = (await publicClient.readContract({
+        address: pending.voterRegistry,
+        abi: voterRegistryAbi,
+        functionName: "getVoterWithNormalisedWeight",
+        args: [pending.rewardEpochId, address],
+      })) as [string, number];
+      if (!voter || /^0x0{40}$/i.test(voter)) {
+        setPhase("error");
+        setErr(t("rsign.notSigner"));
+        return;
+      }
+
+      // EIP-191 over the RAW 32 bytes. The contract recovers with toEthSignedMessageHash, so the
+      // wallet's own prefixing is exactly right; signing the hex STRING instead would prefix the
+      // 66-character text and recover a different address entirely.
+      setPhase("signing");
+      const sig = await signMessageAsync({ message: { raw: pending.messageHash } });
+      const r = `0x${sig.slice(2, 66)}` as `0x${string}`;
+      const s = `0x${sig.slice(66, 130)}` as `0x${string}`;
+      let v = parseInt(sig.slice(130, 132), 16);
+      // Some wallets still return 0/1 where the contract wants 27/28.
+      if (v < 27) v += 27;
+
+      const args = [
+        pending.rewardEpochId,
+        pending.claims.map((c) => ({
+          rewardManagerId: BigInt(c.rewardManagerId),
+          noOfWeightBasedClaims: BigInt(c.noOfWeightBasedClaims),
+        })),
+        pending.rewardsHash,
+        { v, r, s },
+      ] as const;
+
+      // SIMULATED BEFORE SENDING, which is how "you already signed", "uptime vote hash not signed
+      // yet" and "rewards hash already signed" arrive as sentences instead of as a burnt fee.
+      setPhase("sending");
+      try {
+        await publicClient.simulateContract({
+          address: pending.systemsManager, abi: fsmAbi, functionName: "signRewards",
+          args: args as never, account: address,
+        });
+      } catch (e) {
+        setPhase("error");
+        const m = e instanceof Error ? e.message : String(e);
+        const reason = /reverted with the following reason:\s*\n?(.+)/i.exec(m)?.[1]?.trim();
+        setErr(reason || m.slice(0, 180));
+        return;
+      }
+
+      const hash = await writeContractAsync({
+        address: pending.systemsManager, abi: fsmAbi, functionName: "signRewards",
+        args: args as never, chainId: FLARE_CHAIN_ID,
+      });
+      setTxHash(hash);
+      setPhase("mining");
+      const rec = await publicClient.waitForTransactionReceipt({ hash });
+      if (rec.status !== "success") {
+        setPhase("error");
+        setErr(t("rsign.reverted"));
+        return;
+      }
+      setPhase("done");
+    } catch (e) {
+      const m = e instanceof Error ? e.message : String(e);
+      if (/user rejected|denied|rejected the request/i.test(m)) {
+        setPhase("idle");
+        return;
+      }
+      setPhase("error");
+      setErr(m.slice(0, 180));
+    }
+  }
+
+  const busy = phase === "checking" || phase === "signing" || phase === "sending" || phase === "mining";
+
+  return (
+    <section className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/[0.04] p-5">
+      <h2 className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+        {t("rsign.title", { epoch: pending.rewardEpochId })}
+      </h2>
+      <p className="mt-1.5 text-xs text-muted">{t("rsign.intro")}</p>
+
+      <dl className="mt-3 space-y-1 text-[11px]">
+        <div className="flex flex-wrap gap-2">
+          <dt className="w-28 shrink-0 text-faint">{t("rsign.rewardsHash")}</dt>
+          <dd className="min-w-0 break-all font-mono text-muted">{pending.rewardsHash}</dd>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <dt className="w-28 shrink-0 text-faint">{t("rsign.claims")}</dt>
+          <dd className="min-w-0 break-all font-mono text-muted">
+            {pending.claims
+              .map((c) => `${c.noOfWeightBasedClaims} (manager ${c.rewardManagerId})`)
+              .join(", ")}
+          </dd>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <dt className="w-28 shrink-0 text-faint">{t("rsign.registered")}</dt>
+          <dd className="text-muted">{t("rsign.registeredN", { n: pending.eligible })}</dd>
+        </div>
+      </dl>
+
+      {phase === "done" ? (
+        <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">
+          {t("rsign.done")}{" "}
+          {txHash && (
+            <a
+              className="underline"
+              href={`https://flare-explorer.flare.network/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("mg.viewTx")}
+            </a>
+          )}
+        </p>
+      ) : (
+        <>
+          <button
+            onClick={run}
+            disabled={busy}
+            className="mt-3 rounded bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-500/30 disabled:opacity-50 dark:text-amber-300"
+          >
+            {phase === "checking"
+              ? t("rsign.checking")
+              : phase === "signing"
+                ? t("rsign.signing")
+                : phase === "sending"
+                  ? t("rsign.sending")
+                  : phase === "mining"
+                    ? t("rsign.mining")
+                    : isConnected
+                      ? t("rsign.sign")
+                      : t("rsign.connect")}
+          </button>
+          {/* The address that has to sign is not the one a provider signs in with here, and that is
+              the single most likely reason this fails. Said before the attempt, not after. */}
+          <p className="mt-2 text-[11px] text-faint">{t("rsign.whoCanSign")}</p>
+        </>
+      )}
+      {err && <p className="mt-2 text-[11px] text-flare">{err}</p>}
+    </section>
+  );
+}
