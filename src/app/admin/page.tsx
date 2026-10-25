@@ -25,6 +25,7 @@ type Tab =
   | "reports"
   | "consumers"
   | "alerts"
+  | "content"
   | "detection"
   | "telegram"
   | "system";
@@ -164,6 +165,7 @@ export default function AdminPage() {
     { id: "reports", label: "Logo reports" },
     { id: "consumers", label: "Consumers" },
     { id: "alerts", label: "Proposal alerts" },
+    { id: "content", label: "Content review" },
     { id: "telegram", label: "Telegram" },
     { id: "system", label: "System" },
   ];
@@ -213,6 +215,7 @@ export default function AdminPage() {
         {tab === "reports" && <ReportsTab onChanged={loadCounts} />}
         {tab === "consumers" && <ConsumersTab />}
         {tab === "alerts" && <ProposalAlertsTab />}
+        {tab === "content" && <ContentReviewTab />}
         {tab === "telegram" && <TelegramTab />}
         {tab === "system" && <SystemTab />}
       </div>
@@ -2074,6 +2077,129 @@ function ConsumerEditor({
  * link is not a subscriber and is never mailed, but it is the single most useful signal that the
  * confirmation mail is landing in spam, which is invisible from anywhere else.
  */
+/**
+ * CONTENT REVIEW: descriptions that tripped a heuristic, and the editor the admin never had.
+ *
+ * The profanity filter already refuses swearing at submit time. What it cannot see is the abuse
+ * that actually costs somebody money: a phishing handle, a drainer link, a guaranteed-return
+ * promise. None of that contains a rude word, all of it reaches delegators through every wallet
+ * that consumes the feed, and it goes live the moment a provider signs.
+ *
+ * So those are flagged rather than refused, and land here. Flagged rather than refused because
+ * every rule behind this is a guess about intent, and a guess wrong often enough to reject honest
+ * listings has no business standing between a provider and their own page.
+ *
+ * The description editor is the other half. The admin API has always accepted a description edit;
+ * nothing in the interface ever offered one, so the only remedy for a bad listing was to suspend
+ * or archive the whole provider. Fixing one sentence should not cost a provider their listing.
+ */
+function ContentReviewTab() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState("");
+  const [msg, setMsg] = useState("");
+  const load = useCallback(async () => {
+    const r = await fetch("/api/admin/providers?flagged=1");
+    const b = await r.json();
+    setRows(b.providers ?? []);
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function patch(id: string, body: Record<string, unknown>, label: string) {
+    setBusy(id);
+    setMsg("");
+    try {
+      const r = await fetch("/api/admin/providers", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, ...body }),
+      });
+      setMsg(r.ok ? `${label} done.` : "Failed.");
+      if (r.ok) load();
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between text-xs text-muted">
+        <span className="font-semibold text-fg">Descriptions flagged for review</span>
+        <span>{msg}</span>
+      </div>
+      <Card>
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted">Nothing flagged. Every live description is clean.</p>
+        ) : (
+          <ul className="space-y-5">
+            {rows.map((p) => {
+              const flags: { kind: string; detail: string }[] = Array.isArray(p.contentFlags)
+                ? p.contentFlags
+                : [];
+              const text = draft[p.id] ?? p.description ?? "";
+              return (
+                <li key={p.id} className="border-t border-themed/50 pt-4 first:border-0 first:pt-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium">{p.name}</span>
+                    {p.url && (
+                      <a href={p.url} target="_blank" rel="noreferrer" className="text-[11px] text-beacon hover:underline">
+                        {p.url}
+                      </a>
+                    )}
+                    {p.suspended && <Chip tone="red">suspended</Chip>}
+                  </div>
+                  {/* WHY it was flagged, in the words of the rule that flagged it. An admin should
+                      not have to re-read a paragraph hunting for what tripped it. */}
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {flags.map((f, i) => (
+                      <Chip key={i} tone={f.kind === "off-domain-link" || f.kind === "contact-handle" ? "red" : "amber"}>
+                        {f.kind}: {f.detail}
+                      </Chip>
+                    ))}
+                  </div>
+                  <textarea
+                    rows={3}
+                    className={`${inputCls} mt-2`}
+                    value={text}
+                    onChange={(e) => setDraft((d) => ({ ...d, [p.id]: e.target.value }))}
+                  />
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                    <button
+                      onClick={() => patch(p.id, { description: text }, "Saved")}
+                      disabled={!!busy || text === (p.description ?? "")}
+                      className="rounded bg-emerald-500/15 px-2.5 py-1 text-emerald-400 disabled:opacity-40"
+                    >
+                      {busy === p.id ? "…" : "save description"}
+                    </button>
+                    {/* Re-reviewed on save, so removing the offending line clears the flag by
+                        itself. This is for the case where the text is fine as it stands. */}
+                    <button
+                      onClick={() => patch(p.id, { clearFlags: true }, "Cleared")}
+                      disabled={!!busy}
+                      className="rounded bg-black/10 px-2.5 py-1 text-muted dark:bg-white/10"
+                    >
+                      looks fine, clear flag
+                    </button>
+                    <button
+                      onClick={() => patch(p.id, { suspended: !p.suspended }, "Updated")}
+                      disabled={!!busy}
+                      className="rounded bg-flare/15 px-2.5 py-1 text-flare"
+                    >
+                      {p.suspended ? "unsuspend" : "suspend provider"}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 function ProposalAlertsTab() {
   const [d, setD] = useState<any>(null);
   const [busy, setBusy] = useState("");

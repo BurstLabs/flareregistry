@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSessionAddress } from "@/lib/session";
 import { providerInputSchema, normalizeName } from "@/lib/validation";
+import { reviewDescription } from "@/lib/content-review";
 import { publishFeedToRepo } from "@/lib/feed";
 import { rateLimit } from "@/lib/rate-limit";
 import { isRegisteredOnchain, resolveEntityListingAddress, entityRoleAddresses } from "@/lib/metrics";
@@ -184,10 +186,20 @@ export async function POST(req: NextRequest) {
   const result = await prisma.$transaction(async (tx) => {
     // On claim/update, branding comes from the submitter and the provider becomes owner-owned
     // (source "submitted"), so it is no longer treated as an unclaimed imported seed.
+    // REVIEWED ON EVERY WRITE, create and edit alike, because the edit path is the one that
+    // matters: a listing can be claimed with innocuous copy and the phishing link added later.
+    // Recomputed rather than merged, so removing the offending line clears the flag by itself and
+    // a provider is never left wearing a mark they have already fixed.
+    const flags = reviewDescription(input.description, input.url);
+
     const branding = {
       name: input.name,
       description: input.description,
       url: input.url,
+      // Cast because Prisma types a Json column as InputJsonValue, which a typed array does not
+      // structurally satisfy even though it serialises identically.
+      contentFlags: flags.length ? (flags as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+      contentFlaggedAt: flags.length ? new Date() : null,
       privateNode: input.privateNode ?? null,
       algorithm: input.algorithm ?? null,
       singleEntity: input.singleEntity ?? null,

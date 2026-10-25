@@ -32,6 +32,13 @@ model Provider {
   // Self-declared fields: things the TowoLabs extended requirements list but that cannot be
   // verified on-chain, so they are provider-attested and shown labeled as "self-declared".
   // privateNode: submits prices from a private (not shared) node.
+  // CONTENT REVIEW. Reasons the description was flagged for a human look, as a JSON array of
+  // {kind, detail}. Null means reviewed-and-clean or never flagged; an admin clearing it sets null.
+  // The listing is published either way: these are heuristics about intent, and refusing a listing
+  // on one would reject honest providers. See lib/content-review.
+  contentFlags     Json?
+  contentFlaggedAt DateTime?
+
   privateNode  Boolean? // null = not declared
   // algorithm: "in-house" | "open-source" | null (not declared).
   algorithm    String?
