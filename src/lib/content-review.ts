@@ -54,9 +54,14 @@ const LINK_RE =
 // opener, and nothing a provider needs in a registry description when they have a website field.
 const HANDLE_RE = /\b(?:t\.me\/|telegram:|discord\.gg\/|wa\.me\/|@[a-z0-9_]{4,})/gi;
 
-// Promises about money. Phrased as a return, a guarantee, or an airdrop to claim.
+// Promises about MONEY specifically.
+//
+// A bare "guarantee" was the first version and it was too broad: "processed on a distributed P2P
+// network to guarantee their accuracy" is a claim about data, not about returns, and flagging it
+// taught an admin to skim past the queue. The word only counts when what is being guaranteed is a
+// payout, so it now has to be followed by one.
 const PROMISE_RE =
-  /\b(?:guarantee(?:d|s)?|guaranteed\s+returns?|risk[-\s]?free|no\s+risk|\d{2,3}\s?%\s*(?:apy|apr|returns?|profit)|double\s+your|airdrop|claim\s+your|free\s+(?:flr|tokens?|crypto))\b/gi;
+  /\b(?:guarantee[ds]?\s+(?:returns?|profits?|income|yields?|apy|apr|rewards?|earnings?)|risk[-\s]?free|no\s+risk|\d{2,3}\s?%\s*(?:apy|apr|returns?|profit)|double\s+your|airdrop|claim\s+your|free\s+(?:flr|tokens?|crypto))\b/gi;
 
 // Manufactured urgency, which is what turns a reader into a clicker.
 const URGENCY_RE = /\b(?:act\s+now|limited\s+time|hurry|last\s+chance|expires?\s+(?:soon|today)|only\s+\d+\s+(?:spots?|places?)\s+left)\b/gi;
