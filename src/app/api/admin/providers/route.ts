@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { reviewDescription } from "@/lib/content-review";
 import { requireAdmin, getAdminAddress } from "@/lib/admin";
 import { publishFeedToRepo } from "@/lib/feed";
 
@@ -9,9 +11,15 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const denied = await requireAdmin();
   if (denied) return denied;
-  const q = (new URL(req.url).searchParams.get("q") ?? "").trim().toLowerCase();
+  const url = new URL(req.url);
+  const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
+  // ?flagged=1 is the content-review queue: listings whose description tripped a heuristic in
+  // lib/content-review and that nobody has looked at yet.
+  const onlyFlagged = url.searchParams.get("flagged") === "1";
   const providers = await prisma.provider.findMany({
-    where: q
+    where: onlyFlagged
+      ? { contentFlags: { not: Prisma.DbNull } }
+      : q
       ? {
           OR: [
             { name: { contains: q, mode: "insensitive" } },
@@ -20,7 +28,7 @@ export async function GET(req: NextRequest) {
         }
       : undefined,
     include: { addresses: { orderBy: { chainId: "asc" } } },
-    orderBy: { name: "asc" },
+    orderBy: onlyFlagged ? { contentFlaggedAt: "desc" } : { name: "asc" },
     take: 200,
   });
   return NextResponse.json({ providers });
@@ -37,7 +45,23 @@ export async function PATCH(req: NextRequest) {
 
   const data: Record<string, unknown> = {};
   if (typeof b.name === "string") data.name = b.name.trim();
-  if (typeof b.description === "string") data.description = b.description;
+  if (typeof b.description === "string") {
+    data.description = b.description;
+    // RE-REVIEWED ON AN ADMIN EDIT TOO. An admin removing the offending line should clear the flag
+    // by doing so, not have to clear it twice; and an admin who introduces one should be flagged
+    // like anybody else.
+    const current = await prisma.provider.findUnique({
+      where: { id }, select: { url: true },
+    });
+    const flags = reviewDescription(b.description, typeof b.url === "string" ? b.url : current?.url);
+    data.contentFlags = flags.length ? (flags as unknown as Prisma.InputJsonValue) : Prisma.DbNull;
+    data.contentFlaggedAt = flags.length ? new Date() : null;
+  }
+  // "Reviewed, and it is fine": clears the mark without touching the text.
+  if (b.clearFlags === true) {
+    data.contentFlags = Prisma.DbNull;
+    data.contentFlaggedAt = null;
+  }
   if (typeof b.url === "string") data.url = b.url.trim();
   if (["submitted", "imported", "onchain"].includes(b.source)) data.source = b.source;
   if (typeof b.suspended === "boolean") data.suspended = b.suspended;
