@@ -61,7 +61,10 @@ export default function ApiDocs() {
           </a>
         </p>
         <pre className="mt-3 overflow-x-auto rounded bg-elev p-3 text-xs text-muted">
-          <code>{`# Fetch just the file
+          <code>{`# providerlist.json is published under CC BY 4.0 (see LICENSE-DATA in the repo).
+# The software itself is AGPL-3.0; it does not reach the data you read here.
+
+# Fetch just the file
 curl -O ${ASSETS_FEED}
 
 # Or add the repo as a git submodule and read providerlist.json
