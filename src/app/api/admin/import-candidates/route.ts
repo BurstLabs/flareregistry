@@ -157,9 +157,11 @@ export async function POST(req: NextRequest) {
         (
           await tx.provider.create({
             data: {
-              name: c.name,
-              description: c.description,
-              url: c.url,
+              // Trimmed: this text comes from an upstream list we do not control, and it is
+              // republished verbatim in our public feed.
+              name: c.name.trim(),
+              description: c.description.trim(),
+              url: c.url.trim(),
               logoURI: c.logoURI,
               source: providerSource,
               firstSeenAt: onchainSince?.createdAt ?? null,

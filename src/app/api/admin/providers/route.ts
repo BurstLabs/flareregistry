@@ -46,14 +46,16 @@ export async function PATCH(req: NextRequest) {
   const data: Record<string, unknown> = {};
   if (typeof b.name === "string") data.name = b.name.trim();
   if (typeof b.description === "string") {
-    data.description = b.description;
+    // Trimmed like name and url below it: these fields are published verbatim in the public feed.
+    const description = b.description.trim();
+    data.description = description;
     // RE-REVIEWED ON AN ADMIN EDIT TOO. An admin removing the offending line should clear the flag
     // by doing so, not have to clear it twice; and an admin who introduces one should be flagged
     // like anybody else.
     const current = await prisma.provider.findUnique({
       where: { id }, select: { url: true },
     });
-    const flags = reviewDescription(b.description, typeof b.url === "string" ? b.url : current?.url);
+    const flags = reviewDescription(description, typeof b.url === "string" ? b.url : current?.url);
     data.contentFlags = flags.length ? (flags as unknown as Prisma.InputJsonValue) : Prisma.DbNull;
     data.contentFlaggedAt = flags.length ? new Date() : null;
   }

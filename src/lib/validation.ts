@@ -60,9 +60,20 @@ export function safeExternalUrl(v: string | null | undefined): string {
 }
 
 export const providerInputSchema = z.object({
-  name: z.string().min(1).max(80).refine(isClean, CLEAN_MESSAGE),
-  description: z.string().min(1).max(600).refine(isClean, CLEAN_MESSAGE),
-  url: z.string().url().max(200).refine(isHttpUrl, HTTP_URL_MESSAGE).refine(isClean, CLEAN_MESSAGE),
+  // TRIMMED BEFORE EVERY OTHER CHECK. These three strings are published verbatim in the public
+  // feed, and downstream consumers render them as-is: a stray trailing space on a name reached
+  // Flare's Systems Explorer and staking portal, where it showed as the provider's actual name.
+  // Trimming first also makes min(1) mean what it reads as, so an all-whitespace value is rejected
+  // rather than stored as blank.
+  name: z.string().trim().min(1).max(80).refine(isClean, CLEAN_MESSAGE),
+  description: z.string().trim().min(1).max(600).refine(isClean, CLEAN_MESSAGE),
+  url: z
+    .string()
+    .trim()
+    .url()
+    .max(200)
+    .refine(isHttpUrl, HTTP_URL_MESSAGE)
+    .refine(isClean, CLEAN_MESSAGE),
   // Self-declared (provider-attested, not verifiable on-chain). Optional.
   privateNode: z.boolean().nullish(),
   algorithm: z.enum(["in-house", "open-source"]).nullish(),
