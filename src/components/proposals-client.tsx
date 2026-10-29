@@ -1,5 +1,6 @@
 "use client";
 
+import { foundationDeclined } from "@/lib/foundation-decisions";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
@@ -110,6 +111,22 @@ function anchorFor(p: { contract: string; id: number }): string {
   return `p-${p.contract.slice(0, 10)}-${p.id}`;
 }
 
+// NOT EXECUTED: the vote carried, and the Foundation declined to execute it (off chain, see
+// src/lib/foundation-decisions.ts). A second chip beside the outcome, never a replacement for it:
+// "Accepted" stays true of the vote.
+function FoundationChip({ p }: { p: { contract: string; id: number } }) {
+  const { t } = useApp();
+  if (!foundationDeclined(p)) return null;
+  return (
+    <span
+      className="shrink-0 rounded bg-black/10 px-2 py-0.5 text-xs font-medium text-muted dark:bg-white/10"
+      title={t("prop.foundation.declinedNote")}
+    >
+      {t("prop.foundation.declined")}
+    </span>
+  );
+}
+
 function OutcomeChip({ outcome }: { outcome: MgProposalView["outcome"] }) {
   const { t } = useApp();
   return (
@@ -165,6 +182,11 @@ function ProposalBody({
 
   return (
     <>
+      {foundationDeclined(p) && (
+        <p className="mt-2 rounded border border-themed px-3 py-2 text-xs text-muted">
+          {t("prop.foundation.declinedNote")}
+        </p>
+      )}
       {p.summary ? (
         <p className="mt-2 whitespace-pre-wrap text-muted">{p.summary}</p>
       ) : (
@@ -563,7 +585,10 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
                 <span className="font-medium text-fg">
                   {p.name ?? t("prop.untitled", { id: p.id })}
                 </span>
-                <OutcomeChip outcome={p.outcome} />
+                <span className="flex gap-1.5">
+                  <FoundationChip p={p} />
+                  <OutcomeChip outcome={p.outcome} />
+                </span>
               </div>
               <ProposalBody
                 p={p}
@@ -634,6 +659,7 @@ export function ProposalsClient({ data }: { data: Payload | null }) {
                       <TurnoutBar cast={cast} needed={p.quorumNeeded} />
                     </>
                   )}
+                  <FoundationChip p={p} />
                   <OutcomeChip outcome={p.outcome} />
                   <span aria-hidden="true" className="shrink-0 text-xs text-faint">
                     {isOpen ? "▴" : "▾"}
