@@ -11,7 +11,7 @@ export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const [imports, consumers, openReports, pendingLogos, governance, conduct] = await Promise.all([
+  const [imports, consumers, openReports, pendingLogos, governance, conduct, content] = await Promise.all([
     // Import candidates awaiting review.
     prisma.importCandidate.count({ where: { status: "pending" } }),
     // Consumer moderation queue: new pending submissions OR edit proposals against approved rows.
@@ -36,6 +36,10 @@ export async function GET() {
         state: { in: ["PENDING", "NOTICE", "OPEN_DISCUSSION", "OPEN_VOTING"] },
       },
     }),
+    // Descriptions a content heuristic flagged that nobody has cleared or edited yet. Same filter
+    // the Content review tab itself loads (/api/admin/providers?flagged=1), so the badge and the
+    // list it opens can never disagree about how many are waiting.
+    prisma.provider.count({ where: { contentFlags: { not: Prisma.DbNull } } }),
   ]);
 
   return NextResponse.json({
@@ -47,5 +51,6 @@ export async function GET() {
     pendingLogos,
     governance,
     conduct,
+    content,
   });
 }

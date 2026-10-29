@@ -95,6 +95,9 @@ export default function AdminPage() {
         conduct: b.conduct ?? 0,
         reports: b.reports ?? 0,
         consumers: b.consumers ?? 0,
+        // Flagged descriptions awaiting a decision. Without a badge, the one queue holding live
+        // provider copy was also the only one you had to remember to go and look at.
+        content: b.content ?? 0,
       });
     } catch {
       /* best-effort; badges just don't show */
