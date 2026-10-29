@@ -211,14 +211,14 @@ export default function AdminPage() {
       <div className="mt-6">
         {tab === "stats" && <StatsTab />}
         {tab === "providers" && <ProvidersTab />}
-        {tab === "imports" && <ImportsTab />}
+        {tab === "imports" && <ImportsTab onChanged={loadCounts} />}
         {tab === "qualification" && <QualificationTab />}
-        {tab === "governance" && <GovernanceTab />}
-        {tab === "conduct" && <ConductTab />}
+        {tab === "governance" && <GovernanceTab onChanged={loadCounts} />}
+        {tab === "conduct" && <ConductTab onChanged={loadCounts} />}
         {tab === "reports" && <ReportsTab onChanged={loadCounts} />}
-        {tab === "consumers" && <ConsumersTab />}
+        {tab === "consumers" && <ConsumersTab onChanged={loadCounts} />}
         {tab === "alerts" && <ProposalAlertsTab />}
-        {tab === "content" && <ContentReviewTab />}
+        {tab === "content" && <ContentReviewTab onChanged={loadCounts} />}
         {tab === "telegram" && <TelegramTab />}
         {tab === "system" && <SystemTab />}
       </div>
@@ -719,7 +719,7 @@ function AuditRow({
   );
 }
 
-function ConductTab() {
+function ConductTab({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<any[]>([]);
   const [trail, setTrail] = useState<any[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -740,7 +740,11 @@ function ConductTab() {
     const b = await r.json().catch(() => ({}));
     setRows(b.cases ?? []);
     setTrail(b.deletedTrail ?? []);
-  }, []);
+    // The badge is derived from the same rows this just fetched, so refreshing it here
+    // keeps the two in step by construction: every mutation in this tab already calls
+    // load(), and none of them has to remember to update the count as well.
+    onChanged();
+  }, [onChanged]);
   useEffect(() => {
     load();
   }, [load]);
@@ -1488,14 +1492,18 @@ function AddVote({
   );
 }
 
-function GovernanceTab() {
+function GovernanceTab({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<any[]>([]);
   const [msg, setMsg] = useState("");
   const load = useCallback(async () => {
     const r = await fetch("/api/admin/governance");
     const b = await r.json();
     setRows(b.cases ?? []);
-  }, []);
+    // The badge is derived from the same rows this just fetched, so refreshing it here
+    // keeps the two in step by construction: every mutation in this tab already calls
+    // load(), and none of them has to remember to update the count as well.
+    onChanged();
+  }, [onChanged]);
   useEffect(() => {
     load();
   }, [load]);
@@ -1568,7 +1576,7 @@ function GovernanceTab() {
 // don't have as pending candidates. Approving one creates an UNCLAIMED source="imported" provider: it
 // appears in the feed only once it qualifies on-chain or the real owner claims it by signature.
 // Dismissing keeps a tombstone so it is not re-surfaced. It is not an assertion of ownership.
-function ImportsTab() {
+function ImportsTab({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<any[]>([]);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState("");
@@ -1576,7 +1584,11 @@ function ImportsTab() {
     const r = await fetch("/api/admin/import-candidates");
     const b = await r.json();
     setRows(b.candidates ?? []);
-  }, []);
+    // The badge is derived from the same rows this just fetched, so refreshing it here
+    // keeps the two in step by construction: every mutation in this tab already calls
+    // load(), and none of them has to remember to update the count as well.
+    onChanged();
+  }, [onChanged]);
   useEffect(() => {
     load();
   }, [load]);
@@ -1739,7 +1751,7 @@ function ImportsTab() {
   );
 }
 
-function ConsumersTab() {
+function ConsumersTab({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -1750,7 +1762,11 @@ function ConsumersTab() {
     const b = await r.json();
     setRows(b.queue ?? []);
     setListings(b.listings ?? []);
-  }, []);
+    // The badge is derived from the same rows this just fetched, so refreshing it here
+    // keeps the two in step by construction: every mutation in this tab already calls
+    // load(), and none of them has to remember to update the count as well.
+    onChanged();
+  }, [onChanged]);
   useEffect(() => {
     load();
   }, [load]);
@@ -2096,7 +2112,7 @@ function ConsumerEditor({
  * nothing in the interface ever offered one, so the only remedy for a bad listing was to suspend
  * or archive the whole provider. Fixing one sentence should not cost a provider their listing.
  */
-function ContentReviewTab() {
+function ContentReviewTab({ onChanged }: { onChanged: () => void }) {
   const [rows, setRows] = useState<any[]>([]);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState("");
@@ -2105,7 +2121,11 @@ function ContentReviewTab() {
     const r = await fetch("/api/admin/providers?flagged=1");
     const b = await r.json();
     setRows(b.providers ?? []);
-  }, []);
+    // The badge is derived from the same rows this just fetched, so refreshing it here
+    // keeps the two in step by construction: every mutation in this tab already calls
+    // load(), and none of them has to remember to update the count as well.
+    onChanged();
+  }, [onChanged]);
   useEffect(() => {
     load();
   }, [load]);
