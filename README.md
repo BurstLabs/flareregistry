@@ -110,7 +110,30 @@ migrate deploy, build, pm2 restart, health check). On-chain metrics are ingested
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Copyright (c) 2026 Burst Labs (https://www.burstlabs.io).
+
+Three different things live in this repository and they carry three different
+terms.
+
+| What | Terms |
+| --- | --- |
+| The software (`src/`, `prisma/`, `scripts/`, config) | **AGPL-3.0**. See [LICENSE](LICENSE). |
+| `providerlist.json`, the published list | **CC BY 4.0**. See [LICENSE-DATA](LICENSE-DATA). |
+| `assets/*.png`, the provider logos | Not ours to license. See [assets/NOTICE.md](assets/NOTICE.md). |
+
+**Reading, auditing and reproducing the listing logic is explicitly allowed**,
+and is the reason this repository is public. AGPL-3.0 is an OSI-approved open
+source licence; it adds one obligation that matters here, in section 13: if you
+run a modified version of this software as a network service, you must offer
+your users its complete source.
+
+**Consuming the list is explicitly allowed, commercially included.** The data is
+licensed separately and permissively so that wallets, explorers and dashboards
+never have to reason about the software licence. The same list is served live at
+`/api/feed/providerlist.json` under the same terms.
+
+Versions published before 29 October 2026 were released under the MIT licence.
+That grant cannot be withdrawn and continues to apply to those versions.
 
 ## Built by
 

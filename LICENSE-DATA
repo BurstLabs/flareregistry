@@ -1,0 +1,40 @@
+Flare Registry published data
+=============================
+
+This file covers the DATA this repository publishes, not the software that
+produces it. The software is licensed separately; see LICENSE (AGPL-3.0).
+
+WHAT THIS COVERS
+
+  providerlist.json   the published provider list
+
+Licensed under the Creative Commons Attribution 4.0 International License
+(CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+
+You are free to copy, redistribute, adapt and build upon this data for any
+purpose, including commercially, provided you give appropriate credit to
+Flare Registry (https://flareregistry.com).
+
+WHY IT IS LICENSED SEPARATELY
+
+The list exists to be consumed. Wallets, explorers, dashboards and the
+Flare-operated Systems Explorer and Portal read it, and several do so
+commercially. Nothing in the software licence is intended to reach the data
+this repository publishes, and this file says so explicitly so that no
+consumer has to form a view on the question.
+
+The same list is served live, with the same terms, at
+https://flareregistry.com/api/feed/providerlist.json
+
+WHAT THIS DOES NOT COVER
+
+  assets/*.png        provider logos. See assets/NOTICE.md. These are the
+                      property of the providers they identify and are NOT
+                      licensed by this file or by LICENSE.
+
+Much of the content of providerlist.json is factual (on-chain addresses,
+registration state, vote power, fees) and is unlikely to attract copyright
+in the first place. CC BY 4.0 is offered for the compilation, so that anyone
+relying on it has an explicit permission rather than an assumption.
+
+Copyright (c) 2026 Burst Labs (https://www.burstlabs.io)
