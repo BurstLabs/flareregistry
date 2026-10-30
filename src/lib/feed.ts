@@ -25,6 +25,12 @@ export interface FeedProviderExtras {
   votePowerCapped: string | null;
   feedCount: number | null;
   lastEpoch: number | null;
+  // Month this provider first appeared on this network, as "YYYY-MM", or null if not yet resolved.
+  // Derived from the earliest transaction its delegation address sent, which reaches back to each
+  // network's FTSO launch (Songbird 2021-09, Flare 2022-07); see scripts/backfill-first-activity.mjs
+  // for why reward data cannot answer this. A month, not a day: the underlying signal is a proxy for
+  // when an operator started and does not justify finer precision.
+  activeSince: string | null;
   delegatorRewardLastEpoch: string | null; // wei-scale decimal string
   feeRewardLastEpoch: string | null;
   // The entity's five registered on-chain addresses (null if not matched on-chain). These are
@@ -244,6 +250,9 @@ export async function buildProviderList(): Promise<ProviderList> {
             // feed, and at least one third-party analysis was built on the wrong figure as a result.
             votePowerCapped: entity?.delegationWeightCapped ?? entity?.wNatCappedWeight ?? null,
             feedCount: entity?.feedCount ?? null,
+            activeSince: entity?.firstActivityAt
+              ? entity.firstActivityAt.toISOString().slice(0, 7)
+              : null,
             lastEpoch: latest?.epochId ?? null,
             delegatorRewardLastEpoch: latest?.delegatorReward ?? null,
             feeRewardLastEpoch: latest?.feeReward ?? null,

@@ -330,6 +330,7 @@ export default async function ProviderDetail({
     votePower: formatWeiCompact(metrics?.wNatWeight ?? null),
     votePowerCapped: formatWeiCompact(metrics?.wNatCappedWeight ?? null),
     feedCount: metrics?.feedCount ?? null,
+    activeSince: metrics?.activeSince ?? null,
     reward: formatWeiCompact(metrics?.delegatorReward ?? null),
     stakerReward: formatWeiCompact(metrics?.stakerReward ?? null),
     rewardEpoch: metrics?.lastEpoch ?? null,

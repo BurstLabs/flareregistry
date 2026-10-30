@@ -413,6 +413,21 @@ model ProviderOnchain {
   // curated set of eligible, well-performing providers. Refreshed from a live RPC query.
   managementGroup Boolean   @default(false)
 
+  // WHEN THIS PROVIDER FIRST APPEARED ON THIS NETWORK, as the timestamp of the earliest
+  // transaction its delegation address ever sent. The delegation address is the one that
+  // survives both FTSO eras (in v1 it WAS the data-provider address), so it reaches back to
+  // network genesis: Songbird 2021-09, Flare 2022-07.
+  //
+  // WHY NOT REWARD DATA. The obvious source is the earliest reward epoch we hold, but Flare
+  // only publishes fsp-rewards from Flare epoch 228 (2024-09-26) and Songbird 196
+  // (2024-06-06). Deriving tenure from that pinned 33% of Flare and 75% of Songbird providers
+  // to one floor date, flattening exactly the long-serving operators this is meant to show.
+  //
+  // It is a close proxy, not a certificate: an address can be funded shortly before going
+  // live. Accurate to the month, which is the granularity it is displayed at. Null until the
+  // backfill has seen this row (scripts/backfill-first-activity.mjs).
+  firstActivityAt DateTime?
+
   lastEpochSeen Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
