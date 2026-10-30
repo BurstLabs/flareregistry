@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-10-29T23:47:02.492Z",
+  "timestamp": "2026-10-30T00:08:56.144Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1382,7 +1382,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x499017ADB21D6f70480E4E6224cf4144071C1461.png",
       "listed": true,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": true,
         "qualified": true,
@@ -1444,9 +1444,9 @@
           }
         ],
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.287Z",
@@ -7099,49 +7099,6 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:20.152Z",
-          "lastSubmittedEpoch": 444,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        }
-      }
-    },
-    {
-      "chainId": 19,
-      "name": "AU",
-      "description": "AU provide accurate and reliable price feeds to the Flare Network and a transparent, incentivised, risk-free delegation service. We do so by leveraging the distributed nature of the network and its participants.",
-      "url": "https://www.au.cc",
-      "address": "0x499017ADB21D6f70480E4E6224cf4144071C1461",
-      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x499017ADB21D6f70480E4E6224cf4144071C1461.png",
-      "listed": true,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": true,
-        "qualified": true,
-        "network": "songbird",
-        "feePercent": 20,
-        "votePower": "269988278620794162776928226",
-        "votePowerCapped": "230263935286708073402466304",
-        "feedCount": 63,
-        "lastEpoch": 444,
-        "delegatorRewardLastEpoch": "182646669114521794732910",
-        "feeRewardLastEpoch": "45661667278630448668334",
-        "entity": {
-          "identity": "0xB3C9AA09F22A06122d3608Ef075f14E001561470",
-          "submit": "0x38F01976677021A2599C1D155206037eCB28c1E5",
-          "submitSignatures": "0x49e99EAB73F135B384ddDD3CCDb9Cd1cf0E1736d",
-          "signingPolicy": "0x493E5d0833646f99e4b414E9de5a10d8cb9B5C5a",
-          "delegation": "0x499017ADB21D6f70480E4E6224cf4144071C1461"
-        },
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.287Z",
           "lastSubmittedEpoch": 444,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
