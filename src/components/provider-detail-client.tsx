@@ -95,6 +95,7 @@ export interface DetailData {
   votePower: string | null;
   votePowerCapped: string | null;
   feedCount: number | null;
+  activeSince: string | null;
   reward: string | null;
   stakerReward: string | null;
   rewardEpoch: number | null;
@@ -214,6 +215,18 @@ export interface DetailData {
 // in the Management Group section is therefore paired with a wall-clock date. Rendered in the viewer's
 // own locale and timezone (undefined locale = browser default), so the date means what it says wherever
 // it is read.
+// "YYYY-MM" rendered as a month and year in the viewer's own locale.
+//
+// PARSED INTO A LOCAL DATE, not via new Date("2022-07"), which the spec reads as UTC midnight: in any
+// negative-offset timezone that formats back as the PREVIOUS month, so a provider who started in July
+// would be shown to half the world as having started in June.
+function monthYear(ym: string | null | undefined): string | null {
+  if (!ym) return null;
+  const [y, m] = ym.split("-").map(Number);
+  if (!y || !m) return null;
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { year: "numeric", month: "long" });
+}
+
 function day(iso: string | null | undefined): string | null {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString(undefined, {
@@ -506,6 +519,14 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 <InfoTip label={t("detail.feeds")} tip={t("detail.feedsHint")} />
               </dt>
               <dd className="font-medium">{d.feedCount}</dd>
+            </div>
+          )}
+          {d.activeSince && (
+            <div>
+              <dt className="text-faint">
+                <InfoTip label={t("detail.activeSince")} tip={t("detail.activeSinceHint")} />
+              </dt>
+              <dd className="font-medium">{monthYear(d.activeSince)}</dd>
             </div>
           )}
           {d.reward && (

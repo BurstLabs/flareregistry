@@ -48,6 +48,8 @@ export interface ProviderMetrics {
   wNatWeight: string | null;
   wNatCappedWeight: string | null;
   feedCount: number | null;
+  // Month this entity first appeared on its network ("YYYY-MM"), or null if unresolved.
+  activeSince: string | null;
   registered: boolean;
   goodStanding: boolean | null;
   lastEpoch: number;
@@ -103,6 +105,7 @@ async function entityForAddresses(addresses: string[]): Promise<ProviderMetrics 
     wNatWeight: oc.wNatWeight,
     wNatCappedWeight: oc.wNatCappedWeight,
     feedCount: oc.feedCount,
+    activeSince: oc.firstActivityAt ? oc.firstActivityAt.toISOString().slice(0, 7) : null,
     registered: oc.registered,
     goodStanding: oc.goodStanding,
     lastEpoch: oc.lastEpochSeen,
