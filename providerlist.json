@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-10-30T17:47:02.592Z",
+  "timestamp": "2026-10-30T17:53:16.575Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -4767,7 +4767,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 445,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -6307,7 +6307,7 @@
           "singleEntity": true
         },
         "qualification": {
-          "qualifiedSince": "2026-07-03T10:18:38.711Z",
+          "qualifiedSince": "2026-07-03T10:18:38.338Z",
           "lastSubmittedEpoch": 445,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -8662,7 +8662,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 445,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -9191,6 +9191,50 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.794Z",
+          "lastSubmittedEpoch": 445,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        }
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Tempest FTSO",
+      "description": "TempestFTSO created by industry professionals to deliver the most reliable and accurate price feeds to the FTSO system.",
+      "url": "https://tempestftso.com",
+      "address": "0x4eb408FA585a5C66E523a4aE5f5706374Ec9E8c7",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x4eb408FA585a5C66E523a4aE5f5706374Ec9E8c7.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": true,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "52967168195735392586843028",
+        "votePowerCapped": "52895130044300908222742528",
+        "feedCount": 63,
+        "activeSince": "2022-11",
+        "lastEpoch": 445,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xD9DdD06B3E603F451DD8A16574CA9D3dF564742b",
+          "submit": "0xB410331e0f29f9Cf5792a18982bF416a7768Fdec",
+          "submitSignatures": "0x88311d4876D761837fe70e771A4d4A5beB9da887",
+          "signingPolicy": "0x40567b5f30c90f35A3D3a5c57702bEF6813D9A39",
+          "delegation": "0x4eb408FA585a5C66E523a4aE5f5706374Ec9E8c7"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-07-03T10:18:38.338Z",
           "lastSubmittedEpoch": 445,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
