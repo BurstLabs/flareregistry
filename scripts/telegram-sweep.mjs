@@ -3,6 +3,9 @@
 // Policy: an entity that stops qualifying starts a 30-day clock. If it still does not qualify when
 // the clock runs out, the bot removes the member. Re-qualifying at any point clears the clock.
 //
+// GUEST rows are not swept at all. A guest holds no provider address, so no chain state could ever
+// tell us their access should end; that call belongs to the admin who granted it.
+//
 // The clock is a STORED TIMESTAMP, not a countdown, so a cron that misses a day or runs twice cannot
 // move the deadline in either direction. It also means the deadline survives a restart, which matters
 // when the consequence is ejecting someone from a conversation.
@@ -82,8 +85,18 @@ async function eligible(voter, latestByNetwork) {
   // Select on "has a Telegram account attached and has not already been removed", NOT on
   // state === "joined". The invite route can move a joined row back to "issued", and a state-based
   // filter then hides that member from this sweep permanently.
+  // GUESTS ARE EXCLUDED IN THE QUERY, not skipped in the loop.
+  //
+  // A guest has no on-chain entity, so eligible() would find nothing for its synthetic key and read
+  // that as "lapsed": every guest would start the 30-day clock the moment they joined and be ejected
+  // a month later. Excluding them here means a guest never acquires an ineligibleSince at all, so a
+  // later change to the loop cannot reintroduce the bug. Guest access ends when an admin ends it.
   const rows = await prisma.telegramAccess.findMany({
-    where: { telegramUserId: { not: null }, state: { not: "removed" } },
+    where: {
+      telegramUserId: { not: null },
+      state: { not: "removed" },
+      kind: { not: "guest" },
+    },
   });
   console.log(`joined members: ${rows.length}${DRY ? " (dry run)" : ""}`);
 

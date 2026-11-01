@@ -2795,6 +2795,10 @@ function TelegramTab() {
   const [data, setData] = useState<any>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState("");
+  const [guestLabel, setGuestLabel] = useState("");
+  // Held in state because there is nowhere to send it: a guest link is handed over by the admin, so
+  // it has to stay on screen long enough to be copied. Cleared when the next one is minted.
+  const [guestLink, setGuestLink] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setErr("");
@@ -2822,6 +2826,30 @@ function TelegramTab() {
       });
       const b = await r.json().catch(() => null);
       if (!r.ok) throw new Error(b?.error ?? "failed");
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function inviteGuest() {
+    const label = guestLabel.trim();
+    if (!label) return;
+    setBusy("inviteGuest");
+    setErr("");
+    setGuestLink(null);
+    try {
+      const r = await fetch("/api/admin/telegram", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "inviteGuest", label }),
+      });
+      const b = await r.json().catch(() => null);
+      if (!r.ok) throw new Error(b?.error ?? "failed");
+      setGuestLink(b.link);
+      setGuestLabel("");
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "failed");
@@ -2885,9 +2913,47 @@ function TelegramTab() {
       </div>
 
       <div>
+        <h2 className="mb-2 text-sm font-semibold text-muted">Invite a guest</h2>
+        <p className="mb-2 text-xs text-faint">
+          For people who belong in the room but will never hold a provider address, such as Flare
+          staff. The link admits one account and skips the on-chain check; it does not expire on its
+          own and nothing will ever remove a guest automatically, so the name below is the only
+          record of who was let in and why.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={guestLabel}
+            onChange={(e) => setGuestLabel(e.target.value)}
+            maxLength={60}
+            placeholder="Who is this? e.g. Jane Doe (Flare)"
+            className="w-72 rounded border border-themed bg-elev px-2 py-1 text-sm"
+          />
+          <button
+            onClick={inviteGuest}
+            disabled={!guestLabel.trim() || busy === "inviteGuest"}
+            className="rounded bg-beacon/15 px-3 py-1 text-sm text-beacon disabled:opacity-50"
+          >
+            {busy === "inviteGuest" ? "creating…" : "create invite link"}
+          </button>
+        </div>
+        {guestLink && (
+          <div className="mt-2 rounded border border-themed bg-elev p-2">
+            <div className="mb-1 text-xs text-faint">
+              Send this to them. It is shown once here; if you lose it, revoke the row below and
+              issue another.
+            </div>
+            <code className="break-all text-xs">{guestLink}</code>
+          </div>
+        )}
+      </div>
+
+      <div>
         <h2 className="mb-2 text-sm font-semibold text-muted">
           Members: {data.counts.joined} joined · {data.counts.issued} link issued ·{" "}
           {data.counts.removed} removed
+          {data.counts.guests > 0 && (
+            <span className="text-muted"> · {data.counts.guests} guest</span>
+          )}
           {data.counts.onClock > 0 && (
             <span className="text-amber-500"> · {data.counts.onClock} on the removal clock</span>
           )}
@@ -2910,7 +2976,13 @@ function TelegramTab() {
                 <tr key={r.id} className="border-t border-themed/40">
                   <td className="py-1.5 pr-3">
                     {r.name ?? <span className="font-mono text-xs">{r.voter.slice(0, 10)}…</span>}
-                    <div className="font-mono text-[10px] text-faint">{r.voter}</div>
+                    {r.kind === "guest" ? (
+                      // The synthetic voter key would be noise here: it identifies nothing and is
+                      // not an address anyone can look up. The badge is what matters.
+                      <div className="text-[10px] text-amber-500">guest · admin invited</div>
+                    ) : (
+                      <div className="font-mono text-[10px] text-faint">{r.voter}</div>
+                    )}
                   </td>
                   <td className="py-1.5 pr-3">
                     {r.telegramUsername ? `@${r.telegramUsername}` : r.telegramUserId || "-"}
