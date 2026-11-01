@@ -68,11 +68,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, declined: "unknown-link" });
   }
 
-  // The link is durable; eligibility is not. Re-check at the moment of admission.
-  const elig = await eligibilityForVoter(row.voter);
-  if (!elig.eligible) {
-    await declineJoinRequest(userId).catch(() => {});
-    return NextResponse.json({ ok: true, declined: "no-longer-eligible" });
+  // GUESTS SKIP THE CHAIN CHECK, and only guests do.
+  //
+  // A guest was admitted by a named admin, not by an address, so there is nothing on chain to
+  // re-check: eligibilityForVoter would look up a synthetic "guest:" key, find no entity and decline
+  // every one of them. The branch is on the row's own kind, which an admin had to set, so a provider
+  // row can never reach it however its link is used.
+  if (row.kind !== "guest") {
+    // The link is durable; eligibility is not. Re-check at the moment of admission.
+    const elig = await eligibilityForVoter(row.voter);
+    if (!elig.eligible) {
+      await declineJoinRequest(userId).catch(() => {});
+      return NextResponse.json({ ok: true, declined: "no-longer-eligible" });
+    }
   }
 
   // Bind the link to the FIRST account that uses it, and do it ATOMICALLY.

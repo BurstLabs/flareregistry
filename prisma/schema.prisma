@@ -201,10 +201,27 @@ model TelegramAccess {
   id String @id @default(cuid())
 
   // Identity (voter) address of the entity that earned access. Lowercased.
+  //
+  // A GUEST has no on-chain entity, so it carries a synthetic "guest:<random hex>" here and "guest"
+  // as its network. The column is unique and required; a synthetic key keeps both true without
+  // making the real case nullable. Nothing resolves a guest key on chain, because `kind` is checked
+  // first everywhere this is read.
   voter   String @unique
   // Network the entity qualified on at issue time. Informational: eligibility is rechecked across
   // both chains, so qualifying on either keeps access.
   network String
+
+  // "provider" (earned by proving an on-chain role address) or "guest" (granted by an admin).
+  //
+  // Guests exist for people who belong in the room but will never hold a provider address, such as
+  // Flare staff. Deliberately a SEPARATE KIND rather than a provider row with its checks skipped:
+  // the on-chain rule stays exactly as strict as it was, and the exception is visible in the data
+  // rather than buried in a branch. Guests are never swept, because there is no chain state that
+  // could tell us a guest has lapsed; revoking one is an admin action.
+  kind  String  @default("provider")
+  // Who a guest is, in words, since there is no listing to resolve a name from. Providers leave this
+  // null and get their name resolved through their role addresses as before.
+  label String?
 
   // Random URL-safe token, carried in the invite link's `name` so the webhook can match a join
   // request back to this row without trusting anything the joining user sends.

@@ -6,9 +6,11 @@
 // those are invisible from the member list alone.
 
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdmin, getAdminAddress } from "@/lib/admin";
 import {
+  createJoinRequestLink,
   TELEGRAM_GRACE_EPOCHS,
   TELEGRAM_REVOKE_AFTER_DAYS,
   eligibilityForVoter,
@@ -82,9 +84,14 @@ export async function GET() {
   const now = Date.now();
   const out = [];
   for (const r of rows) {
-    const elig = await eligibilityForVoter(r.voter);
-    const name =
-      (addrsByVoter.get(r.voter) ?? []).map((a) => nameByAddr.get(a)).find(Boolean) ?? null;
+    const guest = r.kind === "guest";
+    // Never resolve a guest on chain. Its voter is a synthetic key, so eligibilityForVoter would
+    // report "not-a-provider" and the panel would show every guest as ineligible and on the way out,
+    // which is the opposite of true: guests are exempt from the sweep entirely.
+    const elig = guest ? null : await eligibilityForVoter(r.voter);
+    const name = guest
+      ? r.label
+      : ((addrsByVoter.get(r.voter) ?? []).map((a) => nameByAddr.get(a)).find(Boolean) ?? null);
     const removesInDays =
       r.ineligibleSince && r.state === "joined"
         ? Math.max(
@@ -108,9 +115,11 @@ export async function GET() {
       joinedAt: r.joinedAt,
       ineligibleSince: r.ineligibleSince,
       removedAt: r.removedAt,
-      eligibleNow: elig.eligible,
-      eligibleReason: elig.reason,
-      epochsSinceSeen: elig.epochsSinceSeen,
+      kind: r.kind,
+      label: r.label,
+      eligibleNow: guest ? true : elig!.eligible,
+      eligibleReason: guest ? "guest" : elig!.reason,
+      epochsSinceSeen: guest ? null : elig!.epochsSinceSeen,
       removesInDays,
       hasLink: !!r.inviteLink,
     });
@@ -134,18 +143,62 @@ export async function GET() {
       removed: rows.filter((r) => r.state === "removed").length,
       revoked: rows.filter((r) => r.state === "revoked").length,
       onClock: rows.filter((r) => r.ineligibleSince && r.state === "joined").length,
+      guests: rows.filter((r) => r.kind === "guest" && r.state !== "removed").length,
     },
     rows: out,
   });
 }
 
-// POST { action: "revokeLink" | "removeMember", id }
+// POST { action: "revokeLink" | "removeMember", id } | { action: "inviteGuest", label }
 export async function POST(req: NextRequest) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
   const body = await req.json().catch(() => null);
   const action = typeof body?.action === "string" ? body.action : null;
+
+  // GUEST INVITE: the one path into this group that a human grants rather than the chain.
+  //
+  // Handled before the id lookup because it creates a row rather than acting on one. The link is a
+  // join-request link like every other, so the admission still runs through the webhook and is still
+  // recorded: what differs is only that the webhook finds a guest row and does not ask the chain.
+  //
+  // The label is required and is the whole audit trail. A guest cannot be identified by an address
+  // and is never swept, so a row with no name is one nobody can later justify or review.
+  if (action === "inviteGuest") {
+    const label = typeof body?.label === "string" ? body.label.trim() : "";
+    if (!label || label.length > 60) {
+      return NextResponse.json({ error: "label required (1-60 chars)" }, { status: 400 });
+    }
+    if (!telegramConfigured()) {
+      return NextResponse.json({ error: "telegram-not-configured" }, { status: 503 });
+    }
+    const token = randomBytes(12).toString("base64url");
+    let link: string;
+    try {
+      // Same shape as a provider link: the token rides in the NAME, so the webhook resolves the row
+      // from the link object Telegram echoes back rather than anything the joiner controls.
+      link = await createJoinRequestLink(`flareregistry ${token}`);
+    } catch (e) {
+      console.error("telegram guest link failed:", e);
+      return NextResponse.json({ error: "invite-failed" }, { status: 502 });
+    }
+    const row = await prisma.telegramAccess.create({
+      data: {
+        // Synthetic, unique, and never resolved on chain. See the schema comment on `voter`.
+        voter: `guest:${randomBytes(8).toString("hex")}`,
+        network: "guest",
+        kind: "guest",
+        label,
+        token,
+        inviteLink: link,
+        state: "issued",
+      },
+    });
+    console.log(`telegram guest invited: ${label} by ${await getAdminAddress()}`);
+    return NextResponse.json({ ok: true, action, link, id: row.id });
+  }
+
   const id = typeof body?.id === "string" ? body.id : null;
   if (!action || !id) return NextResponse.json({ error: "bad request" }, { status: 400 });
 
