@@ -20,12 +20,13 @@
 // has no P-chain staking (no node weights, no MIRROR claims), so it never carries the field.
 // The stakers' rate is the FSP MIRROR part plus the P-chain validator rewards Flare pays through
 // ValidatorRewardManager (ValidatorRewardEpoch, from Flare's reward-scripts files). Those are published
-// up to a day after fsp-rewards, so for a while after each new epoch the window lacks them: the figure
-// is then the MIRROR part alone, flagged includesValidatorRewards: false.
+// up to a day after fsp-rewards, so for a while after each new epoch networkRates holds the previous
+// complete window (its epochs then end one before the ranking's) instead of changing the figure. Only
+// when they are missing for longer is it the MIRROR part alone, flagged includesValidatorRewards: false.
 
 import { prisma } from "./db";
 import { NETWORKS } from "./ingest";
-import { MIN_VOTE_POWER, YIELD_WINDOW_EPOCHS, networkRates, rankYield, type NetworkYield } from "./yield-rank";
+import { MIN_VOTE_POWER, VALIDATOR_LAG_EPOCHS, YIELD_WINDOW_EPOCHS, networkRates, rankYield, type NetworkYield } from "./yield-rank";
 
 export type { NetworkRates, NetworkYield, ProviderYield, StakerRates, ValidatorRewardRow, YieldRow } from "./yield-rank";
 
@@ -98,8 +99,11 @@ export async function buildYieldFeed(): Promise<YieldFeed> {
     const newest = state?.lastEpochIngested ?? 0;
     if (newest <= 0) continue;
     const epochs = Array.from({ length: YIELD_WINDOW_EPOCHS }, (_, i) => newest - i).reverse();
+    // networkRates may hold a window up to VALIDATOR_LAG_EPOCHS older than the ranking's, so the rows
+    // reach that far back. The ranking itself is given its own window's rows only.
+    const reach = Array.from({ length: YIELD_WINDOW_EPOCHS + VALIDATOR_LAG_EPOCHS }, (_, i) => newest - i).reverse();
     const rows = await prisma.providerMetricEpoch.findMany({
-      where: { network, epochId: { in: epochs } },
+      where: { network, epochId: { in: reach } },
       select: {
         epochId: true,
         voter: true,
@@ -117,14 +121,17 @@ export async function buildYieldFeed(): Promise<YieldFeed> {
     const validator =
       network === "flare"
         ? await prisma.validatorRewardEpoch.findMany({
-            where: { network, epochId: { in: epochs } },
+            where: { network, epochId: { in: reach } },
             select: { epochId: true, stakerReward: true, totalStake: true },
           })
         : null;
     const rates = networkRates(rows, epochs, validator);
     networks[network] = {
       chainId: CHAIN_IDS[network],
-      ...rankYield(rows, epochs),
+      ...rankYield(
+        rows.filter((r) => epochs.includes(r.epochId)),
+        epochs,
+      ),
       ...(network === "flare" && independence ? { independence } : {}),
       ...(rates ? { networkRates: rates } : {}),
     };
