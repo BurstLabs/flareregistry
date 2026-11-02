@@ -13,12 +13,17 @@
 // counts. Below 1 means the provider is over the cap and each delegator's share is diluted.
 //
 // Eligibility is reported as Flare published it for the newest epoch (passes.json), never inferred.
+//
+// networkRates (additive, per network): what delegators earned per wrapped token and what P-chain
+// stakers earned per staked token across the whole network over the same window, and the ratio. Wallets
+// show "stakers earned about N times more" from it rather than a number written into the app. Songbird
+// has no P-chain staking (no node weights, no MIRROR claims), so it never carries the field.
 
 import { prisma } from "./db";
 import { NETWORKS } from "./ingest";
-import { MIN_VOTE_POWER, YIELD_WINDOW_EPOCHS, rankYield, type NetworkYield } from "./yield-rank";
+import { MIN_VOTE_POWER, YIELD_WINDOW_EPOCHS, networkRates, rankYield, type NetworkYield } from "./yield-rank";
 
-export type { NetworkYield, ProviderYield, YieldRow } from "./yield-rank";
+export type { NetworkRates, NetworkYield, ProviderYield, YieldRow } from "./yield-rank";
 
 const CHAIN_IDS: Record<(typeof NETWORKS)[number], number> = { flare: 14, songbird: 19 };
 
@@ -100,12 +105,16 @@ export async function buildYieldFeed(): Promise<YieldFeed> {
         goodStanding: true,
         passes: true,
         failures: true,
+        stakerReward: true,
+        stakeWeight: true,
       },
     });
+    const rates = networkRates(rows, epochs);
     networks[network] = {
       chainId: CHAIN_IDS[network],
       ...rankYield(rows, epochs),
       ...(network === "flare" && independence ? { independence } : {}),
+      ...(rates ? { networkRates: rates } : {}),
     };
   }
   return {

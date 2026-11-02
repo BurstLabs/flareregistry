@@ -582,6 +582,12 @@ model ProviderMetricEpoch {
   feeReward       String? // claimType 1 (provider commission)
   delegatorReward String? // claimType 2 (WNAT pool to the delegation address)
   stakerReward    String? // claimType 3 (mirror/staking)
+  // Total P-chain stake on the entity's registered validator nodes this epoch: the sum of its
+  // nodeWeights in reward-epoch-info.json (wei-scale decimal string). The denominator for what
+  // stakerReward pays per staked FLR. "0" when the entity lists no nodes, which is every Songbird row
+  // (Songbird has no P-chain staking). NULL means the row predates this column and has not been
+  // filled yet; the yield feed leaves its network comparison out rather than count it as zero.
+  stakeWeight     String?
 
   // Was the entity registered/active this epoch, and in good standing (no applied penalties).
   registered   Boolean  @default(true)

@@ -28,6 +28,19 @@ async function getJson(url) {
   return r.ok ? r.json() : null;
 }
 
+// Total stake on an entity's validator nodes: the sum of voterRegistrationInfo.nodeWeights. "0" when it
+// registers no nodes (every Songbird entity: Songbird has no P-chain staking). null when the weights are
+// missing or unreadable, so an unknown never reads as zero stake. Same as stakeWeightOf in the lib.
+function stakeWeightOf(vri) {
+  const weights = vri?.nodeWeights;
+  if (!Array.isArray(weights)) return Array.isArray(vri?.nodeIds) && vri.nodeIds.length === 0 ? "0" : null;
+  try {
+    return weights.reduce((sum, w) => sum + BigInt(String(w)), 0n).toString();
+  } catch {
+    return null;
+  }
+}
+
 async function latestEpoch(network) {
   const l = await getJson(`${API_BASE}/${network}`);
   if (!Array.isArray(l)) return null;
@@ -47,6 +60,8 @@ function parseEpoch(info, dist, network, passes, conds) {
 
   const identities = [];
   const addrToVoter = new Map();
+  // voter -> sum of nodeWeights, the stake that this epoch's MIRROR (claimType 3) rewards are paid on.
+  const stakeWeight = new Map();
   for (const e of info.voterRegistrationInfo ?? []) {
     const r = e.voterRegistered ?? {};
     const vri = e.voterRegistrationInfo ?? {};
@@ -65,6 +80,7 @@ function parseEpoch(info, dist, network, passes, conds) {
       signingWeight: swByPolicyAddr.get(low(r.signingPolicyAddress) ?? "") ?? null,
     };
     identities.push(id);
+    stakeWeight.set(voter, stakeWeightOf(vri));
     for (const a of [
       voter,
       id.delegationAddress,
@@ -137,6 +153,7 @@ function parseEpoch(info, dist, network, passes, conds) {
     feeReward: (fee.get(id.voter) ?? 0n).toString(),
     delegatorReward: (del.get(id.voter) ?? 0n).toString(),
     stakerReward: (stk.get(id.voter) ?? 0n).toString(),
+    stakeWeight: stakeWeight.get(id.voter) ?? null,
     registered: true,
     // From passes.json, verbatim. Was hardcoded true, which reported every provider as in good
     // standing during epochs where Flare had burned all of their rewards.
@@ -186,6 +203,39 @@ async function persist(parsed) {
       update: data,
     });
   }
+}
+
+// STAKE WEIGHT FILL.
+//
+// stakeWeight arrived after the rows in the yield feed's window were ingested, and the incremental loop
+// below never revisits an epoch it has stored. So the recent epochs that lack it are filled from the
+// same reward-epoch-info.json, writing that one column and nothing else, and only where it is still
+// NULL. Idempotent and cheap once done: Songbird rows get "0", so the query comes back empty and no file
+// is fetched. Bounded to the backfill window, which covers the feed's 10 epochs with room to spare.
+async function fillStakeWeight(network, latest) {
+  const pending = await prisma.providerMetricEpoch.findMany({
+    where: { network, stakeWeight: null, epochId: { gt: latest - MAX_BACKFILL } },
+    select: { epochId: true },
+    distinct: ["epochId"],
+    orderBy: { epochId: "asc" },
+  });
+  let filled = 0;
+  for (const { epochId } of pending) {
+    const info = await getJson(`${RAW_BASE}/${network}/${epochId}/reward-epoch-info.json`);
+    if (!info) continue;
+    for (const e of info.voterRegistrationInfo ?? []) {
+      const vri = e.voterRegistrationInfo ?? {};
+      const voter = low(e.voterRegistered?.voter ?? vri.voter);
+      const w = stakeWeightOf(vri);
+      if (!voter || w == null) continue;
+      const r = await prisma.providerMetricEpoch.updateMany({
+        where: { network, epochId, voter, stakeWeight: null },
+        data: { stakeWeight: w },
+      });
+      filled += r.count;
+    }
+  }
+  if (pending.length) console.log(`${network}: stakeWeight filled on ${filled} row(s) across ${pending.length} epoch(s)`);
 }
 
 async function ingestNetwork(network) {
@@ -255,6 +305,8 @@ async function ingestNetwork(network) {
       console.log(`${network}: only ${present} entities in epoch ${latest}; skipping deregistration sweep`);
     }
   }
+
+  await fillStakeWeight(network, latest);
 
   console.log(`${network}: ingested ${n} epoch(s) [${start}..${latest}]`);
 }
