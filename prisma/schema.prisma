@@ -647,6 +647,45 @@ model IngestState {
   updatedAt         DateTime @updatedAt
 }
 
+/// P-CHAIN VALIDATOR REWARDS PER REWARD EPOCH, network-wide, from Flare's reward-scripts repository
+/// (generated-files/reward-epoch-N/data.json and nodes-data.json). These are paid through
+/// ValidatorRewardManager and are not in fsp-rewards, so ProviderMetricEpoch.stakerReward (MIRROR) is
+/// only part of what a P-chain staker earns. The yield feed adds stakerReward / totalStake from here to
+/// the MIRROR rate. Written by scripts/ingest-validator-rewards.mjs; parse and checks in
+/// scripts/validator-rewards-parse.mjs. Flare only: Songbird has no P-chain staking.
+///
+/// All amounts are wei-scale decimal strings (stake converted from the P-chain's 1e9 unit), summed in
+/// BigInt, never in SQL.
+model ValidatorRewardEpoch {
+  id      String @id @default(cuid())
+  network String
+  epochId Int
+
+  /// The epoch's whole pool, REWARD_AMOUNT_EPOCH_WEI (ValidatorRewardManager daily inflation x 3.5).
+  rewardAmount    String
+  /// What the stake earned after the validator's fee: sum over rewarded nodes of nodeRewardAmount
+  /// minus fee. Includes the self-bond's and boost's shares (paid to the validator) and the delegators'.
+  stakerReward    String
+  /// Validators' fees (nodeRewardAmount x fee / 1e6, as Flare computes it).
+  feeReward       String
+  /// Shares of nodes that passed uptime but failed FSP minimal conditions.
+  burnedReward    String
+  /// Delegators' part of stakerReward alone.
+  delegatorReward String
+  /// Stake on every active validator in the file, including nodes that earned nothing.
+  totalStake      String
+  delegatedStake  String
+  selfBond        String
+  nodes           Int
+  rewardedNodes   Int
+  stakingVpBlock  Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([network, epochId])
+}
+
 // Cached result of the address-on-website qualification check, keyed by provider url.
 model WebsiteCheck {
   url       String   @id

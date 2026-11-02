@@ -18,12 +18,16 @@
 // stakers earned per staked token across the whole network over the same window, and the ratio. Wallets
 // show "stakers earned about N times more" from it rather than a number written into the app. Songbird
 // has no P-chain staking (no node weights, no MIRROR claims), so it never carries the field.
+// The stakers' rate is the FSP MIRROR part plus the P-chain validator rewards Flare pays through
+// ValidatorRewardManager (ValidatorRewardEpoch, from Flare's reward-scripts files). Those are published
+// up to a day after fsp-rewards, so for a while after each new epoch the window lacks them: the figure
+// is then the MIRROR part alone, flagged includesValidatorRewards: false.
 
 import { prisma } from "./db";
 import { NETWORKS } from "./ingest";
 import { MIN_VOTE_POWER, YIELD_WINDOW_EPOCHS, networkRates, rankYield, type NetworkYield } from "./yield-rank";
 
-export type { NetworkRates, NetworkYield, ProviderYield, YieldRow } from "./yield-rank";
+export type { NetworkRates, NetworkYield, ProviderYield, StakerRates, ValidatorRewardRow, YieldRow } from "./yield-rank";
 
 const CHAIN_IDS: Record<(typeof NETWORKS)[number], number> = { flare: 14, songbird: 19 };
 
@@ -109,7 +113,15 @@ export async function buildYieldFeed(): Promise<YieldFeed> {
         stakeWeight: true,
       },
     });
-    const rates = networkRates(rows, epochs);
+    // P-chain validator rewards exist on Flare only. Never queried for Songbird, so it cannot carry them.
+    const validator =
+      network === "flare"
+        ? await prisma.validatorRewardEpoch.findMany({
+            where: { network, epochId: { in: epochs } },
+            select: { epochId: true, stakerReward: true, totalStake: true },
+          })
+        : null;
+    const rates = networkRates(rows, epochs, validator);
     networks[network] = {
       chainId: CHAIN_IDS[network],
       ...rankYield(rows, epochs),
