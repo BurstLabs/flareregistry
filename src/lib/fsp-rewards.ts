@@ -36,6 +36,8 @@ export interface EpochProviderMetric {
   feeReward: string; // wei-scale decimal strings
   delegatorReward: string;
   stakerReward: string;
+  /** Sum of the entity's nodeWeights (P-chain stake on its validator nodes); null if not published. */
+  stakeWeight: string | null;
   registered: boolean;
   goodStanding: boolean | null;
   passes: number | null;
@@ -63,6 +65,23 @@ export interface ParsedEpoch {
 
 function lower(a: unknown): string | null {
   return typeof a === "string" && a ? a.toLowerCase() : null;
+}
+
+/**
+ * Total stake on an entity's validator nodes: the sum of voterRegistrationInfo.nodeWeights. "0" when
+ * it registers no nodes (every Songbird entity, since Songbird has no P-chain staking). null when the
+ * weights are missing or unreadable, so an unknown never reads as zero stake.
+ */
+export function stakeWeightOf(vri: any): string | null {
+  const weights = vri?.nodeWeights;
+  if (!Array.isArray(weights)) {
+    return Array.isArray(vri?.nodeIds) && vri.nodeIds.length === 0 ? "0" : null;
+  }
+  try {
+    return weights.reduce((sum: bigint, w: unknown) => sum + BigInt(String(w)), 0n).toString();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -102,6 +121,8 @@ export function parseEpoch(
   const identities: EntityIdentity[] = [];
   // address -> voter, to attribute reward claims (claims pay the delegation/voter address).
   const addrToVoter = new Map<string, string>();
+  // voter -> sum of nodeWeights, the stake that this epoch's MIRROR (claimType 3) rewards are paid on.
+  const stakeWeight = new Map<string, string | null>();
 
   for (const entry of info.voterRegistrationInfo ?? []) {
     const reg = entry.voterRegistered ?? {};
@@ -125,6 +146,7 @@ export function parseEpoch(
         signingWeightByPolicyAddr.get(lower(reg.signingPolicyAddress) ?? "") ?? null,
     };
     identities.push(identity);
+    stakeWeight.set(voter, stakeWeightOf(vri));
 
     // Map every address this entity controls back to its voter, for reward attribution.
     for (const a of [
@@ -207,6 +229,7 @@ export function parseEpoch(
     feeReward: (fee.get(id.voter) ?? 0n).toString(),
     delegatorReward: (del.get(id.voter) ?? 0n).toString(),
     stakerReward: (stake.get(id.voter) ?? 0n).toString(),
+    stakeWeight: stakeWeight.get(id.voter) ?? null,
     registered: true,
     // From passes.json, verbatim. Was hardcoded true, which reported every provider as in good
     // standing during epochs where Flare had burned all of their rewards.

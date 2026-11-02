@@ -15,6 +15,10 @@ export interface YieldRow {
   goodStanding: boolean | null;
   passes: number | null;
   failures: string[];
+  /** claimType 3 (MIRROR) rewards paid to the provider's validator node IDs. Only networkRates reads it. */
+  stakerReward?: string | null;
+  /** Sum of the provider's nodeWeights. Only networkRates reads it; null = not filled yet. */
+  stakeWeight?: string | null;
 }
 
 export interface ProviderYield {
@@ -36,11 +40,32 @@ export interface ProviderYield {
   ineligibleEpochs: number;
 }
 
+export interface RateSummary {
+  /** Reward per token per reward epoch, as a fraction. */
+  ratePerEpoch: number;
+  /** ratePerEpoch * 365 / 3.5, as for providers. */
+  annualRate: number;
+}
+
+/** Network-wide delegator and staker rates over the same window, summed across every registered provider. */
+export interface NetworkRates {
+  epochs: number[];
+  /** Total WNAT delegator rewards / total wNatWeight. */
+  delegators: RateSummary;
+  /** Total MIRROR rewards / total stake on the providers' validator nodes. */
+  stakers: RateSummary;
+  /** stakers.ratePerEpoch / delegators.ratePerEpoch. */
+  stakersToDelegators: number;
+  method: string;
+}
+
 export interface NetworkYield {
   chainId: number;
   epochs: number[];
   median: number;
   providers: ProviderYield[];
+  /** Absent on networks without P-chain staking (Songbird) and whenever the window is incomplete. */
+  networkRates?: NetworkRates;
 }
 
 const toTokens = (wei: bigint) => Number(wei / WEI) + Number(wei % WEI) / 1e18;
@@ -103,3 +128,56 @@ export function rankYield(rows: YieldRow[], epochs: number[]): Omit<NetworkYield
   };
 }
 
+export const NETWORK_RATES_METHOD =
+  "Network-wide, over the same reward epochs, summed across every provider registered in each epoch. " +
+  "Delegators: total WNAT delegator rewards (claimType 2) paid to the providers' delegation addresses divided by " +
+  "their total registered wNatWeight. Stakers: total MIRROR rewards (claimType 3) paid to the providers' " +
+  "registered validator node IDs and shared by the FLR staked on those nodes, divided by the total stake " +
+  "registered on those nodes (nodeWeights). Both are after the provider's fee, per reward epoch, and " +
+  "annualised as rate x 365 / 3.5. stakersToDelegators is the stakers' rate divided by the delegators'. " +
+  "P-chain validator rewards, which Flare pays separately through ValidatorRewardManager and does not " +
+  "publish in fsp-rewards, are not included. Present only where the window has P-chain stake, so never " +
+  "on Songbird.";
+
+/**
+ * What delegators and stakers earned per token across the whole network over `epochs`, from the same
+ * stored rows as rankYield. Defined like the per-provider rate: rewards summed over the window divided
+ * by weights summed over the window, so it is the weight-averaged per-epoch rate.
+ *
+ * Returns null rather than a partial figure when any epoch of the window has no rows, when any row's
+ * stake weight has not been filled, or when there is no stake at all (Songbird, which has no P-chain
+ * staking and lists no nodes).
+ */
+export function networkRates(rows: YieldRow[], epochs: number[]): NetworkRates | null {
+  const want = new Set(epochs);
+  const seen = new Set<number>();
+  let delegatorReward = 0n;
+  let wNatWeight = 0n;
+  let stakerReward = 0n;
+  let stakeWeight = 0n;
+  for (const r of rows) {
+    if (!want.has(r.epochId)) continue;
+    if (r.stakeWeight == null || r.stakerReward == null) return null;
+    seen.add(r.epochId);
+    delegatorReward += big(r.delegatorReward);
+    wNatWeight += big(r.wNatWeight);
+    stakerReward += big(r.stakerReward);
+    stakeWeight += big(r.stakeWeight);
+  }
+  if (seen.size !== want.size) return null;
+  if (wNatWeight <= 0n || stakeWeight <= 0n || delegatorReward <= 0n || stakerReward <= 0n) return null;
+
+  const delegators = toTokens(delegatorReward) / toTokens(wNatWeight);
+  const stakers = toTokens(stakerReward) / toTokens(stakeWeight);
+  const ratio = stakers / delegators;
+  if (![delegators, stakers, ratio].every((x) => Number.isFinite(x) && x > 0)) return null;
+
+  const annual = (rate: number) => (rate * 365) / REWARD_EPOCH_DAYS;
+  return {
+    epochs,
+    delegators: { ratePerEpoch: delegators, annualRate: annual(delegators) },
+    stakers: { ratePerEpoch: stakers, annualRate: annual(stakers) },
+    stakersToDelegators: ratio,
+    method: NETWORK_RATES_METHOD,
+  };
+}
