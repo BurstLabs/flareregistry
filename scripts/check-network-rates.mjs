@@ -6,13 +6,16 @@
 // staking at all) must all give NO figure rather than a partial one.
 //
 // Since 2 November 2026 the stakers' rate also counts P-chain validator rewards (ValidatorRewardManager,
-// from Flare's reward-scripts files): FTSO part + validator part, but only when the validator part covers
-// the whole window. A window Flare has not finished publishing must fall back to the FTSO part with
-// includesValidatorRewards: false, never a sum over fewer epochs, and Songbird must never carry it.
+// from Flare's reward-scripts files): FTSO part + validator part, but only over a window the validator
+// part covers completely, never a sum over fewer epochs. Flare publishes those files up to a day after
+// fsp-rewards, so in that gap the figure HOLDS the previous complete window (one epoch back) rather than
+// flipping; only when no complete window ends within the last 2 epochs (an outage, not a lag) does it fall
+// back to the FTSO part over the ranking window, flagged includesValidatorRewards: false. Songbird must
+// never carry it.
 //
 // Run from the build. No database and no network. Imports the REAL functions via Node type stripping,
 // the same way check-outcome-rule.mjs does, so it cannot pass against a transcription.
-const { networkRates, rankYield, validatorRate, NETWORK_RATES_METHOD, NETWORK_RATES_METHOD_FTSO_ONLY } = await import(
+const { networkRates, rankYield, validatorRate, NETWORK_RATES_METHOD, NETWORK_RATES_METHOD_FTSO_ONLY, VALIDATOR_LAG_EPOCHS } = await import(
   new URL("../src/lib/yield-rank.ts", import.meta.url).href
 );
 const { stakeWeightOf } = await import(new URL("../src/lib/fsp-rewards.ts", import.meta.url).href);
@@ -107,7 +110,7 @@ const fallback = (label, vr) => {
   check(`${label}: stakers is the FTSO part alone`, near(f?.stakers.ratePerEpoch, ftsoRate) && !("validator" in (f?.stakers ?? {})));
   check(`${label}: same as with no validator rows`, JSON.stringify(f) === JSON.stringify(r));
 };
-fallback("newest epoch's validator rewards not published", [vrows[0]]);
+fallback("newest epoch's validator rewards not published and no FSP rows for the window before", [vrows[0]]);
 fallback("oldest epoch's validator rewards missing", [vrows[1]]);
 fallback("validator rows only outside the window", [vrow(9, 3_000, 10_000_000), vrow(12, 1_000, 10_000_000)]);
 fallback("empty validator rows", []);
@@ -124,6 +127,50 @@ check("validator rows do not rescue an incomplete FTSO window", networkRates(row
 check("validator rows do not rescue unfilled stake weights", networkRates([...rows.slice(0, 3), { ...rows[3], stakeWeight: null }], [10, 11], vrows) === null);
 check("validator rows never give Songbird a figure", networkRates(songbird, [10, 11], vrows) === null);
 check("validatorRate on an empty window is null", validatorRate(vrows, []) === null);
+
+// THE PUBLICATION LAG: hold the newest complete window. FSP rows for epochs 8 to 11, so a window one or
+// two epochs back can be evaluated. Epoch 9: delegators 300 on 1,500,000, MIRROR 1,200 on 1,000,000;
+// epoch 8 the same. Window [9, 10]: delegators 450 / 3,000,000, MIRROR 1,800 / 2,000,000.
+check("the lag allowance is one epoch (the window ends in the last 2 epochs)", VALIDATOR_LAG_EPOCHS === 1);
+const older = (e) => [row(e, "0xa", { wNat: 1_000_000, del: 200, stk: 900, stake: 1_000_000 }), row(e, "0xb", { wNat: 500_000, del: 100, stk: 300, stake: 0 })];
+const rowsLag = [...older(8), ...older(9), ...rows];
+const lagDel = 450 / 3_000_000;
+const lagFtso = 1_800 / 2_000_000;
+const lagVal = 5_000 / 20_000_000;
+const lagged = networkRates(rowsLag, [10, 11], [vrow(9, 2_000, 10_000_000), vrows[0]]);
+check("lag: newest epoch's validator rewards not yet published still gives a figure", lagged !== null);
+if (lagged) {
+  check("lag: holds the previous complete window", JSON.stringify(lagged.epochs) === "[9,10]");
+  check("lag: includes validator rewards", lagged.includesValidatorRewards === true && lagged.method === NETWORK_RATES_METHOD);
+  check("lag: delegators over the held window", near(lagged.delegators.ratePerEpoch, lagDel));
+  check("lag: stakers.ftso over the held window", near(lagged.stakers.ftso.ratePerEpoch, lagFtso));
+  check("lag: stakers.validator over the held window", near(lagged.stakers.validator?.ratePerEpoch, lagVal));
+  check("lag: stakers = ftso + validator over the held window", near(lagged.stakers.ratePerEpoch, lagFtso + lagVal));
+  check("lag: ratio over the held window", near(lagged.stakersToDelegators, (lagFtso + lagVal) / lagDel));
+  check("lag: the window keeps its length", lagged.epochs.length === 2);
+}
+check(
+  "lag over: once the newest epoch lands, the current window wins",
+  JSON.stringify(networkRates(rowsLag, [10, 11], [vrow(9, 2_000, 10_000_000), ...vrows])) === JSON.stringify(v),
+);
+check(
+  "lag: a held window whose FSP rows are unfilled is not used",
+  JSON.stringify(networkRates([...rowsLag.filter((x) => !(x.epochId === 9 && x.voter === "0xa")), { ...older(9)[0], stakeWeight: null }], [10, 11], [vrow(9, 2_000, 10_000_000), vrows[0]])) === JSON.stringify(r),
+);
+
+// A LONG OUTAGE: validator rewards stop. A complete window ending 2 epochs back ([8, 9]) is too old to
+// hold, so the figure is the FTSO part over the ranking window, flagged false, never nothing.
+const outage = networkRates(rowsLag, [10, 11], [vrow(8, 2_000, 10_000_000), vrow(9, 2_000, 10_000_000)]);
+check("outage: still a figure", outage !== null);
+check("outage: over the ranking window", JSON.stringify(outage?.epochs) === "[10,11]");
+check("outage: flagged false with the fallback method", outage?.includesValidatorRewards === false && outage?.method === NETWORK_RATES_METHOD_FTSO_ONLY);
+check("outage: stakers is the FTSO part alone", near(outage?.stakers.ratePerEpoch, ftsoRate) && !("validator" in (outage?.stakers ?? {})));
+check("outage: same figure as with no validator rows", JSON.stringify(outage) === JSON.stringify(networkRates(rowsLag, [10, 11])));
+check("outage: no validator rows at all gives the same", JSON.stringify(networkRates(rowsLag, [10, 11], [])) === JSON.stringify(outage));
+check("the fallback method says when it applies", NETWORK_RATES_METHOD_FTSO_ONLY.includes("within the last 2 reward epochs"));
+check("the method says the window can trail the ranking's", NETWORK_RATES_METHOD.includes("one epoch before the ranking's"));
+check("lag rows never give Songbird a figure", networkRates(rowsLag.map((x) => ({ ...x, stakerReward: "0", stakeWeight: "0" })), [10, 11], [vrow(9, 2_000, 10_000_000), ...vrows]) === null);
+check("the ranking is unchanged by the lag rows it is not given", JSON.stringify(rankYield(rowsLag.filter((x) => x.epochId >= 10), [10, 11])) === JSON.stringify(rankYield(rows, [10, 11])));
 
 // THE PARSER over Flare's reward-scripts files. A pool of 1,000 FLR over three nodes, split exactly as
 // reward-scripts' calculateRewardAmounts splits it:
