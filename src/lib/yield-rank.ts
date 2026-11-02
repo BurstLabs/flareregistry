@@ -47,15 +47,34 @@ export interface RateSummary {
   annualRate: number;
 }
 
+/** One reward epoch of P-chain validator rewards, network-wide (ValidatorRewardEpoch). Flare only. */
+export interface ValidatorRewardRow {
+  epochId: number;
+  /** Validator rewards paid on stake after the validator's fee, wei. */
+  stakerReward: string;
+  /** Stake on every active validator, wei. */
+  totalStake: string;
+}
+
+/** What a staked FLR earned: the FTSO (MIRROR) part plus, when published for the whole window, the validator part. */
+export interface StakerRates extends RateSummary {
+  /** Total MIRROR rewards / total stake on the providers' validator nodes. */
+  ftso: RateSummary;
+  /** Validator rewards after the validator's fee / total stake on every active validator. Absent when includesValidatorRewards is false. */
+  validator?: RateSummary;
+}
+
 /** Network-wide delegator and staker rates over the same window, summed across every registered provider. */
 export interface NetworkRates {
   epochs: number[];
   /** Total WNAT delegator rewards / total wNatWeight. */
   delegators: RateSummary;
-  /** Total MIRROR rewards / total stake on the providers' validator nodes. */
-  stakers: RateSummary;
+  /** stakers.ftso plus stakers.validator; stakers.ftso alone when includesValidatorRewards is false. */
+  stakers: StakerRates;
   /** stakers.ratePerEpoch / delegators.ratePerEpoch. */
   stakersToDelegators: number;
+  /** false when Flare has not yet published validator rewards for every epoch of the window. */
+  includesValidatorRewards: boolean;
   method: string;
 }
 
@@ -128,16 +147,64 @@ export function rankYield(rows: YieldRow[], epochs: number[]): Omit<NetworkYield
   };
 }
 
-export const NETWORK_RATES_METHOD =
-  "Network-wide, over the same reward epochs, summed across every provider registered in each epoch. " +
-  "Delegators: total WNAT delegator rewards (claimType 2) paid to the providers' delegation addresses divided by " +
-  "their total registered wNatWeight. Stakers: total MIRROR rewards (claimType 3) paid to the providers' " +
-  "registered validator node IDs and shared by the FLR staked on those nodes, divided by the total stake " +
-  "registered on those nodes (nodeWeights). Both are after the provider's fee, per reward epoch, and " +
-  "annualised as rate x 365 / 3.5. stakersToDelegators is the stakers' rate divided by the delegators'. " +
-  "P-chain validator rewards, which Flare pays separately through ValidatorRewardManager and does not " +
-  "publish in fsp-rewards, are not included. Present only where the window has P-chain stake, so never " +
-  "on Songbird.";
+const NETWORK_RATES_METHOD_BASE =
+  "Network-wide, over the same reward epochs. Delegators: total WNAT delegator rewards (fsp-rewards " +
+  "claimType 2) paid to every registered provider's delegation address divided by their total registered " +
+  "wNatWeight, after the provider's fee. Stakers: what a staked FLR earned, the sum of two per-FLR rates. " +
+  "stakers.ftso is the total MIRROR rewards (claimType 3) paid to the providers' registered validator node " +
+  "IDs, after the provider's capped staking fee and shared by all the FLR staked on those nodes, divided by " +
+  "the total stake on those nodes (nodeWeights). stakers.validator is the P-chain validator rewards Flare " +
+  "pays through ValidatorRewardManager, from its reward-scripts files (generated-files/reward-epoch-N/" +
+  "nodes-data.json): each rewarded node's reward minus the validator's fee, which is what its self-bond, " +
+  "boost and delegators earned, divided by the total stake on every active validator, including nodes " +
+  "whose share Flare burned or withheld for failing minimal conditions or uptime. Each rate is rewards " +
+  "summed over the window divided by weights summed over the window, per reward epoch, annualised as " +
+  "rate x 365 / 3.5. stakersToDelegators is the stakers' rate divided by the delegators'. Present only " +
+  "where the window has P-chain stake, so never on Songbird.";
+
+/** Method text when the validator part is in the staker rate. */
+export const NETWORK_RATES_METHOD = NETWORK_RATES_METHOD_BASE;
+
+/** Method text when it is not: Flare publishes validator rewards up to a day after fsp-rewards. */
+export const NETWORK_RATES_METHOD_FTSO_ONLY =
+  NETWORK_RATES_METHOD_BASE +
+  " includesValidatorRewards is false: Flare has not yet published validator rewards for every epoch of " +
+  "this window (they follow fsp-rewards by up to a day), so stakers is stakers.ftso alone and understates " +
+  "what stakers earned.";
+
+const annual = (rate: number) => (rate * 365) / REWARD_EPOCH_DAYS;
+const summary = (rate: number): RateSummary => ({ ratePerEpoch: rate, annualRate: annual(rate) });
+
+/**
+ * The validator part of the staker rate over `epochs`: total validator rewards after fee over total
+ * stake, both summed over the window. Null unless every epoch of the window has a row with readable,
+ * positive stake, and the window's rewards are positive, so a partial window is never passed off as a
+ * whole one.
+ */
+export function validatorRate(rows: ValidatorRewardRow[] | null | undefined, epochs: number[]): number | null {
+  if (!rows || epochs.length === 0) return null;
+  const want = new Set(epochs);
+  const byEpoch = new Map<number, ValidatorRewardRow>();
+  for (const r of rows) if (want.has(r.epochId) && !byEpoch.has(r.epochId)) byEpoch.set(r.epochId, r);
+  if (byEpoch.size !== want.size) return null;
+  let reward = 0n;
+  let stake = 0n;
+  for (const r of byEpoch.values()) {
+    let a: bigint, w: bigint;
+    try {
+      a = BigInt(r.stakerReward);
+      w = BigInt(r.totalStake);
+    } catch {
+      return null;
+    }
+    if (a < 0n || w <= 0n) return null;
+    reward += a;
+    stake += w;
+  }
+  if (reward <= 0n) return null;
+  const rate = toTokens(reward) / toTokens(stake);
+  return Number.isFinite(rate) && rate > 0 ? rate : null;
+}
 
 /**
  * What delegators and stakers earned per token across the whole network over `epochs`, from the same
@@ -146,9 +213,15 @@ export const NETWORK_RATES_METHOD =
  *
  * Returns null rather than a partial figure when any epoch of the window has no rows, when any row's
  * stake weight has not been filled, or when there is no stake at all (Songbird, which has no P-chain
- * staking and lists no nodes).
+ * staking and lists no nodes). Validator rewards (`validator`, Flare only) are added to the staker rate
+ * only when they cover every epoch of the window; otherwise the figure is the FTSO part alone, flagged
+ * includesValidatorRewards: false, so wallets keep a figure while Flare's files catch up.
  */
-export function networkRates(rows: YieldRow[], epochs: number[]): NetworkRates | null {
+export function networkRates(
+  rows: YieldRow[],
+  epochs: number[],
+  validator?: ValidatorRewardRow[] | null,
+): NetworkRates | null {
   const want = new Set(epochs);
   const seen = new Set<number>();
   let delegatorReward = 0n;
@@ -168,16 +241,22 @@ export function networkRates(rows: YieldRow[], epochs: number[]): NetworkRates |
   if (wNatWeight <= 0n || stakeWeight <= 0n || delegatorReward <= 0n || stakerReward <= 0n) return null;
 
   const delegators = toTokens(delegatorReward) / toTokens(wNatWeight);
-  const stakers = toTokens(stakerReward) / toTokens(stakeWeight);
+  const ftso = toTokens(stakerReward) / toTokens(stakeWeight);
+  const fromValidators = validatorRate(validator, epochs);
+  const stakers = ftso + (fromValidators ?? 0);
   const ratio = stakers / delegators;
-  if (![delegators, stakers, ratio].every((x) => Number.isFinite(x) && x > 0)) return null;
+  if (![delegators, ftso, stakers, ratio].every((x) => Number.isFinite(x) && x > 0)) return null;
 
-  const annual = (rate: number) => (rate * 365) / REWARD_EPOCH_DAYS;
   return {
     epochs,
-    delegators: { ratePerEpoch: delegators, annualRate: annual(delegators) },
-    stakers: { ratePerEpoch: stakers, annualRate: annual(stakers) },
+    delegators: summary(delegators),
+    stakers: {
+      ...summary(stakers),
+      ftso: summary(ftso),
+      ...(fromValidators != null ? { validator: summary(fromValidators) } : {}),
+    },
     stakersToDelegators: ratio,
-    method: NETWORK_RATES_METHOD,
+    includesValidatorRewards: fromValidators != null,
+    method: fromValidators != null ? NETWORK_RATES_METHOD : NETWORK_RATES_METHOD_FTSO_ONLY,
   };
 }
