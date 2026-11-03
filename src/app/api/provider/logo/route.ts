@@ -95,7 +95,12 @@ export async function POST(req: NextRequest) {
       }),
       prisma.providerAddress.update({
         where: { id: sessionAddr.id },
-        data: { verified: true, verifiedAt: new Date(), listed: true },
+        data: { verified: true, attestedAt: now, listed: true },
+      }),
+      // verifiedAt only if it has never been set; see api/provider for why it must not move.
+      prisma.providerAddress.updateMany({
+        where: { id: sessionAddr.id, verifiedAt: null },
+        data: { verifiedAt: now },
       }),
     ]);
     providerName = updated.name;

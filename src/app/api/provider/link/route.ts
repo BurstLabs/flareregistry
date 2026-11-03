@@ -196,6 +196,7 @@ export async function POST(req: NextRequest) {
         ? existingB.providerId
         : null;
 
+    const signedAt = new Date();
     await tx.providerAddress.upsert({
       where: { chainId_address: { chainId: chainIdB, address: listingAddress } },
       create: {
@@ -203,15 +204,21 @@ export async function POST(req: NextRequest) {
         chainId: chainIdB,
         address: listingAddress,
         verified: true,
-        verifiedAt: new Date(),
+        verifiedAt: signedAt,
+        attestedAt: signedAt,
         listed: true,
       },
       update: {
         providerId: ownedA.id,
         verified: true,
-        verifiedAt: new Date(),
+        attestedAt: signedAt,
         listed: true,
       },
+    });
+    // verifiedAt only if it has never been set; see api/provider for why it must not move.
+    await tx.providerAddress.updateMany({
+      where: { chainId: chainIdB, address: listingAddress, verifiedAt: null },
+      data: { verifiedAt: signedAt },
     });
 
     if (orphanProviderId) {

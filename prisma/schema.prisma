@@ -201,8 +201,35 @@ model ProviderAddress {
 
   // True only after a valid signature from this address is recorded, i.e. the owner has
   // claimed the entry. Imported entries start false even though they appear in the feed.
+  //
+  // verifiedAt is the FIRST such signature and does not move afterwards. It anchors the new-claim
+  // hold (see lib/hold-rule claimAnchor), so an owner editing their listing two months later must
+  // not reset it; it used to, which would have taken a settled chain-only claim back out of the
+  // listed feed for another thirty days for the crime of fixing a typo.
   verified   Boolean   @default(false)
   verifiedAt DateTime?
+
+  // The LAST signature from this address, bumped on every authenticated save. What verifiedAt was
+  // being asked to be and could not be at the same time.
+  //
+  // Published as flareregistry.attestedAt. A consumer holding two provider lists that disagree
+  // about this address needs to know when its owner last stood behind a copy, and this is the only
+  // date in the system that answers that: it is backed by a signature from an on-chain role key.
+  attestedAt DateTime?
+
+  // PUBLISHED-CONTENT FRESHNESS for this entry, published as flareregistry.updatedAt.
+  //
+  // contentHash is a hash of exactly the fields two provider lists can disagree about: name, the
+  // effective description for this chain, url, logoURI. contentUpdatedAt moves only when that hash
+  // moves, which is why neither Prisma `updatedAt` column can serve: those advance for content-review
+  // flags, governance state, qualification latches and backfills, none of which change a byte anyone
+  // publishes. A date that advances while the content sits still is worse than no date at all, since
+  // it is precisely the claim a stale list would make on its own behalf.
+  //
+  // Stamped by lib/content-stamp on every feed publish rather than at each of the dozen write sites
+  // that can touch branding, so a path that forgets to stamp cannot make the field lie.
+  contentHash      String?
+  contentUpdatedAt DateTime?
 
   // The feed's "listed" flag for this entry. For imported entries this carries the source
   // list's listed value verbatim. For owner-submitted entries it is true once verified.

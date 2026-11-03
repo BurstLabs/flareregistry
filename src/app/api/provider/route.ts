@@ -248,6 +248,7 @@ export async function POST(req: NextRequest) {
       // network whose entity the session is a role of, or the session itself). Never silently verify
       // a network the caller has not proven control of.
       const isControlled = controlled.has(a.address.toLowerCase());
+      const signedAt = new Date();
       await tx.providerAddress.upsert({
         where: { chainId_address: { chainId: a.chainId, address: a.address } },
         create: {
@@ -255,16 +256,28 @@ export async function POST(req: NextRequest) {
           chainId: a.chainId,
           address: a.address,
           verified: isControlled,
-          verifiedAt: isControlled ? new Date() : null,
+          verifiedAt: isControlled ? signedAt : null,
+          attestedAt: isControlled ? signedAt : null,
           listed: isControlled,
         },
         update: {
           providerId: provider.id,
-          ...(isControlled
-            ? { verified: true, verifiedAt: new Date(), listed: true }
-            : {}),
+          // verifiedAt is deliberately NOT here. It is the first proof, and the new-claim hold is
+          // measured from the earliest verified address; writing it on every save moved the anchor
+          // forward on each edit, which would drop a settled chain-only claim back out of the
+          // listed feed for another thirty days because its owner fixed a typo. attestedAt is the
+          // field that is supposed to move, and now it is the one that does.
+          ...(isControlled ? { verified: true, attestedAt: signedAt, listed: true } : {}),
         },
       });
+      // The first proof for a row that already existed unclaimed. Scoped on verifiedAt being null
+      // so this statement can only ever set the anchor, never reset it.
+      if (isControlled) {
+        await tx.providerAddress.updateMany({
+          where: { chainId: a.chainId, address: a.address, verifiedAt: null },
+          data: { verifiedAt: signedAt },
+        });
+      }
 
       // PER-NETWORK DESCRIPTION, written only for a network the caller has proven control of.
       //

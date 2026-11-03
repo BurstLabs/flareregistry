@@ -69,6 +69,19 @@ export interface FeedProviderExtras {
     epochsUntilRevoke: number | null; // missed epochs remaining before revocation
     revokeAfterEpochs: number; // the threshold
   };
+  // FRESHNESS, for a consumer holding a second provider list that disagrees with this one.
+  //
+  // updatedAt: when this entry's published content (name, description, url, logoURI) last changed.
+  // Null on an entry we did not author, i.e. one still carrying an upstream list's text, because
+  // the date we copied a row says nothing about when its provider last stood behind it.
+  //
+  // attestedAt: when this address last proved control by signing a challenge with an on-chain role
+  // key. Null if the entry has never been claimed. This is the date that settles a disagreement:
+  // it says the subject of the record, not a third party, put the text there.
+  //
+  // See lib/content-stamp for why neither can be a row timestamp.
+  updatedAt: string | null;
+  attestedAt: string | null;
   // Governance (Management Group flag mechanism). Present so third parties can show the same
   // public status. underReview = an open flag case; suspended = a DENIED outcome.
   governance?: {
@@ -300,6 +313,13 @@ export async function buildProviderList(): Promise<ProviderList> {
               epochsUntilRevoke: risk?.epochsUntilRevoke ?? null,
               revokeAfterEpochs: risk?.revokeAfterEpochs ?? 17,
             },
+            // Only for listings whose text is ours to date. "imported" and "onchain" rows publish
+            // somebody else's content or no content at all; see FeedProviderExtras above.
+            updatedAt:
+              a.provider.source === "submitted" && a.contentUpdatedAt
+                ? a.contentUpdatedAt.toISOString()
+                : null,
+            attestedAt: a.attestedAt ? a.attestedAt.toISOString() : null,
             ...(govByProvider.get(providerId)
               ? { governance: govByProvider.get(providerId) }
               : {}),
@@ -398,6 +418,16 @@ export const FEED_REPO_PATH = "providerlist.json";
 export async function publishFeedToRepo(): Promise<void> {
   try {
     const { commitFile } = await import("./github");
+    // BEFORE the build, so a change that triggered this publish is dated in the file it produces.
+    // Every write path that can touch branding ends here, which is why the stamp lives here rather
+    // than in each of them.
+    const { stampEntryContent } = await import("./content-stamp");
+    await stampEntryContent(resolveLogo).catch((e) => {
+      // A failed stamp must not stop the feed going out: a slightly stale date is recoverable, a
+      // feed that stopped republishing is not.
+      console.error("stampEntryContent failed:", e instanceof Error ? e.message : e);
+      return 0;
+    });
     const list = await buildProviderList();
     const body = Buffer.from(JSON.stringify(list, null, 2) + "\n", "utf8");
     await commitFile(FEED_REPO_PATH, body, "feed: update providerlist.json");
