@@ -92,6 +92,8 @@ model Provider {
   updatedAt DateTime @updatedAt
 
   addresses   ProviderAddress[]
+  // Per-network description overrides. Empty for most providers; see ProviderChainDescription.
+  chainDescriptions ProviderChainDescription[]
   flagCases   ProviderFlagCase[]
   logoReports LogoReport[]
   watches     ProviderWatch[]
@@ -157,6 +159,36 @@ model LogoReport {
 
 // One on-chain address the provider operates, on one chain. This is the unit that gets
 // verified and the unit that becomes a feed entry.
+// A DESCRIPTION FOR ONE NETWORK, overriding the provider-level one.
+//
+// Provider.description is a single string published on every chain the provider is listed on. The
+// upstream list we imported from stores one description PER CHAIN, so whichever chain's copy we
+// happened to scan was then published on both, and 30 feed entries ended up describing the wrong
+// network ("Providing reliable data feeds to the Songbird Network" on a Flare listing, and the
+// reverse). The text was never wrong, it was on the wrong chain.
+//
+// Keyed by (provider, chain) rather than by address: a provider may register several addresses on
+// one chain, and all of them describe the same service on that chain. Keying by address would let
+// two entries for one network disagree.
+//
+// Absent means "use Provider.description", which is the case for most providers and stays the
+// simple path. Nothing here changes the feed's shape: each entry still carries one `description`.
+model ProviderChainDescription {
+  id         String   @id @default(cuid())
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId String
+
+  // EVM chain id (14 Flare, 19 Songbird).
+  chainId     Int
+  description String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([providerId, chainId])
+  @@index([providerId])
+}
+
 model ProviderAddress {
   id         String   @id @default(cuid())
   provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)

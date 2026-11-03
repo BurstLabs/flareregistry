@@ -119,7 +119,7 @@ export async function buildProviderList(): Promise<ProviderList> {
       provider: { is: { archivedAt: null } },
       OR: [{ verified: true }, { provider: { is: { source: { in: ["imported", "onchain"] } } } }],
     },
-    include: { provider: true },
+    include: { provider: { include: { chainDescriptions: true } } },
     orderBy: [{ chainId: "asc" }, { provider: { name: "asc" } }],
   });
 
@@ -309,7 +309,12 @@ export async function buildProviderList(): Promise<ProviderList> {
     return {
       chainId: a.chainId,
       name: a.provider.name,
-      description: a.provider.description,
+      // Per-network text when the provider has set one for THIS chain, otherwise the single
+      // provider-level description. Most providers have no override and take the fallback; see
+      // ProviderChainDescription for why the override exists at all.
+      description:
+        a.provider.chainDescriptions.find((d) => d.chainId === a.chainId)?.description ??
+        a.provider.description,
       url: a.provider.url,
       address: toChecksum(a.address),
       logoURI: resolveLogo(a.provider.logoPath, a.provider.logoURI),

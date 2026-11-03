@@ -20,7 +20,7 @@ export async function GET(
 
   let owned = await prisma.providerAddress.findFirst({
     where: { address: parsed.data },
-    include: { provider: { include: { addresses: true } } },
+    include: { provider: { include: { addresses: true, chainDescriptions: true } } },
   });
   if (!owned) {
     // Fall back to resolving the address as one of an entity's role addresses, then look the listing
@@ -29,7 +29,7 @@ export async function GET(
     if (canon.length) {
       owned = await prisma.providerAddress.findFirst({
         where: { address: { in: canon } },
-        include: { provider: { include: { addresses: true } } },
+        include: { provider: { include: { addresses: true, chainDescriptions: true } } },
       });
     }
   }
@@ -63,6 +63,12 @@ export async function GET(
       chainId: a.chainId,
       address: a.address,
       verified: a.verified,
+    })),
+    // Per-network description overrides, so the manage form can prefill the one for the network
+    // being edited. Public: these are published in the feed already.
+    chainDescriptions: p.chainDescriptions.map((d) => ({
+      chainId: d.chainId,
+      description: d.description,
     })),
   });
 }

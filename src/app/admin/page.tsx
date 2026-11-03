@@ -2188,6 +2188,41 @@ function ContentReviewTab({ onChanged }: { onChanged: () => void }) {
                     value={text}
                     onChange={(e) => setDraft((d) => ({ ...d, [p.id]: e.target.value }))}
                   />
+
+                  {/* PER-NETWORK OVERRIDES. Published in the same feed field as the text above, so
+                      a reviewer who could not see them would be reviewing half the listing. Each
+                      saves on its own; emptying one deletes it and that network falls back to the
+                      main description. */}
+                  {(p.chainDescriptions ?? []).map((d: any) => {
+                    const key = `${p.id}:${d.chainId}`;
+                    const val = draft[key] ?? d.description ?? "";
+                    const net = d.chainId === 14 ? "Flare" : d.chainId === 19 ? "Songbird" : d.chainId;
+                    return (
+                      <div key={key} className="mt-2">
+                        <div className="text-[11px] text-faint">{net} only</div>
+                        <textarea
+                          rows={2}
+                          className={`${inputCls} mt-1`}
+                          value={val}
+                          onChange={(e) => setDraft((x) => ({ ...x, [key]: e.target.value }))}
+                        />
+                        <button
+                          onClick={() =>
+                            patch(
+                              p.id,
+                              { chainDescription: { chainId: d.chainId, description: val } },
+                              val.trim() ? `Saved ${net}` : `Cleared ${net}`
+                            )
+                          }
+                          disabled={!!busy || val === (d.description ?? "")}
+                          className="mt-1 rounded bg-emerald-500/15 px-2.5 py-1 text-xs text-emerald-400 disabled:opacity-40"
+                        >
+                          {val.trim() ? `save ${net} text` : `clear ${net} override`}
+                        </button>
+                      </div>
+                    );
+                  })}
+
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     <button
                       onClick={() => patch(p.id, { description: text }, "Saved")}
