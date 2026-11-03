@@ -209,15 +209,22 @@ function SubmitPageInner() {
   const [error, setError] = useState<string>("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  // Optional per-network override of the description above, for the network being registered.
-  // Empty string means "no override": the network falls back to the main description.
-  const [chainDescription, setChainDescription] = useState("");
-  // Networks this listing already covers. The override field is pointless on a single-network
-  // listing, so it is only offered once a provider is actually on both.
-  const [listedChainIds, setListedChainIds] = useState<number[]>([]);
-  // Overrides as loaded from the server, keyed by chain. Kept separately from the editable field
-  // because chainId is resolved through several branches below and can change after the load; the
-  // field is derived from this whenever that happens, rather than prefilled at each exit point.
+  // Optional per-network overrides of the description above, keyed by chain. Empty or missing
+  // means "no override": that network falls back to the main description.
+  const [chainDescs, setChainDescs] = useState<Record<number, string>>({});
+  // Networks this listing already covers, and the address it holds on each. The override fields
+  // are pointless on a single-network listing, so they are only offered once a provider is on both.
+  const [listedAddresses, setListedAddresses] = useState<{ chainId: number; address: string }[]>(
+    []
+  );
+  const listedChainIds = Array.from(new Set(listedAddresses.map((a) => a.chainId)));
+  // Networks this SESSION can prove it controls, from resolve-role: every network the connected
+  // address is a registered entity role on. Not the same as the network being registered. An
+  // operator whose identity address is registered on both chains proves both with one signature,
+  // and the server will write an override for either, so the form offers both rather than making
+  // them sign in again with the other address to reach text they can already change.
+  const [controlledChainIds, setControlledChainIds] = useState<number[]>([]);
+  // Overrides as loaded from the server, keyed by chain.
   const [loadedChainDescs, setLoadedChainDescs] = useState<Record<number, string>>({});
   const [url, setUrl] = useState("");
   // Self-declared (provider-attested) fields.
@@ -341,12 +348,13 @@ function SubmitPageInner() {
   // registered on Flare and Songbird), resolve-role returns two networks and we must NOT overwrite the
   // user's choice with an arbitrary first-in-list network - doing so silently claimed Flare when the
   // user picked Songbird. If given, it wins; we only fall back to auto-resolving when it's absent.
-  // Follow the resolved network. chainId settles through several branches in loadExisting, and the
-  // override shown must always be the one for the network this save will actually write, or the
-  // provider edits Flare's text and saves it onto Songbird.
+  // Start the editable boxes from what the server holds. One effect over the whole map rather than
+  // a prefill at each exit point, because chainId and the loaded listing settle through several
+  // branches in loadExisting and an exit point that forgot would show one network's text in
+  // another network's box.
   useEffect(() => {
-    setChainDescription(loadedChainDescs[chainId] ?? "");
-  }, [chainId, loadedChainDescs]);
+    setChainDescs(loadedChainDescs);
+  }, [loadedChainDescs]);
 
   async function loadExisting(addr: string, preferredChainId?: number): Promise<boolean> {
     try {
@@ -355,9 +363,12 @@ function SubmitPageInner() {
       const p = await res.json();
       setName(p.name ?? "");
       setDescription(p.description ?? "");
-      setListedChainIds([
-        ...new Set((p.addresses ?? []).map((a: { chainId: number }) => a.chainId)),
-      ] as number[]);
+      setListedAddresses(
+        ((p.addresses ?? []) as { chainId: number; address: string }[]).map((a) => ({
+          chainId: a.chainId,
+          address: a.address,
+        }))
+      );
       setLoadedChainDescs(
         Object.fromEntries(
           ((p.chainDescriptions ?? []) as { chainId: number; description: string }[]).map((d) => [
@@ -469,6 +480,11 @@ function SubmitPageInner() {
           const uniqueChains = Array.from(
             new Map(rb.roles.map((r: { chainId: number; chainName: string }) => [r.chainId, r])).values()
           ) as { chainId: number; chainName: string }[];
+          // Every network this address is a role on is a network this one signature proves. Which
+          // of them the user is REGISTERING is a separate question, asked just below; this is the
+          // set the save is allowed to write, and it is what decides which description boxes the
+          // form lets them edit.
+          setControlledChainIds(uniqueChains.map((c) => c.chainId));
           if (uniqueChains.length > 1 && chosenChainId == null) {
             setNetworkChoices(uniqueChains);
             setError(t("submit.err.pickNetwork"));
@@ -486,6 +502,9 @@ function SubmitPageInner() {
       // listing that already exists for this address - a claim/edit - is still allowed; checked after
       // sign-in via loadExisting, so only block when there is no resolved network AND no existing row.)
       if (!resolved) {
+        // Not a registered entity anywhere, so the only thing this signature proves is the address
+        // itself; the save may touch its own network and nothing else.
+        setControlledChainIds([signChainId]);
         const existsRes = await fetch(`/api/provider/${address.toLowerCase()}`);
         if (!existsRes.ok) {
           setError(t("submit.err.notRegisteredEither", { address: address.toLowerCase() }));
@@ -524,9 +543,9 @@ function SubmitPageInner() {
     for (const [labelKey, value] of [
       ["submit.field.name", name],
       ["submit.field.description", description],
-      // Checked like the main description: it is published in the same feed field, so the same
-      // words are unacceptable in it. Empty passes, which is correct for "no override".
-      ["submit.field.description", chainDescription],
+      // Checked like the main description: they are published in the same feed field, so the same
+      // words are unacceptable in them. Empty passes, which is correct for "no override".
+      ...Object.values(chainDescs).map((v) => ["submit.field.description", v] as const),
       ["submit.field.url", url],
     ] as const) {
       if (!checkContent(value).ok) {
@@ -539,6 +558,16 @@ function SubmitPageInner() {
       setError(t("submit.logo.required"));
       return;
     }
+    // Save every network this session has proven control of, not only the one it signed in on.
+    // The server still checks control per address, so this cannot reach a listing we do not own;
+    // what it buys is a provider on both chains editing both descriptions in one signature.
+    const saveAddresses = [
+      { chainId, address },
+      ...listedAddresses.filter(
+        (la) => la.chainId !== chainId && controlledChainIds.includes(la.chainId)
+      ),
+    ];
+    const savedChainIds = saveAddresses.map((a) => a.chainId);
     setBusy(true);
     try {
       const res = await fetch("/api/provider", {
@@ -553,10 +582,16 @@ function SubmitPageInner() {
           noticeEmail: noticeEmail.trim() || null,
           algorithm: algorithm || null,
           logoURI: logoUri || null,
-          // null (not undefined) when cleared, so the server deletes an existing override rather
-          // than treating the field as "unchanged".
-          chainDescription: chainDescription.trim() || null,
-          addresses: [{ chainId, address }],
+          // One entry per network this save is allowed to touch. null (not an omitted network)
+          // when a box was cleared, so the server deletes that override rather than treating the
+          // network as unmentioned and leaving it alone.
+          chainDescriptions: savedChainIds.map((cid) => ({
+            chainId: cid,
+            description: (chainDescs[cid] ?? "").trim() || null,
+          })),
+          // The signed-in network FIRST: the server redirects to the first address the session
+          // controls, and that should stay the page the provider just came from.
+          addresses: saveAddresses,
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -843,18 +878,27 @@ function SubmitPageInner() {
               .sort((a, b) => a - b)
               .map((cid) => {
                 const network = getChain(cid)?.name ?? String(cid);
-                const editable = cid === chainId;
-                const shown = editable ? chainDescription : (loadedChainDescs[cid] ?? "");
+                const editable = cid === chainId || controlledChainIds.includes(cid);
+                const shown = chainDescs[cid] ?? "";
                 return (
                   <label key={cid} className="block text-sm">
                     {t("submit.field.chainDescription", { network })}
                     <textarea
-                      className={`mt-1 block w-full rounded border border-themed px-3 py-2 ${
-                        editable ? "bg-elev" : "bg-elev/40 text-muted"
+                      // bg-elev is a hand-written class in globals.css, not a Tailwind color, so
+                      // an alpha modifier on it ("bg-elev/40") matches no rule at all and the
+                      // textarea falls back to the user agent's own background, which on this dark
+                      // theme renders LIGHTER than the editable fields and reads as the active one.
+                      // opacity is a real utility and dims the whole control, which is the cue
+                      // wanted here.
+                      className={`mt-1 block w-full rounded border border-themed bg-elev px-3 py-2 ${
+                        editable ? "" : "cursor-not-allowed text-muted opacity-60"
                       }`}
                       value={shown}
                       {...(editable
-                        ? { onChange: (e: ChangeEvent<HTMLTextAreaElement>) => setChainDescription(e.target.value) }
+                        ? {
+                            onChange: (e: ChangeEvent<HTMLTextAreaElement>) =>
+                              setChainDescs((m) => ({ ...m, [cid]: e.target.value })),
+                          }
                         : { readOnly: true })}
                       maxLength={600}
                       rows={3}
