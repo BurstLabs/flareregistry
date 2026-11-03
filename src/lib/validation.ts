@@ -67,11 +67,35 @@ export const providerInputSchema = z.object({
   // rather than stored as blank.
   name: z.string().trim().min(1).max(80).refine(isClean, CLEAN_MESSAGE),
   description: z.string().trim().min(1).max(600).refine(isClean, CLEAN_MESSAGE),
-  // OPTIONAL PER-NETWORK DESCRIPTION, replacing the one above on the network this submission
-  // registers. Same rules as the main description, because it is published in the same field of the
-  // same feed and is read by the same consumers: anything the main one may not say, this may not
-  // say either. Null or omitted clears any existing override for that network.
-  chainDescription: z.string().trim().min(1).max(600).refine(isClean, CLEAN_MESSAGE).nullish(),
+  // OPTIONAL PER-NETWORK DESCRIPTIONS, one entry per network, each replacing the description above
+  // on that network alone. Same rules as the main description, because it is published in the same
+  // field of the same feed and is read by the same consumers: anything the main one may not say,
+  // this may not say either.
+  //
+  // A network absent from the array is left exactly as it is; present with null clears its override
+  // and lets the network fall back to the description above. The two have to stay distinct, or a
+  // client that simply does not mention a network would silently wipe its text.
+  //
+  // An array rather than the single string this started as. Scoped to "the network this submission
+  // registers", the other network's text could only be reached by signing out and signing in again
+  // with that network's address, and since the form showed one box there was nothing to suggest the
+  // other text existed. The server still writes an override only for a network whose control the
+  // session has proven, so widening the input widens nothing else.
+  chainDescriptions: z
+    .array(
+      z.object({
+        chainId: chainIdSchema,
+        description: z
+          .string()
+          .trim()
+          .min(1)
+          .max(600)
+          .refine(isClean, CLEAN_MESSAGE)
+          .nullable(),
+      })
+    )
+    .max(8)
+    .optional(),
   url: z
     .string()
     .trim()

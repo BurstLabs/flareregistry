@@ -198,7 +198,9 @@ export async function POST(req: NextRequest) {
     // which is the row the review queue is keyed on.
     const flags = [
       ...reviewDescription(input.description, input.url),
-      ...(input.chainDescription ? reviewDescription(input.chainDescription, input.url) : []),
+      ...(input.chainDescriptions ?? []).flatMap((d) =>
+        d.description ? reviewDescription(d.description, input.url) : []
+      ),
     ];
 
     const branding = {
@@ -285,19 +287,20 @@ export async function POST(req: NextRequest) {
       // you do not own: the loop also walks addresses the caller merely submitted, and the override
       // is what the feed actually publishes for that chain.
       //
-      // Omitting the field entirely is "no change"; sending null or an empty string clears the
-      // override and the network falls back to the provider-level description. Those have to stay
-      // distinct, or a client that simply does not send the field would silently wipe it.
-      if (isControlled && input.chainDescription !== undefined) {
-        if (input.chainDescription) {
+      // Not mentioning a network is "no change"; mentioning it with null clears the override and
+      // the network falls back to the provider-level description. Those have to stay distinct, or
+      // a client that simply does not send a network would silently wipe it.
+      const chainDesc = (input.chainDescriptions ?? []).find((d) => d.chainId === a.chainId);
+      if (isControlled && chainDesc) {
+        if (chainDesc.description) {
           await tx.providerChainDescription.upsert({
             where: { providerId_chainId: { providerId: provider.id, chainId: a.chainId } },
             create: {
               providerId: provider.id,
               chainId: a.chainId,
-              description: input.chainDescription,
+              description: chainDesc.description,
             },
-            update: { description: input.chainDescription },
+            update: { description: chainDesc.description },
           });
         } else {
           await tx.providerChainDescription.deleteMany({
