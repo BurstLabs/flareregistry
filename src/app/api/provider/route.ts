@@ -190,7 +190,16 @@ export async function POST(req: NextRequest) {
     // matters: a listing can be claimed with innocuous copy and the phishing link added later.
     // Recomputed rather than merged, so removing the offending line clears the flag by itself and
     // a provider is never left wearing a mark they have already fixed.
-    const flags = reviewDescription(input.description, input.url);
+    // REVIEW THE OVERRIDE TOO, not just the main description.
+    //
+    // A per-network description is published in exactly the same feed field and read by the same
+    // consumers, so reviewing only the main one would leave an unreviewed channel for the same text
+    // an admin would otherwise be asked to look at. Flags from both are merged onto the provider,
+    // which is the row the review queue is keyed on.
+    const flags = [
+      ...reviewDescription(input.description, input.url),
+      ...(input.chainDescription ? reviewDescription(input.chainDescription, input.url) : []),
+    ];
 
     const branding = {
       name: input.name,
@@ -256,6 +265,33 @@ export async function POST(req: NextRequest) {
             : {}),
         },
       });
+
+      // PER-NETWORK DESCRIPTION, written only for a network the caller has proven control of.
+      //
+      // Without the isControlled guard this would be a way to edit the published text of a listing
+      // you do not own: the loop also walks addresses the caller merely submitted, and the override
+      // is what the feed actually publishes for that chain.
+      //
+      // Omitting the field entirely is "no change"; sending null or an empty string clears the
+      // override and the network falls back to the provider-level description. Those have to stay
+      // distinct, or a client that simply does not send the field would silently wipe it.
+      if (isControlled && input.chainDescription !== undefined) {
+        if (input.chainDescription) {
+          await tx.providerChainDescription.upsert({
+            where: { providerId_chainId: { providerId: provider.id, chainId: a.chainId } },
+            create: {
+              providerId: provider.id,
+              chainId: a.chainId,
+              description: input.chainDescription,
+            },
+            update: { description: input.chainDescription },
+          });
+        } else {
+          await tx.providerChainDescription.deleteMany({
+            where: { providerId: provider.id, chainId: a.chainId },
+          });
+        }
+      }
     }
 
     return provider;

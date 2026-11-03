@@ -8,6 +8,7 @@ import { useWalletSign } from "@/lib/useWalletSign";
 import { checkContent } from "@/lib/content-filter";
 import { useApp } from "@/components/providers";
 import { apiErrorMessage } from "@/lib/i18n";
+import { getChain } from "@/lib/chains";
 
 // Provider self-service flow:
 //   1. Connect wallet (window.ethereum) and read the active address.
@@ -208,6 +209,16 @@ function SubmitPageInner() {
   const [error, setError] = useState<string>("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  // Optional per-network override of the description above, for the network being registered.
+  // Empty string means "no override": the network falls back to the main description.
+  const [chainDescription, setChainDescription] = useState("");
+  // Networks this listing already covers. The override field is pointless on a single-network
+  // listing, so it is only offered once a provider is actually on both.
+  const [listedChainIds, setListedChainIds] = useState<number[]>([]);
+  // Overrides as loaded from the server, keyed by chain. Kept separately from the editable field
+  // because chainId is resolved through several branches below and can change after the load; the
+  // field is derived from this whenever that happens, rather than prefilled at each exit point.
+  const [loadedChainDescs, setLoadedChainDescs] = useState<Record<number, string>>({});
   const [url, setUrl] = useState("");
   // Self-declared (provider-attested) fields.
   const [privateNode, setPrivateNode] = useState(false);
@@ -330,6 +341,13 @@ function SubmitPageInner() {
   // registered on Flare and Songbird), resolve-role returns two networks and we must NOT overwrite the
   // user's choice with an arbitrary first-in-list network - doing so silently claimed Flare when the
   // user picked Songbird. If given, it wins; we only fall back to auto-resolving when it's absent.
+  // Follow the resolved network. chainId settles through several branches in loadExisting, and the
+  // override shown must always be the one for the network this save will actually write, or the
+  // provider edits Flare's text and saves it onto Songbird.
+  useEffect(() => {
+    setChainDescription(loadedChainDescs[chainId] ?? "");
+  }, [chainId, loadedChainDescs]);
+
   async function loadExisting(addr: string, preferredChainId?: number): Promise<boolean> {
     try {
       const res = await fetch(`/api/provider/${addr}`);
@@ -337,6 +355,17 @@ function SubmitPageInner() {
       const p = await res.json();
       setName(p.name ?? "");
       setDescription(p.description ?? "");
+      setListedChainIds([
+        ...new Set((p.addresses ?? []).map((a: { chainId: number }) => a.chainId)),
+      ] as number[]);
+      setLoadedChainDescs(
+        Object.fromEntries(
+          ((p.chainDescriptions ?? []) as { chainId: number; description: string }[]).map((d) => [
+            d.chainId,
+            d.description,
+          ])
+        )
+      );
       setUrl(p.url ?? "");
       setExisting({ source: p.source ?? "submitted" });
       if (p.logoURI) setLogoUri(p.logoURI);
@@ -495,6 +524,9 @@ function SubmitPageInner() {
     for (const [labelKey, value] of [
       ["submit.field.name", name],
       ["submit.field.description", description],
+      // Checked like the main description: it is published in the same feed field, so the same
+      // words are unacceptable in it. Empty passes, which is correct for "no override".
+      ["submit.field.description", chainDescription],
       ["submit.field.url", url],
     ] as const) {
       if (!checkContent(value).ok) {
@@ -521,6 +553,9 @@ function SubmitPageInner() {
           noticeEmail: noticeEmail.trim() || null,
           algorithm: algorithm || null,
           logoURI: logoUri || null,
+          // null (not undefined) when cleared, so the server deletes an existing override rather
+          // than treating the field as "unchanged".
+          chainDescription: chainDescription.trim() || null,
           addresses: [{ chainId, address }],
         }),
       });
@@ -785,6 +820,28 @@ function SubmitPageInner() {
               rows={4}
             />
           </label>
+
+          {/* PER-NETWORK DESCRIPTION. Offered only to providers actually listed on both networks:
+              on a single-network listing an override can only ever say the same thing as the field
+              above it, so it would be a question with no useful answer. */}
+          {listedChainIds.length > 1 && (
+            <label className="block text-sm">
+              {t("submit.field.chainDescription", {
+                network: getChain(chainId)?.name ?? String(chainId),
+              })}
+              <textarea
+                className="mt-1 block w-full rounded bg-elev border border-themed px-3 py-2"
+                value={chainDescription}
+                onChange={(e) => setChainDescription(e.target.value)}
+                maxLength={600}
+                rows={3}
+              />
+              <span className="mt-1 block text-xs text-faint">
+                {t("submit.field.chainDescriptionHint")}
+              </span>
+            </label>
+          )}
+
           <label className="block text-sm">
             {t("submit.field.url")}
             <input

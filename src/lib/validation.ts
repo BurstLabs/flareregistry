@@ -67,6 +67,11 @@ export const providerInputSchema = z.object({
   // rather than stored as blank.
   name: z.string().trim().min(1).max(80).refine(isClean, CLEAN_MESSAGE),
   description: z.string().trim().min(1).max(600).refine(isClean, CLEAN_MESSAGE),
+  // OPTIONAL PER-NETWORK DESCRIPTION, replacing the one above on the network this submission
+  // registers. Same rules as the main description, because it is published in the same field of the
+  // same feed and is read by the same consumers: anything the main one may not say, this may not
+  // say either. Null or omitted clears any existing override for that network.
+  chainDescription: z.string().trim().min(1).max(600).refine(isClean, CLEAN_MESSAGE).nullish(),
   url: z
     .string()
     .trim()

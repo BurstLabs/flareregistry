@@ -27,7 +27,12 @@ export async function GET(req: NextRequest) {
           ],
         }
       : undefined,
-    include: { addresses: { orderBy: { chainId: "asc" } } },
+    include: {
+      addresses: { orderBy: { chainId: "asc" } },
+      // Shown in the review queue: an override is published text, so a reviewer who cannot see it
+      // is reviewing only half of what the feed carries.
+      chainDescriptions: { orderBy: { chainId: "asc" } },
+    },
     orderBy: onlyFlagged ? { contentFlaggedAt: "desc" } : { name: "asc" },
     take: 200,
   });
@@ -53,9 +58,19 @@ export async function PATCH(req: NextRequest) {
     // by doing so, not have to clear it twice; and an admin who introduces one should be flagged
     // like anybody else.
     const current = await prisma.provider.findUnique({
-      where: { id }, select: { url: true },
+      where: { id },
+      select: { url: true, chainDescriptions: { select: { description: true } } },
     });
-    const flags = reviewDescription(description, typeof b.url === "string" ? b.url : current?.url);
+    // RECOMPUTED OVER THE OVERRIDES TOO. The flag column lives on the provider but the published
+    // text is the main description plus any per-network override, so reviewing only the main one
+    // would let an admin's edit clear a flag that an override had raised and still stands.
+    const declaredUrl = typeof b.url === "string" ? b.url : current?.url;
+    const flags = [
+      ...reviewDescription(description, declaredUrl),
+      ...(current?.chainDescriptions ?? []).flatMap((d) =>
+        reviewDescription(d.description, declaredUrl)
+      ),
+    ];
     data.contentFlags = flags.length ? (flags as unknown as Prisma.InputJsonValue) : Prisma.DbNull;
     data.contentFlaggedAt = flags.length ? new Date() : null;
   }
@@ -65,6 +80,30 @@ export async function PATCH(req: NextRequest) {
     data.contentFlaggedAt = null;
   }
   if (typeof b.url === "string") data.url = b.url.trim();
+
+  // EDIT OR CLEAR ONE NETWORK'S OVERRIDE: { chainDescription: { chainId, description } }, where a
+  // null or empty description deletes it and that network falls back to the main text. Applied
+  // outside `data` because it writes a different table.
+  const cd = b.chainDescription;
+  if (cd && typeof cd.chainId === "number") {
+    const text = typeof cd.description === "string" ? cd.description.trim() : "";
+    if (text) {
+      await prisma.providerChainDescription.upsert({
+        where: { providerId_chainId: { providerId: id, chainId: cd.chainId } },
+        create: { providerId: id, chainId: cd.chainId, description: text },
+        update: { description: text },
+      });
+    } else {
+      await prisma.providerChainDescription.deleteMany({
+        where: { providerId: id, chainId: cd.chainId },
+      });
+    }
+    // An override edit on its own is a valid change, so do not fall through to "no changes".
+    if (!Object.keys(data).length) {
+      await publishFeedToRepo().catch(() => {});
+      return NextResponse.json({ ok: true, chainDescription: cd.chainId });
+    }
+  }
   if (["submitted", "imported", "onchain"].includes(b.source)) data.source = b.source;
   if (typeof b.suspended === "boolean") data.suspended = b.suspended;
   // archived: true -> archive (soft-delete, exclude from feed); false -> restore to the live feed.
