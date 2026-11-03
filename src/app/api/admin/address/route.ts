@@ -12,10 +12,21 @@ export async function PATCH(req: NextRequest) {
   const b = await req.json().catch(() => null);
   const id = typeof b?.id === "string" ? b.id : null;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  const existing = await prisma.providerAddress.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
   const data: Record<string, unknown> = {};
   if (typeof b.verified === "boolean") {
     data.verified = b.verified;
-    data.verifiedAt = b.verified ? new Date() : null;
+    // Granting verification does not overwrite an anchor that is already set, which would restart
+    // a hold the provider has already served. attestedAt is never written here: it is published as
+    // evidence that the OWNER signed, and an admin flipping a flag is not that. Revoking clears
+    // both, so the feed cannot keep asserting a proof for a listing we no longer treat as claimed.
+    if (!b.verified) {
+      data.verifiedAt = null;
+      data.attestedAt = null;
+    } else if (!existing.verifiedAt) {
+      data.verifiedAt = new Date();
+    }
   }
   if (typeof b.listed === "boolean") data.listed = b.listed;
   if (!Object.keys(data).length) return NextResponse.json({ error: "no changes" }, { status: 400 });

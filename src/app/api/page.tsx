@@ -117,6 +117,9 @@ git -C flareregistry checkout <commit-sha>`}</code>
       <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-themed bg-elev p-4 text-xs font-medium">
         {`"flareregistry": {
   "verified": true,                 // owner proved control of this address by signature
+  "attestedAt": "2026-10-30T16:50:12.000Z",  // when that signature was last given (null if never claimed)
+  "updatedAt": "2026-11-03T12:47:04.000Z",   // when this entry's name/description/url/logo last changed
+                                    //   (null while the entry still carries an upstream list's text)
   "registered": true,               // matched to a registered FTSO entity on-chain
   "managementGroup": true,          // member of Flare's on-chain FTSO Management Group
   "qualified": true,                // meets all automatable qualification criteria (new providers are held 30d before listed flips true)
@@ -160,6 +163,7 @@ git -C flareregistry checkout <commit-sha>`}</code>
   }
 }`}
       </pre>
+      <p className="mt-3 text-sm text-muted">{t("api.freshnessNote")}</p>
       <p className="mt-3 text-sm text-muted">
         {t("api.weiNote")} (<code>flare-foundation/fsp-rewards</code>) {t("api.weiNoteMid")}{" "}
         (<code>lastEpoch</code>){t("api.weiNoteAfter")} 10<sup>18</sup>.

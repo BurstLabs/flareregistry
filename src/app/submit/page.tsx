@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, type ChangeEvent } from "react";
 import { openWallet } from "@/lib/appkit";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAccount } from "wagmi";
@@ -819,28 +819,56 @@ function SubmitPageInner() {
               maxLength={600}
               rows={4}
             />
+            {listedChainIds.length > 1 && (
+              <span className="mt-1 block text-xs text-faint">
+                {t("submit.field.descriptionShared")}
+              </span>
+            )}
           </label>
 
-          {/* PER-NETWORK DESCRIPTION. Offered only to providers actually listed on both networks:
-              on a single-network listing an override can only ever say the same thing as the field
-              above it, so it would be a question with no useful answer. */}
-          {listedChainIds.length > 1 && (
-            <label className="block text-sm">
-              {t("submit.field.chainDescription", {
-                network: getChain(chainId)?.name ?? String(chainId),
+          {/* PER-NETWORK DESCRIPTION, one box per network the listing is on.
+              Offered only to providers actually listed on both networks: on a single-network
+              listing an override can only ever say the same thing as the field above it, so it
+              would be a question with no useful answer.
+
+              BOTH networks are shown, not only the one being edited. A provider editing a single
+              box labelled "Description for Flare only" cannot see what Songbird says, cannot tell
+              whether the shared description above is reaching it, and has no way to find out short
+              of reading the feed. That is the state that produced thirty listings whose Flare entry
+              described Songbird and the reverse. Only the signed-in network is editable, because
+              the save posts one address and the server writes an override only for a chain whose
+              control it has verified; the other is read-only and says how to get at it. */}
+          {listedChainIds.length > 1 &&
+            [...listedChainIds]
+              .sort((a, b) => a - b)
+              .map((cid) => {
+                const network = getChain(cid)?.name ?? String(cid);
+                const editable = cid === chainId;
+                const shown = editable ? chainDescription : (loadedChainDescs[cid] ?? "");
+                return (
+                  <label key={cid} className="block text-sm">
+                    {t("submit.field.chainDescription", { network })}
+                    <textarea
+                      className={`mt-1 block w-full rounded border border-themed px-3 py-2 ${
+                        editable ? "bg-elev" : "bg-elev/40 text-muted"
+                      }`}
+                      value={shown}
+                      {...(editable
+                        ? { onChange: (e: ChangeEvent<HTMLTextAreaElement>) => setChainDescription(e.target.value) }
+                        : { readOnly: true })}
+                      maxLength={600}
+                      rows={3}
+                    />
+                    <span className="mt-1 block text-xs text-faint">
+                      {editable
+                        ? t("submit.field.chainDescriptionHint")
+                        : shown
+                          ? t("submit.field.chainDescriptionLocked", { network })
+                          : t("submit.field.chainDescriptionEmpty", { network })}
+                    </span>
+                  </label>
+                );
               })}
-              <textarea
-                className="mt-1 block w-full rounded bg-elev border border-themed px-3 py-2"
-                value={chainDescription}
-                onChange={(e) => setChainDescription(e.target.value)}
-                maxLength={600}
-                rows={3}
-              />
-              <span className="mt-1 block text-xs text-faint">
-                {t("submit.field.chainDescriptionHint")}
-              </span>
-            </label>
-          )}
 
           <label className="block text-sm">
             {t("submit.field.url")}
