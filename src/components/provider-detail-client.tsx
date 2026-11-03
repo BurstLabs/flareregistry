@@ -26,7 +26,10 @@ import { TelegramPanel } from "./telegram-panel";
 
 export interface DetailData {
   name: string;
+  /** The provider-level text. Published only on networks that have not given their own. */
   description: string;
+  /** What each network this listing is on actually publishes, in the feed's own resolution. */
+  descriptions: { chain: string; description: string }[];
   url: string;
   logo: string;
   verified: boolean;
@@ -431,7 +434,22 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
         </div>
       )}
 
-      <p className="mt-4 text-muted">{d.description}</p>
+      {/* One paragraph when every network says the same thing, which is the normal case. When they
+          differ, each is shown under its own network, because that is what the feed publishes and
+          a single paragraph here would be either the wrong network's text or, for a provider that
+          has written both, a sentence that appears on neither. */}
+      {d.descriptions.length > 1 &&
+      new Set(d.descriptions.map((x) => x.description)).size > 1 ? (
+        <div className="mt-4 space-y-2">
+          {d.descriptions.map((x) => (
+            <p key={x.chain} className="text-muted">
+              <span className="font-medium text-beacon">{x.chain}</span> {x.description}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-4 text-muted">{d.descriptions[0]?.description ?? d.description}</p>
+      )}
       <a
         href={safeExternalUrl(d.url)}
         target="_blank"

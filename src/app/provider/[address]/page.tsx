@@ -37,14 +37,14 @@ export default async function ProviderDetail({
   // after claiming with a submit address) still resolves to the listing.
   let owned = await prisma.providerAddress.findFirst({
     where: { address: addr },
-    include: { provider: { include: { addresses: true } } },
+    include: { provider: { include: { addresses: true, chainDescriptions: true } } },
   });
   if (!owned) {
     const canon = await listingAddressesForSigner(addr);
     if (canon.length) {
       owned = await prisma.providerAddress.findFirst({
         where: { address: { in: canon } },
-        include: { provider: { include: { addresses: true } } },
+        include: { provider: { include: { addresses: true, chainDescriptions: true } } },
       });
     }
   }
@@ -280,9 +280,24 @@ export default async function ProviderDetail({
     // Unreadable membership falls back to the client probe, which costs the old flicker, not the
     // feature.
   }
+  // WHAT EACH NETWORK ACTUALLY PUBLISHES, one entry per network this listing is on.
+  //
+  // The page used to show p.description alone, which is only the fallback: a network with its own
+  // text publishes that instead, and a provider that has given both networks their own text has a
+  // p.description that appears nowhere at all. The page claims to show the listing, so it shows
+  // what is in the feed rather than the field the feed falls back to.
+  const descriptions = Array.from(new Set(p.addresses.map((a) => a.chainId)))
+    .sort((a, b) => a - b)
+    .map((cid) => ({
+      chain: getChain(cid)?.name ?? `chain ${cid}`,
+      description:
+        p.chainDescriptions.find((d) => d.chainId === cid)?.description ?? p.description,
+    }));
+
   const data: DetailData = {
     name: p.name,
     description: p.description,
+    descriptions,
     url: p.url,
     logo: cardLogo(p.logoPath, p.logoURI),
     verified: p.source === "submitted",
