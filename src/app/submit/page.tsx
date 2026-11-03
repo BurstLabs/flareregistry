@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { openWallet } from "@/lib/appkit";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAccount } from "wagmi";
@@ -218,12 +218,6 @@ function SubmitPageInner() {
     []
   );
   const listedChainIds = Array.from(new Set(listedAddresses.map((a) => a.chainId)));
-  // Networks this SESSION can prove it controls, from resolve-role: every network the connected
-  // address is a registered entity role on. Not the same as the network being registered. An
-  // operator whose identity address is registered on both chains proves both with one signature,
-  // and the server will write an override for either, so the form offers both rather than making
-  // them sign in again with the other address to reach text they can already change.
-  const [controlledChainIds, setControlledChainIds] = useState<number[]>([]);
   // Overrides as loaded from the server, keyed by chain.
   const [loadedChainDescs, setLoadedChainDescs] = useState<Record<number, string>>({});
   const [url, setUrl] = useState("");
@@ -480,11 +474,6 @@ function SubmitPageInner() {
           const uniqueChains = Array.from(
             new Map(rb.roles.map((r: { chainId: number; chainName: string }) => [r.chainId, r])).values()
           ) as { chainId: number; chainName: string }[];
-          // Every network this address is a role on is a network this one signature proves. Which
-          // of them the user is REGISTERING is a separate question, asked just below; this is the
-          // set the save is allowed to write, and it is what decides which description boxes the
-          // form lets them edit.
-          setControlledChainIds(uniqueChains.map((c) => c.chainId));
           if (uniqueChains.length > 1 && chosenChainId == null) {
             setNetworkChoices(uniqueChains);
             setError(t("submit.err.pickNetwork"));
@@ -502,9 +491,6 @@ function SubmitPageInner() {
       // listing that already exists for this address - a claim/edit - is still allowed; checked after
       // sign-in via loadExisting, so only block when there is no resolved network AND no existing row.)
       if (!resolved) {
-        // Not a registered entity anywhere, so the only thing this signature proves is the address
-        // itself; the save may touch its own network and nothing else.
-        setControlledChainIds([signChainId]);
         const existsRes = await fetch(`/api/provider/${address.toLowerCase()}`);
         if (!existsRes.ok) {
           setError(t("submit.err.notRegisteredEither", { address: address.toLowerCase() }));
@@ -558,16 +544,11 @@ function SubmitPageInner() {
       setError(t("submit.logo.required"));
       return;
     }
-    // Save every network this session has proven control of, not only the one it signed in on.
-    // The server still checks control per address, so this cannot reach a listing we do not own;
-    // what it buys is a provider on both chains editing both descriptions in one signature.
-    const saveAddresses = [
-      { chainId, address },
-      ...listedAddresses.filter(
-        (la) => la.chainId !== chainId && controlledChainIds.includes(la.chainId)
-      ),
-    ];
-    const savedChainIds = saveAddresses.map((a) => a.chainId);
+    // Every network this listing is on, plus the one being registered if it is new. The server
+    // writes an override only for networks the listing actually holds, and only on the caller's
+    // own listing; it does not require a separate signature per network, because the shared
+    // description above already reaches every one of them.
+    const savedChainIds = Array.from(new Set([chainId, ...listedAddresses.map((a) => a.chainId)]));
     setBusy(true);
     try {
       const res = await fetch("/api/provider", {
@@ -589,9 +570,7 @@ function SubmitPageInner() {
             chainId: cid,
             description: (chainDescs[cid] ?? "").trim() || null,
           })),
-          // The signed-in network FIRST: the server redirects to the first address the session
-          // controls, and that should stay the page the provider just came from.
-          addresses: saveAddresses,
+          addresses: [{ chainId, address }],
         }),
       });
       const body = await res.json().catch(() => ({}));
@@ -866,49 +845,35 @@ function SubmitPageInner() {
               listing an override can only ever say the same thing as the field above it, so it
               would be a question with no useful answer.
 
-              BOTH networks are shown, not only the one being edited. A provider editing a single
-              box labelled "Description for Flare only" cannot see what Songbird says, cannot tell
+              BOTH networks are shown and both are editable. A provider editing a single box
+              labelled "Description for Flare only" cannot see what Songbird says, cannot tell
               whether the shared description above is reaching it, and has no way to find out short
               of reading the feed. That is the state that produced thirty listings whose Flare entry
-              described Songbird and the reverse. Only the signed-in network is editable, because
-              the save posts one address and the server writes an override only for a chain whose
-              control it has verified; the other is read-only and says how to get at it. */}
+              described Songbird and the reverse. Editing is not scoped to the signed-in network,
+              because the description above is already published on both and this session may
+              rewrite it; see api/provider for why the narrower gate protected nothing. */}
           {listedChainIds.length > 1 &&
             [...listedChainIds]
               .sort((a, b) => a - b)
               .map((cid) => {
                 const network = getChain(cid)?.name ?? String(cid);
-                const editable = cid === chainId || controlledChainIds.includes(cid);
                 const shown = chainDescs[cid] ?? "";
                 return (
                   <label key={cid} className="block text-sm">
                     {t("submit.field.chainDescription", { network })}
                     <textarea
-                      // bg-elev is a hand-written class in globals.css, not a Tailwind color, so
-                      // an alpha modifier on it ("bg-elev/40") matches no rule at all and the
-                      // textarea falls back to the user agent's own background, which on this dark
-                      // theme renders LIGHTER than the editable fields and reads as the active one.
-                      // opacity is a real utility and dims the whole control, which is the cue
-                      // wanted here.
-                      className={`mt-1 block w-full rounded border border-themed bg-elev px-3 py-2 ${
-                        editable ? "" : "cursor-not-allowed text-muted opacity-60"
-                      }`}
+                      className="mt-1 block w-full rounded border border-themed bg-elev px-3 py-2"
                       value={shown}
-                      {...(editable
-                        ? {
-                            onChange: (e: ChangeEvent<HTMLTextAreaElement>) =>
-                              setChainDescs((m) => ({ ...m, [cid]: e.target.value })),
-                          }
-                        : { readOnly: true })}
+                      onChange={(e) =>
+                        setChainDescs((m) => ({ ...m, [cid]: e.target.value }))
+                      }
                       maxLength={600}
                       rows={3}
                     />
                     <span className="mt-1 block text-xs text-faint">
-                      {editable
+                      {shown
                         ? t("submit.field.chainDescriptionHint")
-                        : shown
-                          ? t("submit.field.chainDescriptionLocked", { network })
-                          : t("submit.field.chainDescriptionEmpty", { network })}
+                        : t("submit.field.chainDescriptionEmpty", { network })}
                     </span>
                   </label>
                 );
