@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-03T17:47:02.937Z",
+  "timestamp": "2026-11-03T17:58:54.371Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1258,7 +1258,7 @@
     {
       "chainId": 14,
       "name": "Aternety",
-      "description": "Aternety US-based data provider on the Songbird Network.",
+      "description": "Aternety US-based data provider on the Flare Network.",
       "url": "https://aternety.com",
       "address": "0xD3956F862a4960bB4937e596a2BaeCFfCbb4b3e0",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x2De2C741658f0Ae7b2DdD8EAdD179911564af119.png",
@@ -1323,7 +1323,7 @@
     {
       "chainId": 14,
       "name": "Atlas TSO",
-      "description": "Atlas Songbird Network Data Provider. Doing what is best for the users and the network.",
+      "description": "Atlas Flare Network Data Provider. Doing what is best for the users and the network.",
       "url": "https://tsoatlas.xyz",
       "address": "0x07702A7494F760B0b3642463BdD2B7A13cFDDbb2",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xB5ECB64526F777Eb6f02D4A83AbAB1FAD26b1C00.png",
@@ -1698,7 +1698,7 @@
     {
       "chainId": 14,
       "name": "Bushido FTSO",
-      "description": "As samurai are born to serve their lord and die, Bushido FTSO exists to provide accurate and reliable prices for the Songbird ecosystem.",
+      "description": "As samurai are born to serve their lord and die, Bushido FTSO exists to provide accurate and reliable prices for the Flare ecosystem.",
       "url": "https://bushi.finance",
       "address": "0xC7cF3238D2ca63d01Ad4d42B4cCB9dB8b0adE702",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x0d3852Ad415477fFC39ce9351bD4dEdbbd585833.png",
@@ -2383,7 +2383,7 @@
     {
       "chainId": 14,
       "name": "Envision",
-      "description": "Providing reliable data feeds to the Songbird Network",
+      "description": "Providing reliable data feeds to the Flare Network",
       "url": "https://www.envisionftso.com",
       "address": "0x9b42B895D2A10D048eaf4996fDf93aEBf59167BF",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x58Cd43E9FcdBd4D0F507aB4f6029dB8032746da8.png",
@@ -2623,7 +2623,7 @@
     {
       "chainId": 14,
       "name": "Flare Beacon",
-      "description": "Songbird network signal provider. Beaconing since inception",
+      "description": "Flare network signal provider. Beaconing since inception",
       "url": "https://flarebeacon.xyz",
       "address": "0xdd33Ba13F32C90D678422251B52B005335fB7A4c",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x633CE03ea66d910c15869e1552fDccC2bf9aAD87.png",
@@ -3623,7 +3623,7 @@
     {
       "chainId": 14,
       "name": "FTSO EU",
-      "description": "Ftso.eu is one of the oldest signal providers building on Flare, with a strong community and presence. Our signals are weighted, dynamic, resilient, processed with an innovative approach on a distributed P2P network to guarantee their accuracy.",
+      "description": "Ftso.eu is one of the oldest signal providers building on Flare, with a strong community and presence. Our signals are weighted, dynamic, resilient and processed with an innovative approach on a distributed P2P network to guarantee their accuracy.",
       "url": "https://www.ftso.eu",
       "address": "0xb0421af2cFfB21D8a0Be4087448146E4f9cbD306",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x010a16c53F33E4d93892f00897965578b55a8CFC.png",
@@ -4777,7 +4777,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.175Z",
+          "qualifiedSince": "2026-06-22T23:47:18.864Z",
           "lastSubmittedEpoch": 446,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -5578,7 +5578,7 @@
     {
       "chainId": 14,
       "name": "Scintilla",
-      "description": "High accuracy signal provider to the Songbird Network.",
+      "description": "High accuracy signal provider to the Flare Network.",
       "url": "https://www.scintilla.io",
       "address": "0xeFb939Ebe430efD987c2650367a1b2c9f070d3f1",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xE70d5351a842131c66AAeBC4bD604912BF3cBa72.png",
@@ -6088,7 +6088,7 @@
     {
       "chainId": 14,
       "name": "Sun-Dara",
-      "description": "Sun-Dara is an Asian STSO provider based primarily in Bangladesh with connections to the United Kingdom. We try and keep things simple and easy to understand. Check out our website for more information and service status updates.",
+      "description": "Sun-Dara is an Asian FTSO provider based primarily in Bangladesh with connections to the United Kingdom. We try and keep things simple and easy to understand. Check out our website for more information and service status updates.",
       "url": "https://sun-dara.co.uk",
       "address": "0x1E8F916CE03F4ce86186531a8994d366581Ed4be",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x7394923453FC2F606cfb4D0ea1A5438BB8260D08.png",
@@ -6523,7 +6523,7 @@
     {
       "chainId": 14,
       "name": "Use Your Spark",
-      "description": "Global Signal Provider for the Flare Time Series Oracle (FTSO), offering vote delegation services to Songbird (SGB) token holders. Start earning risk-free rewards today!",
+      "description": "Global Signal Provider for the Flare Time Series Oracle (FTSO), offering vote delegation services to Spark (FLR) token holders. Start earning risk-free rewards today!",
       "url": "https://www.useyourspark.com",
       "address": "0xa288054b230DCbb8689Ac229D6DBd7Df39203181",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x53CAEDDA4339eD74272ECfEF85b657dEf18fA2e4.png",
@@ -6578,7 +6578,7 @@
     {
       "chainId": 14,
       "name": "WitterFTSO",
-      "description": "We are a NYC based Songbird Network signal provider. We put the PRO in provider!",
+      "description": "We are a NYC based Flare Network signal provider. We put the PRO in provider!",
       "url": "https://witterftso.com",
       "address": "0x4A74e79738009711a6ddB6653614d43ba9F431b9",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xD9200CC419BDe28B169AD8c904d2687a15A4Bf9F.png",
@@ -7501,7 +7501,7 @@
     {
       "chainId": 19,
       "name": "DataVector",
-      "description": "DataVector is an Infrastructure Provider on Flare Network providing validation services and reliable data provisioning to the Flare oracle system.",
+      "description": "DataVector is an Infrastructure Provider on Flare Network validation services and reliable data provisioning to the Flare oracle system.",
       "url": "https://datavector.org",
       "address": "0x43cAb70e8EdefeF8C648C4Fc0863DD9D8FF5776A",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xCaA49C97318b6Bb62b7F9241891D70F87FC05D35.png",
@@ -8029,7 +8029,7 @@
     {
       "chainId": 19,
       "name": "Flare.Space",
-      "description": "Your most convenient and efficient Flare network data provider and validator. Visit us to get access to information, tools and components for integration with Flare network.",
+      "description": "Your most convenient and efficient Songbird network data provider and validator. Visit us to get access to information, tools and components for integration with Songbird network.",
       "url": "https://flare.space",
       "address": "0xCcd522393233052Dd0DfeAadc124a0a9bB87FD08",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x111246F191a2A20012723369d3CEc77777E774E9.png",
@@ -8672,7 +8672,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.175Z",
+          "qualifiedSince": "2026-06-22T23:47:18.864Z",
           "lastSubmittedEpoch": 446,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
