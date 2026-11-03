@@ -1,7 +1,8 @@
 // Ingest P-chain validator rewards per reward epoch from Flare's reward-scripts repository, so the
 // yield feed's networkRates can count what P-chain stakers earn from ValidatorRewardManager next to
-// what they earn from FSP MIRROR claims. Network-wide totals only; Flare only (Songbird has no
-// P-chain staking).
+// what they earn from FSP MIRROR claims (ValidatorRewardEpoch, network-wide totals), and so
+// /api/feed/validators.json can rank each validator node on what its stakers earned
+// (ValidatorNodeEpoch, one row per node). Flare only (Songbird has no P-chain staking).
 //
 //   node scripts/ingest-validator-rewards.mjs              # fill any missing epoch in the last 30
 //   node scripts/ingest-validator-rewards.mjs --backfill 60
@@ -13,13 +14,24 @@
 // is simply absent here and the feed says includesValidatorRewards: false. A not-yet-published epoch
 // is a 404 and costs one request per run.
 //
-// Source: https://github.com/flare-foundation/reward-scripts/tree/main/generated-files
-// Parse and checks: scripts/validator-rewards-parse.mjs (asserted in the build).
+// Per node, the epoch's nodes-data.json is joined with two fsp-rewards files of the same epoch,
+// reward-epoch-info.json (which FSP voter lists the node, at what nodeWeight) and
+// reward-distribution-data.json (MIRROR claims paid to the node). They are fetched only once the
+// reward-scripts files are there, and the node rows are stored only when the epoch's summary was
+// accepted as well. An epoch's node rows are replaced together, in one transaction, so the feed never
+// reads half an epoch. An epoch whose summary is already stored but which has no node rows yet (every
+// epoch in the window, on the first run after the table was added) is filled the same way.
+//
+// Sources: https://github.com/flare-foundation/reward-scripts/tree/main/generated-files
+//          https://github.com/flare-foundation/fsp-rewards/tree/main/flare
+// Parse and checks: scripts/validator-rewards-parse.mjs (asserted in the build by
+// check-network-rates.mjs and check-validator-feed.mjs).
 
 import { PrismaClient } from "@prisma/client";
-import { summariseValidatorRewards } from "./validator-rewards-parse.mjs";
+import { summariseValidatorRewards, validatorNodeRows } from "./validator-rewards-parse.mjs";
 
 const RAW_BASE = "https://raw.githubusercontent.com/flare-foundation/reward-scripts/main/generated-files";
+const FSP_BASE = "https://raw.githubusercontent.com/flare-foundation/fsp-rewards/main";
 const NETWORK = "flare";
 const argAt = process.argv.indexOf("--backfill");
 const BACKFILL = argAt > -1 ? Number(process.argv[argAt + 1]) : 30;
@@ -48,20 +60,24 @@ async function main() {
     return;
   }
   const lo = Math.max(1, newest - BACKFILL + 1);
+  const inWindow = { network: NETWORK, epochId: { gte: lo, lte: newest } };
   const stored = new Set(
-    (
-      await prisma.validatorRewardEpoch.findMany({
-        where: { network: NETWORK, epochId: { gte: lo, lte: newest } },
-        select: { epochId: true },
-      })
-    ).map((r) => r.epochId),
+    (await prisma.validatorRewardEpoch.findMany({ where: inWindow, select: { epochId: true } })).map((r) => r.epochId),
+  );
+  const storedNodes = new Set(
+    (await prisma.validatorNodeEpoch.groupBy({ by: ["epochId"], where: inWindow })).map((r) => r.epochId),
   );
 
   let added = 0;
   let pending = 0;
   let refused = 0;
+  let nodesAdded = 0;
+  let nodesPending = 0;
+  let nodesRefused = 0;
   for (let epochId = lo; epochId <= newest; epochId++) {
-    if (stored.has(epochId) && !REFRESH) continue;
+    const needSummary = REFRESH || !stored.has(epochId);
+    const needNodes = REFRESH || !storedNodes.has(epochId);
+    if (!needSummary && !needNodes) continue;
     const base = `${RAW_BASE}/reward-epoch-${epochId}`;
     let data, nodes;
     try {
@@ -75,22 +91,56 @@ async function main() {
       pending++;
       continue;
     }
+    // Checked even when the summary is already stored: node rows are kept only for an epoch whose
+    // files also add up network-wide.
     const s = summariseValidatorRewards(epochId, data, nodes);
     if (!s.ok) {
       console.error(`${NETWORK}: validator rewards refused, ${s.reason}`);
       refused++;
       continue;
     }
-    const { epochId: _e, ...fields } = s.value;
-    await prisma.validatorRewardEpoch.upsert({
-      where: { network_epochId: { network: NETWORK, epochId } },
-      create: { network: NETWORK, epochId, ...fields },
-      update: fields,
-    });
-    added++;
+    if (needSummary) {
+      const { epochId: _e, ...fields } = s.value;
+      await prisma.validatorRewardEpoch.upsert({
+        where: { network_epochId: { network: NETWORK, epochId } },
+        create: { network: NETWORK, epochId, ...fields },
+        update: fields,
+      });
+      added++;
+    }
+    if (!needNodes) continue;
+
+    const fsp = `${FSP_BASE}/${NETWORK}/${epochId}`;
+    let info, dist;
+    try {
+      [info, dist] = await Promise.all([
+        getJson(`${fsp}/reward-epoch-info.json`),
+        getJson(`${fsp}/reward-distribution-data.json`),
+      ]);
+    } catch (e) {
+      console.error(`${NETWORK}: validator node rows epoch ${epochId}: ${e.message}`);
+      nodesRefused++;
+      continue;
+    }
+    if (!info || !dist) {
+      nodesPending++;
+      continue;
+    }
+    const n = validatorNodeRows(epochId, nodes, info, dist);
+    if (!n.ok) {
+      console.error(`${NETWORK}: validator node rows refused, ${n.reason}`);
+      nodesRefused++;
+      continue;
+    }
+    await prisma.$transaction([
+      prisma.validatorNodeEpoch.deleteMany({ where: { network: NETWORK, epochId } }),
+      prisma.validatorNodeEpoch.createMany({ data: n.value.map((row) => ({ network: NETWORK, ...row })) }),
+    ]);
+    nodesAdded++;
   }
   console.log(
-    `${NETWORK}: validator rewards stored ${added} epoch(s) [${lo}..${newest}], ${pending} not published yet, ${refused} refused`,
+    `${NETWORK}: validator rewards stored ${added} epoch(s) [${lo}..${newest}], ${pending} not published yet, ${refused} refused; ` +
+      `node rows stored for ${nodesAdded} epoch(s), ${nodesPending} without fsp-rewards files yet, ${nodesRefused} refused`,
   );
 }
 

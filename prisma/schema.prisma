@@ -718,6 +718,56 @@ model ValidatorRewardEpoch {
   @@unique([network, epochId])
 }
 
+/// P-CHAIN VALIDATOR REWARDS PER NODE PER REWARD EPOCH, so /api/feed/validators.json can rank validators
+/// on what one staked FLR actually earned on each. From the same reward-scripts nodes-data.json as
+/// ValidatorRewardEpoch, plus the fsp-rewards files of the same epoch: reward-epoch-info.json (which FSP
+/// voter lists the node and at what nodeWeight) and reward-distribution-data.json (the MIRROR claims
+/// paid to the node's 20 bytes). Written by scripts/ingest-validator-rewards.mjs, an epoch's rows
+/// replaced together and only when that epoch's ValidatorRewardEpoch summary was accepted too. Parse and
+/// checks in scripts/validator-rewards-parse.mjs (validatorNodeRows). Flare only.
+///
+/// Amounts and weights are wei-scale decimal strings (stake converted from the P-chain's 1e9 unit), "0"
+/// when there is none, divided in BigInt, never in SQL.
+model ValidatorNodeEpoch {
+  id      String @id @default(cuid())
+  network String
+  epochId Int
+  /// "NodeID-..." as Flare prints it.
+  nodeId  String
+
+  /// Lowercase FSP voter (identity) that lists the node in reward-epoch-info.json, else the voter whose
+  /// delegationAddress is the node's ftsoAddress, else null.
+  identity          String?
+  /// Lowercase ftsoAddress from nodes-data.json; null when it is the zero address (no FTSO provider).
+  delegationAddress String?
+  /// Validator fee in millionths: 200000 = 20%, 1000000 = 100%.
+  feePpm            Int
+  /// totalStakeAmount: self-bond, boost and delegations.
+  stake             String
+  /// The weight the node's reward is shared over (stake less any overboost).
+  rewardingWeight   String
+  /// rewardingWeight after the per-entity 5% cap; "0" when Flare computed none (the node failed uptime).
+  cappedWeight      String
+  uptimeEligible    Boolean
+  /// The linked FTSO provider's eligibleForReward; false when the node has no provider.
+  eligible          Boolean
+  /// nodeRewardAmount when rewarded (uptimeEligible and eligible), else "0".
+  nodeReward        String
+  /// The validator's fee, nodeReward x fee / 1e6 exactly as Flare computes it; "0" when not rewarded.
+  feeReward         String
+  /// Sum of the MIRROR (claimType 3) claims whose beneficiary is the node's 20 bytes.
+  mirrorReward      String
+  /// The node's FSP nodeWeight; "0" when no voter lists it.
+  mirrorWeight      String
+  /// Unix seconds; null when unreadable.
+  stakeEnd          Int?
+
+  createdAt DateTime @default(now())
+
+  @@unique([network, epochId, nodeId])
+  @@index([network, nodeId])
+}
+
 // Cached result of the address-on-website qualification check, keyed by provider url.
 model WebsiteCheck {
   url       String   @id
