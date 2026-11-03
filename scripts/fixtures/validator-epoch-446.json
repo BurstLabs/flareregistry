@@ -1,0 +1,599 @@
+{
+ "_source": "Flare reward epoch 446, cut from Flare's published files without changing any value: reward-scripts generated-files/reward-epoch-446/nodes-data.json (10 of its 182 nodes, each without its delegators list), fsp-rewards flare/446/reward-epoch-info.json (rewardEpochId and the voterRegistrationInfo entries of the voters that list those nodes or whose delegation address is their ftsoAddress) and flare/446/reward-distribution-data.json (rewardEpochId, network and the reward claims paid to those voters' addresses and node IDs, each without its merkleProof). Asserted by scripts/check-validator-feed.mjs.",
+ "epochId": 446,
+ "nodes": [
+  {
+   "nodeId": "NodeID-53Yqr6UiB8KYKj3HFadr27va9zLNkypmc",
+   "bondingAddress": "flare1t978fn7jcpdu4f2shy7g9eha4vnf3ykqf3xflg",
+   "selfBond": "3049000000000000",
+   "ftsoAddress": "0xC8142E2b2f6f8Adfd34d8e6735F389667F9E2C0a",
+   "stakeEnd": 1794794400,
+   "pChainAddress": [
+    "flare1t978fn7jcpdu4f2shy7g9eha4vnf3ykqf3xflg"
+   ],
+   "fee": 200000,
+   "uptimeEligible": true,
+   "ftsoName": "",
+   "BEB": "3049000000000000",
+   "boostDelegations": "0",
+   "boost": "0",
+   "selfDelegations": "0",
+   "normalDelegations": "40434300675058334",
+   "totalSelfBond": "3049000000000000",
+   "totalStakeAmount": "43483300675058334",
+   "cChainAddress": "0x87CA3742ea39ae26dA68f5faf2cEDafF9a61e54f",
+   "eligible": true,
+   "overboost": "0",
+   "rewardingWeight": "43483300675058334",
+   "cappedWeight": "43483300675058334",
+   "nodeRewardAmount": "14771850178824984354723",
+   "validatorRewardAmount": "3782998414862659852807"
+  },
+  {
+   "nodeId": "NodeID-7aU2dDeBVu4btx4wbt44ACqyJeQRjCZMi",
+   "bondingAddress": "flare1hlp32xcqgj2xu9tc8pw7xtpfntf97tamwvllex",
+   "selfBond": "13500000000000000",
+   "ftsoAddress": "0x6c23aa4C5A1dA47F8FDF9Df4A032904c062cB92B",
+   "stakeEnd": 1808469175,
+   "pChainAddress": [
+    "flare1hlp32xcqgj2xu9tc8pw7xtpfntf97tamwvllex"
+   ],
+   "fee": 1000000,
+   "uptimeEligible": true,
+   "ftsoName": "Next Finance Tech",
+   "BEB": "13500000000000000",
+   "boostDelegations": "0",
+   "boost": "0",
+   "selfDelegations": "100000000000000000",
+   "normalDelegations": "387447611758681",
+   "totalSelfBond": "113500000000000000",
+   "totalStakeAmount": "113887447611758681",
+   "cChainAddress": "0x8FDa661dF251b4c3B4E1e832D426C6f889878529",
+   "eligible": true,
+   "overboost": "0",
+   "rewardingWeight": "113887447611758681",
+   "cappedWeight": "113887447611758681",
+   "nodeRewardAmount": "38689066543990490696444",
+   "validatorRewardAmount": "38689066543990490696444"
+  },
+  {
+   "nodeId": "NodeID-KywEC9cXm8P4KezUkovM5oA1rLTTFDe6e",
+   "bondingAddress": "flare1yrm7vfk6lhy5a0ce655atmwuz9t0qn6ks3s4mf",
+   "selfBond": "13500000000000000",
+   "ftsoAddress": "0x6c23aa4C5A1dA47F8FDF9Df4A032904c062cB92B",
+   "stakeEnd": 1802228400,
+   "pChainAddress": [
+    "flare1yrm7vfk6lhy5a0ce655atmwuz9t0qn6ks3s4mf"
+   ],
+   "fee": 1000000,
+   "uptimeEligible": true,
+   "ftsoName": "Next Finance Tech",
+   "BEB": "13500000000000000",
+   "boostDelegations": "0",
+   "boost": "0",
+   "selfDelegations": "186500000000000000",
+   "normalDelegations": "261521131027075",
+   "totalSelfBond": "200000000000000000",
+   "totalStakeAmount": "200261521131027075",
+   "cChainAddress": "0x08E9AD0B5558B44154c47F42995Be44718c6D2b1",
+   "eligible": true,
+   "overboost": "0",
+   "rewardingWeight": "200261521131027075",
+   "cappedWeight": "200261521131027075",
+   "nodeRewardAmount": "68031477390306391057924",
+   "validatorRewardAmount": "68031477390306391057924"
+  },
+  {
+   "nodeId": "NodeID-4QpT6xPQNKiyBfuKQNC8AyU3oLGVaFFwb",
+   "bondingAddress": "flare1n2t5dxej43wv0yasz2vl5q9plmcya5xd0d02z4",
+   "selfBond": "1000000000000000",
+   "ftsoAddress": "0x0000000000000000000000000000000000000000",
+   "stakeEnd": 1799737200,
+   "pChainAddress": [
+    "flare1n2t5dxej43wv0yasz2vl5q9plmcya5xd0d02z4"
+   ],
+   "fee": 200000,
+   "uptimeEligible": true,
+   "ftsoName": "",
+   "BEB": "1000000000000000",
+   "boostDelegations": "0",
+   "boost": "0",
+   "selfDelegations": "0",
+   "normalDelegations": "0",
+   "totalSelfBond": "1000000000000000",
+   "totalStakeAmount": "1000000000000000",
+   "cChainAddress": "0x839267B430a7A802a3D2E1686f5C1F9251Befac7",
+   "eligible": false,
+   "overboost": "0",
+   "rewardingWeight": "1000000000000000",
+   "cappedWeight": "1000000000000000",
+   "burnedRewardAmount": "339713176081363964358"
+  },
+  {
+   "nodeId": "NodeID-FERvNWfCH4mjCSoFnjF4YouDBuYZCpfKm",
+   "bondingAddress": "flare1daqetq0w8dclhf2g5d8u6zv9xklgcc2jw67ed0",
+   "selfBond": "4999999000000000",
+   "ftsoAddress": "0x9C44c70180642cF4Cfd06d77b84Bb8F864ea5697",
+   "stakeEnd": 1795716000,
+   "pChainAddress": [
+    "flare1daqetq0w8dclhf2g5d8u6zv9xklgcc2jw67ed0"
+   ],
+   "fee": 200000,
+   "uptimeEligible": false,
+   "ftsoName": "Comfy Nodes",
+   "BEB": "4999999000000000",
+   "boostDelegations": "15000000000000000",
+   "boost": "15000000000000000",
+   "selfDelegations": "0",
+   "normalDelegations": "44960837517435093",
+   "totalSelfBond": "4999999000000000",
+   "totalStakeAmount": "64960836517435093",
+   "cChainAddress": "0x0A255b5642B3FB56B355A8bd3B265783805c9999",
+   "eligible": true,
+   "overboost": "0",
+   "rewardingWeight": "64960836517435093"
+  },
+  {
+   "nodeId": "NodeID-D3QKd6XxLnrKowkziZJSG4RNLtffz8ESk",
+   "bondingAddress": "flare1p4wgms0x27halpaa6atw09eph3ck3z4t7hdtdz",
+   "selfBond": "3000000000000000",
+   "ftsoAddress": "0xb084575CaCedf7DEdd78329656715651F8f66712",
+   "stakeEnd": 1797850800,
+   "pChainAddress": [
+    "flare1p4wgms0x27halpaa6atw09eph3ck3z4t7hdtdz"
+   ],
+   "fee": 200000,
+   "uptimeEligible": true,
+   "ftsoName": "FocusTSO",
+   "BEB": "3000000000000000",
+   "boostDelegations": "15000000000000000",
+   "boost": "15000000000000000",
+   "selfDelegations": "0",
+   "normalDelegations": "11489098512514602",
+   "totalSelfBond": "3000000000000000",
+   "totalStakeAmount": "29489098512514602",
+   "cChainAddress": "0xb745Da5E25F90cA62B0ea4CFF9f4ab60Ec4eD86a",
+   "eligible": false,
+   "overboost": "0",
+   "rewardingWeight": "29489098512514602",
+   "cappedWeight": "29489098512514602",
+   "burnedRewardAmount": "10017835315462561152132"
+  },
+  {
+   "nodeId": "NodeID-BeE5PDQkbtgbeDsxJMc2diKWyE95HtuHR",
+   "bondingAddress": "flare1qhdu00kt4pa39tqqjrn5g0cz74lre7uaa5hr60",
+   "selfBond": "20000000000000000",
+   "ftsoAddress": "0x9A46864A3b0a7805B266C445289C3fAD1E48f18e",
+   "stakeEnd": 1814364000,
+   "pChainAddress": [
+    "flare1qhdu00kt4pa39tqqjrn5g0cz74lre7uaa5hr60"
+   ],
+   "fee": 200000,
+   "uptimeEligible": true,
+   "ftsoName": "Bifrost Wallet",
+   "BEB": "20000000000000000",
+   "boostDelegations": "15000000000000000",
+   "boost": "15000000000000000",
+   "selfDelegations": "0",
+   "normalDelegations": "257500621969509420",
+   "totalSelfBond": "20000000000000000",
+   "totalStakeAmount": "292500621969509420",
+   "cChainAddress": "0x71fC15E031F76dBd0066f254a9020312Ff0B6965",
+   "eligible": true,
+   "overboost": "0",
+   "rewardingWeight": "292500621969509420",
+   "cappedWeight": "292500621969509420",
+   "nodeRewardAmount": "99366315295036430410883",
+   "validatorRewardAmount": "29385231989285477084213"
+  },
+  {
+   "nodeId": "NodeID-MKeSBNK4dMPNnvPPxb2xEjbeyyJMc9tfc",
+   "bondingAddress": "flare1qhdu00kt4pa39tqqjrn5g0cz74lre7uaa5hr60",
+   "selfBond": "20000000000000000",
+   "ftsoAddress": "0x9A46864A3b0a7805B266C445289C3fAD1E48f18e",
+   "stakeEnd": 1801069200,
+   "pChainAddress": [
+    "flare1qhdu00kt4pa39tqqjrn5g0cz74lre7uaa5hr60"
+   ],
+   "fee": 200000,
+   "uptimeEligible": true,
+   "ftsoName": "Bifrost Wallet",
+   "BEB": "20000000000000000",
+   "boostDelegations": "0",
+   "boost": "0",
+   "selfDelegations": "0",
+   "normalDelegations": "304140001069210",
+   "totalSelfBond": "20000000000000000",
+   "totalStakeAmount": "20304140001069210",
+   "cChainAddress": "0x71fC15E031F76dBd0066f254a9020312Ff0B6965",
+   "eligible": true,
+   "overboost": "0",
+   "rewardingWeight": "20304140001069210",
+   "cappedWeight": "20304140001069210",
+   "nodeRewardAmount": "6897583887363890048287",
+   "validatorRewardAmount": "6814927594774601439392"
+  },
+  {
+   "nodeId": "NodeID-KiAUisCU8UvXGnMRiUvoeyWneSdUm987",
+   "bondingAddress": "flare1uzwl6dnjppwyqsg47ws3djywv02nyl0yx4hwlk",
+   "selfBond": "1010000000000000",
+   "ftsoAddress": "0x1e68DC808A240C096F0261144dc41fd4c883Cfb0",
+   "stakeEnd": 1797015600,
+   "pChainAddress": [
+    "flare1uzwl6dnjppwyqsg47ws3djywv02nyl0yx4hwlk"
+   ],
+   "fee": 500000,
+   "uptimeEligible": true,
+   "ftsoName": "Stakecore",
+   "BEB": "1010000000000000",
+   "boostDelegations": "8000000000000000",
+   "boost": "8000000000000000",
+   "selfDelegations": "0",
+   "normalDelegations": "5747099204983989",
+   "totalSelfBond": "1010000000000000",
+   "totalStakeAmount": "14757099204983989",
+   "cChainAddress": "0x868822C4A79ee2a18bedfdd5f1EF3b23B190cf1e",
+   "eligible": true,
+   "overboost": "2950000000000000",
+   "rewardingWeight": "11807099204983989",
+   "cappedWeight": "11807099204983989",
+   "nodeRewardAmount": "4011027171232858331230",
+   "validatorRewardAmount": "3034844509142961977621"
+  },
+  {
+   "nodeId": "NodeID-HGNPxSh8dZqCNCmHfMMNWYC8CNQiUwDWK",
+   "bondingAddress": "flare1em9dh4ez6vlvhqukqxe3y2cl2flgg37heatqrw",
+   "selfBond": "12724000000000000",
+   "ftsoAddress": "0x112B1130BD78B5A520adeace6130151E07a270a7",
+   "stakeEnd": 1796025600,
+   "pChainAddress": [
+    "flare1em9dh4ez6vlvhqukqxe3y2cl2flgg37heatqrw"
+   ],
+   "fee": 200000,
+   "uptimeEligible": true,
+   "ftsoName": "Xdrops Oracle",
+   "BEB": "12724000000000000",
+   "boostDelegations": "0",
+   "boost": "0",
+   "selfDelegations": "0",
+   "normalDelegations": "148730589551620915",
+   "totalSelfBond": "12724000000000000",
+   "totalStakeAmount": "161454589551620915",
+   "cChainAddress": "0x216f3f9476cC26ec95AafB2A494e23979d0494e8",
+   "eligible": false,
+   "overboost": "0",
+   "rewardingWeight": "161454589551620915",
+   "cappedWeight": "161454589551620915",
+   "burnedRewardAmount": "54848251409494142452470"
+  }
+ ],
+ "rewardEpochInfo": {
+  "rewardEpochId": 446,
+  "voterRegistrationInfo": [
+   {
+    "voterRegistered": {
+     "voter": "0x5e53fa91ad7ce06b1510f03bfaac3ba77558ded8",
+     "rewardEpochId": 446,
+     "signingPolicyAddress": "0x297a6cc26880b83835084f9418d968c350f9e0a4",
+     "submitAddress": "0x66ad76a46c55348d93a5dbb4716bad7fa1878222",
+     "submitSignaturesAddress": "0x09213f362e106a6ce31c51ca3fd42738327b5773",
+     "registrationWeight": "60077352371140375544"
+    },
+    "voterRegistrationInfo": {
+     "voter": "0x5e53fa91ad7ce06b1510f03bfaac3ba77558ded8",
+     "rewardEpochId": 446,
+     "delegationAddress": "0xc8142e2b2f6f8adfd34d8e6735f389667f9e2c0a",
+     "delegationFeeBIPS": 2000,
+     "wNatWeight": "6620945704531858853643666",
+     "wNatCappedWeight": "6620945704531858853643666",
+     "nodeIds": [
+      "0x2c5bea62f08383745d9be382eed6b532555aaa5e"
+     ],
+     "nodeWeights": [
+      "45734999675058334000000000"
+     ]
+    }
+   },
+   {
+    "voterRegistered": {
+     "voter": "0x1650d2760baee638c034200dedcbe17b050d0364",
+     "rewardEpochId": 446,
+     "signingPolicyAddress": "0x05ca60d45584358d999f39bb62be1835ad50b742",
+     "submitAddress": "0x09981b26225021baf22ad86c952f1aadbac609f6",
+     "submitSignaturesAddress": "0x51374b34b916faf91726f64a6c78cf089c51d81f",
+     "registrationWeight": "630953724545010079510"
+    },
+    "voterRegistrationInfo": {
+     "voter": "0x1650d2760baee638c034200dedcbe17b050d0364",
+     "rewardEpochId": 446,
+     "delegationAddress": "0x9a46864a3b0a7805b266c445289c3fad1e48f18e",
+     "delegationFeeBIPS": 2000,
+     "wNatWeight": "1471409126905241713388228198",
+     "wNatCappedWeight": "1013064420014445466944463124",
+     "nodeIds": [
+      "0xaaa27a3c99f6bcc65e8b891890b8c8d5f2ebb173",
+      "0xdee9405cb2536a04ce08435e53afc3e289150338",
+      "0x34a3fca895ce17d6f6c2f858c2826b405b823c50",
+      "0x74bb90385022b61f24be95d8321aedbeb71de567"
+     ],
+     "nodeWeights": [
+      "299949999999999988000000000",
+      "0",
+      "299815027229519379000000000",
+      "279953009599055855000000000"
+     ]
+    }
+   },
+   {
+    "voterRegistered": {
+     "voter": "0xc058d02fdd08294d29fd4db631e6edc789741ea6",
+     "rewardEpochId": 446,
+     "signingPolicyAddress": "0xf60ccd5b3b8c44ecdc351e0f7fd046eeae363bd6",
+     "submitAddress": "0x7b6c3bf0da61353a195fb2accc5c2c6d0b72dcae",
+     "submitSignaturesAddress": "0xb99cbb2d94e27d73a564b90a00e14e892aa0b2a2",
+     "registrationWeight": "96128260868433138180"
+    },
+    "voterRegistrationInfo": {
+     "voter": "0xc058d02fdd08294d29fd4db631e6edc789741ea6",
+     "rewardEpochId": 446,
+     "delegationAddress": "0x9c44c70180642cf4cfd06d77b84bb8f864ea5697",
+     "delegationFeeBIPS": 2000,
+     "wNatWeight": "100297005215733796899975661",
+     "wNatCappedWeight": "100297005215733796899975661",
+     "nodeIds": [
+      "0x9c1bf8866dd532ccf1760c4817deb1f857b38e38"
+     ],
+     "nodeWeights": [
+      "68011307738455494000000000"
+     ]
+    }
+   },
+   {
+    "voterRegistered": {
+     "voter": "0x3a32539045a214958132e1d9afba66460e0073eb",
+     "rewardEpochId": 446,
+     "signingPolicyAddress": "0xe7a203ff45e25519fee8c25bb257e466a9f6285a",
+     "submitAddress": "0x77e37adfde61942ceb46f6657e65001e0baae805",
+     "submitSignaturesAddress": "0xff6da679b1d4fed143512abc26f5b890b3edc236",
+     "registrationWeight": "25003270632101094900"
+    },
+    "voterRegistrationInfo": {
+     "voter": "0x3a32539045a214958132e1d9afba66460e0073eb",
+     "rewardEpochId": 446,
+     "delegationAddress": "0xb084575cacedf7dedd78329656715651f8f66712",
+     "delegationFeeBIPS": 2000,
+     "wNatWeight": "48483051290770827749599270",
+     "wNatCappedWeight": "48483051290770827749599270",
+     "nodeIds": [
+      "0x8415cf0c51b1203265cd98d014d67772646aa858"
+     ],
+     "nodeWeights": [
+      "4926031169875382000000000"
+     ]
+    }
+   },
+   {
+    "voterRegistered": {
+     "voter": "0xfed1eff46608249054a6c7c4bce8998051dcff7d",
+     "rewardEpochId": 446,
+     "signingPolicyAddress": "0x4dfee82239b05d749abfa8cd8fa438146760ce00",
+     "submitAddress": "0x61d328cc6c18076432acfda8d5b5bd86041aef79",
+     "submitSignaturesAddress": "0xf6c99a269b22010fde6fd1db45c1fdc8c7fb6de2",
+     "registrationWeight": "409867182832101515616"
+    },
+    "voterRegistrationInfo": {
+     "voter": "0xfed1eff46608249054a6c7c4bce8998051dcff7d",
+     "rewardEpochId": 446,
+     "delegationAddress": "0x6c23aa4c5a1da47f8fdf9df4a032904c062cb92b",
+     "delegationFeeBIPS": 2000,
+     "wNatWeight": "41563224560149818472887069",
+     "wNatCappedWeight": "41563224560149818472887069",
+     "nodeIds": [
+      "0x82b4692c50d13db54812752cfcfde1fee873be04",
+      "0x48250b14d05a2c1c261d322887f1697d78236415",
+      "0xbe1a25039497ba1b48ec71eeaa26e1e65e7fff3d",
+      "0xd036d323d4e561fed229336e51f0493b9b895773"
+     ],
+     "nodeWeights": [
+      "0",
+      "113837447611758681000000000",
+      "286500000000000000000000000",
+      "200261521131027075000000000"
+     ]
+    }
+   },
+   {
+    "voterRegistered": {
+     "voter": "0xcdeae85d8cef99a6433f341c3dce6096c3c5598c",
+     "rewardEpochId": 446,
+     "signingPolicyAddress": "0xda120015f32de47427663db78bc7339ace2213ac",
+     "submitAddress": "0x6a4121a29839b446052640655818b4c7f9bb569f",
+     "submitSignaturesAddress": "0x53cbf076ac8d35d40057e653b53f7e8b77d3b5fa",
+     "registrationWeight": "126195341058535989064"
+    },
+    "voterRegistrationInfo": {
+     "voter": "0xcdeae85d8cef99a6433f341c3dce6096c3c5598c",
+     "rewardEpochId": 446,
+     "delegationAddress": "0x1e68dc808a240c096f0261144dc41fd4c883cfb0",
+     "delegationFeeBIPS": 2000,
+     "wNatWeight": "262046147001933869360317469",
+     "wNatCappedWeight": "262046147001933869360317469",
+     "nodeIds": [
+      "0x0389d94ae54c777090a5d44844631b7868eefabc",
+      "0x60c68227f6180e9decd497909c439b8289cabb38"
+     ],
+     "nodeWeights": [
+      "14757099204983989000000000",
+      "59430011709952686000000000"
+     ]
+    }
+   }
+  ]
+ },
+ "rewardDistribution": {
+  "rewardEpochId": 446,
+  "network": "flare",
+  "rewardClaims": [
+   {
+    "body": {
+     "beneficiary": "0x0389d94ae54c777090a5d44844631b7868eefabc",
+     "claimType": 3,
+     "amount": "10819239243720765337228",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x1650d2760baee638c034200dedcbe17b050d0364",
+     "claimType": 1,
+     "amount": "100488827853989891967012",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x1e68dc808a240c096f0261144dc41fd4c883cfb0",
+     "claimType": 2,
+     "amount": "38424082103501987510410",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x2c5bea62f08383745d9be382eed6b532555aaa5e",
+     "claimType": 3,
+     "amount": "40086206242982508043025",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x34a3fca895ce17d6f6c2f858c2826b405b823c50",
+     "claimType": 3,
+     "amount": "111345098174453321283447",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x48250b14d05a2c1c261d322887f1697d78236415",
+     "claimType": 3,
+     "amount": "55473583588943416440585",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x5e53fa91ad7ce06b1510f03bfaac3ba77558ded8",
+     "claimType": 1,
+     "amount": "10311710735252185800062",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x60c68227f6180e9decd497909c439b8289cabb38",
+     "claimType": 3,
+     "amount": "43571402889935532468614",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x6c23aa4c5a1da47f8fdf9df4a032904c062cb92b",
+     "claimType": 2,
+     "amount": "4050795340610459850310",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x74bb90385022b61f24be95d8321aedbeb71de567",
+     "claimType": 3,
+     "amount": "103968755756120599518399",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x9a46864a3b0a7805b266c445289c3fad1e48f18e",
+     "claimType": 2,
+     "amount": "75246233216456959717734",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x9c1bf8866dd532ccf1760c4817deb1f857b38e38",
+     "claimType": 3,
+     "amount": "47993099419081278256314",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0x9c44c70180642cf4cfd06d77b84bb8f864ea5697",
+     "claimType": 2,
+     "amount": "14155187726328932041933",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0xaaa27a3c99f6bcc65e8b891890b8c8d5f2ebb173",
+     "claimType": 3,
+     "amount": "111395224268928687432846",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0xbe1a25039497ba1b48ec71eeaa26e1e65e7fff3d",
+     "claimType": 3,
+     "amount": "139612948389670541845430",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0xc058d02fdd08294d29fd4db631e6edc789741ea6",
+     "claimType": 1,
+     "amount": "15537071786352552563940",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0xc8142e2b2f6f8adfd34d8e6735f389667f9e2c0a",
+     "claimType": 2,
+     "amount": "1160636698026235196630",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0xcdeae85d8cef99a6433f341c3dce6096c3c5598c",
+     "claimType": 1,
+     "amount": "23203681059289571317519",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0xd036d323d4e561fed229336e51f0493b9b895773",
+     "claimType": 3,
+     "amount": "97588486611179754498266",
+     "rewardEpochId": 446
+    }
+   },
+   {
+    "body": {
+     "beneficiary": "0xfed1eff46608249054a6c7c4bce8998051dcff7d",
+     "claimType": 1,
+     "amount": "74181453482601043141179",
+     "rewardEpochId": 446
+    }
+   }
+  ]
+ }
+}

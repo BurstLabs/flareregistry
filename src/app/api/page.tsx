@@ -82,6 +82,11 @@ git -C flareregistry checkout <commit-sha>`}</code>
         {t("api.ep.archived")}
       </Endpoint>
 
+      <Endpoint method="GET" path="/api/feed/validators.json">
+        {t("api.ep.validators")}{" "}
+        <code>{`{ name, generatedAt, method, windowEpochs, networks: { flare: { chainId, epochs, totalStake, validators[] } } }`}</code>
+      </Endpoint>
+
       <Endpoint method="GET" path="/api/v1/providers">
         {t("api.ep.providers")}{" "}
         <code>{`{ apiVersion, generatedAt, count, providers[] }`}</code>.{" "}
