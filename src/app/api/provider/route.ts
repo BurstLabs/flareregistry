@@ -281,30 +281,46 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // PER-NETWORK DESCRIPTION, written only for a network the caller has proven control of.
-      //
-      // Without the isControlled guard this would be a way to edit the published text of a listing
-      // you do not own: the loop also walks addresses the caller merely submitted, and the override
-      // is what the feed actually publishes for that chain.
-      //
-      // Not mentioning a network is "no change"; mentioning it with null clears the override and
-      // the network falls back to the provider-level description. Those have to stay distinct, or
-      // a client that simply does not send a network would silently wipe it.
-      const chainDesc = (input.chainDescriptions ?? []).find((d) => d.chainId === a.chainId);
-      if (isControlled && chainDesc) {
-        if (chainDesc.description) {
+    }
+
+    // PER-NETWORK DESCRIPTIONS, for any network THIS LISTING is on.
+    //
+    // Deliberately not gated on proving control of that particular network. The session has already
+    // proved it owns this listing, and the description above, which it may rewrite freely, is
+    // exactly what Songbird publishes whenever Songbird has no override. So a Flare key could
+    // always change Songbird's published text; it just could not change it in the box labelled
+    // Songbird. That gate protected nothing and made the only route to fixing one network's
+    // wording a second sign-in with that network's key, which is how listings ended up describing
+    // the wrong chain for months.
+    //
+    // What does the protecting is the ownership check above: an address belonging to another
+    // listing is rejected outright, so providerId here is always the caller's own listing, and an
+    // override is scoped to (providerId, chainId).
+    //
+    // Read AFTER the address loop so a network linked in this same save counts. Not mentioning a
+    // network is "no change"; mentioning it with null clears the override and that network falls
+    // back to the description above. Those have to stay distinct, or a client that simply does not
+    // send a network would silently wipe it.
+    if (input.chainDescriptions?.length) {
+      const ownChainIds = new Set(
+        (
+          await tx.providerAddress.findMany({
+            where: { providerId: provider.id },
+            select: { chainId: true },
+          })
+        ).map((r) => r.chainId)
+      );
+      for (const d of input.chainDescriptions) {
+        if (!ownChainIds.has(d.chainId)) continue;
+        if (d.description) {
           await tx.providerChainDescription.upsert({
-            where: { providerId_chainId: { providerId: provider.id, chainId: a.chainId } },
-            create: {
-              providerId: provider.id,
-              chainId: a.chainId,
-              description: chainDesc.description,
-            },
-            update: { description: chainDesc.description },
+            where: { providerId_chainId: { providerId: provider.id, chainId: d.chainId } },
+            create: { providerId: provider.id, chainId: d.chainId, description: d.description },
+            update: { description: d.description },
           });
         } else {
           await tx.providerChainDescription.deleteMany({
-            where: { providerId: provider.id, chainId: a.chainId },
+            where: { providerId: provider.id, chainId: d.chainId },
           });
         }
       }
