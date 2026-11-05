@@ -155,7 +155,25 @@ export async function buildProviderList(): Promise<ProviderList> {
     //
     // What is still excluded is anything with no on-chain presence AND no claim; see below.
     where: {
-      OR: [{ verified: true }, { provider: { is: { source: { in: ["imported", "onchain"] } } } }],
+      OR: [
+        { verified: true },
+        { provider: { is: { source: { in: ["imported", "onchain"] } } } },
+        // AN ADDRESS AN UPSTREAM LIST ALREADY VOUCHED FOR, which `listed` carries verbatim from
+        // the import and which no unproven submission can set: the submit route writes
+        // listed:isControlled on create and only raises it for an address the session controls.
+        //
+        // Without this, CLAIMING A LISTING DELETED THE OTHER NETWORK'S ENTRY. An imported listing
+        // published both of its networks, because the provider's source was "imported". The owner
+        // then signed with one network's key, source flipped to "submitted", and every unverified
+        // address on the listing silently left the feed. AU, HEWG and uGaenn each lost their
+        // Songbird entry at the exact minute they proved who they were on Flare: all three are
+        // listed and active on Songbird at the current epoch, and Flare's Systems Explorer has
+        // been taking their names from an archived repository ever since.
+        //
+        // Proving one network cannot un-vouch another. The upstream listing stands until an owner
+        // replaces it or the entity leaves the chain.
+        { listed: true },
+      ],
     },
     include: { provider: { include: { chainDescriptions: true } } },
     orderBy: [{ chainId: "asc" }, { provider: { name: "asc" } }],
