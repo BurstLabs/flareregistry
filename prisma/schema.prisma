@@ -214,6 +214,22 @@ model ProviderAddress {
   verified   Boolean   @default(false)
   verifiedAt DateTime?
 
+  // A REGISTRATION WITH NO PARTICIPATION. True when this address belongs to an entity registered
+  // in the EntityManager that has never signed a policy, submitted, or earned, so it appears in
+  // none of the reward data ProviderOnchain is built from.
+  //
+  // Flare's Systems Explorer lists every EntityManager registration, we list entities that took
+  // part, and the gap is 111 of their 325 rows. Fourteen of those carry a name, and for those the
+  // explorer had no live source for it: we published nothing, so it fell back to a provider list
+  // archived on 2026-11-05. This flag is how such a listing earns a place in the feed without
+  // being counted as a participant: it publishes at listed:false with status "dormant".
+  //
+  // Set only by scripts/check-entity-registration, which confirms the pairing against the chain
+  // itself (getDelegationAddressOf on the identity must return this address), never from a third
+  // party's word.
+  entityRegistered Boolean   @default(false)
+  entityCheckedAt  DateTime?
+
   // The LAST signature from this address, bumped on every authenticated save. What verifiedAt was
   // being asked to be and could not be at the same time.
   //

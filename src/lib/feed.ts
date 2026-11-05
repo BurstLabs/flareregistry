@@ -82,10 +82,13 @@ export interface FeedProviderExtras {
   //   departed     not qualified and silent for PURGE_AFTER_EPOCHS reward epochs or more
   //   suspended    a governance case closed against it
   //   unnamed      registered on-chain, but no list or owner has ever published an identity
+  //   dormant      holds an EntityManager registration and has never taken part: no signing
+  //                policy, no submissions, no rewards. Confirmed against the chain, not taken
+  //                from a third party; see ProviderAddress.entityRegistered
   //
   // This replaced a separate archive endpoint. A departed provider used to be removed from the
   // feed entirely, which told consumers nothing and left them to find a name elsewhere.
-  status: "listed" | "held" | "unqualified" | "departed" | "suspended" | "unnamed";
+  status: "listed" | "held" | "unqualified" | "departed" | "suspended" | "unnamed" | "dormant";
   // FRESHNESS, for a consumer holding a second provider list that disagrees with this one.
   //
   // updatedAt: when this entry's published content (name, description, url, logoURI) last changed.
@@ -274,6 +277,10 @@ export async function buildProviderList(): Promise<ProviderList> {
     const net = getChain(a.chainId)?.key;
     if (net && entityByNetworkAddress.has(`${net}:${a.address.toLowerCase()}`)) return true;
     if (a.verified) return true;
+    // A confirmed EntityManager registration that the reward data does not carry. Without this,
+    // a named entity Flare's explorer shows has no live source for its name and falls back to an
+    // archived list. See ProviderAddress.entityRegistered.
+    if (a.entityRegistered) return true;
     return riskByProvider.get(providerIdByAddress.get(a.address.toLowerCase()) ?? "")?.qualified ?? false;
   };
 
@@ -332,15 +339,18 @@ export async function buildProviderList(): Promise<ProviderList> {
     // chain-seeded row than "nobody named it", and both outrank the bare "unqualified".
     const status: FeedProviderExtras["status"] = gov?.suspended
       ? "suspended"
-      : departed
-        ? "departed"
-        : a.provider.source === "onchain"
-          ? "unnamed"
-          : !qualified
-            ? "unqualified"
-            : held
-              ? "held"
-              : "listed";
+      : // Before "departed": an entity that never took part has not left, it never arrived.
+        !entity && a.entityRegistered
+        ? "dormant"
+        : departed
+          ? "departed"
+          : a.provider.source === "onchain"
+            ? "unnamed"
+            : !qualified
+              ? "unqualified"
+              : held
+                ? "held"
+                : "listed";
 
     // Emitted for every published entry. An entry we publish should always be able to say why it
     // is or is not listed; on-chain fields are simply null where this network has no entity.

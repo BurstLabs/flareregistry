@@ -112,7 +112,7 @@ git -C flareregistry checkout <commit-sha>`}</code>
       </p>
       <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-themed bg-elev p-4 text-xs font-medium">
         {`"flareregistry": {
-  "status": "listed",               // listed | held | unqualified | departed | suspended | unnamed
+  "status": "listed",               // listed | held | unqualified | departed | suspended | unnamed | dormant
                                     //   why this entry is or is not listed; listed === (status === "listed")
   "verified": true,                 // owner proved control of this address by signature
   "attestedAt": "2026-10-30T16:50:12.000Z",  // when that signature was last given (null if never claimed)
