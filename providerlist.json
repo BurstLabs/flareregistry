@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-05T17:56:46.097Z",
+  "timestamp": "2026-11-05T17:59:39.330Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1646,47 +1646,6 @@
     },
     {
       "chainId": 14,
-      "name": "Canary FTSO",
-      "description": "Canary FTSO, your European-based Signal Service Provider, actively contributes to the Flare ecosystem. We ensure a secure and stable price provision service, allowing you to delegate your votes worldwide.",
-      "url": "https://can4ary.com",
-      "address": "0x0b31C6571D6C0dd9250b737Ea5e7e3D918d99046",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xb76865823f68b48b02Bb9604A2CD886eB49A9f3D.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": false,
-        "managementGroup": false,
-        "qualified": false,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "activeSince": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": null,
-          "lastSubmittedEpoch": null,
-          "epochsSinceSubmit": null,
-          "epochsUntilRevoke": null,
-          "revokeAfterEpochs": 17
-        },
-        "status": "unqualified",
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
       "name": "CashLab",
       "description": "Independent, solo-operated Flare infrastructure: FTSO price feeds, Fast Updates and FDC attestations on dedicated hardware, plus our own validator. Transparency-first — every claim we publish is verifiable on-chain at cashlab.network.",
       "url": "https://cashlab.network",
@@ -3161,47 +3120,6 @@
     },
     {
       "chainId": 14,
-      "name": "Flare Portal",
-      "description": "Flare Portal - FTSO Data Provider - provides accurate price and reliable globally sourced data. Using your Bifrost wallet to delegate your vote to us is greatly appreciated.",
-      "url": "https://flareportal.com",
-      "address": "0x9225db8B30A59D8Dd15448E2E5918BD160262b5D",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x9225db8B30A59D8Dd15448E2E5918BD160262b5D.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": false,
-        "managementGroup": false,
-        "qualified": false,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "activeSince": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": null,
-          "lastSubmittedEpoch": null,
-          "epochsSinceSubmit": null,
-          "epochsUntilRevoke": null,
-          "revokeAfterEpochs": 17
-        },
-        "status": "unqualified",
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
       "name": "Flare Sensei",
       "description": "Flare Sensei provides FTSO, FDC and staking infrastructure for both the Songbird and Flare network.",
       "url": "https://flare-sensei.com",
@@ -3594,47 +3512,6 @@
           "revokeAfterEpochs": 17
         },
         "status": "listed",
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "FTSO4ALL",
-      "description": "FTSO4ALL is a reliable data provider that aims to become the reference data provider for everyone",
-      "url": "https://ftso4all.xyz",
-      "address": "0xA99C45A2D3dF0547CD43190cB388EfC8bCdd75Ec",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x0937E91c116767ffD2256ABc15B67561BaD5d1C2.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": false,
-        "managementGroup": false,
-        "qualified": false,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "activeSince": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": null,
-          "lastSubmittedEpoch": null,
-          "epochsSinceSubmit": null,
-          "epochsUntilRevoke": null,
-          "revokeAfterEpochs": 17
-        },
-        "status": "unqualified",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6462,47 +6339,6 @@
     },
     {
       "chainId": 14,
-      "name": "SAKURA",
-      "description": "Beautiful Japanese SAKURA and beautiful Flare Network technology.",
-      "url": "https://sakura-japan.com",
-      "address": "0x7081a25589875F5d9D91d9f58bcf466706D8f997",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x1a696Acb220a4f76153c779f828d0Ba99028770a.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": false,
-        "managementGroup": false,
-        "qualified": false,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "activeSince": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": null,
-          "lastSubmittedEpoch": null,
-          "epochsSinceSubmit": null,
-          "epochsUntilRevoke": null,
-          "revokeAfterEpochs": 17
-        },
-        "status": "unqualified",
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
       "name": "Scintilla",
       "description": "High accuracy signal provider to the Flare Network.",
       "url": "https://www.scintilla.io",
@@ -6885,47 +6721,6 @@
           "revokeAfterEpochs": 17
         },
         "status": "listed",
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "Sparkles FTSO",
-      "description": "Sparkles FTSO is an extension of Sparkles, an NFT platform on the Songbird/Flare Network. Our philosophy is to push boundaries and create standards, be creative and make everything we do fun and interactive for our community.",
-      "url": "https://sparklesnft.com",
-      "address": "0x3D985CFF3C4680428d5ce093dBc4919a57F6E2f6",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x3012c799565010C3b090D252839a3D24f3b766bE.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": false,
-        "managementGroup": false,
-        "qualified": false,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "activeSince": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": null,
-          "lastSubmittedEpoch": null,
-          "epochsSinceSubmit": null,
-          "epochsUntilRevoke": null,
-          "revokeAfterEpochs": 17
-        },
-        "status": "unqualified",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9121,47 +8916,6 @@
     },
     {
       "chainId": 19,
-      "name": "E8T.app",
-      "description": "Songbird network signal provider by the E8T team. Bringing trusted reviews to the blockchain",
-      "url": "https://www.e8t.app",
-      "address": "0xC7de51A131522749c7c18CEAF46BB985c5687A5e",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xC7de51A131522749c7c18CEAF46BB985c5687A5e.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": false,
-        "managementGroup": false,
-        "qualified": false,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "activeSince": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": null,
-          "lastSubmittedEpoch": null,
-          "epochsSinceSubmit": null,
-          "epochsUntilRevoke": null,
-          "revokeAfterEpochs": 17
-        },
-        "status": "unqualified",
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 19,
       "name": "Envision",
       "description": "Providing reliable data feeds to the Songbird Network",
       "url": "https://www.envisionftso.com",
@@ -10848,47 +10602,6 @@
     },
     {
       "chainId": 19,
-      "name": "Poseidon FTSO",
-      "description": "Poseidon FTSO is an FTSO on Songbird and Flare mainnet. We provide ourself in operating a functional FTSO which plays by the rules. We aim to build a robust FTSO which will help enhance the Flare ecosystem.",
-      "url": "https://poseidon-ftso.com",
-      "address": "0x8d5Ddf992D582AFA3b2062d56a7ffB8028AB59a2",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x02a256FF137D680aC591f1959D64a8669006c95c.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": false,
-        "managementGroup": false,
-        "qualified": false,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "activeSince": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": null,
-          "lastSubmittedEpoch": null,
-          "epochsSinceSubmit": null,
-          "epochsUntilRevoke": null,
-          "revokeAfterEpochs": 17
-        },
-        "status": "unqualified",
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 19,
       "name": "PRICEKRAKEN",
       "description": "Germany based FTSO data provider with passion for improvements",
       "url": "https://www.pricekraken.de",
@@ -11212,47 +10925,6 @@
           "revokeAfterEpochs": 17
         },
         "status": "departed",
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 19,
-      "name": "StakeCapital FTSO",
-      "description": "Stake Capital is a group run by Blockchain and DeFi pioneers standing at the intersection of traditional industries and blockchain technology.",
-      "url": "https://stake.capital",
-      "address": "0xe3704aBE555Fb4807062e68c5Ce1c3EB8FdCB11B",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xe3704aBE555Fb4807062e68c5Ce1c3EB8FdCB11B.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": false,
-        "managementGroup": false,
-        "qualified": false,
-        "network": null,
-        "feePercent": null,
-        "votePower": null,
-        "votePowerCapped": null,
-        "feedCount": null,
-        "activeSince": null,
-        "lastEpoch": null,
-        "delegatorRewardLastEpoch": null,
-        "feeRewardLastEpoch": null,
-        "entity": null,
-        "validators": [],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": null,
-          "lastSubmittedEpoch": null,
-          "epochsSinceSubmit": null,
-          "epochsUntilRevoke": null,
-          "revokeAfterEpochs": 17
-        },
-        "status": "unqualified",
         "updatedAt": null,
         "attestedAt": null
       }
