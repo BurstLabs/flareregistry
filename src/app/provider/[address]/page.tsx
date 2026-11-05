@@ -3,7 +3,11 @@ import type { LiveConductView, SubjectCase } from "@/lib/governance";
 import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProvider, formatWeiCompact, listingAddressesForSigner } from "@/lib/metrics";
-import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
+import {
+  qualifyProviders,
+  latchedQualifiedByAddresses,
+  PURGE_AFTER_EPOCHS,
+} from "@/lib/qualification";
 import {
   isHeldNewProvider,
   isHeldNewClaim,
@@ -96,6 +100,24 @@ export default async function ProviderDetail({
       ],
     },
   });
+  // DEPARTED: the same judgement the feed publishes as flareregistry.status and the directory
+  // prints as a chip. Not qualified, and silent past the purge window on every network we match.
+  const latestEpochByNetwork = new Map<string, number>();
+  for (const row of await prisma.providerOnchain.findMany({
+    select: { network: true, lastEpochSeen: true },
+  })) {
+    if (row.lastEpochSeen > (latestEpochByNetwork.get(row.network) ?? -1)) {
+      latestEpochByNetwork.set(row.network, row.lastEpochSeen);
+    }
+  }
+  const silences = entities.map(
+    (e) => (latestEpochByNetwork.get(e.network) ?? e.lastEpochSeen) - e.lastEpochSeen
+  );
+  const departed =
+    !(latchedMap.get(p.id) ?? false) &&
+    silences.length > 0 &&
+    silences.every((g) => g >= PURGE_AFTER_EPOCHS);
+
   const NETWORK_LABEL: Record<string, string> = { flare: "Flare", songbird: "Songbird" };
   const entityAddresses = entities.map((e) => ({
     network: NETWORK_LABEL[e.network] ?? e.network,
@@ -295,6 +317,7 @@ export default async function ProviderDetail({
     name: p.name,
     description: p.description,
     descriptions,
+    departed,
     url: p.url,
     logo: cardLogo(p.logoPath, p.logoURI),
     verified: p.source === "submitted",
@@ -310,7 +333,11 @@ export default async function ProviderDetail({
     viewerIsMember,
     viewerLiveCase,
     viewerSubjectCases,
-    conductEligible: entities.length > 0 && !inNewProviderWindow(anchor, nowDate),
+    // NOT against a provider that has gone. A case is a formal record about a named operator who
+    // is expected to answer it; one silent for months has no owner watching, often no notice
+    // address, and nothing a verdict would change. The archive flag used to do this by accident,
+    // under a condition that said "archived" when the reason was always that they had left.
+    conductEligible: entities.length > 0 && !departed && !inNewProviderWindow(anchor, nowDate),
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
     hasLogo: !!p.logoURI,
