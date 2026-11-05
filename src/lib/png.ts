@@ -2,8 +2,12 @@
 //   - valid PNG
 //   - square (aspect ratio 1)
 //   - width and height between 128 and 256 px
-//   - has an alpha channel (so a transparent background is possible); a fully opaque image that
-//     fills the frame also satisfies "background fills the entire image"
+//   - an alpha channel is RECOMMENDED, not required. The rule used to demand one, which this very
+//     comment contradicted by allowing "a fully opaque image that fills the frame", and which 34
+//     of the logos we already serve would fail, QuickNode's solid green mark among them. Bifrost's
+//     own requirements say the same: transparency recommended, opaque valid. Enforcing it would
+//     mean re-encoding those 34 through palette quantisation to add a channel that is opaque
+//     everywhere, which risks the image to change nothing a viewer can see.
 //   - max file size 24 KB (which also stands in for "must be optimized")
 //
 // "Content centered" is not machine-checkable reliably and is not enforced.
@@ -79,7 +83,7 @@ function hasTrailingAfterIend(buf: Buffer): boolean {
 /**
  * Full-decode logo validation (S13): runs the cheap header checks, rejects any bytes after IEND, then
  * actually decodes the image with sharp to confirm it is a real, non-truncated PNG and enforces the
- * alpha-channel requirement. Async because it decodes. Use this on upload.
+ * decoded dimensions. Async because it decodes. Use this on upload.
  */
 export async function validateLogoStrict(buf: Buffer): Promise<LogoValidation> {
   const basic = validateLogo(buf);
@@ -91,9 +95,6 @@ export async function validateLogoStrict(buf: Buffer): Promise<LogoValidation> {
     const sharp = (await import("sharp")).default;
     const meta = await sharp(buf, { failOn: "error" }).metadata();
     if (meta.format !== "png") return { ok: false, error: "logo must be a PNG" };
-    if (!meta.hasAlpha) {
-      return { ok: false, error: "logo must have an alpha (transparency) channel" };
-    }
     if (
       meta.width == null ||
       meta.height == null ||

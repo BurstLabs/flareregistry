@@ -26,6 +26,7 @@
 import { PrismaClient } from "@prisma/client";
 import { getAddress } from "viem";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { normalisePng } from "./lib/normalise-png.mjs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -53,7 +54,11 @@ async function fetchPng(url) {
     throw new Error("not a PNG");
   }
   if (buf.length > 1_000_000) throw new Error("too large (>1MB)");
-  return buf;
+  // Mirrored images used to be written verbatim, which is how a 512x512 and ten non-square logos
+  // reached assets/. Normalise on the way in so it cannot happen again; see scripts/lib.
+  const n = await normalisePng(buf);
+  if ("error" in n) throw new Error(n.error);
+  return n.buf;
 }
 
 async function main() {

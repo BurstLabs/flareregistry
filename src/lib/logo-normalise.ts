@@ -10,7 +10,9 @@
 //
 // Deliberately conservative: we letterbox onto a transparent square rather than cropping, because
 // silently cutting content off someone's logo is worse than padding it. We never upscale past the
-// source, so a small image stays crisp rather than being blurred up to 256.
+// source, so a small image stays crisp rather than being blurred up to 256. An image that is
+// already square, in range and small enough is returned untouched even if it is fully opaque:
+// re-encoding it to add an alpha channel nobody can see would risk the artwork for nothing.
 import sharp from "sharp";
 import { LOGO_MAX_BYTES, LOGO_MIN_DIM, LOGO_MAX_DIM } from "./png";
 
@@ -38,7 +40,6 @@ export async function normaliseLogo(input: Buffer): Promise<NormaliseResult | { 
     w === h &&
     w >= LOGO_MIN_DIM &&
     w <= LOGO_MAX_DIM &&
-    meta.hasAlpha &&
     input.length <= LOGO_MAX_BYTES;
   if (alreadyOk) return { buf: input, converted: false };
 
