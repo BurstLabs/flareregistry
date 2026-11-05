@@ -245,13 +245,19 @@ export async function buildProviderList(): Promise<ProviderList> {
   // for operators we have never found on-chain on either network. That is another project's record
   // of its own past, not ours, and republishing it would put names in front of consumers for
   // entities with no chain presence at all.
-  const publishableProviderIds = new Set<string>();
-  for (const a of addresses) {
-    if (publishableProviderIds.has(a.providerId)) continue;
+  // Per ENTRY, not per provider. A provider gone from Flare but never registered on Songbird has a
+  // Songbird row only because a legacy list put one there; publishing it would assert a presence
+  // on a network where there is none, and it reads as "unqualified" when the truth is "not here".
+  //
+  // The qualified clause is what keeps the one legitimate case: an operator whose entity we match
+  // on one network and whose listing on the other is carried by the provider-level qualification
+  // latch. Dropping it would unlist a currently-listed entry.
+  const isPublishable = (a: (typeof addresses)[number]) => {
     const net = getChain(a.chainId)?.key;
-    const hasEntity = !!net && entityByNetworkAddress.has(`${net}:${a.address.toLowerCase()}`);
-    if (hasEntity || a.verified) publishableProviderIds.add(a.providerId);
-  }
+    if (net && entityByNetworkAddress.has(`${net}:${a.address.toLowerCase()}`)) return true;
+    if (a.verified) return true;
+    return riskByProvider.get(providerIdByAddress.get(a.address.toLowerCase()) ?? "")?.qualified ?? false;
+  };
 
   // Latest epoch seen per network, which is what "silent since" is measured against below.
   const latestEpochByNetwork = new Map<string, number>();
@@ -261,7 +267,7 @@ export async function buildProviderList(): Promise<ProviderList> {
     }
   }
 
-  const publishable = addresses.filter((a) => publishableProviderIds.has(a.providerId));
+  const publishable = addresses.filter(isPublishable);
 
   const providers: FeedProvider[] = publishable.map((a) => {
     // Match the entity on THIS entry's network (derived from its chainId), not address alone, so a
