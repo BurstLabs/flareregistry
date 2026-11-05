@@ -12,7 +12,8 @@ Only addresses registered on-chain as FTSO signal providers (on Flare or Songbir
 the registry only ever contains real providers. The whole codebase, including the qualification
 rules that decide listing, is open source here for anyone to audit and reproduce.
 
-See [flareregistry.com/why](https://flareregistry.com/why) for more.
+Reading the feed: **[CONSUMERS.md](CONSUMERS.md)**. Why the registry exists:
+[flareregistry.com/why](https://flareregistry.com/why).
 
 ## Highlights
 
@@ -26,6 +27,9 @@ See [flareregistry.com/why](https://flareregistry.com/why) for more.
   on-chain data, with every criterion shown as a pass/fail.
 - **Registered providers only.** Listing requires an on-chain registered FTSO address, so the
   registry cannot be polluted with arbitrary addresses.
+- **Checkable by the reader.** The feed names a published JSON Schema, and every entry carries
+  the SHA-256 of its logo, so a consumer can validate the document and confirm the image it
+  serves is the one we published rather than taking either on trust.
 - **Open source and auditable.** The listing logic is code anyone can read. Open, documented API
   plus a stable feed URL. See [/api](https://flareregistry.com/api).
 
@@ -75,23 +79,37 @@ under `flareregistry.entity` (identity, submit, submit-signatures, signing-polic
 
 - `GET  /api/feed/providerlist.json` — the wallet-compatible feed. Also published as a static
   file at `raw.githubusercontent.com/BurstLabs/flareregistry/main/providerlist.json`.
+- `GET  /providerlist.schema.json` — the JSON Schema that feed conforms to, named in its
+  `$schema`. Checked against the generator on every build, so it cannot fall behind the document.
 - `GET  /api/v1/providers` — the same data in a versioned envelope.
+- `GET  /api/feed/validators.json`, `/api/feed/yield.json` — validator stats and delegator yield.
+- `GET  /api/feed/coston2/providerlist.json`, `/api/feed/coston2/yield.json` — the test network.
 - `GET  /api/provider/:address` — a single provider profile.
 - `POST /api/auth/nonce`, `POST /api/auth/verify` — sign-in.
 - `POST /api/provider`, `POST /api/provider/logo` — manage a listing (authenticated).
 
-Full schema and the `flareregistry` metrics object: [/api](https://flareregistry.com/api).
+How to read it, including what `listed` and `status` mean and what not to infer from them:
+[CONSUMERS.md](CONSUMERS.md). Field-by-field reference: [/api](https://flareregistry.com/api).
+
+A provider that stops submitting is **not** removed from the feed. It keeps its entry with
+`listed: false` and `status: "departed"`, because the chain still carries its registration and a
+consumer still needs a name for it. `/api/feed/archived.json`, which used to hold those entries
+separately, was removed on 5 November 2026.
 
 ## Logo assets
 
 Logos are committed for the provider on upload and served from GitHub's raw CDN, keyed by the
-EIP-55 checksummed address: `assets/<checksumAddress>.png`. Requirements (enforced on upload):
-square PNG, 128-256 px per side, transparent or filled background, <= 24 KB.
+EIP-55 checksummed address: `assets/<checksumAddress>.png`. Square PNG, 128-256 px per side,
+<= 24 KB, enforced on upload and applied to mirrored images too. Transparency is recommended and
+not required; an opaque mark is a valid logo.
+
+Each feed entry carries `flareregistry.logoHash`, the SHA-256 of the bytes at its `logoURI`, so a
+consumer can confirm the image it serves is the one we published.
 
 ## Stack
 
 Next.js 16 (App Router) · TypeScript · Postgres (Prisma) · SIWE wallet auth (viem) · Tailwind
-(dark/light) · 6-language i18n (EN/ES/ZH/JA/KO/DE).
+(dark/light) · 7-language i18n (EN/ES/ZH/JA/KO/DE/FR).
 
 ## Getting started
 
@@ -118,7 +136,7 @@ terms.
 | What | Terms |
 | --- | --- |
 | The software (`src/`, `prisma/`, `scripts/`, config) | **AGPL-3.0**. See [LICENSE](LICENSE). |
-| `providerlist.json`, the published list | **CC BY 4.0**. See [LICENSE-DATA](LICENSE-DATA). |
+| `providerlist.json` and `public/providerlist.schema.json`, the published list and its schema | **CC BY 4.0**. See [LICENSE-DATA](LICENSE-DATA). |
 | `assets/*.png`, the provider logos | Not ours to license. See [assets/NOTICE.md](assets/NOTICE.md). |
 
 **Reading, auditing and reproducing the listing logic is explicitly allowed**,

@@ -6,7 +6,8 @@ produces it. The software is licensed separately; see LICENSE (AGPL-3.0).
 
 WHAT THIS COVERS
 
-  providerlist.json   the published provider list
+  providerlist.json              the published provider list
+  public/providerlist.schema.json  the JSON Schema that list conforms to
 
 Licensed under the Creative Commons Attribution 4.0 International License
 (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
@@ -24,7 +25,10 @@ this repository publishes, and this file says so explicitly so that no
 consumer has to form a view on the question.
 
 The same list is served live, with the same terms, at
-https://flareregistry.com/api/feed/providerlist.json
+https://flareregistry.com/api/feed/providerlist.json, and the schema at
+https://flareregistry.com/providerlist.schema.json
+
+How to read the list is documented in CONSUMERS.md.
 
 WHAT THIS DOES NOT COVER
 
