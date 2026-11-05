@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-05T15:47:02.902Z",
+  "timestamp": "2026-11-05T16:46:52.898Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -1688,6 +1688,52 @@
         },
         "updatedAt": "2026-07-15T20:40:28.000Z",
         "attestedAt": "2026-07-15T20:40:27.791Z"
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "BlockNth",
+      "description": "Secure validator infrastructure for growing networks",
+      "url": "https://blocknth.com",
+      "address": "0xa2c403ea9D293308821aA4ddB377C8d3d9483a89",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xa2c403ea9D293308821aA4ddB377C8d3d9483a89.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "1900000000000000000000",
+        "votePowerCapped": "1900000000000000000000",
+        "feedCount": 63,
+        "activeSince": "2026-05",
+        "lastEpoch": 406,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xFB1362b339C4D82226238887E965F27811cdc03a",
+          "submit": "0xaF71ADEA27B480724056527Fbda2a3B1795AE1BE",
+          "submitSignatures": "0xeEaA558aD6a80eb2C6d9502422E8143773A8FA43",
+          "signingPolicy": "0x8E3F6bE9065489e9ea5212f06e23ABAcA86f0ca0",
+          "delegation": "0xa2c403ea9D293308821aA4ddB377C8d3d9483a89"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "updatedAt": null,
+        "attestedAt": null
       }
     },
     {
@@ -4927,7 +4973,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 446,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -8972,7 +9018,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:18.864Z",
+          "qualifiedSince": "2026-06-22T23:47:20.175Z",
           "lastSubmittedEpoch": 446,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
