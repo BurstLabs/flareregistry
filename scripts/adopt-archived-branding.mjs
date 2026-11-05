@@ -172,6 +172,13 @@ async function main() {
     }
     let r = 0;
     for (const p of hotlinked) {
+      // Only repoint to a file we actually hold. Bitrue's asset in the archived repo is a JPEG
+      // with a .png name, so the mirror refuses it; repointing anyway would swap a URL that works
+      // for one that 404s.
+      if (!existsSync(join(ASSETS_DIR, `${getAddress(p.addresses[0].address)}.png`))) {
+        console.log(`  SKIP repoint ${p.name}: no mirrored asset`);
+        continue;
+      }
       await prisma.provider.update({
         where: { id: p.id },
         data: { logoURI: logoRawURL(p.addresses[0].address) },
