@@ -175,18 +175,35 @@ async function registryListings(): Promise<Map<string, Coston2Listing>> {
 }
 
 /**
- * NO UPSTREAM LISTINGS FOR COSTON2, and there never were any.
+ * The Coston2 names the legacy public provider list carried, frozen.
  *
- * This used to fetch the legacy public provider list and pick out its chain 114 entries. That list
- * has only ever carried Flare (147) and Songbird (115) entries, so the lookup downloaded 370 KB on
- * every rebuild and always returned nothing. Bifrost's replacement catalog has no eip155-114
- * directory either (404), so there is no source to repoint it at: a testnet is not listed by a
- * wallet. Coston2 names come from our own registry, via registryListings above.
- *
- * The assembler keeps taking the map, because an upstream source for a network is a reasonable
- * thing to feed it; this one is simply empty.
+ * That list DID carry chain 114: four entries (Test Provider 1-3 and Burst FTSO), removed in its
+ * archive commit on 2026-11-05; the last version with them is 9a47c1c. Bifrost's replacement catalog
+ * has no eip155-114 directory, so there is no live source any more and this map is the copy. The
+ * registry's own rows still win (registryListings is picked first). The test providers' links are left
+ * out on purpose, and their logos fall back to the placeholder (the archived repo dropped the files).
  */
-const upstreamListings = async (): Promise<Map<string, Coston2Listing>> => new Map();
+const FROZEN_COSTON2_LISTINGS: ReadonlyArray<[address: string, listing: Coston2Listing]> = [
+  ["0xABaA1718C2d80fC037Bf66e3f66f0975D67431a9", { name: "Test Provider 1", description: "Test provider 1 for the Coston2 test network.", url: "", logoURI: "", verified: false, attestedAt: null }],
+  ["0x07f5053C867AE107Db15A38Aa4421b2c24aC4e51", { name: "Test Provider 2", description: "Test provider 2 for the Coston2 test network.", url: "", logoURI: "", verified: false, attestedAt: null }],
+  ["0xE80c39Eae57c0359EE6c4086e2b22300353728e1", { name: "Test Provider 3", description: "Test provider 3 for the Coston2 test network.", url: "", logoURI: "", verified: false, attestedAt: null }],
+  [
+    "0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C",
+    {
+      name: "Burst FTSO",
+      description: "Burst FTSO on the Coston2 test network.",
+      url: "https://www.burstlabs.io",
+      logoURI: "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x670a7Fd22cAa9C2Fb5B798078d084B29AB4bC63C.png",
+      verified: false,
+      attestedAt: null,
+    },
+  ],
+];
+
+export const frozenCoston2Listings = (): Map<string, Coston2Listing> =>
+  new Map(FROZEN_COSTON2_LISTINGS.map(([address, listing]) => [address.toLowerCase(), { ...listing }]));
+
+const upstreamListings = async (): Promise<Map<string, Coston2Listing>> => frozenCoston2Listings();
 
 async function build(): Promise<Coston2Feeds> {
   const [snapshot, registry, upstream] = await Promise.all([readSnapshot(), registryListings(), upstreamListings()]);
