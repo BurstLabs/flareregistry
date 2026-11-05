@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-05T17:47:02.724Z",
+  "timestamp": "2026-11-05T17:52:57.469Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -49,6 +49,7 @@
           "epochsUntilRevoke": 14,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -106,6 +107,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -193,6 +195,7 @@
           "epochsUntilRevoke": 4,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -250,6 +253,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -296,6 +300,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -353,6 +358,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -410,6 +416,7 @@
           "epochsUntilRevoke": 9,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -467,6 +474,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.512Z",
         "attestedAt": "2026-06-30T22:43:05.591Z"
       }
@@ -524,8 +532,87 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.817Z",
         "attestedAt": "2026-08-14T21:39:47.555Z"
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "A41",
+      "description": "A41 is a blockchain infra-service provider that validates and paves paths never ventured before.",
+      "url": "https://www.a41.io",
+      "address": "0x90C6423ec3Ea40591bAdb177171B64c7e6556028",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x90C6423ec3Ea40591bAdb177171B64c7e6556028.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "110096926118764715429081556",
+        "votePowerCapped": "110096926118764715429081556",
+        "feedCount": 63,
+        "activeSince": "2023-10",
+        "lastEpoch": 384,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xbBc569CA9C9288B6772F467025Dc376b4cc5B107",
+          "submit": "0x6Cd9F7bc80566Ae68e4b3F248f224376698948C5",
+          "submitSignatures": "0x3877188344fBE58D7A067Aa180D03D3D082F355B",
+          "signingPolicy": "0x01a44898e83016b48590e255A4A6D0B6BE3A5994",
+          "delegation": "0x90C6423ec3Ea40591bAdb177171B64c7e6556028"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-A7jk7Z5GA2aVe5ecuupNXWtSLfVjLDWFC",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          },
+          {
+            "nodeId": "NodeID-EHMcsRfGdnBSuaZuKdoxu4W8AvtL1jg1F",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          },
+          {
+            "nodeId": "NodeID-AtTWuBwxHXXJngcLWDx47ErrqkNbNXdyh",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
+        "updatedAt": null,
+        "attestedAt": null
       }
     },
     {
@@ -611,6 +698,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -668,6 +756,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -725,6 +814,65 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Agni",
+      "description": "Reliable validator and oracle infrastructure supporting Flare's core data protocols.",
+      "url": "https://agnioracle.xyz",
+      "address": "0x9c8A42155b73647Be3471FF22A61D803eA61FdcF",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x9c8A42155b73647Be3471FF22A61D803eA61FdcF.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "35439524536009913780794993",
+        "votePowerCapped": "35439524536009913780794993",
+        "feedCount": 64,
+        "activeSince": "2025-10",
+        "lastEpoch": 377,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x1D8209DD5ad037cc71329759324A2D07aB95b80A",
+          "submit": "0x72057697f4B1fAD2f0B0Ed5633300019e7d2a2Df",
+          "submitSignatures": "0xdb3D3Aa90D4ED189aEd4D9e4b3D27Ce53D497E3D",
+          "signingPolicy": "0x10e424b932B2fb740f1B77cffA09e0EC2b8D8975",
+          "delegation": "0x9c8A42155b73647Be3471FF22A61D803eA61FdcF"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-Ch7qNpjU1cfUDhHAiVstqCHs1RHgExxo4",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -782,6 +930,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -859,6 +1008,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -916,6 +1066,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -983,6 +1134,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -1060,6 +1212,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -1147,6 +1300,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.620Z",
         "attestedAt": "2026-10-30T00:08:55.297Z"
       }
@@ -1224,6 +1378,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -1311,8 +1466,56 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-15T20:40:28.000Z",
         "attestedAt": "2026-07-15T20:40:27.791Z"
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "BlockNth",
+      "description": "Secure validator infrastructure for growing networks",
+      "url": "https://blocknth.com",
+      "address": "0xa2c403ea9D293308821aA4ddB377C8d3d9483a89",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xa2c403ea9D293308821aA4ddB377C8d3d9483a89.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "1900000000000000000000",
+        "votePowerCapped": "1900000000000000000000",
+        "feedCount": 63,
+        "activeSince": "2026-05",
+        "lastEpoch": 406,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xFB1362b339C4D82226238887E965F27811cdc03a",
+          "submit": "0xaF71ADEA27B480724056527Fbda2a3B1795AE1BE",
+          "submitSignatures": "0xeEaA558aD6a80eb2C6d9502422E8143773A8FA43",
+          "signingPolicy": "0x8E3F6bE9065489e9ea5212f06e23ABAcA86f0ca0",
+          "delegation": "0xa2c403ea9D293308821aA4ddB377C8d3d9483a89"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
+        "updatedAt": null,
+        "attestedAt": null
       }
     },
     {
@@ -1368,6 +1571,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-11-03T22:14:42.959Z",
         "attestedAt": "2026-11-03T22:14:42.948Z"
       }
@@ -1435,9 +1639,19 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
+    },
+    {
+      "chainId": 14,
+      "name": "Canary FTSO",
+      "description": "Canary FTSO, your European-based Signal Service Provider, actively contributes to the Flare ecosystem. We ensure a secure and stable price provision service, allowing you to delegate your votes worldwide.",
+      "url": "https://can4ary.com",
+      "address": "0x0b31C6571D6C0dd9250b737Ea5e7e3D918d99046",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xb76865823f68b48b02Bb9604A2CD886eB49A9f3D.png",
+      "listed": false
     },
     {
       "chainId": 14,
@@ -1492,6 +1706,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-08-17T23:59:59.000Z",
         "attestedAt": "2026-08-17T05:27:05.668Z"
       }
@@ -1559,6 +1774,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.110Z",
         "attestedAt": "2026-06-30T19:40:43.238Z"
       }
@@ -1636,6 +1852,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -1693,6 +1910,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -1760,6 +1978,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -1827,6 +2046,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "held",
         "updatedAt": "2026-10-17T07:11:46.000Z",
         "attestedAt": "2026-10-16T23:21:20.582Z"
       }
@@ -1894,6 +2114,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -1951,6 +2172,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2018,6 +2240,65 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "E8T.app",
+      "description": "Songbird network signal provider by the E8T team. Bringing trusted reviews to the blockchain",
+      "url": "https://www.e8t.app",
+      "address": "0x3C1BafC9E066dfdeBCf6cFcDEd6aBF89541b08c2",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xC7de51A131522749c7c18CEAF46BB985c5687A5e.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "889038857362438657025606",
+        "votePowerCapped": "889038857362438657025606",
+        "feedCount": 63,
+        "activeSince": "2024-02",
+        "lastEpoch": 390,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x795AbB2f4292C1bC6ca9f0D8C454B4416F2aB147",
+          "submit": "0x55B4596FA58CB941EcB56cF00C225C7E87D6b076",
+          "submitSignatures": "0x448A47002c0Cea0D6e80De4737F482C95EBe8001",
+          "signingPolicy": "0x4a12a36b113be163dfDB1E06112945416d418315",
+          "delegation": "0x3C1BafC9E066dfdeBCf6cFcDEd6aBF89541b08c2"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-J3ZiQBEZWAsotDdbjActgAEGCTwoQwvkJ",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2075,6 +2356,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2132,6 +2414,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2189,6 +2472,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2256,6 +2540,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2323,6 +2608,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.954Z",
         "attestedAt": "2026-07-04T22:53:55.748Z"
       }
@@ -2390,6 +2676,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-11-03T17:58:56.000Z",
         "attestedAt": "2026-09-05T09:10:04.221Z"
       }
@@ -2477,6 +2764,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.466Z",
         "attestedAt": "2026-07-15T13:44:56.529Z"
       }
@@ -2534,6 +2822,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2591,6 +2880,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-08-06T20:03:00.000Z",
         "attestedAt": "2026-08-07T02:50:23.135Z"
       }
@@ -2648,6 +2938,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2705,8 +2996,67 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-10-29T21:18:03.000Z",
         "attestedAt": "2026-07-13T16:52:55.916Z"
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "FlareFTSO",
+      "description": "FlareFTSO is a signal provider for the Flare Time Series Oracle, providing reliable price feeds, delegation services, validator services, and other solutions to the crypto community.",
+      "url": "https://flareftso.com",
+      "address": "0x58048528D3d3aea14Ec95eb5e98b18dE51780e27",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x4F7f5F8eF4a3CC11f94e875393Ee909Eb5f824ea.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "55483878754271627041823617",
+        "votePowerCapped": "55483878754271627041823617",
+        "feedCount": 59,
+        "activeSince": "2022-07",
+        "lastEpoch": 294,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xF10e0cd76c442c39D5817ac1c4e9cE1d8f7E281B",
+          "submit": "0x82f4789515D514138E647653cBC1F73feA0B0945",
+          "submitSignatures": "0xC87f68BE565B6057F08B90E34F47F3DFeADA46Bb",
+          "signingPolicy": "0x285b70C413b72baEcEDd29282eA85c3A9d8D3D9f",
+          "delegation": "0x58048528D3d3aea14Ec95eb5e98b18dE51780e27"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-J9JZSkVJWCUYZ43n36q4fCixu7Tj4QR1P",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
+        "updatedAt": null,
+        "attestedAt": null
       }
     },
     {
@@ -2772,9 +3122,19 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
+    },
+    {
+      "chainId": 14,
+      "name": "Flare Portal",
+      "description": "Flare Portal - FTSO Data Provider - provides accurate price and reliable globally sourced data. Using your Bifrost wallet to delegate your vote to us is greatly appreciated.",
+      "url": "https://flareportal.com",
+      "address": "0x9225db8B30A59D8Dd15448E2E5918BD160262b5D",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x9225db8B30A59D8Dd15448E2E5918BD160262b5D.png",
+      "listed": false
     },
     {
       "chainId": 14,
@@ -2849,6 +3209,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2936,6 +3297,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -2993,6 +3355,7 @@
           "epochsUntilRevoke": 6,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-08-24T22:06:29.000Z",
         "attestedAt": "2026-08-24T20:21:49.589Z"
       }
@@ -3050,6 +3413,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-24T14:57:47.000Z",
         "attestedAt": "2026-07-23T21:28:40.161Z"
       }
@@ -3107,6 +3471,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -3164,9 +3529,19 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
+    },
+    {
+      "chainId": 14,
+      "name": "FTSO4ALL",
+      "description": "FTSO4ALL is a reliable data provider that aims to become the reference data provider for everyone",
+      "url": "https://ftso4all.xyz",
+      "address": "0xA99C45A2D3dF0547CD43190cB388EfC8bCdd75Ec",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x0937E91c116767ffD2256ABc15B67561BaD5d1C2.png",
+      "listed": false
     },
     {
       "chainId": 14,
@@ -3221,6 +3596,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -3288,6 +3664,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -3355,6 +3732,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.076Z",
         "attestedAt": "2026-07-01T19:33:37.957Z"
       }
@@ -3422,8 +3800,67 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-11-03T17:58:56.000Z",
         "attestedAt": "2026-07-15T14:35:49.022Z"
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "FTSOExpress",
+      "description": "FTSO Express, looking to be a no frills, minimal FTSO Provider",
+      "url": "https://ftso.express",
+      "address": "0xc0452CEcee694Ab416d19E95a0907f022DEC5664",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xc0452CEcee694Ab416d19E95a0907f022DEC5664.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "81310803375613260609049522",
+        "votePowerCapped": "81310803375613260609049522",
+        "feedCount": 64,
+        "activeSince": "2022-11",
+        "lastEpoch": 376,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xC12Bec79A27371e0dea690c2759f5D683845BD00",
+          "submit": "0x10AD99c87035464BdEB5994F736d84778C23eF68",
+          "submitSignatures": "0x0565E048aB75fd7FB9a8DFb8af08c4057b414225",
+          "signingPolicy": "0x37f4d9d331e844A5cab05316d78045697CC9039a",
+          "delegation": "0xc0452CEcee694Ab416d19E95a0907f022DEC5664"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-CeX1NfNPHCdaJXUVtkLysShaZCtsHRK3D",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
+        "updatedAt": null,
+        "attestedAt": null
       }
     },
     {
@@ -3479,6 +3916,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.904Z",
         "attestedAt": "2026-07-03T11:58:52.865Z"
       }
@@ -3546,6 +3984,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.145Z",
         "attestedAt": "2026-06-30T23:48:45.632Z"
       }
@@ -3603,6 +4042,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -3660,6 +4100,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -3727,6 +4168,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-22T14:18:51.000Z",
         "attestedAt": "2026-07-22T14:18:49.626Z"
       }
@@ -3784,8 +4226,67 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-09-29T10:19:00.000Z",
         "attestedAt": "2026-10-20T04:41:22.309Z"
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Google Cloud",
+      "description": "Google Cloud's data provider for Flare Network",
+      "url": "https://cloud.google.com",
+      "address": "0x50A1BCa4d5e91B3bcea7891742248F5BA5ACF0e5",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x50A1BCa4d5e91B3bcea7891742248F5BA5ACF0e5.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "395474223543484048003025860",
+        "votePowerCapped": "395474223543484048003025860",
+        "feedCount": 61,
+        "activeSince": "2023-12",
+        "lastEpoch": 335,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x564a2694342E57EE1223697b67086695695D1c57",
+          "submit": "0x38F92b9F532188177787693190E114fcC0Cb2f63",
+          "submitSignatures": "0x02B78b5059AAD9f14D7f5d0f2DCad13f25290FFb",
+          "signingPolicy": "0x130d2b817eaBCeE149c3272120bb03Faa2aE897E",
+          "delegation": "0x50A1BCa4d5e91B3bcea7891742248F5BA5ACF0e5"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-Gy2c6Y1RNz2PZfAnTwHZMZ4RZ53nKPf1Q",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
+        "updatedAt": null,
+        "attestedAt": null
       }
     },
     {
@@ -3871,6 +4372,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -3938,6 +4440,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.707Z",
         "attestedAt": "2026-07-20T02:44:33.084Z"
       }
@@ -3995,6 +4498,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4052,6 +4556,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.478Z",
         "attestedAt": "2026-06-29T18:30:27.361Z"
       }
@@ -4119,6 +4624,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Insight Oracle",
+      "description": "We are a group of friends obsessed with crypto, maths and algorithms. We want to build dApps and help to develop and expand the Flare Network.",
+      "url": "https://insightoracle.site",
+      "address": "0x8E621dEdDE2B5F6D7d9f3Da3Ed77656a991B7Bf3",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x86B8012c254cbe2fe63A5B7f64Cb1a039bAB2047.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "20712072900955120060831747",
+        "votePowerCapped": "20712072900955120060831747",
+        "feedCount": 50,
+        "activeSince": "2023-09",
+        "lastEpoch": 236,
+        "delegatorRewardLastEpoch": "950571530705875046872",
+        "feeRewardLastEpoch": "237642882676468761244",
+        "entity": {
+          "identity": "0xaf1e1207C1d6421Be5Be9956d6164B2f772F5F39",
+          "submit": "0x3284bf31dBc1e9FCbEcc1d694431497F30DEA1C8",
+          "submitSignatures": "0xbF70171628A82FEe86BB0C19e3EcF6EF3BF8a0e4",
+          "signingPolicy": "0x9C310C856dB2778347da84FC724fbE38e0Dfd38d",
+          "delegation": "0x8E621dEdDE2B5F6D7d9f3Da3Ed77656a991B7Bf3"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4176,6 +4729,7 @@
           "epochsUntilRevoke": 9,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4233,6 +4787,7 @@
           "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
         },
+        "status": "unqualified",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4290,6 +4845,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-21T20:53:39.000Z",
         "attestedAt": "2026-07-21T20:53:37.861Z"
       }
@@ -4377,6 +4933,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4434,6 +4991,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4521,6 +5079,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Lena Instruments",
+      "description": "Institutional grade vote delegation service and FTSO signal provider to the Songbird ecosystem",
+      "url": "https://www.lena.tech",
+      "address": "0xdde9BcB57cbA00A9718b67b4074ec6B62C542957",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xc9AC8F034d295962A6a975b717B691437605Bbb6.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "152681723880667776702607100",
+        "votePowerCapped": "152681723880667776702607100",
+        "feedCount": 62,
+        "activeSince": "2022-07",
+        "lastEpoch": 343,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xa3b84C1f57fF17A6Ea5098aD58D94BA8EA7149b7",
+          "submit": "0x900D5355b30674116092AF9717c3129f62F4F8c9",
+          "submitSignatures": "0x9E0b3fD27e79Daf8b53f0f1b18eE5Eee988B7e16",
+          "signingPolicy": "0xAA91D35cd61d65d0086E14C1AA229679af7Ad4F9",
+          "delegation": "0xdde9BcB57cbA00A9718b67b4074ec6B62C542957"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4578,6 +5184,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-30T19:24:10.000Z",
         "attestedAt": "2026-06-30T19:24:08.957Z"
       }
@@ -4645,6 +5252,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4702,6 +5310,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4759,6 +5368,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.220Z",
         "attestedAt": "2026-07-05T04:45:35.129Z"
       }
@@ -4816,6 +5426,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-10-30T09:01:05.000Z",
         "attestedAt": "2026-10-30T09:01:03.173Z"
       }
@@ -4873,6 +5484,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -4960,6 +5572,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5037,6 +5650,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "O1 FTSO",
+      "description": "O1 FTSO is an open-minded data signals provider looking for a great partnership on the Flare and Songbird Network.",
+      "url": "https://o1ftso.netlify.app",
+      "address": "0xBE304C28F3a050486b9733AE56cB5541B16c007B",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x229458A754CD1aeBa8A0c87f59E22777D593B85a.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "97861905553964417213938705",
+        "votePowerCapped": "97861905553964417213938705",
+        "feedCount": 51,
+        "activeSince": "2022-09",
+        "lastEpoch": 266,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x23075D2210F1aC5f8eaD459bE03Ea7337D10afA0",
+          "submit": "0x9C9E9f692CbD46ddE072314972a9a512a58cdCeB",
+          "submitSignatures": "0xa2F7D4e93BE921Be2f4a504d78002E451F47eA7B",
+          "signingPolicy": "0x458Bd1C5fAeb843C8be9C512F7eB3A14EC5fB6f5",
+          "delegation": "0xBE304C28F3a050486b9733AE56cB5541B16c007B"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5124,6 +5785,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5181,6 +5843,65 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Poseidon FTSO",
+      "description": "Poseidon FTSO is an FTSO on Songbird and Flare mainnet. We provide ourself in operating a functional FTSO which plays by the rules. We aim to build a robust FTSO which will help enhance the Flare ecosystem.",
+      "url": "https://poseidon-ftso.com",
+      "address": "0x02a256FF137D680aC591f1959D64a8669006c95c",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x02a256FF137D680aC591f1959D64a8669006c95c.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "67278267615637842097344107",
+        "votePowerCapped": "67278267615637842097344107",
+        "feedCount": 63,
+        "activeSince": "2023-01",
+        "lastEpoch": 390,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xd523Dd62E3d32D72A62035F05A4EBa304275585C",
+          "submit": "0x7e8AAdCA155A1f472Ce87Bc02dfa10228fA653b5",
+          "submitSignatures": "0x5EF973ffBbb40f4d19D3207e546437bbe8AE9B0D",
+          "signingPolicy": "0xad6ba78F801b68F6484781940e7030409E582A23",
+          "delegation": "0x02a256FF137D680aC591f1959D64a8669006c95c"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-CtSfUZd8nvr4RDaQnKRiP9cae15Nrb1bX",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5268,6 +5989,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5335,6 +6057,7 @@
           "epochsUntilRevoke": 1,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5392,6 +6115,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5479,6 +6203,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "held",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5546,6 +6271,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5633,9 +6359,19 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
+    },
+    {
+      "chainId": 14,
+      "name": "SAKURA",
+      "description": "Beautiful Japanese SAKURA and beautiful Flare Network technology.",
+      "url": "https://sakura-japan.com",
+      "address": "0x7081a25589875F5d9D91d9f58bcf466706D8f997",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x1a696Acb220a4f76153c779f828d0Ba99028770a.png",
+      "listed": false
     },
     {
       "chainId": 14,
@@ -5690,6 +6426,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5747,6 +6484,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5834,6 +6572,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-08-03T21:18:10.000Z",
         "attestedAt": "2026-08-03T18:14:55.251Z"
       }
@@ -5901,6 +6640,65 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "SolidiFi Nexus",
+      "description": "SolidiFi Nexus: Pioneering Flare's data integrity with accurate price feeds, free DeFi tools, and community-focused dApps since the Songbird days.",
+      "url": "https://solidifinexus.com",
+      "address": "0x4CfB79399cd840414a2BeF2c7C7A0cE3b9b0F89d",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x769530a9F2e4624aE2D6869869d510D4cd55b545.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "40948903787088256594046612",
+        "votePowerCapped": "40948903787088256594046612",
+        "feedCount": 64,
+        "activeSince": "2022-10",
+        "lastEpoch": 371,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xDe38Ab3840A9Da20A266b68A395dF270895561E5",
+          "submit": "0x81AF51E49B3c15CC3B3efEC6105F979279Ad5f4E",
+          "submitSignatures": "0xFDC70Aad038dB5bf364a772BB82f1D2f10B0f1Fa",
+          "signingPolicy": "0x82339c90C63452eD67166242C68E5E17f3e59A2b",
+          "delegation": "0x4CfB79399cd840414a2BeF2c7C7A0cE3b9b0F89d"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-EJ7V3trSnp93txcLP3h4ULJvBhvUtP66c",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -5958,9 +6756,19 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
+    },
+    {
+      "chainId": 14,
+      "name": "Sparkles FTSO",
+      "description": "Sparkles FTSO is an extension of Sparkles, an NFT platform on the Songbird/Flare Network. Our philosophy is to push boundaries and create standards, be creative and make everything we do fun and interactive for our community.",
+      "url": "https://sparklesnft.com",
+      "address": "0x3D985CFF3C4680428d5ce093dBc4919a57F6E2f6",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x3012c799565010C3b090D252839a3D24f3b766bE.png",
+      "listed": false
     },
     {
       "chainId": 14,
@@ -6015,6 +6823,65 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "StakeCapital FTSO",
+      "description": "Stake Capital is a group run by Blockchain and DeFi pioneers standing at the intersection of traditional industries and blockchain technology.",
+      "url": "https://stake.capital",
+      "address": "0x9Dfc1c62B7F7a3D4D412Fc502Cba37157446aEe9",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xe3704aBE555Fb4807062e68c5Ce1c3EB8FdCB11B.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "60263946764615389617566193",
+        "votePowerCapped": "60263946764615389617566193",
+        "feedCount": 62,
+        "activeSince": "2023-09",
+        "lastEpoch": 346,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x52304625C2000a1cf338b4307541d6F5e388f414",
+          "submit": "0x0F1E856E17AE716B255C92d59aC2b9434240e5bc",
+          "submitSignatures": "0x01CF3e596a975E2Cd3C2036882c6c81661E467f4",
+          "signingPolicy": "0x735d88aDE0C77c2225c556F1628151Ab8B893Bd8",
+          "delegation": "0x9Dfc1c62B7F7a3D4D412Fc502Cba37157446aEe9"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-HDsRbr7VyxukPyXP5WpxUW8XwELhAhGUS",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6082,6 +6949,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-20T16:51:43.000Z",
         "attestedAt": "2026-07-20T16:28:54.082Z"
       }
@@ -6139,6 +7007,7 @@
           "epochsUntilRevoke": 15,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6216,6 +7085,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6273,6 +7143,65 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Swyke",
+      "description": "Swyke is an ISO-27001 certified institutional grade validator registered with VARA (Virtual Asset Regulatory Authority)",
+      "url": "https://swyke.ai",
+      "address": "0xbF55a6eb78487F49197806025CA82DdaF633204e",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xbF55a6eb78487F49197806025CA82DdaF633204e.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "56811777732144785095140797",
+        "votePowerCapped": "56811777732144785095140797",
+        "feedCount": 63,
+        "activeSince": "2023-09",
+        "lastEpoch": 416,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xf1F468658F7b098D44Fbc54F77459a765704f34a",
+          "submit": "0xa75BCF7f7C50aa881e7fF5F01FE190AfCc32ce2b",
+          "submitSignatures": "0x41635d3cdB52c82dF5acecE4dD2eC3021dD95C85",
+          "signingPolicy": "0x1A199658f43D2045cBdB089e11a68cC4F2d38d06",
+          "delegation": "0xbF55a6eb78487F49197806025CA82DdaF633204e"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-JZuVSDnBui1u82RmkbkWKJ1JxfdxuVYR9",
+            "feePercent": 20,
+            "uptimePercent": 75.539,
+            "connected": false,
+            "weight": "30199999000000000",
+            "selfBond": "30199999000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": 416,
+          "epochsSinceSubmit": 30,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6330,6 +7259,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6397,6 +7327,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-15T23:44:08.000Z",
         "attestedAt": "2026-07-15T23:38:16.072Z"
       }
@@ -6464,6 +7395,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-10-30T16:50:05.000Z",
         "attestedAt": "2026-10-30T16:50:03.147Z"
       }
@@ -6521,6 +7453,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6598,6 +7531,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.680Z",
         "attestedAt": "2026-07-31T04:45:02.073Z"
       }
@@ -6665,6 +7599,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.048Z",
         "attestedAt": "2026-06-30T21:56:47.593Z"
       }
@@ -6722,6 +7657,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6779,6 +7715,7 @@
           "epochsUntilRevoke": 13,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6836,6 +7773,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6893,6 +7831,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -6960,6 +7899,75 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Zellic",
+      "description": "The go-to blockchain security firm for top teams, specializing in Cosmos, EVM, ZK, Move (Aptos and Sui). We solve your hardest security problems. Twitter: https://twitter.com/zellic_io Telegram: t.me/zellic_io",
+      "url": "https://zellic.io/validators",
+      "address": "0x76E5591DdA384a30Eeb53FD4059C9570eE072E7E",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x76E5591DdA384a30Eeb53FD4059C9570eE072E7E.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "101479816570038333834156852",
+        "votePowerCapped": "101479816570038333834156852",
+        "feedCount": 63,
+        "activeSince": "2026-02",
+        "lastEpoch": 397,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xa12CAffAb6a3861A915161ecF9513DBD9c48dfC7",
+          "submit": "0x33F9e14121611aF039C82Ca0F43Da50EeE99Ab32",
+          "submitSignatures": "0xc4A2eb9C4070FBc41f60e7193340d229BEB89138",
+          "signingPolicy": "0xF26B63fcaf64DA9647fEDCDDd2dDB41e9DEF131C",
+          "delegation": "0x76E5591DdA384a30Eeb53FD4059C9570eE072E7E"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-DtEwf5vHDQb6G4SwhcGUK5p4rW7vTX3CG",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          },
+          {
+            "nodeId": "NodeID-C7N2J3bURZmycviTFNPASiP8c75e5USEC",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7006,6 +8014,7 @@
           "epochsUntilRevoke": 3,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7052,6 +8061,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7098,6 +8108,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "unnamed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7144,6 +8155,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.817Z",
         "attestedAt": "2026-08-14T21:37:02.047Z"
       }
@@ -7190,6 +8202,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7236,6 +8249,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7282,6 +8296,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7328,6 +8343,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7374,6 +8390,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7420,6 +8437,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7466,6 +8484,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7512,6 +8531,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7558,6 +8578,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-15T20:41:07.000Z",
         "attestedAt": "2026-07-15T20:41:06.707Z"
       }
@@ -7604,6 +8625,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-11-03T22:14:42.959Z",
         "attestedAt": "2026-07-02T18:18:31.569Z"
       }
@@ -7650,6 +8672,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Canary FTSO",
+      "description": "Canary FTSO, your European-based Signal Service Provider, actively contributes to the Flare ecosystem. We ensure a secure and stable price provision service, allowing you to delegate your votes worldwide.",
+      "url": "https://can4ary.com",
+      "address": "0xb76865823f68b48b02Bb9604A2CD886eB49A9f3D",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xb76865823f68b48b02Bb9604A2CD886eB49A9f3D.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "20000644000000000000000000",
+        "votePowerCapped": "20000644000000000000000000",
+        "feedCount": 38,
+        "activeSince": "2022-08",
+        "lastEpoch": 209,
+        "delegatorRewardLastEpoch": "402748789009799848523",
+        "feeRewardLastEpoch": "100687197252449962012",
+        "entity": {
+          "identity": "0x3B1860969C6e00Aef35c48a1bbbe15a3017D558D",
+          "submit": "0x2E7F8Ad95d306AaC5551663930334C4F0376b6bD",
+          "submitSignatures": "0xCE3F771D79fd256071F49Ce942bAF9e9f457A2b6",
+          "signingPolicy": "0x7564fb077B65a1fc4fd42cF8C4948aD5fF11F0c4",
+          "delegation": "0xb76865823f68b48b02Bb9604A2CD886eB49A9f3D"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7696,6 +8766,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.110Z",
         "attestedAt": "2026-06-30T19:42:13.466Z"
       }
@@ -7742,6 +8813,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "CosmicData",
+      "description": "CosmicData operates production-grade oracle infrastructure on the Songbird and Flare networks. Custom multi-exchange FTSO price aggregation, in-house FDC verifier stack (BTC/DOGE/XRPL/ETH), and high-availability validator nodes - engineered for accuracy, uptime, and the FAssets era.",
+      "url": "https://cosmicdata.io",
+      "address": "0x3bE85b604E6EEd1384Fac798A7919cBEBAdb8337",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x3bE85b604E6EEd1384Fac798A7919cBEBAdb8337.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "14456491599551297849724669",
+        "votePowerCapped": "14456491599551297849724669",
+        "feedCount": 63,
+        "activeSince": "2026-04",
+        "lastEpoch": 401,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x9fb51f3a51C5dB3238369b0a7D10F0EC289554B4",
+          "submit": "0x7E9875dcaf7beFf96959A6a9FAb3CB537CD6488A",
+          "submitSignatures": "0xC542a0A01a02C790d0310e79a2c7A52dfF443881",
+          "signingPolicy": "0x68e8B07EFA615188657fb0bCB0D430b0275eFFBf",
+          "delegation": "0x3bE85b604E6EEd1384Fac798A7919cBEBAdb8337"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7788,6 +8907,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7834,9 +8954,19 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
+    },
+    {
+      "chainId": 19,
+      "name": "E8T.app",
+      "description": "Songbird network signal provider by the E8T team. Bringing trusted reviews to the blockchain",
+      "url": "https://www.e8t.app",
+      "address": "0xC7de51A131522749c7c18CEAF46BB985c5687A5e",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xC7de51A131522749c7c18CEAF46BB985c5687A5e.png",
+      "listed": false
     },
     {
       "chainId": 19,
@@ -7880,6 +9010,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7926,6 +9057,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -7972,6 +9104,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.954Z",
         "attestedAt": "2026-07-04T22:54:45.039Z"
       }
@@ -8018,6 +9151,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.102Z",
         "attestedAt": "2026-09-05T09:05:48.659Z"
       }
@@ -8064,6 +9198,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.466Z",
         "attestedAt": "2026-07-15T13:46:56.443Z"
       }
@@ -8110,6 +9245,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8156,6 +9292,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-08-06T20:03:00.000Z",
         "attestedAt": "2026-08-05T13:21:43.460Z"
       }
@@ -8202,6 +9339,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "FlareFTSO",
+      "description": "FlareFTSO is a signal provider for the Flare Time Series Oracle, providing reliable price feeds, delegation services, validator services, and other solutions to the crypto community.",
+      "url": "https://flareftso.com",
+      "address": "0x4F7f5F8eF4a3CC11f94e875393Ee909Eb5f824ea",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x4F7f5F8eF4a3CC11f94e875393Ee909Eb5f824ea.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "30207502896772996872448421",
+        "votePowerCapped": "30207502896772996872448421",
+        "feedCount": 59,
+        "activeSince": "2021-10",
+        "lastEpoch": 291,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xC5d2411d9ff188ebeD494d93efB52e87Bb14b75d",
+          "submit": "0x9431cf3c0D0E0e547984f446322BC9086e198A8e",
+          "submitSignatures": "0xAb77981E9841E1BA46be2f752360C981e887907b",
+          "signingPolicy": "0xfB7B095ED8ab9082aE44C511a597c5c7dA4216CA",
+          "delegation": "0x4F7f5F8eF4a3CC11f94e875393Ee909Eb5f824ea"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8248,6 +9433,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Flare Portal",
+      "description": "Flare Portal - FTSO Data Provider - provides accurate price and reliable globally sourced data. Using your Bifrost wallet to delegate your vote to us is greatly appreciated.",
+      "url": "https://flareportal.com",
+      "address": "0x9225db8B30A59D8Dd15448E2E5918BD160262b5D",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x9225db8B30A59D8Dd15448E2E5918BD160262b5D.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "20765723758971243717626548",
+        "votePowerCapped": "20765723758971243717626548",
+        "feedCount": 38,
+        "activeSince": "2022-02",
+        "lastEpoch": 223,
+        "delegatorRewardLastEpoch": "848436888820723654381",
+        "feeRewardLastEpoch": "212109222205180913261",
+        "entity": {
+          "identity": "0x08d094dC09a0bAf05eC7E2a881A02Da54C26442b",
+          "submit": "0x5d71ee71f5CE23C647162F31bEaFa6Ee5B8A1E0b",
+          "submitSignatures": "0x05A9886f643224b79a3572694005C5Fc1E319d74",
+          "signingPolicy": "0x07E54122FB187dAA7e10B39D9e670C5F894e4190",
+          "delegation": "0x9225db8B30A59D8Dd15448E2E5918BD160262b5D"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8294,6 +9527,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8340,6 +9574,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8386,6 +9621,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-24T14:57:47.000Z",
         "attestedAt": "2026-07-23T21:28:33.107Z"
       }
@@ -8432,6 +9668,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "FTSO4ALL",
+      "description": "FTSO4ALL is a reliable data provider that aims to become the reference data provider for everyone",
+      "url": "https://ftso4all.xyz",
+      "address": "0x0937E91c116767ffD2256ABc15B67561BaD5d1C2",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x0937E91c116767ffD2256ABc15B67561BaD5d1C2.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "20182768550638178334130552",
+        "votePowerCapped": "20182768550638178334130552",
+        "feedCount": 59,
+        "activeSince": "2022-06",
+        "lastEpoch": 270,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x928aeB29a4C82c7a1BBfF51d41777fAA4dD78A8E",
+          "submit": "0xAaCFf202CE7e70dA4e0008aE415f46547A612099",
+          "submitSignatures": "0x0ccD9dB584cd23F47E8F1D973834c5B551CeE6a8",
+          "signingPolicy": "0x6b0D2fC3176A4Cf12DfC6D8dbE3B0b10967904Ad",
+          "delegation": "0x0937E91c116767ffD2256ABc15B67561BaD5d1C2"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8478,6 +9762,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8524,6 +9809,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8570,6 +9856,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.076Z",
         "attestedAt": "2026-07-01T19:32:15.980Z"
       }
@@ -8616,8 +9903,56 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.602Z",
         "attestedAt": "2026-07-31T05:57:00.490Z"
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "FTSOExpress",
+      "description": "FTSO Express, looking to be a no frills, minimal FTSO Provider",
+      "url": "https://ftso.express",
+      "address": "0x33DDAe234e403789954CD792e1feBdBE2466ADC2",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xc0452CEcee694Ab416d19E95a0907f022DEC5664.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "36804430800122814902556362",
+        "votePowerCapped": "36804430800122814902556362",
+        "feedCount": 64,
+        "activeSince": "2021-09",
+        "lastEpoch": 375,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xb54547B790d0c05Be00fbd3d3436D3172854e3dC",
+          "submit": "0x071252ad3eE729Adf310895894289b528A49Dd39",
+          "submitSignatures": "0xE7f6770fBa8E9DF7eB0f598826938E98327E5F6A",
+          "signingPolicy": "0x51918bb8E38E96Ac6fD185fe0e585bfE7538133a",
+          "delegation": "0x33DDAe234e403789954CD792e1feBdBE2466ADC2"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
+        "updatedAt": null,
+        "attestedAt": null
       }
     },
     {
@@ -8662,6 +9997,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:39.904Z",
         "attestedAt": "2026-07-03T12:00:52.823Z"
       }
@@ -8708,6 +10044,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.145Z",
         "attestedAt": "2026-07-04T20:23:46.631Z"
       }
@@ -8754,6 +10091,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8794,6 +10132,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Insight Oracle",
+      "description": "We are a group of friends obsessed with crypto, maths and algorithms. We want to build dApps and help to develop and expand the Flare Network.",
+      "url": "https://insightoracle.site",
+      "address": "0x86B8012c254cbe2fe63A5B7f64Cb1a039bAB2047",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x86B8012c254cbe2fe63A5B7f64Cb1a039bAB2047.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "41331279687111959284825847",
+        "votePowerCapped": "41331279687111959284825847",
+        "feedCount": 50,
+        "activeSince": "2023-08",
+        "lastEpoch": 236,
+        "delegatorRewardLastEpoch": "1769829764793167788434",
+        "feeRewardLastEpoch": "442457441198291946792",
+        "entity": {
+          "identity": "0x90C0Edf240397D461eBe7DF9b41EE9b4415F3432",
+          "submit": "0x68A88c2DFD9863E65cBaFDb2dD490d28b8AEd8DF",
+          "submitSignatures": "0x2aCbF71Bcf87862492f710a3eCf0677816f9b4C1",
+          "signingPolicy": "0x3228f985B49EDA79C8dd5E967B63aB562edF7EAA",
+          "delegation": "0x86B8012c254cbe2fe63A5B7f64Cb1a039bAB2047"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8840,6 +10226,7 @@
           "epochsUntilRevoke": null,
           "revokeAfterEpochs": 17
         },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8886,6 +10273,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Lena Instruments",
+      "description": "Institutional grade vote delegation service and FTSO signal provider to the Songbird ecosystem",
+      "url": "https://www.lena.tech",
+      "address": "0xc9AC8F034d295962A6a975b717B691437605Bbb6",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xc9AC8F034d295962A6a975b717B691437605Bbb6.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "97431208032687050292068655",
+        "votePowerCapped": "97431208032687050292068655",
+        "feedCount": 62,
+        "activeSince": "2021-09",
+        "lastEpoch": 346,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x037c3e6a8f65ad2d810f26DB3439d96e48156858",
+          "submit": "0xD8Da39f97C10b1787e3Af6ADB95B36785AC25E8A",
+          "submitSignatures": "0x14F52DE797635262e985BbBaD661280223f536Ee",
+          "signingPolicy": "0x4d02AbB622560B15A98A1c572fb3063852D8A7dE",
+          "delegation": "0xc9AC8F034d295962A6a975b717B691437605Bbb6"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -8932,6 +10367,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-30T19:25:48.000Z",
         "attestedAt": "2026-06-30T19:25:47.592Z"
       }
@@ -8978,6 +10414,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9024,6 +10461,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.220Z",
         "attestedAt": "2026-07-05T05:13:38.207Z"
       }
@@ -9070,6 +10508,54 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "O1 FTSO",
+      "description": "O1 FTSO is an open-minded data signals provider looking for a great partnership on the Flare and Songbird Network.",
+      "url": "https://o1ftso.netlify.app",
+      "address": "0x229458A754CD1aeBa8A0c87f59E22777D593B85a",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x229458A754CD1aeBa8A0c87f59E22777D593B85a.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "194402808874399391495704762",
+        "votePowerCapped": "194402808874399391495704762",
+        "feedCount": 38,
+        "activeSince": "2022-05",
+        "lastEpoch": 229,
+        "delegatorRewardLastEpoch": "73909054130436052064427",
+        "feeRewardLastEpoch": "18477263532609013014361",
+        "entity": {
+          "identity": "0x23075D2210F1aC5f8eaD459bE03Ea7337D10afA0",
+          "submit": "0x9C9E9f692CbD46ddE072314972a9a512a58cdCeB",
+          "submitSignatures": "0xa2F7D4e93BE921Be2f4a504d78002E451F47eA7B",
+          "signingPolicy": "0x458Bd1C5fAeb843C8be9C512F7eB3A14EC5fB6f5",
+          "delegation": "0x229458A754CD1aeBa8A0c87f59E22777D593B85a"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9116,6 +10602,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9162,9 +10649,19 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
+    },
+    {
+      "chainId": 19,
+      "name": "Poseidon FTSO",
+      "description": "Poseidon FTSO is an FTSO on Songbird and Flare mainnet. We provide ourself in operating a functional FTSO which plays by the rules. We aim to build a robust FTSO which will help enhance the Flare ecosystem.",
+      "url": "https://poseidon-ftso.com",
+      "address": "0x8d5Ddf992D582AFA3b2062d56a7ffB8028AB59a2",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x02a256FF137D680aC591f1959D64a8669006c95c.png",
+      "listed": false
     },
     {
       "chainId": 19,
@@ -9208,6 +10705,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9254,6 +10752,54 @@
           "epochsUntilRevoke": 1,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "SAKURA",
+      "description": "Beautiful Japanese SAKURA and beautiful Flare Network technology.",
+      "url": "https://sakura-japan.com",
+      "address": "0x1a696Acb220a4f76153c779f828d0Ba99028770a",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x1a696Acb220a4f76153c779f828d0Ba99028770a.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "200000000000000000000",
+        "votePowerCapped": "200000000000000000000",
+        "feedCount": 19,
+        "activeSince": "2024-06",
+        "lastEpoch": 205,
+        "delegatorRewardLastEpoch": "13055788433214782",
+        "feeRewardLastEpoch": "3263947108303551",
+        "entity": {
+          "identity": "0x1a696Acb220a4f76153c779f828d0Ba99028770a",
+          "submit": "0x7EE8B1E5E1a77e565Fe9E53BBA164C3f5045823e",
+          "submitSignatures": "0x2865e042f9E8F83D6fCFFd56A45912C0C055E1d5",
+          "signingPolicy": "0x0eFa7CDCd4B8edAAADC04D196719f79010460627",
+          "delegation": "0xe37e1698d17D5D3ed0BD3c48502318ba16E342f1"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9300,6 +10846,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9346,9 +10893,113 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
+    },
+    {
+      "chainId": 19,
+      "name": "SolidiFi Nexus",
+      "description": "SolidiFi Nexus: Pioneering Flare's data integrity with accurate price feeds, free DeFi tools, and community-focused dApps since the Songbird days.",
+      "url": "https://solidifinexus.com",
+      "address": "0x769530a9F2e4624aE2D6869869d510D4cd55b545",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x769530a9F2e4624aE2D6869869d510D4cd55b545.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "21560931710060756050554798",
+        "votePowerCapped": "21560931710060756050554798",
+        "feedCount": 62,
+        "activeSince": "2022-01",
+        "lastEpoch": 345,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x79FdD105935D075BcF36dafb6e82ba2e33cd34cc",
+          "submit": "0x661852a82F6777351dC6ffAAa7f363E0207B7E0d",
+          "submitSignatures": "0x6b347AEe1dd7FF3B66Fb0316b216d8bE9c1F65F9",
+          "signingPolicy": "0x3876273C2F6ddD5BdCD4B91f8a2a0c1281D69D51",
+          "delegation": "0x769530a9F2e4624aE2D6869869d510D4cd55b545"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "Sparkles FTSO",
+      "description": "Sparkles FTSO is an extension of Sparkles, an NFT platform on the Songbird/Flare Network. Our philosophy is to push boundaries and create standards, be creative and make everything we do fun and interactive for our community.",
+      "url": "https://sparklesnft.com",
+      "address": "0x3012c799565010C3b090D252839a3D24f3b766bE",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0x3012c799565010C3b090D252839a3D24f3b766bE.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": false,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "23787760446469961443635004",
+        "votePowerCapped": "23787760446469961443635004",
+        "feedCount": 38,
+        "activeSince": "2021-10",
+        "lastEpoch": 215,
+        "delegatorRewardLastEpoch": "1227837256435661741604",
+        "feeRewardLastEpoch": "306959314108915435231",
+        "entity": {
+          "identity": "0x709c1ca45E66d0c4D6F1867E67bf37DD676B4B6B",
+          "submit": "0xb31dabE40FB95839cd4015b66Bed7C5C1770a18D",
+          "submitSignatures": "0xA6901b38D9Ef4454a45b3cFafD6b5C07Fc40c309",
+          "signingPolicy": "0x93Cbc3d86Ba2c6B2c3f9235a6369F6420EAd91AC",
+          "delegation": "0x3012c799565010C3b090D252839a3D24f3b766bE"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "status": "departed",
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "StakeCapital FTSO",
+      "description": "Stake Capital is a group run by Blockchain and DeFi pioneers standing at the intersection of traditional industries and blockchain technology.",
+      "url": "https://stake.capital",
+      "address": "0xe3704aBE555Fb4807062e68c5Ce1c3EB8FdCB11B",
+      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xe3704aBE555Fb4807062e68c5Ce1c3EB8FdCB11B.png",
+      "listed": false
     },
     {
       "chainId": 19,
@@ -9392,6 +11043,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-07-20T16:51:43.000Z",
         "attestedAt": "2026-07-20T16:29:48.739Z"
       }
@@ -9438,6 +11090,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9484,6 +11137,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9530,6 +11184,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9576,6 +11231,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-10-30T17:53:17.000Z",
         "attestedAt": "2026-10-30T17:53:15.508Z"
       }
@@ -9622,6 +11278,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9668,6 +11325,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.048Z",
         "attestedAt": "2026-06-30T21:54:54.028Z"
       }
@@ -9714,6 +11372,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9760,6 +11419,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9806,6 +11466,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9852,6 +11513,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
@@ -9898,6 +11560,7 @@
           "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
+        "status": "listed",
         "updatedAt": null,
         "attestedAt": null
       }
