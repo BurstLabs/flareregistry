@@ -30,6 +30,8 @@ export interface DetailData {
   description: string;
   /** What each network this listing is on actually publishes, in the feed's own resolution. */
   descriptions: { chain: string; description: string }[];
+  /** Not qualified and silent past the purge window on every network; feed status "departed". */
+  departed: boolean;
   url: string;
   logo: string;
   verified: boolean;
@@ -371,6 +373,15 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 label={t("badge.onchainOnly")}
                 tip={t("badge.onchainOnlyTip")}
                 triggerClassName="rounded-md bg-amber-500/15 px-2 py-1.5 text-xs text-amber-600 dark:text-amber-400"
+              />
+            )}
+            {/* The page keeps working for a provider that has gone, so it has to say so here as
+                well as on the directory card, or the only signal is an absent Qualified badge. */}
+            {d.departed && (
+              <InfoTip
+                label={t("badge.departed")}
+                tip={t("badge.departedTip")}
+                triggerClassName="rounded-md bg-elev px-2 py-1.5 text-xs text-muted"
               />
             )}
           </div>

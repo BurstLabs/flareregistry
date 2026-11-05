@@ -12,6 +12,7 @@ import {
 } from "@/lib/governance";
 import { apiError } from "@/lib/api-error";
 import { validateEvidence, type CleanEvidence } from "@/lib/conduct-evidence";
+import { latchedQualifiedByAddresses, PURGE_AFTER_EPOCHS } from "@/lib/qualification";
 import { serveConductNotice } from "@/lib/conduct-open";
 
 // POST /api/governance/conduct
@@ -152,6 +153,47 @@ export async function POST(req: NextRequest) {
   });
   if (!entity) {
     return NextResponse.json({ error: "provider is not matched on-chain" }, { status: 409 });
+  }
+
+  // NOT AGAINST A PROVIDER THAT HAS GONE, enforced here and not only in the page that offers the
+  // form. A conduct case is a public record about a named operator who is expected to answer it,
+  // and one silent for months has nobody watching, often no notice address, and nothing a verdict
+  // would change. This used to fall out of the archive flag; the flag is gone and the reason it
+  // was standing in for is stated directly.
+  const entityRows = await prisma.providerOnchain.findMany({
+    where: {
+      OR: [
+        { voter: { in: lowerAddrs } },
+        { delegationAddress: { in: lowerAddrs } },
+        { submitAddress: { in: lowerAddrs } },
+        { submitSignaturesAddress: { in: lowerAddrs } },
+        { signingPolicyAddress: { in: lowerAddrs } },
+      ],
+    },
+    select: { network: true, lastEpochSeen: true },
+  });
+  const latestByNetwork = new Map<string, number>();
+  for (const row of await prisma.providerOnchain.findMany({
+    select: { network: true, lastEpochSeen: true },
+  })) {
+    if (row.lastEpochSeen > (latestByNetwork.get(row.network) ?? -1)) {
+      latestByNetwork.set(row.network, row.lastEpochSeen);
+    }
+  }
+  const qualifiedNow = (await latchedQualifiedByAddresses([{ id: providerId, addresses: lowerAddrs }])).get(
+    providerId
+  );
+  const departed =
+    !qualifiedNow &&
+    entityRows.length > 0 &&
+    entityRows.every(
+      (e) => (latestByNetwork.get(e.network) ?? e.lastEpochSeen) - e.lastEpochSeen >= PURGE_AFTER_EPOCHS
+    );
+  if (departed) {
+    return NextResponse.json(
+      { error: "provider has departed; a conduct case needs an operator who can answer it" },
+      { status: 409 }
+    );
   }
 
   // One live conduct case per provider. A later co-initiator joins the pending one rather than
