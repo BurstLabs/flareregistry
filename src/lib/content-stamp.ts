@@ -87,3 +87,48 @@ export async function stampEntryContent(
   }
   return moved.length;
 }
+
+/**
+ * Keep flareregistry.logoHash true for every listing whose image we host.
+ *
+ * Same reasoning as the content stamp above: the digest is a published fact, and a fact that is
+ * only written at some of the places that can change it drifts. A logo reaches a listing through
+ * an upload, a pending-logo promotion, an admin action, a mirror script and a repoint, so instead
+ * of trusting five call sites this recomputes from the bytes on disk on every publish.
+ *
+ * Cheap because it never leaves the box: every logo we publish is a file in this repo, either
+ * assets/<address>.png or something under public/. A URL we do not host is left null rather than
+ * fetched, because a digest of whatever a third party served this minute is not a fact about us.
+ */
+export async function stampLogoHashes(
+  resolveLogo: (logoPath: string | null, logoURI: string | null) => string,
+  opts: { publicBaseUrl: string; logoRepo: string }
+): Promise<number> {
+  const { createHash } = await import("crypto");
+  const { readFileSync, existsSync } = await import("fs");
+  const { join } = await import("path");
+
+  const rawPrefix = `https://raw.githubusercontent.com/${opts.logoRepo}/`;
+  const root = process.cwd();
+  const providers = await prisma.provider.findMany({
+    select: { id: true, logoPath: true, logoURI: true, logoSha256: true },
+  });
+
+  let written = 0;
+  for (const p of providers) {
+    const url = resolveLogo(p.logoPath, p.logoURI);
+    let file: string | null = null;
+    if (url.startsWith(rawPrefix)) {
+      // .../<branch>/assets/<file>.png
+      file = join(root, url.slice(rawPrefix.length).split("/").slice(1).join("/"));
+    } else if (url.startsWith(opts.publicBaseUrl)) {
+      file = join(root, "public", url.slice(opts.publicBaseUrl.length));
+    }
+    if (!file || !existsSync(file)) continue;
+    const digest = createHash("sha256").update(readFileSync(file)).digest("hex");
+    if (digest === p.logoSha256) continue;
+    await prisma.provider.update({ where: { id: p.id }, data: { logoSha256: digest } });
+    written++;
+  }
+  return written;
+}

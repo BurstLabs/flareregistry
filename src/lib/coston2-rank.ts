@@ -194,6 +194,8 @@ export function assembleCoston2Feeds(
     minVotePower: number;
     revokeAfterEpochs: number;
     placeholderLogo: string;
+    /** Origin the schema URL is built from, so the test harness can pass its own. */
+    publicBaseUrl: string;
     /** Keyed by lowercase role address. Flare Registry listings win over the legacy list. */
     registryListings: Map<string, Coston2Listing>;
     upstreamListings: Map<string, Coston2Listing>;
@@ -246,6 +248,9 @@ export function assembleCoston2Feeds(
         // none can be "departed" either: there is no pass data to go silent against. A listing
         // gives it an identity; without one it is a registration nobody has named.
         status: listing ? "unqualified" : "unnamed",
+        // No digest on a test network: these logos come from a registry listing we did not hash
+        // per entry, and nothing consumes Coston2 images for verification.
+        logoHash: null,
         network: COSTON2_NETWORK,
         feePercent: r.feeBips / 100,
         votePower: r.wNatWeight.toString(),
@@ -282,9 +287,12 @@ export function assembleCoston2Feeds(
   const generatedAt = opts.now.toISOString();
   return {
     providerList: {
+      // Same schema as the mainnet feeds: the shape is identical and a consumer validating one
+      // should validate the other, which is the point of the guard in check-coston2-feed.
+      $schema: `${opts.publicBaseUrl}/providerlist.schema.json`,
       name: "Flare Registry FTSO Signal Providers (Coston2)",
       timestamp: generatedAt,
-      version: { major: 1, minor: 3, patch: 0 },
+      version: { major: 1, minor: 4, patch: 0 },
       providers,
     },
     yieldFeed: {

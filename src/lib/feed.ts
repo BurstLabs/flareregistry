@@ -69,6 +69,10 @@ export interface FeedProviderExtras {
     epochsUntilRevoke: number | null; // missed epochs remaining before revocation
     revokeAfterEpochs: number; // the threshold
   };
+  // SHA-256 of the bytes at logoURI, lowercase hex, no 0x prefix. Null when we do not host the
+  // image and could not read it. A URL alone cannot be checked: a CDN, a proxy or a mirror can
+  // serve a different picture and no reader can tell. Hashing what we published lets them.
+  logoHash: string | null;
   // WHY this entry is or is not listed, which `listed` alone cannot say: it is false for a
   // provider inside its 30-day hold, one that stopped submitting last week, one that stopped three
   // years ago, one suspended by a governance vote, and one the chain shows but nobody has named.
@@ -127,6 +131,15 @@ export interface FeedProvider {
 }
 
 export interface ProviderList {
+  /**
+   * The schema this document conforms to, served at a stable URL.
+   *
+   * The only JSON Schema this format has ever had lived in TowoLabs/ftso-signal-providers, which
+   * was archived on 2026-11-05 and can never be corrected; its replacement publishes none. A
+   * format every Flare wallet and explorer reads should have a definition someone maintains, and
+   * a consumer should be able to validate a feed rather than infer its shape from an example.
+   */
+  $schema: string;
   name: string;
   timestamp: string;
   version: { major: number; minor: number; patch: number };
@@ -421,6 +434,7 @@ export async function buildProviderList(): Promise<ProviderList> {
         epochsUntilRevoke: risk?.epochsUntilRevoke ?? null,
         revokeAfterEpochs: risk?.revokeAfterEpochs ?? 17,
       },
+      logoHash: a.provider.logoSha256,
       status,
       // Only for listings whose text is ours to date. "imported" and "onchain" rows publish
       // somebody else's content or no content at all; see FeedProviderExtras above.
@@ -461,9 +475,12 @@ export async function buildProviderList(): Promise<ProviderList> {
   });
 
   return {
+    $schema: `${PUBLIC_BASE_URL}/providerlist.schema.json`,
     name: "Flare Registry FTSO Signal Providers",
     timestamp: new Date().toISOString(),
-    version: { major: 1, minor: 3, patch: 0 },
+    // Minor, not patch: logoHash and status are new fields. Additive, so a consumer written
+    // against 1.3 reads 1.4 unchanged.
+    version: { major: 1, minor: 4, patch: 0 },
     providers,
   };
 }
@@ -484,7 +501,14 @@ export async function publishFeedToRepo(): Promise<void> {
     // BEFORE the build, so a change that triggered this publish is dated in the file it produces.
     // Every write path that can touch branding ends here, which is why the stamp lives here rather
     // than in each of them.
-    const { stampEntryContent } = await import("./content-stamp");
+    const { stampEntryContent, stampLogoHashes } = await import("./content-stamp");
+    await stampLogoHashes(resolveLogo, {
+      publicBaseUrl: PUBLIC_BASE_URL,
+      logoRepo: process.env.LOGO_REPO ?? "BurstLabs/flareregistry",
+    }).catch((e) => {
+      console.error("stampLogoHashes failed:", e instanceof Error ? e.message : e);
+      return 0;
+    });
     await stampEntryContent(resolveLogo).catch((e) => {
       // A failed stamp must not stop the feed going out: a slightly stale date is recoverable, a
       // feed that stopped republishing is not.
