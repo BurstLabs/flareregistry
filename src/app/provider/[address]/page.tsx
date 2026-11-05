@@ -330,6 +330,7 @@ export default async function ProviderDetail({
     description: p.description,
     descriptions,
     departed,
+    dormant: p.addresses.some((a) => a.entityRegistered),
     url: p.url,
     logo: cardLogo(p.logoPath, p.logoURI),
     verified: p.source === "submitted",

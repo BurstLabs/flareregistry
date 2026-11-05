@@ -32,6 +32,8 @@ export interface DetailData {
   descriptions: { chain: string; description: string }[];
   /** Not qualified and silent past the purge window on every network; feed status "departed". */
   departed: boolean;
+  /** Holds an on-chain registration that never took part; feed status "dormant". */
+  dormant: boolean;
   url: string;
   logo: string;
   verified: boolean;
@@ -381,6 +383,13 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
               <InfoTip
                 label={t("badge.departed")}
                 tip={t("badge.departedTip")}
+                triggerClassName="rounded-md bg-elev px-2 py-1.5 text-xs text-muted"
+              />
+            )}
+            {d.dormant && (
+              <InfoTip
+                label={t("badge.dormant")}
+                tip={t("badge.dormantTip")}
                 triggerClassName="rounded-md bg-elev px-2 py-1.5 text-xs text-muted"
               />
             )}
