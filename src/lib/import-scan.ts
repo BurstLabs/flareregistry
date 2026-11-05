@@ -13,7 +13,7 @@ import { prisma } from "./db";
 import { isSupportedChain, getChainByKey } from "./chains";
 import { isClean } from "./content-filter";
 
-const TOWOLABS_LIST_URL =
+export const TOWOLABS_LIST_URL =
   process.env.TOWOLABS_LIST_URL ??
   "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/bifrost-wallet.providerlist.json";
 

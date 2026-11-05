@@ -111,7 +111,7 @@ export interface ProviderList {
   providers: FeedProvider[];
 }
 
-function resolveLogo(logoPath: string | null, sourceLogoURI: string | null): string {
+export function resolveLogo(logoPath: string | null, sourceLogoURI: string | null): string {
   // Prefer a self-hosted logo, then the imported source URL, then a placeholder.
   if (logoPath)
     return `${PUBLIC_BASE_URL}${logoPath.startsWith("/") ? "" : "/"}${logoPath}`;

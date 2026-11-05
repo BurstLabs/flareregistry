@@ -96,8 +96,15 @@ const big = (s: string | null) => {
   }
 };
 
-/** Pure ranking over stored rows, so it can be checked against the raw fsp-rewards files. */
-export function rankYield(rows: YieldRow[], epochs: number[]): Omit<NetworkYield, "chainId"> {
+/**
+ * Pure ranking over stored rows, so it can be checked against the raw fsp-rewards files. epochDays is
+ * the reward epoch length used to annualise: 3.5 on Flare and Songbird, 0.25 on Coston2.
+ */
+export function rankYield(
+  rows: YieldRow[],
+  epochs: number[],
+  epochDays: number = REWARD_EPOCH_DAYS,
+): Omit<NetworkYield, "chainId"> {
   const newest = Math.max(...epochs);
   const byVoter = new Map<string, YieldRow[]>();
   for (const r of rows) {
@@ -124,7 +131,7 @@ export function rankYield(rows: YieldRow[], epochs: number[]): Omit<NetworkYield
       return {
         identity: voter.toLowerCase(),
         ratePerEpoch: rate,
-        annualRate: (rate * 365) / REWARD_EPOCH_DAYS,
+        annualRate: (rate * 365) / epochDays,
         cappedShare: weight > 0n ? Math.min(toTokens(capped) / toTokens(weight), 1) : 0,
         averageVotePower,
         eligibleLastEpoch: last?.goodStanding ?? null,
