@@ -173,11 +173,15 @@ export default async function Home({
     return silences.length > 0 && silences.every((g) => g >= PURGE_AFTER_EPOCHS);
   };
 
+  // A confirmed EntityManager registration that never took part. It passes no qualification check
+  // by definition, so it needs naming here for the same reason departed does.
+  const isDormant = (p: (typeof all)[number]) => p.addresses.some((a) => a.entityRegistered);
+
   // Hide a row only when there is nothing we can say about it: no qualification check passes AND
-  // we cannot even call it departed. A departed provider used to be hidden here too, by a filter
-  // written when it was also archived out of the feed, which meant the directory kept a provider
-  // invisible for the one state we can describe precisely.
-  const listable = all.filter((p) => hasAnyPass(p.id) || isDeparted(p));
+  // we cannot call it departed or dormant either. A departed provider used to be hidden here too,
+  // by a filter written when it was also archived out of the feed, which meant the directory kept
+  // a provider invisible for the states we can describe most precisely.
+  const listable = all.filter((p) => hasAnyPass(p.id) || isDeparted(p) || isDormant(p));
   // An "onchain" provider was seeded from the chain because it is registered and submitting, but
   // nothing publishes a name, a site or a logo for it and nobody has claimed it. It is held out of
   // the default view for that reason and not because of anything about its performance: it may well
@@ -291,6 +295,7 @@ export default async function Home({
       verified: p.source === "submitted",
       onchainOnly: isOnchainOnly(p),
       departed: isDeparted(p),
+      dormant: isDormant(p),
       roles: m?.roles ?? [],
       // WHY THERE IS NO FIGURE, when there is none. An empty space meant Songbird, or too little
       // history, or departed, and a reader could not tell which.

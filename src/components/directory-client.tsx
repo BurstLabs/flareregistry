@@ -33,6 +33,8 @@ export interface CardProvider {
   onchainOnly: boolean;
   /** Not qualified and silent past the purge window on every network; feed status "departed". */
   departed: boolean;
+  /** Holds an on-chain registration that never took part; feed status "dormant". */
+  dormant: boolean;
   governance: { pending: boolean; underReview: boolean; suspended: boolean; caseId: string | null } | null;
   votePower: string | null;
   reward: string | null;
@@ -474,6 +476,13 @@ export function DirectoryClient({
                       <InfoTip
                         label={t("badge.departed")}
                         tip={t("badge.departedTip")}
+                        triggerClassName="rounded-md bg-elev px-2 py-1.5 text-xs text-muted"
+                      />
+                    )}
+                    {p.dormant && (
+                      <InfoTip
+                        label={t("badge.dormant")}
+                        tip={t("badge.dormantTip")}
                         triggerClassName="rounded-md bg-elev px-2 py-1.5 text-xs text-muted"
                       />
                     )}
