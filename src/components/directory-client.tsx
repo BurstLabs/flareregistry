@@ -31,6 +31,8 @@ export interface CardProvider {
   verified: boolean;
   /** Seeded from the chain, no published identity, never claimed. Held out of the default view. */
   onchainOnly: boolean;
+  /** Not qualified and silent past the purge window on every network; feed status "departed". */
+  departed: boolean;
   governance: { pending: boolean; underReview: boolean; suspended: boolean; caseId: string | null } | null;
   votePower: string | null;
   reward: string | null;
@@ -464,6 +466,15 @@ export function DirectoryClient({
                         label={t("badge.onchainOnly")}
                         tip={t("badge.onchainOnlyTip")}
                         triggerClassName="rounded-md bg-amber-500/15 px-2 py-1.5 text-xs text-amber-600 dark:text-amber-400"
+                      />
+                    )}
+                    {/* A provider that stopped submitting keeps its card rather than vanishing, so
+                        the chip has to say why it is here and not qualified. */}
+                    {p.departed && (
+                      <InfoTip
+                        label={t("badge.departed")}
+                        tip={t("badge.departedTip")}
+                        triggerClassName="rounded-md bg-elev px-2 py-1.5 text-xs text-muted"
                       />
                     )}
                   </div>
