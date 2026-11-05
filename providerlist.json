@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-05T16:47:03.048Z",
+  "timestamp": "2026-11-05T17:15:05.608Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -112,63 +112,6 @@
     },
     {
       "chainId": 14,
-      "name": "0x5df7d653ab5f80560b1494d17f6daef7dee5f7be",
-      "description": "",
-      "url": "",
-      "address": "0x59187c1f521FbaCc0236e74Db052EcFb17d9A845",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "13787370389717689895168609",
-        "votePowerCapped": "13776690424442020480155648",
-        "feedCount": 62,
-        "activeSince": "2026-02",
-        "lastEpoch": 446,
-        "delegatorRewardLastEpoch": "2199377191993502020248",
-        "feeRewardLastEpoch": "10511219772957839511412",
-        "entity": {
-          "identity": "0x5dF7D653aB5F80560B1494D17F6DaeF7Dee5f7BE",
-          "submit": "0x92A74E5C5A4c42dfc6B531244A29c68b7da57196",
-          "submitSignatures": "0xe97C990a1FC4f10d6147260B70aB8E886c72EEC3",
-          "signingPolicy": "0x70509021b5fAf413492cBa08F37e81da3a4b8729",
-          "delegation": "0x59187c1f521FbaCc0236e74Db052EcFb17d9A845"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-HHL3A3jMLbcKWKBP91ApQpuuKkqD9VguZ",
-            "feePercent": 20,
-            "uptimePercent": 99.9632,
-            "connected": true,
-            "weight": "59999999626017387",
-            "selfBond": "4000000000000000",
-            "delegatedWeight": "55999999626017387",
-            "delegatorCount": 32
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:19.478Z",
-          "lastSubmittedEpoch": 446,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        },
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
       "name": "0x7060082318372a2cc4917ba1ce7b6481371f7e00",
       "description": "",
       "url": "",
@@ -248,237 +191,6 @@
           "lastSubmittedEpoch": 433,
           "epochsSinceSubmit": 13,
           "epochsUntilRevoke": 4,
-          "revokeAfterEpochs": 17
-        },
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0x7b7cea81627b1fd3ae008b865ff28af382660950",
-      "description": "",
-      "url": "",
-      "address": "0x26E135eFD09b6756F5A847be991c8305611A05f1",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "200000000000000000000",
-        "votePowerCapped": "200000000000000000000",
-        "feedCount": 62,
-        "activeSince": "2026-07",
-        "lastEpoch": 442,
-        "delegatorRewardLastEpoch": "0",
-        "feeRewardLastEpoch": "0",
-        "entity": {
-          "identity": "0x7b7CEA81627B1fd3ae008b865FF28Af382660950",
-          "submit": "0xa28C24c921A86761ef4FfDb2cea5C8a8dA57Db6C",
-          "submitSignatures": "0x28503B12622f92891266AD7D40a6D5590E8e3bA9",
-          "signingPolicy": "0x5e93bCCEeE1722c7E9A358619c5106aCD840579C",
-          "delegation": "0x26E135eFD09b6756F5A847be991c8305611A05f1"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-DsauN2ztCZWaVwcnf3REjj2Uqas7Gfdz6",
-            "feePercent": 20,
-            "uptimePercent": 64.1884,
-            "connected": false,
-            "weight": "1000000000000000",
-            "selfBond": "1000000000000000",
-            "delegatedWeight": "0",
-            "delegatorCount": 0
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-08-10T16:18:24.348Z",
-          "lastSubmittedEpoch": 442,
-          "epochsSinceSubmit": 4,
-          "epochsUntilRevoke": 13,
-          "revokeAfterEpochs": 17
-        },
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0x7e74d30ef4dd811830118645633a9471f6cc63d3",
-      "description": "",
-      "url": "",
-      "address": "0x7e9bc5C2d12711bAB79e93eb5a6e6c6D9A084f8C",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "17063534143491909752230067",
-        "votePowerCapped": "17059667807995528067678208",
-        "feedCount": 62,
-        "activeSince": "2026-06",
-        "lastEpoch": 446,
-        "delegatorRewardLastEpoch": "1373494037205267996524",
-        "feeRewardLastEpoch": "100957165997204860849464",
-        "entity": {
-          "identity": "0x7e74D30eF4dd811830118645633a9471f6cc63D3",
-          "submit": "0x68A8270ca20Ce92b1870554e2c3E58736890Efb6",
-          "submitSignatures": "0xB56dEefA9e2Db7b972445275973E59F30D392Df5",
-          "signingPolicy": "0xa2798CD3bbD243039AD012BA896d4fBF35536956",
-          "delegation": "0x7e9bc5C2d12711bAB79e93eb5a6e6c6D9A084f8C"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-436aEkcwxBo9Z5Ud9Rr7mWEgHnjDu78NR",
-            "feePercent": 20,
-            "uptimePercent": 99.9963,
-            "connected": true,
-            "weight": "249999999939057210",
-            "selfBond": "20000000000000000",
-            "delegatedWeight": "229999999939057210",
-            "delegatorCount": 24
-          },
-          {
-            "nodeId": "NodeID-LwpTuHwv3BdGhT1y7RcPY1t4rx494uExo",
-            "feePercent": 20,
-            "uptimePercent": 99.2059,
-            "connected": true,
-            "weight": "249999999717488050",
-            "selfBond": "20000000000000000",
-            "delegatedWeight": "229999999717488050",
-            "delegatorCount": 62
-          },
-          {
-            "nodeId": "NodeID-QK6w1Ryp8kfgPBYSyNgHbRTjEhYfLkyBE",
-            "feePercent": 20,
-            "uptimePercent": 98.7213,
-            "connected": true,
-            "weight": "259999999841908650",
-            "selfBond": "20000000000000000",
-            "delegatedWeight": "239999999841908650",
-            "delegatorCount": 59
-          },
-          {
-            "nodeId": "NodeID-C3cwgDrgNHRCpqd7GGBZ6qhcBFNmKh3a3",
-            "feePercent": 20,
-            "uptimePercent": 99.8982,
-            "connected": true,
-            "weight": "249999999717231650",
-            "selfBond": "20000000000000000",
-            "delegatedWeight": "229999999717231650",
-            "delegatorCount": 44
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-07-10T10:18:14.105Z",
-          "lastSubmittedEpoch": 446,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
-          "revokeAfterEpochs": 17
-        },
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0x802c64fcd19d8dba98ae96302c0c9faa16952cd5",
-      "description": "",
-      "url": "",
-      "address": "0xe35800fe5785F60C216Bd9E667f106a42dC2C042",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "127150735189074170910607054",
-        "votePowerCapped": "127146868853577782912876544",
-        "feedCount": 62,
-        "activeSince": "2026-06",
-        "lastEpoch": 446,
-        "delegatorRewardLastEpoch": "11578802296683815424123",
-        "feeRewardLastEpoch": "103773152596262626612949",
-        "entity": {
-          "identity": "0x802c64FCD19D8DBA98Ae96302C0C9fAa16952Cd5",
-          "submit": "0x6e6Bca42a3A82AdaD355703Abc201A6619AD0a58",
-          "submitSignatures": "0xf889004a86Cf0B8389CFF01f2d69072b5f88BBBE",
-          "signingPolicy": "0x14cF47eA046930A64e71cf2Ffa79Aef16aA911b0",
-          "delegation": "0xe35800fe5785F60C216Bd9E667f106a42dC2C042"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-LbGaxB3u2JbUSCk4SKH7yZrFzwFg1guoL",
-            "feePercent": 20,
-            "uptimePercent": 99.97,
-            "connected": true,
-            "weight": "220000000000000000",
-            "selfBond": "20000000000000000",
-            "delegatedWeight": "200000000000000000",
-            "delegatorCount": 1
-          },
-          {
-            "nodeId": "NodeID-5akjQVNKt8uEqWGyUoszCrKFWFVSegVN1",
-            "feePercent": 20,
-            "uptimePercent": 99.9987,
-            "connected": true,
-            "weight": "220706772430000000",
-            "selfBond": "20000000000000000",
-            "delegatedWeight": "200706772430000000",
-            "delegatorCount": 4
-          },
-          {
-            "nodeId": "NodeID-Foimk2gQaUs4DD3K6Jan8x8kSonGxzT9P",
-            "feePercent": 20,
-            "uptimePercent": 99.9914,
-            "connected": true,
-            "weight": "220000000000000000",
-            "selfBond": "20000000000000000",
-            "delegatedWeight": "200000000000000000",
-            "delegatorCount": 1
-          },
-          {
-            "nodeId": "NodeID-97tdK5LmgQHcrud4n7BjserKwiDa2QPFY",
-            "feePercent": 20,
-            "uptimePercent": 99.9981,
-            "connected": true,
-            "weight": "220390000000000000",
-            "selfBond": "20000000000000000",
-            "delegatedWeight": "200390000000000000",
-            "delegatorCount": 2
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-07-24T10:18:50.063Z",
-          "lastSubmittedEpoch": 446,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
         "updatedAt": null,
@@ -696,93 +408,6 @@
           "lastSubmittedEpoch": 438,
           "epochsSinceSubmit": 8,
           "epochsUntilRevoke": 9,
-          "revokeAfterEpochs": 17
-        },
-        "updatedAt": null,
-        "attestedAt": null
-      }
-    },
-    {
-      "chainId": 14,
-      "name": "0xfc936989b5bca0bdea6b0f4a184044eb720d86a5",
-      "description": "",
-      "url": "",
-      "address": "0xFC936989b5BCA0bdea6B0f4A184044eb720D86A5",
-      "logoURI": "https://flareregistry.com/logo-placeholder.png",
-      "listed": false,
-      "flareregistry": {
-        "verified": false,
-        "registered": true,
-        "managementGroup": false,
-        "qualified": true,
-        "network": "flare",
-        "feePercent": 20,
-        "votePower": "651000000000000000000",
-        "votePowerCapped": "127854509999999992987648",
-        "feedCount": 62,
-        "activeSince": "2026-10",
-        "lastEpoch": 446,
-        "delegatorRewardLastEpoch": "0",
-        "feeRewardLastEpoch": "0",
-        "entity": {
-          "identity": "0xF874e8a9E95d70D3Eba6C7c88e5Df9E0420526Bb",
-          "submit": "0x5360Cc1D0E82bD5c1053E926E5EeF21ec219F589",
-          "submitSignatures": "0xCe37C2e367B057ba1243F88ebf91Be744901f5dD",
-          "signingPolicy": "0xDA774f67badeC57ABa10dc0eBB76051ca70b7Fc5",
-          "delegation": "0xFC936989b5BCA0bdea6B0f4A184044eb720D86A5"
-        },
-        "validators": [
-          {
-            "nodeId": "NodeID-PvoESzorptfvdheBzTN273YuMatKuJgVn",
-            "feePercent": 20,
-            "uptimePercent": 2.8324,
-            "connected": false,
-            "weight": "12975000000000000",
-            "selfBond": "12975000000000000",
-            "delegatedWeight": "0",
-            "delegatorCount": 0
-          },
-          {
-            "nodeId": "NodeID-DwsTFgCHxtg1FB7Uo7b9CVyVY9g2JRvTj",
-            "feePercent": null,
-            "uptimePercent": null,
-            "connected": false,
-            "weight": null,
-            "selfBond": null,
-            "delegatedWeight": null,
-            "delegatorCount": null
-          },
-          {
-            "nodeId": "NodeID-Dgxq3z2yWZK9KmSr3DtwU7iTCcp3TaQXc",
-            "feePercent": null,
-            "uptimePercent": null,
-            "connected": false,
-            "weight": null,
-            "selfBond": null,
-            "delegatedWeight": null,
-            "delegatorCount": null
-          },
-          {
-            "nodeId": "NodeID-EFrkDEDR5e1BKWZBxsf3ucrhX9SFs16Cd",
-            "feePercent": null,
-            "uptimePercent": null,
-            "connected": false,
-            "weight": null,
-            "selfBond": null,
-            "delegatedWeight": null,
-            "delegatorCount": null
-          }
-        ],
-        "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
-        },
-        "qualification": {
-          "qualifiedSince": "2026-11-02T17:18:44.749Z",
-          "lastSubmittedEpoch": 446,
-          "epochsSinceSubmit": 0,
-          "epochsUntilRevoke": 17,
           "revokeAfterEpochs": 17
         },
         "updatedAt": null,
@@ -1696,7 +1321,7 @@
       "description": "Secure validator infrastructure for growing networks",
       "url": "https://blocknth.com",
       "address": "0xa2c403ea9D293308821aA4ddB377C8d3d9483a89",
-      "logoURI": "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/assets/0xa2c403ea9D293308821aA4ddB377C8d3d9483a89.png",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xa2c403ea9D293308821aA4ddB377C8d3d9483a89.png",
       "listed": false,
       "flareregistry": {
         "verified": false,
@@ -4211,6 +3836,93 @@
     },
     {
       "chainId": 14,
+      "name": "Griffwn",
+      "description": "Trusted validator services built by experienced blockchain professionals. Securing the network with enterprise-grade reliability.",
+      "url": "https://www.griffwn.tech",
+      "address": "0xe35800fe5785F60C216Bd9E667f106a42dC2C042",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xe35800fe5785F60C216Bd9E667f106a42dC2C042.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "127150735189074170910607054",
+        "votePowerCapped": "127146868853577782912876544",
+        "feedCount": 62,
+        "activeSince": "2026-06",
+        "lastEpoch": 446,
+        "delegatorRewardLastEpoch": "11578802296683815424123",
+        "feeRewardLastEpoch": "103773152596262626612949",
+        "entity": {
+          "identity": "0x802c64FCD19D8DBA98Ae96302C0C9fAa16952Cd5",
+          "submit": "0x6e6Bca42a3A82AdaD355703Abc201A6619AD0a58",
+          "submitSignatures": "0xf889004a86Cf0B8389CFF01f2d69072b5f88BBBE",
+          "signingPolicy": "0x14cF47eA046930A64e71cf2Ffa79Aef16aA911b0",
+          "delegation": "0xe35800fe5785F60C216Bd9E667f106a42dC2C042"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-LbGaxB3u2JbUSCk4SKH7yZrFzwFg1guoL",
+            "feePercent": 20,
+            "uptimePercent": 99.97,
+            "connected": true,
+            "weight": "220000000000000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "200000000000000000",
+            "delegatorCount": 1
+          },
+          {
+            "nodeId": "NodeID-5akjQVNKt8uEqWGyUoszCrKFWFVSegVN1",
+            "feePercent": 20,
+            "uptimePercent": 99.9987,
+            "connected": true,
+            "weight": "220706772430000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "200706772430000000",
+            "delegatorCount": 4
+          },
+          {
+            "nodeId": "NodeID-Foimk2gQaUs4DD3K6Jan8x8kSonGxzT9P",
+            "feePercent": 20,
+            "uptimePercent": 99.9914,
+            "connected": true,
+            "weight": "220000000000000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "200000000000000000",
+            "delegatorCount": 1
+          },
+          {
+            "nodeId": "NodeID-97tdK5LmgQHcrud4n7BjserKwiDa2QPFY",
+            "feePercent": 20,
+            "uptimePercent": 99.9981,
+            "connected": true,
+            "weight": "220390000000000000",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "200390000000000000",
+            "delegatorCount": 2
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-07-24T10:18:50.063Z",
+          "lastSubmittedEpoch": 446,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        },
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
       "name": "HEWG",
       "description": "HEWG strikes to provide best FTSO price data.",
       "url": "https://hewg.org",
@@ -5732,6 +5444,93 @@
     },
     {
       "chainId": 14,
+      "name": "Radroot",
+      "description": "Independent Flare data provider.",
+      "url": "https://radroot.org",
+      "address": "0xFC936989b5BCA0bdea6B0f4A184044eb720D86A5",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xFC936989b5BCA0bdea6B0f4A184044eb720D86A5.png",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "651000000000000000000",
+        "votePowerCapped": "127854509999999992987648",
+        "feedCount": 62,
+        "activeSince": "2026-10",
+        "lastEpoch": 446,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0xF874e8a9E95d70D3Eba6C7c88e5Df9E0420526Bb",
+          "submit": "0x5360Cc1D0E82bD5c1053E926E5EeF21ec219F589",
+          "submitSignatures": "0xCe37C2e367B057ba1243F88ebf91Be744901f5dD",
+          "signingPolicy": "0xDA774f67badeC57ABa10dc0eBB76051ca70b7Fc5",
+          "delegation": "0xFC936989b5BCA0bdea6B0f4A184044eb720D86A5"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-PvoESzorptfvdheBzTN273YuMatKuJgVn",
+            "feePercent": 20,
+            "uptimePercent": 2.8324,
+            "connected": false,
+            "weight": "12975000000000000",
+            "selfBond": "12975000000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          },
+          {
+            "nodeId": "NodeID-DwsTFgCHxtg1FB7Uo7b9CVyVY9g2JRvTj",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          },
+          {
+            "nodeId": "NodeID-Dgxq3z2yWZK9KmSr3DtwU7iTCcp3TaQXc",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          },
+          {
+            "nodeId": "NodeID-EFrkDEDR5e1BKWZBxsf3ucrhX9SFs16Cd",
+            "feePercent": null,
+            "uptimePercent": null,
+            "connected": false,
+            "weight": null,
+            "selfBond": null,
+            "delegatedWeight": null,
+            "delegatorCount": null
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-11-02T17:18:44.749Z",
+          "lastSubmittedEpoch": 446,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        },
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
       "name": "Resonance",
       "description": "Resonance delivers accurate, transparent oracle signals on Flare, while prioritizing durability and the network's long-term health over short-term wins.",
       "url": "https://resonanceoracle.xyz",
@@ -5788,6 +5587,93 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:18.611Z",
+          "lastSubmittedEpoch": 446,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        },
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Rotko Networks",
+      "description": "Rotko Networks operates bare-metal infrastructure for Flare, running FTSO price feeds, Flare Data Connector attestations and validator nodes from its own network.",
+      "url": "https://rotko.net",
+      "address": "0x7e9bc5C2d12711bAB79e93eb5a6e6c6D9A084f8C",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x7e9bc5C2d12711bAB79e93eb5a6e6c6D9A084f8C.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "17063534143491909752230067",
+        "votePowerCapped": "17059667807995528067678208",
+        "feedCount": 62,
+        "activeSince": "2026-06",
+        "lastEpoch": 446,
+        "delegatorRewardLastEpoch": "1373494037205267996524",
+        "feeRewardLastEpoch": "100957165997204860849464",
+        "entity": {
+          "identity": "0x7e74D30eF4dd811830118645633a9471f6cc63D3",
+          "submit": "0x68A8270ca20Ce92b1870554e2c3E58736890Efb6",
+          "submitSignatures": "0xB56dEefA9e2Db7b972445275973E59F30D392Df5",
+          "signingPolicy": "0xa2798CD3bbD243039AD012BA896d4fBF35536956",
+          "delegation": "0x7e9bc5C2d12711bAB79e93eb5a6e6c6D9A084f8C"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-436aEkcwxBo9Z5Ud9Rr7mWEgHnjDu78NR",
+            "feePercent": 20,
+            "uptimePercent": 99.9963,
+            "connected": true,
+            "weight": "249999999939057210",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "229999999939057210",
+            "delegatorCount": 24
+          },
+          {
+            "nodeId": "NodeID-LwpTuHwv3BdGhT1y7RcPY1t4rx494uExo",
+            "feePercent": 20,
+            "uptimePercent": 99.2059,
+            "connected": true,
+            "weight": "249999999717488050",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "229999999717488050",
+            "delegatorCount": 62
+          },
+          {
+            "nodeId": "NodeID-QK6w1Ryp8kfgPBYSyNgHbRTjEhYfLkyBE",
+            "feePercent": 20,
+            "uptimePercent": 98.7213,
+            "connected": true,
+            "weight": "259999999841908650",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "239999999841908650",
+            "delegatorCount": 59
+          },
+          {
+            "nodeId": "NodeID-C3cwgDrgNHRCpqd7GGBZ6qhcBFNmKh3a3",
+            "feePercent": 20,
+            "uptimePercent": 99.8982,
+            "connected": true,
+            "weight": "249999999717231650",
+            "selfBond": "20000000000000000",
+            "delegatedWeight": "229999999717231650",
+            "delegatorCount": 44
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-07-10T10:18:14.105Z",
           "lastSubmittedEpoch": 446,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -6113,6 +5999,63 @@
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.295Z",
+          "lastSubmittedEpoch": 446,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        },
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "Sparky",
+      "description": "Sparky is an independent Flare infrastructure operator, providing enterprise-grade validator and data-feed infrastructure.",
+      "url": "https://sparky.capital",
+      "address": "0x59187c1f521FbaCc0236e74Db052EcFb17d9A845",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x59187c1f521FbaCc0236e74Db052EcFb17d9A845.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "13787370389717689895168609",
+        "votePowerCapped": "13776690424442020480155648",
+        "feedCount": 62,
+        "activeSince": "2026-02",
+        "lastEpoch": 446,
+        "delegatorRewardLastEpoch": "2199377191993502020248",
+        "feeRewardLastEpoch": "10511219772957839511412",
+        "entity": {
+          "identity": "0x5dF7D653aB5F80560B1494D17F6DaeF7Dee5f7BE",
+          "submit": "0x92A74E5C5A4c42dfc6B531244A29c68b7da57196",
+          "submitSignatures": "0xe97C990a1FC4f10d6147260B70aB8E886c72EEC3",
+          "signingPolicy": "0x70509021b5fAf413492cBa08F37e81da3a4b8729",
+          "delegation": "0x59187c1f521FbaCc0236e74Db052EcFb17d9A845"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-HHL3A3jMLbcKWKBP91ApQpuuKkqD9VguZ",
+            "feePercent": 20,
+            "uptimePercent": 99.9632,
+            "connected": true,
+            "weight": "59999999626017387",
+            "selfBond": "4000000000000000",
+            "delegatedWeight": "55999999626017387",
+            "delegatorCount": 32
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:19.478Z",
           "lastSubmittedEpoch": 446,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -6823,6 +6766,63 @@
           "lastSubmittedEpoch": 446,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        },
+        "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "VirelithX",
+      "description": "Enterprise-grade validator and oracle infrastructure for the Flare ecosystem, delivering resilient, secure and highly available decentralized data services through transparent operations and long-term reliability.",
+      "url": "https://virelithx.com",
+      "address": "0x26E135eFD09b6756F5A847be991c8305611A05f1",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x26E135eFD09b6756F5A847be991c8305611A05f1.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": false,
+        "qualified": true,
+        "network": "flare",
+        "feePercent": 20,
+        "votePower": "200000000000000000000",
+        "votePowerCapped": "200000000000000000000",
+        "feedCount": 62,
+        "activeSince": "2026-07",
+        "lastEpoch": 442,
+        "delegatorRewardLastEpoch": "0",
+        "feeRewardLastEpoch": "0",
+        "entity": {
+          "identity": "0x7b7CEA81627B1fd3ae008b865FF28Af382660950",
+          "submit": "0xa28C24c921A86761ef4FfDb2cea5C8a8dA57Db6C",
+          "submitSignatures": "0x28503B12622f92891266AD7D40a6D5590E8e3bA9",
+          "signingPolicy": "0x5e93bCCEeE1722c7E9A358619c5106aCD840579C",
+          "delegation": "0x26E135eFD09b6756F5A847be991c8305611A05f1"
+        },
+        "validators": [
+          {
+            "nodeId": "NodeID-DsauN2ztCZWaVwcnf3REjj2Uqas7Gfdz6",
+            "feePercent": 20,
+            "uptimePercent": 64.1884,
+            "connected": false,
+            "weight": "1000000000000000",
+            "selfBond": "1000000000000000",
+            "delegatedWeight": "0",
+            "delegatorCount": 0
+          }
+        ],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": "2026-08-10T16:18:24.348Z",
+          "lastSubmittedEpoch": 442,
+          "epochsSinceSubmit": 4,
+          "epochsUntilRevoke": 13,
           "revokeAfterEpochs": 17
         },
         "updatedAt": null,
