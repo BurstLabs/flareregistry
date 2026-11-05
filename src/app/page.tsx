@@ -91,7 +91,9 @@ export default async function Home({
     }
   }
   const all = everyProvider.filter((p) =>
-    p.addresses.some((a) => a.verified || onchainAddrs.has(a.address.toLowerCase()))
+    p.addresses.some(
+      (a) => a.verified || a.entityRegistered || onchainAddrs.has(a.address.toLowerCase())
+    )
   );
 
   const latched = await latchedQualifiedByAddresses(
