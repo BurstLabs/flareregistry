@@ -2,7 +2,11 @@ import type { ConductDirectoryView } from "@/lib/governance";
 import { prisma } from "@/lib/db";
 import { getChain } from "@/lib/chains";
 import { metricsForProviders, formatWeiCompact } from "@/lib/metrics";
-import { qualifyProviders, latchedQualifiedByAddresses } from "@/lib/qualification";
+import {
+  qualifyProviders,
+  latchedQualifiedByAddresses,
+  PURGE_AFTER_EPOCHS,
+} from "@/lib/qualification";
 import {
   isHeldNewProvider,
   isHeldNewClaim,
@@ -55,16 +59,24 @@ export default async function Home({
   // What this does exclude is the thirty-six rows seeded from the legacy provider list in June for
   // operators we have never found on-chain on either network (SAKURA and the like). Without the
   // filter they reappear here, which is the bug the old archive flag was papering over.
-  const onchainAddrs = new Set<string>();
-  for (const e of await prisma.providerOnchain.findMany({
+  const onchainEntities = await prisma.providerOnchain.findMany({
     select: {
+      network: true,
+      lastEpochSeen: true,
       voter: true,
       delegationAddress: true,
       submitAddress: true,
       submitSignaturesAddress: true,
       signingPolicyAddress: true,
     },
-  })) {
+  });
+  const onchainAddrs = new Set<string>();
+  const entityByAddr = new Map<string, (typeof onchainEntities)[number]>();
+  const latestEpochByNetwork = new Map<string, number>();
+  for (const e of onchainEntities) {
+    if (e.lastEpochSeen > (latestEpochByNetwork.get(e.network) ?? -1)) {
+      latestEpochByNetwork.set(e.network, e.lastEpochSeen);
+    }
     for (const a of [
       e.voter,
       e.delegationAddress,
@@ -72,7 +84,10 @@ export default async function Home({
       e.submitSignaturesAddress,
       e.signingPolicyAddress,
     ]) {
-      if (a) onchainAddrs.add(a.toLowerCase());
+      if (a) {
+        onchainAddrs.add(a.toLowerCase());
+        entityByAddr.set(a.toLowerCase(), e);
+      }
     }
   }
   const all = everyProvider.filter((p) =>
@@ -145,7 +160,22 @@ export default async function Home({
   const hasAnyPass = (id: string) =>
     (qualifications.get(id)?.checks ?? []).some((c) => c.status === "pass");
 
-  const listable = all.filter((p) => hasAnyPass(p.id));
+  // DEPARTED, the same judgement the feed publishes as flareregistry.status: not qualified and
+  // silent for PURGE_AFTER_EPOCHS on every network we match it on.
+  const isDeparted = (p: (typeof all)[number]) => {
+    if (isQualified(p.id)) return false;
+    const silences = p.addresses
+      .map((a) => entityByAddr.get(a.address.toLowerCase()))
+      .filter((e): e is NonNullable<typeof e> => !!e)
+      .map((e) => (latestEpochByNetwork.get(e.network) ?? e.lastEpochSeen) - e.lastEpochSeen);
+    return silences.length > 0 && silences.every((g) => g >= PURGE_AFTER_EPOCHS);
+  };
+
+  // Hide a row only when there is nothing we can say about it: no qualification check passes AND
+  // we cannot even call it departed. A departed provider used to be hidden here too, by a filter
+  // written when it was also archived out of the feed, which meant the directory kept a provider
+  // invisible for the one state we can describe precisely.
+  const listable = all.filter((p) => hasAnyPass(p.id) || isDeparted(p));
   // An "onchain" provider was seeded from the chain because it is registered and submitting, but
   // nothing publishes a name, a site or a logo for it and nobody has claimed it. It is held out of
   // the default view for that reason and not because of anything about its performance: it may well
@@ -258,6 +288,7 @@ export default async function Home({
       managementGroup: mgByProvider.get(p.id) ?? false,
       verified: p.source === "submitted",
       onchainOnly: isOnchainOnly(p),
+      departed: isDeparted(p),
       roles: m?.roles ?? [],
       // WHY THERE IS NO FIGURE, when there is none. An empty space meant Songbird, or too little
       // history, or departed, and a reader could not tell which.
