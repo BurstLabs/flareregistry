@@ -96,6 +96,19 @@ git -C flareregistry checkout <commit-sha>`}</code>
       <h2 className="mb-3 mt-8 text-xl font-semibold">{t("api.lifecycleHeading")}</h2>
       <p className="mb-3 text-sm text-muted">{t("api.lifecycleBody")}</p>
 
+      <p className="mb-6 text-sm text-muted">
+        {t("api.consumersGuide")}{" "}
+        <a
+          className="text-beacon hover:underline"
+          href="https://github.com/BurstLabs/flareregistry/blob/main/CONSUMERS.md"
+          target="_blank"
+          rel="noreferrer"
+        >
+          CONSUMERS.md
+        </a>
+        .
+      </p>
+
       <h2 className="mb-3 mt-8 text-xl font-semibold">{t("api.schemaHeading")}</h2>
       <p className="mb-3 text-sm text-muted">
         {t("api.baseFields")} <code>chainId</code>, <code>name</code>,{" "}
