@@ -1,4 +1,4 @@
-// Seed the registry from an external Bifrost-format provider list (the TowoLabs list).
+// Seed the registry from Bifrost Wallet's provider catalog (bifrostwallet/assets).
 //
 // Each source entry is { chainId, name, description, url, address, logoURI, listed? }. The
 // same provider appears once per chain it operates on, so we group by (name + url) into one
@@ -12,28 +12,55 @@
 // but never downgrades an address the owner has already verified.
 //
 // Usage:
-//   FEED_URL=<url> node scripts/import-towolabs.mjs        # fetch from URL
-//   FEED_FILE=<path> node scripts/import-towolabs.mjs       # read a local file
+//   node scripts/import-bifrost.mjs                        # fetch the live catalog
+//   FEED_FILE=<path> node scripts/import-bifrost.mjs       # read a local Bifrost-format file
 
 import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "node:fs";
 import { getAddress } from "viem";
 
-const DEFAULT_FEED_URL =
-  "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/next/bifrost-wallet.providerlist.json";
+// One aggregate per network; there is no global all.json. This used to read
+// TowoLabs/ftso-signal-providers, archived 2026-11-05, whose raw URL still answers 200 with the
+// file frozen on that date.
+const CATALOG_URL = (chainId) =>
+  `https://raw.githubusercontent.com/bifrostwallet/assets/main/data/providers/eip155-${chainId}/all.json`;
+const CATALOG_CHAINS = [14, 19];
 
 const SUPPORTED_CHAINS = new Set([14, 19, 16, 114]);
 
 const prisma = new PrismaClient();
 
 async function loadSource() {
+  // FEED_FILE still reads the old single-file shape, so an archived snapshot can be replayed.
   if (process.env.FEED_FILE) {
     return JSON.parse(readFileSync(process.env.FEED_FILE, "utf8"));
   }
-  const url = process.env.FEED_URL || DEFAULT_FEED_URL;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`fetch ${url} -> ${res.status}`);
-  return res.json();
+  // Normalise the per-network catalog into the single-list shape the rest of this script expects.
+  // Keyed on the delegation address, which is what the old list published and what our
+  // ProviderAddress rows hold, so re-running against the new source matches existing rows instead
+  // of creating a second set.
+  const providers = [];
+  for (const chainId of CATALOG_CHAINS) {
+    const url = CATALOG_URL(chainId);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`fetch ${url} -> ${res.status}`);
+    const list = await res.json();
+    if (!Array.isArray(list)) throw new Error(`${url}: expected an array`);
+    for (const e of list) {
+      const address = e.delegationAddress || e.identityAddress;
+      if (!address) continue;
+      providers.push({
+        chainId,
+        name: e.name ?? "",
+        description: e.description ?? "",
+        url: e.websiteURL ?? "",
+        address,
+        logoURI: e.logoURL ?? undefined,
+        listed: e.listed ?? false,
+      });
+    }
+  }
+  return { providers };
 }
 
 function groupKey(p) {

@@ -22,21 +22,33 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const APPLY = process.argv.includes("--apply");
-const UPSTREAM =
-  process.env.TOWOLABS_LIST_URL ??
-  "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/bifrost-wallet.providerlist.json";
+// Bifrost Wallet's catalog, one aggregate per network. Replaced TowoLabs/ftso-signal-providers,
+// archived 2026-11-05 with its raw URL still answering 200 and frozen on that date.
+const CATALOG_URL = (chainId) =>
+  `https://raw.githubusercontent.com/bifrostwallet/assets/main/data/providers/eip155-${chainId}/all.json`;
+const CATALOG_CHAINS = [14, 19];
 
 const norm = (s) => (s ?? "").replace(/\s+/g, " ").trim();
 const CHAIN = { 14: "Flare", 19: "Songbird" };
 
 async function main() {
-  const res = await fetch(UPSTREAM);
-  if (!res.ok) throw new Error(`upstream list: HTTP ${res.status}`);
-  const upstream = (await res.json()).providers ?? [];
-  // Keyed by chain AND address: the same address is listed on both networks with different text,
-  // which is the entire reason this script exists.
+  // Keyed by chain AND address: the same operator is listed on both networks with different text,
+  // which is the entire reason this script exists. The catalog is one file per network, so the
+  // chain comes from which file an entry was in rather than from a field.
   const up = new Map();
-  for (const p of upstream) up.set(`${p.chainId}:${p.address.toLowerCase()}`, norm(p.description));
+  for (const chainId of CATALOG_CHAINS) {
+    const url = CATALOG_URL(chainId);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`upstream catalog ${chainId}: HTTP ${res.status}`);
+    const list = await res.json();
+    if (!Array.isArray(list)) throw new Error(`${url}: expected an array`);
+    for (const e of list) {
+      // Both role addresses, so a listing of ours keyed on either one finds the upstream text.
+      for (const a of [e.delegationAddress, e.identityAddress]) {
+        if (a) up.set(`${chainId}:${a.toLowerCase()}`, norm(e.description));
+      }
+    }
+  }
 
   const providers = await prisma.provider.findMany({
     where: { archivedAt: null },
