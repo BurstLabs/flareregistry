@@ -8,9 +8,7 @@
 
 import { createPublicClient, getAddress, http, parseAbi, parseAbiItem, type Address } from "viem";
 import { prisma } from "./db";
-import { isClean } from "./content-filter";
 import { resolveLogo } from "./feed";
-import { TOWOLABS_LIST_URL } from "./import-scan";
 import { REVOKE_AFTER_EPOCHS } from "./qualification";
 import { MIN_VOTE_POWER, YIELD_WINDOW_EPOCHS, rankYield } from "./yield-rank";
 import {
@@ -177,32 +175,19 @@ async function registryListings(): Promise<Map<string, Coston2Listing>> {
   return out;
 }
 
-/** The legacy public provider list's chain 114 entries, by lowercase address. Best effort. */
-async function upstreamListings(): Promise<Map<string, Coston2Listing>> {
-  const out = new Map<string, Coston2Listing>();
-  try {
-    const res = await fetch(TOWOLABS_LIST_URL, { cache: "no-store", signal: AbortSignal.timeout(8_000) });
-    if (!res.ok) return out;
-    const d = (await res.json()) as { providers?: { chainId?: number; name?: string; description?: string; url?: string; address?: string; logoURI?: string }[] };
-    for (const p of d.providers ?? []) {
-      if (p.chainId !== COSTON2_CHAIN_ID || !p.address || !p.name) continue;
-      const name = p.name.trim().slice(0, 80);
-      if (!name || !isClean(name)) continue;
-      const description = (p.description ?? "").trim().slice(0, 500);
-      out.set(p.address.toLowerCase(), {
-        name,
-        description: isClean(description) ? description : "",
-        url: /^https?:\/\//i.test(p.url ?? "") ? p.url! : "",
-        logoURI: /^https:\/\//i.test(p.logoURI ?? "") ? p.logoURI! : "",
-        verified: false,
-        attestedAt: null,
-      });
-    }
-  } catch (e) {
-    console.error("coston2 feed: legacy list unavailable:", e instanceof Error ? e.message : e);
-  }
-  return out;
-}
+/**
+ * NO UPSTREAM LISTINGS FOR COSTON2, and there never were any.
+ *
+ * This used to fetch the legacy public provider list and pick out its chain 114 entries. That list
+ * has only ever carried Flare (147) and Songbird (115) entries, so the lookup downloaded 370 KB on
+ * every rebuild and always returned nothing. Bifrost's replacement catalog has no eip155-114
+ * directory either (404), so there is no source to repoint it at: a testnet is not listed by a
+ * wallet. Coston2 names come from our own registry, via registryListings above.
+ *
+ * The assembler keeps taking the map, because an upstream source for a network is a reasonable
+ * thing to feed it; this one is simply empty.
+ */
+const upstreamListings = async (): Promise<Map<string, Coston2Listing>> => new Map();
 
 async function build(): Promise<Coston2Feeds> {
   const [snapshot, registry, upstream] = await Promise.all([readSnapshot(), registryListings(), upstreamListings()]);

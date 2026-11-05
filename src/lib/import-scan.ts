@@ -1,6 +1,5 @@
-// Scan an external legacy provider list (the TowoLabs ftso-signal-providers list that wallets
-// historically consumed) for entries NOT yet in our registry, and stage them as ImportCandidates for
-// admin review. Approving a candidate creates an unclaimed source="imported" Provider that then
+// Scan Bifrost Wallet's provider catalog for entries NOT yet in our registry, and stage them as
+// ImportCandidates for admin review. Approving a candidate creates an unclaimed source="imported" Provider that then
 // follows the normal path (it lists only once it qualifies on-chain or the owner claims it).
 //
 // Design notes:
@@ -10,20 +9,28 @@
 // - A dismissed candidate is kept as a tombstone so it is not re-surfaced on the next scan.
 // - Candidates whose address later appears in our registry are auto-marked "absorbed".
 import { prisma } from "./db";
-import { isSupportedChain, getChainByKey } from "./chains";
+import { CHAINS, isSupportedChain, getChainByKey } from "./chains";
 import { isClean } from "./content-filter";
 
-export const TOWOLABS_LIST_URL =
-  process.env.TOWOLABS_LIST_URL ??
-  "https://raw.githubusercontent.com/TowoLabs/ftso-signal-providers/master/bifrost-wallet.providerlist.json";
+// Bifrost Wallet's catalog, one aggregate per network (there is no global all.json).
+//
+// This replaced TowoLabs/ftso-signal-providers, which Bifrost ARCHIVED on 2026-11-05 after merging
+// fourteen of its nineteen open pull requests. The old raw URL still answers 200 and always will,
+// frozen at the 5 November file, which is exactly why this had to move: a dead source that keeps
+// returning a healthy 200 never fails, it just stops being true, and nothing here would have
+// noticed. The scan would have gone on reporting "no new additions" forever.
+export const BIFROST_LIST_URL = (chainId: number) =>
+  process.env.BIFROST_LIST_URL_TEMPLATE?.replace("{chainId}", String(chainId)) ??
+  `https://raw.githubusercontent.com/bifrostwallet/assets/main/data/providers/eip155-${chainId}/all.json`;
 
+/** One entry of a Bifrost per-network aggregate, reduced to the fields we import. */
 interface UpstreamEntry {
-  chainId: number;
-  name: string;
-  description: string;
-  url: string;
-  address: string;
-  logoURI?: string;
+  name?: string;
+  description?: string;
+  websiteURL?: string;
+  logoURL?: string;
+  identityAddress?: string;
+  delegationAddress?: string;
 }
 
 export interface ScanResult {
@@ -83,18 +90,24 @@ function clamp(s: unknown, max: number): string {
  * a schedule and by hand. Never throws on a bad upstream response - returns { error } instead so a
  * cron logs it rather than crashing.
  */
-export async function scanTowolabsImports(): Promise<ScanResult> {
+export async function scanBifrostImports(): Promise<ScanResult> {
   const result: ScanResult = { fetched: 0, newToUs: 0, staged: 0, refreshed: 0, absorbed: 0 };
 
-  let list: { providers?: UpstreamEntry[] };
-  try {
-    const res = await fetch(TOWOLABS_LIST_URL, { cache: "no-store" });
-    if (!res.ok) return { ...result, error: `upstream HTTP ${res.status}` };
-    list = await res.json();
-  } catch (e) {
-    return { ...result, error: `fetch failed: ${(e as Error).message}` };
+  // One file per network. A network that fails to read ABORTS the run rather than contributing
+  // nothing: an empty half is indistinguishable from "that network has no new providers", and the
+  // scan would report a clean result while having looked at half the catalog.
+  const providers: { chainId: number; entry: UpstreamEntry }[] = [];
+  for (const chain of CHAINS) {
+    try {
+      const res = await fetch(BIFROST_LIST_URL(chain.chainId), { cache: "no-store" });
+      if (!res.ok) return { ...result, error: `upstream ${chain.key}: HTTP ${res.status}` };
+      const list = await res.json();
+      if (!Array.isArray(list)) return { ...result, error: `upstream ${chain.key}: not an array` };
+      for (const entry of list) providers.push({ chainId: chain.chainId, entry });
+    } catch (e) {
+      return { ...result, error: `fetch ${chain.key} failed: ${(e as Error).message}` };
+    }
   }
-  const providers = Array.isArray(list.providers) ? list.providers : [];
   result.fetched = providers.length;
 
   // Match is by address alone (not chain-scoped): the five role addresses identify one operator, and
@@ -108,22 +121,26 @@ export async function scanTowolabsImports(): Promise<ScanResult> {
   const now = new Date();
   const seenThisRun = new Set<string>();
 
-  for (const p of providers) {
-    if (!p || !isSupportedChain(p.chainId) || typeof p.address !== "string") continue;
-    const addr = p.address.toLowerCase();
+  for (const { chainId, entry } of providers) {
+    if (!entry || !isSupportedChain(chainId)) continue;
+    // The DELEGATION address, which is what the old list published and what our own listing rows
+    // are keyed on, so a candidate staged before the source moved keeps its identity instead of
+    // being staged a second time under a different role address. Falls back to the identity
+    // address, which the new catalog keys its directories on and always carries.
+    const addr = (entry.delegationAddress || entry.identityAddress || "").toLowerCase();
     if (!/^0x[0-9a-f]{40}$/.test(addr)) continue;
-    const key = `${p.chainId}:${addr}`;
+    const key = `${chainId}:${addr}`;
     seenThisRun.add(key);
 
     // Skip content that fails our filter (defensive - upstream is trusted, but names feed our UI).
-    const name = clamp(p.name, 80);
+    const name = clamp(entry.name, 80);
     if (!name || !isClean(name)) continue;
 
     const snapshot = {
       name,
-      description: clamp(p.description, 600),
-      url: clamp(p.url, 200),
-      logoURI: typeof p.logoURI === "string" ? p.logoURI.slice(0, 300) : null,
+      description: clamp(entry.description, 600),
+      url: clamp(entry.websiteURL, 200),
+      logoURI: typeof entry.logoURL === "string" ? entry.logoURL.slice(0, 300) : null,
     };
 
     if (ourAddrs.has(addr)) {
@@ -144,7 +161,7 @@ export async function scanTowolabsImports(): Promise<ScanResult> {
     const c = candByKey.get(key);
     if (!c) {
       await prisma.importCandidate.create({
-        data: { source: "towolabs", chainId: p.chainId, address: addr, ...snapshot },
+        data: { source: "bifrost", chainId, address: addr, ...snapshot },
       });
       result.staged++;
     } else if (c.status === "pending") {
@@ -164,8 +181,8 @@ export async function scanTowolabsImports(): Promise<ScanResult> {
 /**
  * SWEEP THE CHAIN, not a list.
  *
- * scanTowolabsImports above can only ever surface providers that some other project already chose to
- * write down. That made the registry's real boundary "whoever is in the TowoLabs list", which is a
+ * scanBifrostImports above can only ever surface providers that some other project already chose to
+ * write down. That made the registry's real boundary "whoever Bifrost lists", which is a
  * narrower and less defensible set than "whoever is registered on Flare": at the time this was
  * written, thirteen currently-registered, actively-submitting, Qualified entities were invisible
  * here purely because no upstream list carried them. This site is run by an operator who also
@@ -228,7 +245,7 @@ export async function scanOnchainEntities(
     const meta = roles.map((r) => enrich.get(r)).find(Boolean);
     await prisma.importCandidate.create({
       data: {
-        source: meta ? "onchain+towolabs" : "onchain",
+        source: meta ? "onchain+bifrost" : "onchain",
         chainId: chain.chainId,
         address: addr,
         name: meta?.name ?? addr,
@@ -253,7 +270,7 @@ export async function scanOnchainEntities(
  * enrichment), then the chain sweep that decides coverage.
  */
 export async function scanImports(): Promise<ScanResult> {
-  const upstream = await scanTowolabsImports();
+  const upstream = await scanBifrostImports();
 
   // Re-read the upstream list from the candidates it just refreshed, keyed by address, so the chain
   // sweep can attach a name to an entity an upstream list describes under a different role address.
@@ -261,7 +278,7 @@ export async function scanImports(): Promise<ScanResult> {
     string,
     { name: string; description: string; url: string; logoURI: string | null }
   >();
-  for (const c of await prisma.importCandidate.findMany({ where: { source: "towolabs" } })) {
+  for (const c of await prisma.importCandidate.findMany({ where: { source: "bifrost" } })) {
     enrich.set(c.address.toLowerCase(), {
       name: c.name,
       description: c.description,

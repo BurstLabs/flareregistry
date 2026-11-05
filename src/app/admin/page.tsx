@@ -1570,10 +1570,10 @@ function GovernanceTab({ onChanged }: { onChanged: () => void }) {
 // eyeball each pending image and either approve it now (promote to live immediately) or reject it
 // (discard the upload). Without this, the only signal was a notification email with no matching action.
 // ---------- Consumers ("Powered by" showcase moderation) ----------
-// ---------- Imports (TowoLabs legacy list) ----------
-// The TowoLabs ftso-signal-providers list is the legacy PR-based provider list wallets historically
-// consumed. A daily scan (plus "Scan now" here) diffs it against our registry and stages entries we
-// don't have as pending candidates. Approving one creates an UNCLAIMED source="imported" provider: it
+// ---------- Imports (Bifrost Wallet catalog) ----------
+// Bifrost Wallet's catalog (bifrostwallet/assets) is the curated provider list wallets consume. It
+// replaced TowoLabs/ftso-signal-providers, archived 2026-11-05. A daily scan (plus "Scan now" here)
+// diffs it against our registry and stages entries we don't have as pending candidates. Approving one creates an UNCLAIMED source="imported" provider: it
 // appears in the feed only once it qualifies on-chain or the real owner claims it by signature.
 // Dismissing keeps a tombstone so it is not re-surfaced. It is not an assertion of ownership.
 function ImportsTab({ onChanged }: { onChanged: () => void }) {
@@ -1595,7 +1595,7 @@ function ImportsTab({ onChanged }: { onChanged: () => void }) {
 
   async function scan() {
     setBusy("scan");
-    setMsg("Scanning TowoLabs list…");
+    setMsg("Scanning Bifrost catalog…");
     try {
       const r = await fetch("/api/admin/import-candidates", {
         method: "POST",
@@ -1652,7 +1652,7 @@ function ImportsTab({ onChanged }: { onChanged: () => void }) {
     <div>
       <div className="mb-2 flex items-center justify-between gap-2 text-xs text-muted">
         <span className="font-semibold text-fg">
-          TowoLabs additions not yet in our registry ({pending.length} pending)
+          Bifrost catalog additions not yet in our registry ({pending.length} pending)
         </span>
         <div className="flex items-center gap-3">
           <span>{msg}</span>
@@ -1668,7 +1668,7 @@ function ImportsTab({ onChanged }: { onChanged: () => void }) {
       <Card>
         {pending.length === 0 ? (
           <p className="text-sm text-muted">
-            No new additions to review. Run a scan to check the TowoLabs list.
+            No new additions to review. Run a scan to check the Bifrost catalog.
           </p>
         ) : (
           <ul className="space-y-4">

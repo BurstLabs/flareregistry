@@ -7,7 +7,7 @@ import { requireInternalAuth } from "@/lib/internal-auth";
 // w.r.t. the feed (staging only - approving a candidate is a separate admin action). Called by a
 // daily cron. Secret-gated.
 //
-// Runs the FULL scan: the upstream TowoLabs list for metadata, then a sweep of the chain itself for
+// Runs the FULL scan: Bifrost Wallet's catalog for metadata, then a sweep of the chain itself for
 // coverage. The cron is the whole reason the chain sweep exists as more than a one-off backfill: if
 // this route kept calling the list-only scan, the registry would drift straight back to showing
 // whoever a third-party list happens to carry.
