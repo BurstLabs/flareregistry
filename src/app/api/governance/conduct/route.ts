@@ -136,9 +136,6 @@ export async function POST(req: NextRequest) {
     include: { addresses: true },
   });
   if (!provider) return NextResponse.json({ error: "provider not found" }, { status: 404 });
-  if (provider.archivedAt) {
-    return NextResponse.json({ error: "provider is archived" }, { status: 409 });
-  }
 
   const lowerAddrs = provider.addresses.map((a) => a.address.toLowerCase());
   const entity = await prisma.providerOnchain.findFirst({

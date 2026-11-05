@@ -67,7 +67,7 @@ async function main() {
 
   const nameless = (
     await prisma.provider.findMany({
-      where: { archivedAt: null, source: "onchain" },
+      where: { source: "onchain" },
       include: { addresses: true },
     })
   ).filter((p) => isAddressName(p.name));
@@ -115,7 +115,7 @@ async function main() {
   // The one existing import still hotlinking the archived repo; same risk, same fix.
   const hotlinked = (
     await prisma.provider.findMany({
-      where: { archivedAt: null, logoURI: { contains: "TowoLabs/ftso-signal-providers" } },
+      where: { logoURI: { contains: "TowoLabs/ftso-signal-providers" } },
       include: { addresses: true },
     })
   ).filter((p) => p.addresses.length);

@@ -130,8 +130,22 @@ const ref = main.providers.find((p) => p.flareregistry?.entity);
 const keys = (o) => Object.keys(o).sort().join();
 check("top-level keys match the main provider list", keys(feeds.providerList) === keys(main));
 check("entry keys match the main provider list", keys(list[0]) === keys(ref));
-const { governance: _g, ...refExtras } = ref.flareregistry;
-check("flareregistry keys match the main provider list", keys(list[0].flareregistry) === keys(refExtras));
+// The flareregistry block is checked against the INTERFACE in lib/feed, not against the committed
+// providerlist.json. That file is a published artifact that only gains a new field after a deploy
+// and a republish, so checking against it makes adding one field to both builders fail the build
+// of the change that adds it, for a drift that does not exist. The interface is the thing both
+// builders are supposed to agree with, and it is in the same commit.
+const extrasSrc = readFileSync(new URL("../src/lib/feed.ts", import.meta.url), "utf8");
+const extrasBody = extrasSrc.slice(
+  extrasSrc.indexOf("export interface FeedProviderExtras {"),
+  extrasSrc.indexOf("\nexport interface FeedProvider {")
+);
+// Top-level required fields only: one indent level, and `name?:` is optional (governance).
+const declared = [...extrasBody.matchAll(/^ {2}([A-Za-z][A-Za-z0-9]*)(\??):/gm)]
+  .filter(([, , opt]) => opt !== "?")
+  .map(([, name]) => name);
+check("FeedProviderExtras parsed", declared.length > 10);
+check("flareregistry keys match FeedProviderExtras", keys(list[0].flareregistry) === declared.slice().sort().join());
 check("entity keys match", keys(list[0].flareregistry.entity) === keys(ref.flareregistry.entity));
 check("qualification keys match", keys(list[0].flareregistry.qualification) === keys(ref.flareregistry.qualification));
 check("selfDeclared keys match", keys(list[0].flareregistry.selfDeclared) === keys(ref.flareregistry.selfDeclared));

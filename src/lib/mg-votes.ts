@@ -405,17 +405,18 @@ export async function resolveMembers(addresses: string[]): Promise<Map<string, M
 
   const select = {
     address: true,
-    provider: { select: { name: true, logoURI: true, logoPath: true, archivedAt: true } },
+    provider: { select: { name: true, logoURI: true, logoPath: true } },
   } as const;
-  type Row = { address: string; provider: { name: string; logoURI: string | null; logoPath: string | null; archivedAt: Date | null } };
+  type Row = { address: string; provider: { name: string; logoURI: string | null; logoPath: string | null } };
 
   const apply = (ref: MemberRef | undefined, r: Row) => {
-    // First listing wins, except that a LIVE listing always displaces an archived one.
+    // First listing wins. There is no longer an archived/live distinction to break the tie with:
+    // a departed provider keeps its listing and its page, and says so through the feed's status.
     if (!ref) return;
-    if (ref.name && !(ref.href === null && !r.provider.archivedAt)) return;
+    if (ref.name) return;
     ref.name = r.provider.name;
     ref.logoURI = r.provider.logoURI ?? r.provider.logoPath ?? null;
-    ref.href = r.provider.archivedAt ? null : r.address.toLowerCase();
+    ref.href = r.address.toLowerCase();
   };
 
   // PHASE 1, and it must come first. The member's own address is a listed address. Resolving this

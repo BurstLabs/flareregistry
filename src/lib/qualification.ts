@@ -547,103 +547,15 @@ export async function latchedRiskByAddresses(
 }
 
 // 3 months at 3.5-day epochs ~= 26 epochs. A provider not qualified for this long is purged.
-const PURGE_AFTER_EPOCHS = 26;
+// Reward epochs of silence after which a provider counts as departed. Exported because the feed
+// publishes the same judgement as flareregistry.status rather than removing the entry: a departed
+// provider stays in the list at listed:false, so the threshold has to be the same number in both
+// places or the feed and the status would disagree about the same provider.
+export const PURGE_AFTER_EPOCHS = 26;
 
-/**
- * Hard-DELETE providers that have not been qualified for ~3 months. A provider is purged when
- * it is NOT currently latched-qualified AND has had no on-chain submission for >= PURGE_AFTER_
- * EPOCHS epochs (or no on-chain match at all). This is irreversible; it logs every deletion.
- *
- * `dryRun` returns the candidates without deleting (use to preview before enabling on cron).
- */
-export async function purgeStaleProviders(opts?: { dryRun?: boolean }): Promise<{
-  // `deleted` is the archived set (name kept for caller compatibility); `restored` came back to life.
-  deleted: { id: string; name: string }[];
-  restored: { id: string; name: string }[];
-  dryRun: boolean;
-}> {
-  const dryRun = opts?.dryRun ?? false;
+// There is no purge. A provider that stops submitting is not removed from anything: it keeps its
+// listing, its page and its place in the feed, and the feed reports it as status "departed" once
+// it has been silent for PURGE_AFTER_EPOCHS. Removing it used to mean consumers had nothing at
+// that address, which is why Flare's Systems Explorer sourced the names of twenty-nine
+// still-registered entities from a provider list that was archived and can never be updated.
 
-  // Latest epoch per network, to measure the no-activity gap.
-  const entities = await prisma.providerOnchain.findMany();
-  const latestPerNetwork = new Map<string, number>();
-  for (const e of entities) {
-    const cur = latestPerNetwork.get(e.network) ?? 0;
-    if (e.lastEpochSeen > cur) latestPerNetwork.set(e.network, e.lastEpochSeen);
-  }
-  // Qualified entity addresses (never purge a currently-qualified provider).
-  const qStates = await prisma.qualificationState.findMany();
-  const stateByVoter = new Map(qStates.map((s) => [`${s.network}:${s.voter}`, s]));
-  const entityByAddr = new Map<string, (typeof entities)[number]>();
-  for (const e of entities)
-    for (const a of [
-      e.voter,
-      e.delegationAddress,
-      e.submitAddress,
-      e.submitSignaturesAddress,
-      e.signingPolicyAddress,
-    ])
-      if (a) entityByAddr.set(a.toLowerCase(), e);
-
-  const providers = await prisma.provider.findMany({
-    include: { addresses: true },
-  });
-
-  const toArchive: { id: string; name: string }[] = [];
-  const toRestore: { id: string; name: string }[] = [];
-  for (const p of providers) {
-    // A provider can match MULTIPLE entities (one per network). Collect all of them.
-    const matched = Array.from(
-      new Set(
-        p.addresses
-          .map((a) => entityByAddr.get(a.address.toLowerCase()))
-          .filter(Boolean) as (typeof entities)[number][]
-      )
-    );
-
-    // A provider with no on-chain match is likely an address-matching gap, not dead: never archive
-    // it. (If it is already archived for some reason, leave it as-is rather than guess.)
-    if (matched.length === 0) continue;
-
-    // Alive if qualified OR recently active on ANY matched entity/network. Archive only when ALL of
-    // its matched entities are unqualified AND lapsed for >= the purge window.
-    const aliveSomewhere = matched.some((entity) => {
-      const state = stateByVoter.get(`${entity.network}:${entity.voter}`);
-      if (state?.qualified) return true;
-      const latest = latestPerNetwork.get(entity.network) ?? entity.lastEpochSeen;
-      const last = state?.lastSubmittedEpoch ?? null;
-      const gap = last == null ? Infinity : latest - last;
-      return gap < PURGE_AFTER_EPOCHS;
-    });
-
-    if (!aliveSomewhere && !p.archivedAt) {
-      toArchive.push({ id: p.id, name: p.name });
-    } else if (aliveSomewhere && p.archivedAt) {
-      // A previously-archived provider that is active again: bring it back into the live feed.
-      toRestore.push({ id: p.id, name: p.name });
-    }
-  }
-
-  if (!dryRun) {
-    const now = new Date();
-    for (const d of toArchive) {
-      // Soft-delete (archive) rather than hard-delete: the record is kept for the audit endpoint and
-      // can be restored automatically if the provider returns on-chain.
-      console.warn(`[purge] archiving provider ${d.id} "${d.name}"`);
-      await prisma.provider.update({
-        where: { id: d.id },
-        data: { archivedAt: now, archivedReason: "Unqualified and lapsed beyond the purge window." },
-      });
-    }
-    for (const d of toRestore) {
-      console.warn(`[purge] restoring provider ${d.id} "${d.name}" (active again)`);
-      await prisma.provider.update({
-        where: { id: d.id },
-        data: { archivedAt: null, archivedReason: null },
-      });
-    }
-  }
-
-  // `deleted` kept as the field name for backward compatibility with callers; it now means archived.
-  return { deleted: toArchive, restored: toRestore, dryRun };
-}
