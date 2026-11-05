@@ -117,8 +117,10 @@ export interface FeedProvider {
   address: string; // checksummed, to match the standard provider list
   logoURI: string;
   listed: boolean;
-  // Optional, additive. Absent if the entry has no on-chain match and isn't verified.
-  flareregistry?: FeedProviderExtras;
+  // Present on every entry. It used to be omitted where there was no on-chain match and no
+  // verified owner, which left exactly the entries that most need explaining, the second-network
+  // address of a departed provider, with no way to say why they are unlisted.
+  flareregistry: FeedProviderExtras;
 }
 
 export interface ProviderList {
@@ -316,89 +318,87 @@ export async function buildProviderList(): Promise<ProviderList> {
               ? "held"
               : "listed";
 
-    // Emit extras if there's anything to report: on-chain match, verified owner, or qualified.
-    const extras: FeedProviderExtras | undefined =
-      entity || a.verified || qualified
+    // Emitted for every published entry. An entry we publish should always be able to say why it
+    // is or is not listed; on-chain fields are simply null where this network has no entity.
+    const extras: FeedProviderExtras = {
+      verified: a.verified,
+      registered: !!entity,
+      managementGroup,
+      qualified,
+      network: entity?.network ?? null,
+      feePercent: entity?.feeBips != null ? entity.feeBips / 100 : null,
+      votePower: entity?.wNatWeight ?? null,
+      // delegationWeightCapped, NOT wNatCappedWeight. Verified decisively against the chain:
+      // isqrt(S)*isqrt(isqrt(S)) with S = delegationWeightCapped + 5*stakingWeight reproduces
+      // VoterRegistry.getVoterRegistrationWeight for 97/97 Flare voters; the same computation with
+      // wNatCappedWeight reproduces 2/97. wNatCappedWeight comes from the lagging fsp-rewards
+      // ingest and is a different, staler quantity that merely looks plausible (26,542M FLR against
+      // the correct 24,443M). Publishing it here understated the cap for every consumer of this
+      // feed, and at least one third-party analysis was built on the wrong figure as a result.
+      votePowerCapped: entity?.delegationWeightCapped ?? entity?.wNatCappedWeight ?? null,
+      feedCount: entity?.feedCount ?? null,
+      activeSince: entity?.firstActivityAt
+        ? entity.firstActivityAt.toISOString().slice(0, 7)
+        : null,
+      lastEpoch: latest?.epochId ?? null,
+      delegatorRewardLastEpoch: latest?.delegatorReward ?? null,
+      feeRewardLastEpoch: latest?.feeReward ?? null,
+      entity: entity
         ? {
-            verified: a.verified,
-            registered: !!entity,
-            managementGroup,
-            qualified,
-            network: entity?.network ?? null,
-            feePercent: entity?.feeBips != null ? entity.feeBips / 100 : null,
-            votePower: entity?.wNatWeight ?? null,
-            // delegationWeightCapped, NOT wNatCappedWeight. Verified decisively against the chain:
-            // isqrt(S)*isqrt(isqrt(S)) with S = delegationWeightCapped + 5*stakingWeight reproduces
-            // VoterRegistry.getVoterRegistrationWeight for 97/97 Flare voters; the same computation with
-            // wNatCappedWeight reproduces 2/97. wNatCappedWeight comes from the lagging fsp-rewards
-            // ingest and is a different, staler quantity that merely looks plausible (26,542M FLR against
-            // the correct 24,443M). Publishing it here understated the cap for every consumer of this
-            // feed, and at least one third-party analysis was built on the wrong figure as a result.
-            votePowerCapped: entity?.delegationWeightCapped ?? entity?.wNatCappedWeight ?? null,
-            feedCount: entity?.feedCount ?? null,
-            activeSince: entity?.firstActivityAt
-              ? entity.firstActivityAt.toISOString().slice(0, 7)
+            identity: toChecksum(entity.voter),
+            submit: entity.submitAddress ? toChecksum(entity.submitAddress) : null,
+            submitSignatures: entity.submitSignaturesAddress
+              ? toChecksum(entity.submitSignaturesAddress)
               : null,
-            lastEpoch: latest?.epochId ?? null,
-            delegatorRewardLastEpoch: latest?.delegatorReward ?? null,
-            feeRewardLastEpoch: latest?.feeReward ?? null,
-            entity: entity
-              ? {
-                  identity: toChecksum(entity.voter),
-                  submit: entity.submitAddress ? toChecksum(entity.submitAddress) : null,
-                  submitSignatures: entity.submitSignaturesAddress
-                    ? toChecksum(entity.submitSignaturesAddress)
-                    : null,
-                  signingPolicy: entity.signingPolicyAddress
-                    ? toChecksum(entity.signingPolicyAddress)
-                    : null,
-                  delegation: entity.delegationAddress
-                    ? toChecksum(entity.delegationAddress)
-                    : null,
-                }
+            signingPolicy: entity.signingPolicyAddress
+              ? toChecksum(entity.signingPolicyAddress)
               : null,
-            validators:
-              entity && Array.isArray(entity.nodeIds)
-                ? (entity.nodeIds as string[]).map((raw) => {
-                    const nodeId = toNodeId(raw);
-                    const v = validatorByNetworkNode.get(`${entity.network}:${nodeId}`);
-                    return {
-                      nodeId,
-                      feePercent: v?.feePercent ?? null,
-                      uptimePercent: v?.uptimePercent ?? null,
-                      connected: v?.connected ?? false,
-                      weight: v?.weight ?? null,
-                      selfBond: v?.selfBond ?? null,
-                      delegatedWeight: v?.delegatedWeight ?? null,
-                      delegatorCount: v?.delegatorCount ?? null,
-                    };
-                  })
-                : [],
-            selfDeclared: {
-              privateNode: a.provider.privateNode,
-              algorithm: a.provider.algorithm,
-              singleEntity: a.provider.singleEntity,
-            },
-            qualification: {
-              qualifiedSince: risk?.qualifiedSince ?? null,
-              lastSubmittedEpoch: risk?.lastSubmittedEpoch ?? null,
-              epochsSinceSubmit: risk?.epochsSinceSubmit ?? null,
-              epochsUntilRevoke: risk?.epochsUntilRevoke ?? null,
-              revokeAfterEpochs: risk?.revokeAfterEpochs ?? 17,
-            },
-            status,
-            // Only for listings whose text is ours to date. "imported" and "onchain" rows publish
-            // somebody else's content or no content at all; see FeedProviderExtras above.
-            updatedAt:
-              a.provider.source === "submitted" && a.contentUpdatedAt
-                ? a.contentUpdatedAt.toISOString()
-                : null,
-            attestedAt: a.attestedAt ? a.attestedAt.toISOString() : null,
-            ...(govByProvider.get(providerId)
-              ? { governance: govByProvider.get(providerId) }
-              : {}),
+            delegation: entity.delegationAddress
+              ? toChecksum(entity.delegationAddress)
+              : null,
           }
-        : undefined;
+        : null,
+      validators:
+        entity && Array.isArray(entity.nodeIds)
+          ? (entity.nodeIds as string[]).map((raw) => {
+              const nodeId = toNodeId(raw);
+              const v = validatorByNetworkNode.get(`${entity.network}:${nodeId}`);
+              return {
+                nodeId,
+                feePercent: v?.feePercent ?? null,
+                uptimePercent: v?.uptimePercent ?? null,
+                connected: v?.connected ?? false,
+                weight: v?.weight ?? null,
+                selfBond: v?.selfBond ?? null,
+                delegatedWeight: v?.delegatedWeight ?? null,
+                delegatorCount: v?.delegatorCount ?? null,
+              };
+            })
+          : [],
+      selfDeclared: {
+        privateNode: a.provider.privateNode,
+        algorithm: a.provider.algorithm,
+        singleEntity: a.provider.singleEntity,
+      },
+      qualification: {
+        qualifiedSince: risk?.qualifiedSince ?? null,
+        lastSubmittedEpoch: risk?.lastSubmittedEpoch ?? null,
+        epochsSinceSubmit: risk?.epochsSinceSubmit ?? null,
+        epochsUntilRevoke: risk?.epochsUntilRevoke ?? null,
+        revokeAfterEpochs: risk?.revokeAfterEpochs ?? 17,
+      },
+      status,
+      // Only for listings whose text is ours to date. "imported" and "onchain" rows publish
+      // somebody else's content or no content at all; see FeedProviderExtras above.
+      updatedAt:
+        a.provider.source === "submitted" && a.contentUpdatedAt
+          ? a.contentUpdatedAt.toISOString()
+          : null,
+      attestedAt: a.attestedAt ? a.attestedAt.toISOString() : null,
+      ...(govByProvider.get(providerId)
+        ? { governance: govByProvider.get(providerId) }
+        : {}),
+    };
 
     return {
       chainId: a.chainId,
@@ -422,7 +422,7 @@ export async function buildProviderList(): Promise<ProviderList> {
       // had before this tier existed, which is the point. It starts listing the moment its owner
       // claims it and the source flips to "submitted".
       listed: a.provider.source === "onchain" ? false : qualified && !held,
-      ...(extras ? { flareregistry: extras } : {}),
+      flareregistry: extras,
     };
   });
 
