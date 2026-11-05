@@ -25,6 +25,18 @@ model Provider {
   // For imported providers we keep the source's absolute logo URL verbatim until the owner
   // claims the entry and uploads their own. Null for natively-submitted providers.
   logoURI     String?
+
+  // SHA-256 of the bytes served at the published logo URL, lowercase hex, no 0x prefix.
+  //
+  // Published as flareregistry.logoHash so a consumer can check that the image it serves is the
+  // image we published. Without it a feed gives a URL and nothing to check it against: a CDN, a
+  // proxy or a mirror can substitute the picture and no reader can tell. Bifrost publish the same
+  // digest for the same reason.
+  //
+  // Stored rather than computed per build: the feed would otherwise fetch two hundred images on
+  // every publish. Written wherever the bytes are already in hand (upload, pending-logo
+  // promotion) and by scripts/backfill-logo-hash for the files we mirror.
+  logoSha256  String?
   // Provenance. "submitted" = created through the sign-in flow on this site. "imported" =
   // seeded from an external list and not yet owner-claimed.
   source      String  @default("submitted")

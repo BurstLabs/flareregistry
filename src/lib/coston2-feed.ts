@@ -196,6 +196,7 @@ async function build(): Promise<Coston2Feeds> {
     minVotePower: MIN_VOTE_POWER,
     revokeAfterEpochs: REVOKE_AFTER_EPOCHS,
     placeholderLogo: `${PUBLIC_BASE_URL}/logo-placeholder.png`,
+    publicBaseUrl: PUBLIC_BASE_URL,
     registryListings: registry,
     upstreamListings: upstream,
     now: new Date(),

@@ -94,6 +94,7 @@ const feeds = assembleCoston2Feeds(snap, {
   minVotePower: MIN_VOTE_POWER,
   revokeAfterEpochs: 17,
   placeholderLogo: "https://flareregistry.com/logo-placeholder.png",
+  publicBaseUrl: "https://flareregistry.com",
   registryListings: registry,
   upstreamListings: upstream,
   now: new Date("2026-11-05T00:00:00Z"),
@@ -128,14 +129,24 @@ check("identity carried for the yield join", byAddr.get(A.del)?.flareregistry.en
 const main = JSON.parse(readFileSync(new URL("../providerlist.json", import.meta.url), "utf8"));
 const ref = main.providers.find((p) => p.flareregistry?.entity);
 const keys = (o) => Object.keys(o).sort().join();
-check("top-level keys match the main provider list", keys(feeds.providerList) === keys(main));
+const extrasSrc = readFileSync(new URL("../src/lib/feed.ts", import.meta.url), "utf8");
+// Also against the interface, for the same reason as the flareregistry block below: the committed
+// file only gains a top-level field after a deploy and a republish.
+const listBody = extrasSrc.slice(
+  extrasSrc.indexOf("export interface ProviderList {"),
+  extrasSrc.indexOf("\n// One archived") >= 0 ? extrasSrc.indexOf("\n// One archived") : extrasSrc.length
+);
+const listDeclared = [...listBody.matchAll(/^ {2}\$?([A-Za-z][A-Za-z0-9]*)(\??):/gm)].map(
+  ([m, name]) => (m.trim().startsWith("$") ? "$" + name : name)
+);
+check("ProviderList parsed", listDeclared.length >= 4);
+check("top-level keys match ProviderList", keys(feeds.providerList) === listDeclared.slice().sort().join());
 check("entry keys match the main provider list", keys(list[0]) === keys(ref));
 // The flareregistry block is checked against the INTERFACE in lib/feed, not against the committed
 // providerlist.json. That file is a published artifact that only gains a new field after a deploy
 // and a republish, so checking against it makes adding one field to both builders fail the build
 // of the change that adds it, for a drift that does not exist. The interface is the thing both
 // builders are supposed to agree with, and it is in the same commit.
-const extrasSrc = readFileSync(new URL("../src/lib/feed.ts", import.meta.url), "utf8");
 const extrasBody = extrasSrc.slice(
   extrasSrc.indexOf("export interface FeedProviderExtras {"),
   extrasSrc.indexOf("\nexport interface FeedProvider {")
