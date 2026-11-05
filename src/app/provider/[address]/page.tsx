@@ -118,6 +118,13 @@ export default async function ProviderDetail({
     silences.length > 0 &&
     silences.every((g) => g >= PURGE_AFTER_EPOCHS);
 
+  // THE SAME RULE THE FEED AND THE DIRECTORY USE. A listing we publish nowhere should not have a
+  // page either: no entity registered on any network and no address its owner signed for means we
+  // hold no evidence of our own, only a row copied from a legacy list in June. Thirty-six of those
+  // exist. They used to 404 because they were archived; the archive flag is gone and the reason it
+  // stood for is stated directly, so the page does not render a name with nothing behind it.
+  if (entities.length === 0 && !p.addresses.some((a) => a.verified)) notFound();
+
   const NETWORK_LABEL: Record<string, string> = { flare: "Flare", songbird: "Songbird" };
   const entityAddresses = entities.map((e) => ({
     network: NETWORK_LABEL[e.network] ?? e.network,
