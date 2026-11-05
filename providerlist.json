@@ -1,6 +1,6 @@
 {
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-05T18:25:25.874Z",
+  "timestamp": "2026-11-05T18:34:04.233Z",
   "version": {
     "major": 1,
     "minor": 3,
@@ -8446,6 +8446,53 @@
     },
     {
       "chainId": 19,
+      "name": "AU",
+      "description": "AU provide accurate and reliable price feeds to the Flare Network and a transparent, incentivised, risk-free delegation service. We do so by leveraging the distributed nature of the network and its participants.",
+      "url": "https://www.au.cc",
+      "address": "0x499017ADB21D6f70480E4E6224cf4144071C1461",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x499017ADB21D6f70480E4E6224cf4144071C1461.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "270636270210830291400639864",
+        "votePowerCapped": "230362793421729414506348544",
+        "feedCount": 63,
+        "activeSince": "2021-09",
+        "lastEpoch": 446,
+        "delegatorRewardLastEpoch": "178827258606232484497975",
+        "feeRewardLastEpoch": "44706814651558121110755",
+        "entity": {
+          "identity": "0xB3C9AA09F22A06122d3608Ef075f14E001561470",
+          "submit": "0x38F01976677021A2599C1D155206037eCB28c1E5",
+          "submitSignatures": "0x49e99EAB73F135B384ddDD3CCDb9Cd1cf0E1736d",
+          "signingPolicy": "0x493E5d0833646f99e4b414E9de5a10d8cb9B5C5a",
+          "delegation": "0x499017ADB21D6f70480E4E6224cf4144071C1461"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:20.287Z",
+          "lastSubmittedEpoch": 446,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        },
+        "status": "listed",
+        "updatedAt": "2026-06-22T18:11:39.620Z",
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
       "name": "Aureus Ox",
       "description": "Aureus Ox is building a scalable and reliable FTSO signal provider. Our initial goals include accurate price submission and delegation tools.",
       "url": "https://aureusox.com",
@@ -10085,6 +10132,53 @@
     },
     {
       "chainId": 19,
+      "name": "HEWG",
+      "description": "HEWG strikes to provide best FTSO price data.",
+      "url": "https://hewg.org",
+      "address": "0x819eaB111BD9A6E595187A914240529D2EFfF21f",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0x819eaB111BD9A6E595187A914240529D2EFfF21f.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "113367903420628680710871043",
+        "votePowerCapped": "113367914446182377511190528",
+        "feedCount": 63,
+        "activeSince": "2021-10",
+        "lastEpoch": 446,
+        "delegatorRewardLastEpoch": "100485222949933616176966",
+        "feeRewardLastEpoch": "25121305737483404033887",
+        "entity": {
+          "identity": "0x4ddd9f80F88F53c730CE7C6041f17583447DD968",
+          "submit": "0xC58b13d32dcf08Eb23d2105159982377982b2777",
+          "submitSignatures": "0x099aE1A237a4a7696672986c2155FE8B80abE906",
+          "signingPolicy": "0x1c884cF954eC8f15D7BF16b9d50402cc5c94b5FD",
+          "delegation": "0x819eaB111BD9A6E595187A914240529D2EFfF21f"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:19.538Z",
+          "lastSubmittedEpoch": 446,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        },
+        "status": "listed",
+        "updatedAt": "2026-06-22T18:11:39.707Z",
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
       "name": "Insight Oracle",
       "description": "We are a group of friends obsessed with crypto, maths and algorithms. We want to build dApps and help to develop and expand the Flare Network.",
       "url": "https://insightoracle.site",
@@ -11208,6 +11302,53 @@
         },
         "status": "listed",
         "updatedAt": null,
+        "attestedAt": null
+      }
+    },
+    {
+      "chainId": 19,
+      "name": "uGaenn",
+      "description": "Your gain is our first priority.",
+      "url": "https://ugaenn.io",
+      "address": "0xb53D69B2519aC9F6D65cff8e7824Bf09F7064D61",
+      "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xb53D69B2519aC9F6D65cff8e7824Bf09F7064D61.png",
+      "listed": true,
+      "flareregistry": {
+        "verified": false,
+        "registered": true,
+        "managementGroup": true,
+        "qualified": true,
+        "network": "songbird",
+        "feePercent": 20,
+        "votePower": "73581324182207270439410851",
+        "votePowerCapped": "73581487923859428575543296",
+        "feedCount": 63,
+        "activeSince": "2021-09",
+        "lastEpoch": 446,
+        "delegatorRewardLastEpoch": "66299960630693695229174",
+        "feeRewardLastEpoch": "16574990157673423797334",
+        "entity": {
+          "identity": "0xD249c7e0BDb6F407604260350eD56e7Dd5254e51",
+          "submit": "0x9247b83e99CB6D1a4546c2efeA7595137a0532e7",
+          "submitSignatures": "0xBB654271F2A2deBfDb3e702067FE9aaa484A3981",
+          "signingPolicy": "0x31E412E114629702281533CC657bE76aD928283B",
+          "delegation": "0xb53D69B2519aC9F6D65cff8e7824Bf09F7064D61"
+        },
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
+        },
+        "qualification": {
+          "qualifiedSince": "2026-06-22T23:47:20.187Z",
+          "lastSubmittedEpoch": 446,
+          "epochsSinceSubmit": 0,
+          "epochsUntilRevoke": 17,
+          "revokeAfterEpochs": 17
+        },
+        "status": "listed",
+        "updatedAt": "2026-06-22T18:11:39.680Z",
         "attestedAt": null
       }
     },
