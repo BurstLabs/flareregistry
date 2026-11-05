@@ -93,14 +93,26 @@ async function main() {
         console.log(`  ${p.name}: read failed (${e.shortMessage ?? e.message})`);
         continue;
       }
-      // The chain has to agree that this identity owns the address we hold. An identity with no
-      // delegation address registered returns itself, which fails this test, as it should.
-      const owns = [delegation, voter.submitAddress, voter.submitSignaturesAddress, voter.signingPolicyAddress]
+      // THE TRIVIAL PASS. Every one of these getters returns its own input when nothing is
+      // registered, so asking "does identity X own address X" is answered yes by an entity that
+      // does not exist. The explorer carries duplicate rows keyed on each role address, so the
+      // candidate for an address is sometimes that address itself, and the first version of this
+      // check reported Fly2Sonic CONFIRMED on exactly that non-answer.
+      //
+      // Two ways to be convinced, both requiring the chain to produce an address it was not given:
+      //   - a DIFFERENT identity resolves to the address we hold, or
+      //   - the address IS the identity, and some role resolves to something other than itself.
+      const roles = [delegation, voter.submitAddress, voter.submitSignaturesAddress, voter.signingPolicyAddress]
         .filter(Boolean)
-        .some((x) => x.toLowerCase() === a.address.toLowerCase());
+        .map((x) => x.toLowerCase());
+      const self = a.address.toLowerCase();
+      const isSelf = identity.toLowerCase() === self;
+      const owns = isSelf ? roles.some((x) => x !== self) : roles.includes(self);
       if (!owns) continue;
       found.push({ p, a, identity, delegation });
-      console.log(`  chain ${a.chainId}  ${p.name.padEnd(18)} identity ${identity} -> ${a.address}  CONFIRMED on-chain`);
+      console.log(
+        `  chain ${a.chainId}  ${p.name.padEnd(18)} ${isSelf ? `identity ${self} has roles ${roles.filter((x) => x !== self).join(",")}` : `identity ${identity} -> ${self}`}  CONFIRMED on-chain`
+      );
     }
   }
 
