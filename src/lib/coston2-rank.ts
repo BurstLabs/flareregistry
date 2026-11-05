@@ -242,6 +242,10 @@ export function assembleCoston2Feeds(
         registered: true,
         managementGroup: false,
         qualified: false,
+        // Qualification is not assessed on a test network, so no entry here can be "listed" and
+        // none can be "departed" either: there is no pass data to go silent against. A listing
+        // gives it an identity; without one it is a registration nobody has named.
+        status: listing ? "unqualified" : "unnamed",
         network: COSTON2_NETWORK,
         feePercent: r.feeBips / 100,
         votePower: r.wNatWeight.toString(),

@@ -154,7 +154,6 @@ async function registryListings(): Promise<Map<string, Coston2Listing>> {
     const rows = await prisma.providerAddress.findMany({
       where: {
         chainId: COSTON2_CHAIN_ID,
-        provider: { is: { archivedAt: null } },
         OR: [{ verified: true }, { provider: { is: { source: "imported" } } }],
       },
       include: { provider: true },

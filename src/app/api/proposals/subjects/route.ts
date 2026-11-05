@@ -39,13 +39,12 @@ export async function GET() {
       },
     }),
     prisma.providerAddress.findMany({
-      select: { address: true, provider: { select: { name: true, archivedAt: true } } },
+      select: { address: true, provider: { select: { name: true } } },
     }),
   ]);
 
   const nameByRole = new Map<string, string>();
   for (const a of addresses) {
-    if (a.provider.archivedAt) continue;
     nameByRole.set(a.address.toLowerCase(), a.provider.name);
   }
 

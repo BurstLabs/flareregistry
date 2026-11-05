@@ -18,7 +18,6 @@ const apply = process.argv.includes("--apply");
 const prisma = new PrismaClient();
 
 const rows = await prisma.provider.findMany({
-  where: { archivedAt: null },
   select: { id: true, name: true, description: true, url: true, contentFlags: true },
 });
 

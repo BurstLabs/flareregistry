@@ -51,7 +51,6 @@ async function main() {
   }
 
   const providers = await prisma.provider.findMany({
-    where: { archivedAt: null },
     include: { addresses: true, chainDescriptions: true },
   });
 

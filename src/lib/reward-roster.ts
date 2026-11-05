@@ -33,7 +33,7 @@ export interface RewardSignerRow {
   signingAddress: string;
   name: string | null;
   logoURI: string | null;
-  /** Provider page slug, or null where the listing is archived or absent. */
+  /** Provider page slug, or null where there is no listing for this address. */
   href: string | null;
   /** Normalised weight for the pending epoch. */
   weight: number;

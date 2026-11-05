@@ -78,10 +78,6 @@ git -C flareregistry checkout <commit-sha>`}</code>
         <p className="mt-3 text-sm text-muted">{t("api.repo.note")}</p>
       </div>
 
-      <Endpoint method="GET" path="/api/feed/archived.json">
-        {t("api.ep.archived")}
-      </Endpoint>
-
       <Endpoint method="GET" path="/api/feed/validators.json">
         {t("api.ep.validators")}{" "}
         <code>{`{ name, generatedAt, method, windowEpochs, networks: { flare: { chainId, epochs, totalStake, validators[] } } }`}</code>
@@ -116,6 +112,8 @@ git -C flareregistry checkout <commit-sha>`}</code>
       </p>
       <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-themed bg-elev p-4 text-xs font-medium">
         {`"flareregistry": {
+  "status": "listed",               // listed | held | unqualified | departed | suspended | unnamed
+                                    //   why this entry is or is not listed; listed === (status === "listed")
   "verified": true,                 // owner proved control of this address by signature
   "attestedAt": "2026-10-30T16:50:12.000Z",  // when that signature was last given (null if never claimed)
   "updatedAt": "2026-11-03T12:47:04.000Z",   // when this entry's name/description/url/logo last changed
@@ -163,6 +161,7 @@ git -C flareregistry checkout <commit-sha>`}</code>
   }
 }`}
       </pre>
+      <p className="mt-3 text-sm text-muted">{t("api.departedNote")}</p>
       <p className="mt-3 text-sm text-muted">{t("api.freshnessNote")}</p>
       <p className="mt-3 text-sm text-muted">
         {t("api.weiNote")} (<code>flare-foundation/fsp-rewards</code>) {t("api.weiNoteMid")}{" "}

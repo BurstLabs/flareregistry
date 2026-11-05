@@ -39,16 +39,45 @@ export default async function Home({
   const showAll = showParam === "all";
   const showReview = showParam === "review";
 
-  const all = await prisma.provider.findMany({
-    // Exclude archived (departed/unmatched) providers from the directory - they live only on the
-    // read-only archive endpoint. Without this, archived legacy imports (e.g. SAKURA) still showed.
+  const everyProvider = await prisma.provider.findMany({
     where: {
-      archivedAt: null,
       OR: [{ addresses: { some: { verified: true } } }, { source: { in: ["imported", "onchain"] } }],
     },
     include: { addresses: true },
     orderBy: { name: "asc" },
   });
+
+  // THE SAME RULE THE FEED USES: show a provider we hold evidence of our own for, which is an
+  // address its owner signed for or a match to an entity registered on-chain. A provider that has
+  // stopped submitting keeps its card and is marked unlisted; it is not hidden, because hiding it
+  // is what left consumers with nothing to resolve its name against.
+  //
+  // What this does exclude is the thirty-six rows seeded from the legacy provider list in June for
+  // operators we have never found on-chain on either network (SAKURA and the like). Without the
+  // filter they reappear here, which is the bug the old archive flag was papering over.
+  const onchainAddrs = new Set<string>();
+  for (const e of await prisma.providerOnchain.findMany({
+    select: {
+      voter: true,
+      delegationAddress: true,
+      submitAddress: true,
+      submitSignaturesAddress: true,
+      signingPolicyAddress: true,
+    },
+  })) {
+    for (const a of [
+      e.voter,
+      e.delegationAddress,
+      e.submitAddress,
+      e.submitSignaturesAddress,
+      e.signingPolicyAddress,
+    ]) {
+      if (a) onchainAddrs.add(a.toLowerCase());
+    }
+  }
+  const all = everyProvider.filter((p) =>
+    p.addresses.some((a) => a.verified || onchainAddrs.has(a.address.toLowerCase()))
+  );
 
   const latched = await latchedQualifiedByAddresses(
     all.map((p) => ({ id: p.id, addresses: p.addresses.map((a) => a.address) }))

@@ -69,6 +69,23 @@ export interface FeedProviderExtras {
     epochsUntilRevoke: number | null; // missed epochs remaining before revocation
     revokeAfterEpochs: number; // the threshold
   };
+  // WHY this entry is or is not listed, which `listed` alone cannot say: it is false for a
+  // provider inside its 30-day hold, one that stopped submitting last week, one that stopped three
+  // years ago, one suspended by a governance vote, and one the chain shows but nobody has named.
+  // Those are different facts and a consumer should not have to infer them from epoch arithmetic.
+  //
+  // `listed === (status === "listed")` holds by construction; the two are computed together.
+  //
+  //   listed       meets every criterion and is past its hold
+  //   held         qualified, but inside the 30-day new-provider or new-claim window
+  //   unqualified  does not currently meet the criteria
+  //   departed     not qualified and silent for PURGE_AFTER_EPOCHS reward epochs or more
+  //   suspended    a governance case closed against it
+  //   unnamed      registered on-chain, but no list or owner has ever published an identity
+  //
+  // This replaced a separate archive endpoint. A departed provider used to be removed from the
+  // feed entirely, which told consumers nothing and left them to find a name elsewhere.
+  status: "listed" | "held" | "unqualified" | "departed" | "suspended" | "unnamed";
   // FRESHNESS, for a consumer holding a second provider list that disagrees with this one.
   //
   // updatedAt: when this entry's published content (name, description, url, logoURI) last changed.
@@ -126,10 +143,16 @@ export function resolveLogo(logoPath: string | null, sourceLogoURI: string | nul
 export async function buildProviderList(): Promise<ProviderList> {
   const now = new Date();
   const addresses = await prisma.providerAddress.findMany({
-    // Exclude archived (soft-deleted, departed) providers from the live feed; they are served
-    // read-only at /api/feed/archived.json. archivedAt:null AND (verified OR imported).
+    // A departed provider is NOT removed from the feed. It stays, with listed:false, which is the
+    // flag whose whole job is "should a picker show this". Carrying two mechanisms for one
+    // conclusion meant the second one drifted: fifty-three entries were published saying "not
+    // registered on-chain" when we held an on-chain row and a last-seen epoch for seventeen of
+    // them. It also left consumers with nothing at those addresses, so Flare's Systems Explorer
+    // took the names for twenty-nine still-registered entities from a provider list that was
+    // archived on 2026-11-05 and can never be updated again.
+    //
+    // What is still excluded is anything with no on-chain presence AND no claim; see below.
     where: {
-      provider: { is: { archivedAt: null } },
       OR: [{ verified: true }, { provider: { is: { source: { in: ["imported", "onchain"] } } } }],
     },
     include: { provider: { include: { chainDescriptions: true } } },
@@ -149,12 +172,11 @@ export async function buildProviderList(): Promise<ProviderList> {
   // long no-submit gap, advanced during ingestion), not a fresh per-render compute.
   const provForQual = await prisma.provider.findMany({
     where: {
-      archivedAt: null,
       OR: [{ addresses: { some: { verified: true } } }, { source: { in: ["imported", "onchain"] } }],
     },
     select: { id: true, addresses: { select: { address: true } } },
   });
-  const { latchedRiskByAddresses } = await import("./qualification");
+  const { latchedRiskByAddresses, PURGE_AFTER_EPOCHS } = await import("./qualification");
   const riskByProvider = await latchedRiskByAddresses(
     provForQual.map((p) => ({ id: p.id, addresses: p.addresses.map((a) => a.address) }))
   );
@@ -209,7 +231,37 @@ export async function buildProviderList(): Promise<ProviderList> {
   const { allValidatorsByNetworkNode, toNodeId } = await import("./validators");
   const validatorByNetworkNode = await allValidatorsByNetworkNode();
 
-  const providers: FeedProvider[] = addresses.map((a) => {
+  // WHAT WE PUBLISH, now that nothing is archived out of the feed.
+  //
+  // A provider is published when we hold evidence of our own for it: an address its owner signed
+  // for, or a match to an entity registered on-chain. A departed provider still has both, so it
+  // stays in the list at listed:false and a consumer can still resolve its name. That is the whole
+  // point of the change: twenty-nine still-registered entities were taking their name and logo
+  // from a provider list archived on 2026-11-05, because we published nothing at those addresses.
+  //
+  // Excluded: rows with neither. Thirty-six of those exist, seeded from that legacy list in June
+  // for operators we have never found on-chain on either network. That is another project's record
+  // of its own past, not ours, and republishing it would put names in front of consumers for
+  // entities with no chain presence at all.
+  const publishableProviderIds = new Set<string>();
+  for (const a of addresses) {
+    if (publishableProviderIds.has(a.providerId)) continue;
+    const net = getChain(a.chainId)?.key;
+    const hasEntity = !!net && entityByNetworkAddress.has(`${net}:${a.address.toLowerCase()}`);
+    if (hasEntity || a.verified) publishableProviderIds.add(a.providerId);
+  }
+
+  // Latest epoch seen per network, which is what "silent since" is measured against below.
+  const latestEpochByNetwork = new Map<string, number>();
+  for (const e of entities) {
+    if (e.lastEpochSeen > (latestEpochByNetwork.get(e.network) ?? -1)) {
+      latestEpochByNetwork.set(e.network, e.lastEpochSeen);
+    }
+  }
+
+  const publishable = addresses.filter((a) => publishableProviderIds.has(a.providerId));
+
+  const providers: FeedProvider[] = publishable.map((a) => {
     // Match the entity on THIS entry's network (derived from its chainId), not address alone, so a
     // role address shared across Flare and Songbird resolves to the right-network entity.
     const entryNetwork = getChain(a.chainId)?.key ?? null;
@@ -243,6 +295,27 @@ export async function buildProviderList(): Promise<ProviderList> {
       (gov?.underReview ?? false) ||
       (gov?.pending ?? false);
     const managementGroup = mgByProvider.get(providerId) ?? false;
+
+    // DEPARTED: not qualified and silent for PURGE_AFTER_EPOCHS reward epochs, measured against
+    // the latest epoch seen on this entry's own network. The same threshold the registry used to
+    // archive a provider on, except the entry now stays and says so.
+    const latestEpoch = entity ? latestEpochByNetwork.get(entity.network) : undefined;
+    const silence = entity && latestEpoch !== undefined ? latestEpoch - entity.lastEpochSeen : null;
+    const departed = !qualified && silence !== null && silence >= PURGE_AFTER_EPOCHS;
+    // Ordered most specific first. departed outranks unnamed because "gone" says more about a
+    // chain-seeded row than "nobody named it", and both outrank the bare "unqualified".
+    const status: FeedProviderExtras["status"] = gov?.suspended
+      ? "suspended"
+      : departed
+        ? "departed"
+        : a.provider.source === "onchain"
+          ? "unnamed"
+          : !qualified
+            ? "unqualified"
+            : held
+              ? "held"
+              : "listed";
+
     // Emit extras if there's anything to report: on-chain match, verified owner, or qualified.
     const extras: FeedProviderExtras | undefined =
       entity || a.verified || qualified
@@ -313,6 +386,7 @@ export async function buildProviderList(): Promise<ProviderList> {
               epochsUntilRevoke: risk?.epochsUntilRevoke ?? null,
               revokeAfterEpochs: risk?.revokeAfterEpochs ?? 17,
             },
+            status,
             // Only for listings whose text is ours to date. "imported" and "onchain" rows publish
             // somebody else's content or no content at all; see FeedProviderExtras above.
             updatedAt:
@@ -357,51 +431,6 @@ export async function buildProviderList(): Promise<ProviderList> {
     timestamp: new Date().toISOString(),
     version: { major: 1, minor: 3, patch: 0 },
     providers,
-  };
-}
-
-// One archived (departed) provider, as served by the read-only archive endpoint.
-export interface ArchivedProvider {
-  name: string;
-  description: string;
-  url: string;
-  source: string; // "submitted" | "imported"
-  archivedAt: string | null;
-  archivedReason: string | null;
-  addresses: { chainId: number; address: string }[];
-}
-
-export interface ArchivedList {
-  name: string;
-  timestamp: string;
-  note: string;
-  providers: ArchivedProvider[];
-}
-
-// Build the archived-providers list for /api/feed/archived.json. This is the audit record of
-// providers removed from the live feed (departed: unqualified and lapsed beyond the purge window).
-// It is PURELY DERIVED from the database on each request - there is no stored archived file that
-// anything writes to, so concurrent updates can never conflict (unlike the committed providerlist.json
-// which a publish bot writes). One entry per archived provider, with all of its addresses.
-export async function buildArchivedList(): Promise<ArchivedList> {
-  const providers = await prisma.provider.findMany({
-    where: { archivedAt: { not: null } },
-    include: { addresses: { orderBy: { chainId: "asc" } } },
-    orderBy: [{ archivedAt: "desc" }, { name: "asc" }],
-  });
-  return {
-    name: "Flare Registry archived (departed) providers",
-    timestamp: new Date().toISOString(),
-    note: "Providers removed from the live feed after going inactive on-chain (unqualified and lapsed beyond the purge window). Kept for the public audit record; not part of the live provider list. A provider that becomes active again is automatically restored to the live feed.",
-    providers: providers.map((p) => ({
-      name: p.name,
-      description: p.description,
-      url: p.url,
-      source: p.source,
-      archivedAt: p.archivedAt ? p.archivedAt.toISOString() : null,
-      archivedReason: p.archivedReason,
-      addresses: p.addresses.map((a) => ({ chainId: a.chainId, address: a.address })),
-    })),
   };
 }
 

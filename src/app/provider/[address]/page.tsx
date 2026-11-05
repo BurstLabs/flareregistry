@@ -50,9 +50,6 @@ export default async function ProviderDetail({
   }
   if (!owned) notFound();
   const p = owned.provider;
-  // Archived (departed/unmatched) providers are not part of the live registry - their detail page is
-  // gone (they remain only on the read-only archive endpoint). 404 so they don't render as live.
-  if (p.archivedAt) notFound();
   const addresses = p.addresses.map((a) => a.address);
 
   const [metrics, qualMap, latchedMap] = await Promise.all([
@@ -307,13 +304,13 @@ export default async function ProviderDetail({
     governance: gov,
     conduct,
     // A conduct case is the instrument for an ESTABLISHED provider, so it is offered exactly where
-    // the new-provider flag is not: matched on-chain, not archived, and past the flag window. The
+    // the new-provider flag is not: matched on-chain and past the flag window. The
     // server enforces Management Group membership on the signature; this only decides whether the
     // form is worth showing at all.
     viewerIsMember,
     viewerLiveCase,
     viewerSubjectCases,
-    conductEligible: entities.length > 0 && !p.archivedAt && !inNewProviderWindow(anchor, nowDate),
+    conductEligible: entities.length > 0 && !inNewProviderWindow(anchor, nowDate),
     pastCases: (await (await import("@/lib/governance")).pastCasesByProvider()).get(p.id) ?? [],
     providerId: p.id,
     hasLogo: !!p.logoURI,
