@@ -1,7 +1,7 @@
 {
   "$schema": "https://flareregistry.com/providerlist.schema.json",
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-07T03:47:02.358Z",
+  "timestamp": "2026-11-07T03:55:27.852Z",
   "version": {
     "major": 1,
     "minor": 4,
@@ -6197,7 +6197,7 @@
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xFC936989b5BCA0bdea6B0f4A184044eb720D86A5.png",
       "listed": false,
       "flareregistry": {
-        "verified": false,
+        "verified": true,
         "registered": true,
         "managementGroup": false,
         "qualified": true,
@@ -6260,9 +6260,9 @@
           }
         ],
         "selfDeclared": {
-          "privateNode": null,
-          "algorithm": null,
-          "singleEntity": null
+          "privateNode": true,
+          "algorithm": "in-house",
+          "singleEntity": true
         },
         "qualification": {
           "qualifiedSince": "2026-11-02T17:18:44.749Z",
@@ -6273,8 +6273,8 @@
         },
         "logoHash": "a7a58f92a920429b08084ec8b168a9f0fa60ebca55ea4a9dc4349d6c47e316d5",
         "status": "held",
-        "updatedAt": null,
-        "attestedAt": null
+        "updatedAt": "2026-11-05T17:15:04.395Z",
+        "attestedAt": "2026-11-07T03:55:26.854Z"
       }
     },
     {
