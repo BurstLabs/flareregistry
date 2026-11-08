@@ -10,6 +10,14 @@ const config: Config = {
         // Beacon/flare palette
         flare: "#e84142",
         beacon: "#f5a623",
+        // Theme tokens from globals.css, registered here so alpha modifiers work
+        // (bg-elev/40, border-themed/60, divide-themed, ring-themed, bg-muted/30).
+        // The hand-written classes in globals.css stay as a fallback for class names
+        // Tailwind cannot see, and use the same values.
+        elev: "rgb(var(--bg-elev) / <alpha-value>)",
+        themed: "rgb(var(--border) / <alpha-value>)",
+        muted: "rgb(var(--text-muted) / <alpha-value>)",
+        faint: "rgb(var(--text-faint) / <alpha-value>)",
       },
     },
   },
