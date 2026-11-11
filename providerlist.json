@@ -1,7 +1,7 @@
 {
   "$schema": "https://flareregistry.com/providerlist.schema.json",
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-11T21:41:44.684Z",
+  "timestamp": "2026-11-11T21:46:54.348Z",
   "version": {
     "major": 1,
     "minor": 4,
@@ -4623,6 +4623,48 @@
         "status": "listed",
         "updatedAt": "2026-06-22T18:11:40.478Z",
         "attestedAt": "2026-06-29T18:30:27.361Z"
+      }
+    },
+    {
+      "chainId": 14,
+      "name": "HUMAN_589",
+      "description": "I am HUMAN_589, a builder, advocate, XRP maximalist, and supporter of the Flare Network, dedicated to victims and children's rights, digital ownership, remembrance and decentralized infrastructure.  I share my world vision at human589.world, including Memorial Garden - my first metaverse app and developed in collaboration with NFT Riddler.",
+      "url": "https://human589.world",
+      "address": "0x881884043958dB769b96de874a6d72e67B5a954c",
+      "logoURI": "https://cdn.jsdelivr.net/gh/bifrostwallet/assets@main/data/providers/eip155-14/0x44a584b709ecd27369a7484d48bf64eae2fafe85/logo.webp",
+      "listed": false,
+      "flareregistry": {
+        "verified": false,
+        "registered": false,
+        "managementGroup": false,
+        "qualified": false,
+        "network": null,
+        "feePercent": null,
+        "votePower": null,
+        "votePowerCapped": null,
+        "feedCount": null,
+        "activeSince": null,
+        "lastEpoch": null,
+        "delegatorRewardLastEpoch": null,
+        "feeRewardLastEpoch": null,
+        "entity": null,
+        "validators": [],
+        "selfDeclared": {
+          "privateNode": null,
+          "algorithm": null,
+          "singleEntity": null
+        },
+        "qualification": {
+          "qualifiedSince": null,
+          "lastSubmittedEpoch": null,
+          "epochsSinceSubmit": null,
+          "epochsUntilRevoke": null,
+          "revokeAfterEpochs": 17
+        },
+        "logoHash": null,
+        "status": "dormant",
+        "updatedAt": null,
+        "attestedAt": null
       }
     },
     {
