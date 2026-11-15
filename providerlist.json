@@ -1,7 +1,7 @@
 {
   "$schema": "https://flareregistry.com/providerlist.schema.json",
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-15T23:18:49.159Z",
+  "timestamp": "2026-11-15T23:47:02.521Z",
   "version": {
     "major": 1,
     "minor": 4,
@@ -2022,7 +2022,7 @@
       "url": "https://d20oracle.com",
       "address": "0xaF7c10dCF8fBA62b29230052AF0be80936c10af3",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xaF7c10dCF8fBA62b29230052AF0be80936c10af3.png",
-      "listed": false,
+      "listed": true,
       "flareregistry": {
         "verified": true,
         "registered": true,
@@ -2079,7 +2079,7 @@
           "revokeAfterEpochs": 17
         },
         "logoHash": "92b37f76f436b0c940e1539d9a48c3eb1732524c51a61760f4c82cf2821220d1",
-        "status": "held",
+        "status": "listed",
         "updatedAt": "2026-10-17T07:11:46.000Z",
         "attestedAt": "2026-10-16T23:21:20.582Z"
       }
@@ -5362,7 +5362,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.175Z",
+          "qualifiedSince": "2026-06-22T23:47:18.864Z",
           "lastSubmittedEpoch": 449,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
@@ -10770,7 +10770,7 @@
           "singleEntity": null
         },
         "qualification": {
-          "qualifiedSince": "2026-06-22T23:47:20.175Z",
+          "qualifiedSince": "2026-06-22T23:47:18.864Z",
           "lastSubmittedEpoch": 449,
           "epochsSinceSubmit": 0,
           "epochsUntilRevoke": 17,
