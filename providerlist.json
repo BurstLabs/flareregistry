@@ -1,7 +1,7 @@
 {
   "$schema": "https://flareregistry.com/providerlist.schema.json",
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-16T05:18:33.985Z",
+  "timestamp": "2026-11-16T05:18:39.522Z",
   "version": {
     "major": 1,
     "minor": 4,
@@ -89,7 +89,7 @@
           {
             "nodeId": "NodeID-3tx749xYxFY3q6jkH4msGnygsUVMqZJ8d",
             "feePercent": 20,
-            "uptimePercent": 99.5623,
+            "uptimePercent": 99.5654,
             "connected": true,
             "weight": "73147940241909380",
             "selfBond": "5000000000000000",
@@ -237,7 +237,7 @@
           {
             "nodeId": "NodeID-NCfvDEdDv8tuVDxWLB1ShJToQ7qAcca2B",
             "feePercent": 20,
-            "uptimePercent": 99.9125,
+            "uptimePercent": 99.9133,
             "connected": true,
             "weight": "39406289482565937",
             "selfBond": "3000000000000000",
@@ -344,7 +344,7 @@
           {
             "nodeId": "NodeID-9Np7kEQYzPmuUSbfhDk3P56WSmWXBfGRX",
             "feePercent": 20,
-            "uptimePercent": 99.9252,
+            "uptimePercent": 99.9259,
             "connected": true,
             "weight": "28892911680000000",
             "selfBond": "2500000000000000",
@@ -462,12 +462,12 @@
           {
             "nodeId": "NodeID-NHdoCbjV2qnAqdFFw6ZesXcGG9CWjxt77",
             "feePercent": 20,
-            "uptimePercent": 99.3444,
+            "uptimePercent": 99.3479,
             "connected": true,
-            "weight": "51962710894224308",
+            "weight": "52220011798794667",
             "selfBond": "3500000000000000",
-            "delegatedWeight": "48462710894224308",
-            "delegatorCount": 20
+            "delegatedWeight": "48720011798794667",
+            "delegatorCount": 21
           }
         ],
         "selfDeclared": {
@@ -659,12 +659,12 @@
           {
             "nodeId": "NodeID-EPLACd344ouymyJAQYXZBvbmU3NJ6ooeB",
             "feePercent": 20,
-            "uptimePercent": 99.9333,
+            "uptimePercent": 99.9344,
             "connected": true,
-            "weight": "39618419127851457",
+            "weight": "39560417127851457",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "19618419127851457",
-            "delegatorCount": 6
+            "delegatedWeight": "19560417127851457",
+            "delegatorCount": 5
           },
           {
             "nodeId": "NodeID-FDR3CXdwP3H3Zz9QKfL61fk56zkPEgdFV",
@@ -679,7 +679,7 @@
           {
             "nodeId": "NodeID-AFor3TgDtzsV8kK8sjqkneuUKpv8tbNwM",
             "feePercent": 20,
-            "uptimePercent": 99.8622,
+            "uptimePercent": 99.8683,
             "connected": true,
             "weight": "33077900000000000",
             "selfBond": "20000000000000000",
@@ -748,12 +748,12 @@
           {
             "nodeId": "NodeID-FLPF99Gi1c79NGHw7GYyhttWPVxpCq713",
             "feePercent": 20,
-            "uptimePercent": 99.9782,
+            "uptimePercent": 99.9783,
             "connected": true,
-            "weight": "148128603237733360",
+            "weight": "147904783237733360",
             "selfBond": "10000000000000000",
-            "delegatedWeight": "138128603237733360",
-            "delegatorCount": 80
+            "delegatedWeight": "137904783237733360",
+            "delegatorCount": 79
           }
         ],
         "selfDeclared": {
@@ -809,9 +809,9 @@
             "feePercent": 10,
             "uptimePercent": 99.9938,
             "connected": true,
-            "weight": "199760994962321125",
+            "weight": "199795994954334375",
             "selfBond": "13333333000000000",
-            "delegatedWeight": "186427661962321125",
+            "delegatedWeight": "186462661954334375",
             "delegatorCount": 356
           }
         ],
@@ -984,12 +984,12 @@
           {
             "nodeId": "NodeID-KRkND3cB1bYaWt71CSQdCUjRSR95d3cNz",
             "feePercent": 20,
-            "uptimePercent": 99.9971,
+            "uptimePercent": 99.9972,
             "connected": true,
-            "weight": "194990696241934240",
+            "weight": "195059470344311294",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "174990696241934240",
-            "delegatorCount": 15
+            "delegatedWeight": "175059470344311294",
+            "delegatorCount": 16
           },
           {
             "nodeId": "NodeID-K5oMYbGkADUJeAxJaZgVFDtCxCH2gFtAA",
@@ -1063,12 +1063,12 @@
           {
             "nodeId": "NodeID-MfzBQ6MbriE31UWm9NjSnEgLiR1cAkEnN",
             "feePercent": 10,
-            "uptimePercent": 99.9489,
+            "uptimePercent": 99.949,
             "connected": true,
-            "weight": "262413764463447285",
+            "weight": "262161264463447285",
             "selfBond": "29990100000000000",
-            "delegatedWeight": "232423664463447285",
-            "delegatorCount": 550
+            "delegatedWeight": "232171164463447285",
+            "delegatorCount": 547
           }
         ],
         "selfDeclared": {
@@ -1213,10 +1213,10 @@
             "feePercent": 10,
             "uptimePercent": 99.9905,
             "connected": true,
-            "weight": "200084608001854730",
+            "weight": "197205608020505629",
             "selfBond": "13340000000000000",
-            "delegatedWeight": "186744608001854730",
-            "delegatorCount": 131
+            "delegatedWeight": "183865608020505629",
+            "delegatorCount": 130
           }
         ],
         "selfDeclared": {
@@ -1272,40 +1272,40 @@
             "feePercent": 10,
             "uptimePercent": 99.9899,
             "connected": true,
-            "weight": "199606459153936542",
+            "weight": "199107900153936542",
             "selfBond": "13340000000000000",
-            "delegatedWeight": "186266459153936542",
-            "delegatorCount": 320
+            "delegatedWeight": "185767900153936542",
+            "delegatorCount": 318
           },
           {
             "nodeId": "NodeID-Bo98cjoi5LvF6jXAMHZZLQYutyeGutBQ1",
             "feePercent": 10,
             "uptimePercent": 99.9935,
             "connected": true,
-            "weight": "200569813539261843",
+            "weight": "200823250041608754",
             "selfBond": "13400000000000000",
-            "delegatedWeight": "187169813539261843",
-            "delegatorCount": 447
+            "delegatedWeight": "187423250041608754",
+            "delegatorCount": 449
           },
           {
             "nodeId": "NodeID-J8sGdhcnVY1yVQNEb7w3LUjxkWCnByhw8",
             "feePercent": 10,
             "uptimePercent": 99.9907,
             "connected": true,
-            "weight": "198828256598470886",
+            "weight": "198015829093367604",
             "selfBond": "13340000000000000",
-            "delegatedWeight": "185488256598470886",
+            "delegatedWeight": "184675829093367604",
             "delegatorCount": 316
           },
           {
             "nodeId": "NodeID-4VGUXmAD3YHdapbLnJBmuWEQceaRQ1Zyd",
             "feePercent": 20,
-            "uptimePercent": 99.9884,
+            "uptimePercent": 99.9885,
             "connected": true,
-            "weight": "290730488284724565",
+            "weight": "289719547284724565",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "270730488284724565",
-            "delegatorCount": 72
+            "delegatedWeight": "269719547284724565",
+            "delegatorCount": 71
           }
         ],
         "selfDeclared": {
@@ -1369,7 +1369,7 @@
           {
             "nodeId": "NodeID-DtwBuXMHKZn2zJd74cSjvwkVjuJTAEs2n",
             "feePercent": 20,
-            "uptimePercent": 99.9761,
+            "uptimePercent": 99.9762,
             "connected": true,
             "weight": "234093409961923566",
             "selfBond": "20000000000000000",
@@ -1440,39 +1440,39 @@
             "feePercent": 20,
             "uptimePercent": 99.9815,
             "connected": true,
-            "weight": "296984249861724950",
+            "weight": "296092452028660655",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "276984249861724950",
+            "delegatedWeight": "276092452028660655",
             "delegatorCount": 226
           },
           {
             "nodeId": "NodeID-MKeSBNK4dMPNnvPPxb2xEjbeyyJMc9tfc",
             "feePercent": 20,
-            "uptimePercent": 99.918,
+            "uptimePercent": 99.9192,
             "connected": true,
-            "weight": "298803699759826775",
+            "weight": "299341699759826775",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "278803699759826775",
-            "delegatorCount": 54
+            "delegatedWeight": "279341699759826775",
+            "delegatorCount": 59
           },
           {
             "nodeId": "NodeID-5oLazJm5PtV8JFb2GpzuCVMZdi1GxkwYP",
             "feePercent": 20,
-            "uptimePercent": 99.9408,
+            "uptimePercent": 99.9409,
             "connected": true,
-            "weight": "274888748225538692",
+            "weight": "280488748216564057",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "254888748225538692",
-            "delegatorCount": 206
+            "delegatedWeight": "260488748216564057",
+            "delegatorCount": 208
           },
           {
             "nodeId": "NodeID-BeE5PDQkbtgbeDsxJMc2diKWyE95HtuHR",
             "feePercent": 20,
-            "uptimePercent": 99.9666,
+            "uptimePercent": 99.9667,
             "connected": true,
-            "weight": "283305825600234570",
+            "weight": "284075438216518512",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "263305825600234570",
+            "delegatedWeight": "264075438216518512",
             "delegatorCount": 440
           }
         ],
@@ -1575,11 +1575,11 @@
           {
             "nodeId": "NodeID-9jaZDNBCn4AwMzRqFBhxfem2ZZtiArRm2",
             "feePercent": 20,
-            "uptimePercent": 99.9708,
+            "uptimePercent": 99.9709,
             "connected": true,
-            "weight": "59950000000000000",
+            "weight": "58571620000000000",
             "selfBond": "4000000000000000",
-            "delegatedWeight": "55950000000000000",
+            "delegatedWeight": "54571620000000000",
             "delegatorCount": 59
           }
         ],
@@ -1634,7 +1634,7 @@
           {
             "nodeId": "NodeID-JHnfNSNgSThSJEFG8aq99FRAE4a7Ko7UP",
             "feePercent": 20,
-            "uptimePercent": 99.9661,
+            "uptimePercent": 99.9662,
             "connected": true,
             "weight": "203673060153556026",
             "selfBond": "15479100000000000",
@@ -1644,12 +1644,12 @@
           {
             "nodeId": "NodeID-AW81N9vGQttoQMMdpqbihU5hEwH793YXj",
             "feePercent": 20,
-            "uptimePercent": 99.8043,
+            "uptimePercent": 99.8053,
             "connected": true,
-            "weight": "126020435112121475",
+            "weight": "125920435112121475",
             "selfBond": "12484725000000000",
-            "delegatedWeight": "113535710112121475",
-            "delegatorCount": 60
+            "delegatedWeight": "113435710112121475",
+            "delegatorCount": 59
           }
         ],
         "selfDeclared": {
@@ -1703,12 +1703,12 @@
           {
             "nodeId": "NodeID-8Tp4GLFefnrLzzD7YU6qvEzDRRT1L6Zec",
             "feePercent": 20,
-            "uptimePercent": 99.9862,
+            "uptimePercent": 99.9863,
             "connected": true,
-            "weight": "134866861425778532",
+            "weight": "139263275287736591",
             "selfBond": "9364656000000000",
-            "delegatedWeight": "125502205425778532",
-            "delegatorCount": 41
+            "delegatedWeight": "129898619287736591",
+            "delegatorCount": 43
           }
         ],
         "selfDeclared": {
@@ -1762,7 +1762,7 @@
           {
             "nodeId": "NodeID-Lj9wReAAhUQokvp2up5RokYYxkTTPqZRC",
             "feePercent": 20,
-            "uptimePercent": 99.9813,
+            "uptimePercent": 99.9814,
             "connected": true,
             "weight": "180190684783315689",
             "selfBond": "16000000000000000",
@@ -1833,15 +1833,15 @@
             "feePercent": 10,
             "uptimePercent": 99.9952,
             "connected": true,
-            "weight": "92183482435201202",
+            "weight": "92363506435201202",
             "selfBond": "13400000000000000",
-            "delegatedWeight": "78783482435201202",
-            "delegatorCount": 80
+            "delegatedWeight": "78963506435201202",
+            "delegatorCount": 82
           },
           {
             "nodeId": "NodeID-7iiWBpS5GSwZHGLqibPxnU388hyXjCKHs",
             "feePercent": 20,
-            "uptimePercent": 99.9506,
+            "uptimePercent": 99.9515,
             "connected": true,
             "weight": "4721999992479250",
             "selfBond": "3100000000000000",
@@ -1861,7 +1861,7 @@
           {
             "nodeId": "NodeID-G13CRTzioVH8Yk6agKr1ZjbPuZbgKYQWV",
             "feePercent": 20,
-            "uptimePercent": 99.9651,
+            "uptimePercent": 99.9657,
             "connected": true,
             "weight": "6000000000000000",
             "selfBond": "6000000000000000",
@@ -1920,7 +1920,7 @@
           {
             "nodeId": "NodeID-FERvNWfCH4mjCSoFnjF4YouDBuYZCpfKm",
             "feePercent": 20,
-            "uptimePercent": 89.8567,
+            "uptimePercent": 89.8756,
             "connected": true,
             "weight": "28980339313609775",
             "selfBond": "4999999000000000",
@@ -2048,17 +2048,17 @@
           {
             "nodeId": "NodeID-HSyEhNxm57xaYi4FWL5jbjgrSpR5HDv8",
             "feePercent": 20,
-            "uptimePercent": 99.9888,
+            "uptimePercent": 99.9889,
             "connected": true,
-            "weight": "74907999851473359",
+            "weight": "74473694851473359",
             "selfBond": "5000000000000000",
-            "delegatedWeight": "69907999851473359",
-            "delegatorCount": 123
+            "delegatedWeight": "69473694851473359",
+            "delegatorCount": 122
           },
           {
             "nodeId": "NodeID-NwSeDUsvyCdXm7khfkAq6tME56E3EZiyo",
             "feePercent": 20,
-            "uptimePercent": 99.9688,
+            "uptimePercent": 99.9692,
             "connected": true,
             "weight": "44999999782844276",
             "selfBond": "3000000000000000",
@@ -2117,7 +2117,7 @@
           {
             "nodeId": "NodeID-7joNh7X4xsHBSXCpLQig22nSqU6xp41k8",
             "feePercent": 20,
-            "uptimePercent": 99.835,
+            "uptimePercent": 99.8355,
             "connected": true,
             "weight": "40058881149041651",
             "selfBond": "20000000000000000",
@@ -2127,7 +2127,7 @@
           {
             "nodeId": "NodeID-3qpQ3cVcU8UxvmCtkwGV4ZB3RYcKoDBRn",
             "feePercent": 20,
-            "uptimePercent": 99.9913,
+            "uptimePercent": 99.9914,
             "connected": true,
             "weight": "144111488968135255",
             "selfBond": "20000000000000000",
@@ -2186,12 +2186,12 @@
           {
             "nodeId": "NodeID-9WF8MvjNhmR45AdNjVfAWp27KKq7KCGpm",
             "feePercent": 20,
-            "uptimePercent": 99.9309,
+            "uptimePercent": 99.932,
             "connected": true,
-            "weight": "58494500100648214",
+            "weight": "58192828179667804",
             "selfBond": "3900000000000000",
-            "delegatedWeight": "54594500100648214",
-            "delegatorCount": 21
+            "delegatedWeight": "54292828179667804",
+            "delegatorCount": 20
           }
         ],
         "selfDeclared": {
@@ -2245,22 +2245,22 @@
           {
             "nodeId": "NodeID-DqtFZusCw713o96Hx29iHKUhFyZ4eBDpw",
             "feePercent": 20,
-            "uptimePercent": 99.9785,
+            "uptimePercent": 99.9786,
             "connected": true,
-            "weight": "172738810301468946",
+            "weight": "171843990317284081",
             "selfBond": "12484800000000000",
-            "delegatedWeight": "160254010301468946",
-            "delegatorCount": 239
+            "delegatedWeight": "159359190317284081",
+            "delegatorCount": 238
           },
           {
             "nodeId": "NodeID-NEBeLpZHjxiSB9fbqDeqsxU529e41hQYE",
             "feePercent": 20,
-            "uptimePercent": 99.9529,
+            "uptimePercent": 99.9531,
             "connected": true,
-            "weight": "66773683033610429",
+            "weight": "66829682933610429",
             "selfBond": "16306150000000000",
-            "delegatedWeight": "50467533033610429",
-            "delegatorCount": 59
+            "delegatedWeight": "50523532933610429",
+            "delegatorCount": 60
           }
         ],
         "selfDeclared": {
@@ -2373,7 +2373,7 @@
           {
             "nodeId": "NodeID-9fsCXCFJ7hzgsGK4FVpuNt1FVjJ9ScfVU",
             "feePercent": 20,
-            "uptimePercent": 99.7877,
+            "uptimePercent": 99.7881,
             "connected": true,
             "weight": "192513268834796017",
             "selfBond": "30000000000000000",
@@ -2493,10 +2493,10 @@
             "feePercent": 20,
             "uptimePercent": 99.9955,
             "connected": true,
-            "weight": "191084832802705894",
+            "weight": "191309568300489735",
             "selfBond": "13050000000000000",
-            "delegatedWeight": "178034832802705894",
-            "delegatorCount": 92
+            "delegatedWeight": "178259568300489735",
+            "delegatorCount": 93
           }
         ],
         "selfDeclared": {
@@ -2550,7 +2550,7 @@
           {
             "nodeId": "NodeID-GoVQ17h7kU1H3pKBZHF3cu2NyTBichnfg",
             "feePercent": 20,
-            "uptimePercent": 99.9144,
+            "uptimePercent": 99.9164,
             "connected": true,
             "weight": "153794985000000000",
             "selfBond": "10252999000000000",
@@ -2560,11 +2560,11 @@
           {
             "nodeId": "NodeID-Mhm29H5a3Xq1jG9UpVoqo5mFXqqL3WpUV",
             "feePercent": 20,
-            "uptimePercent": 99.9511,
+            "uptimePercent": 99.9519,
             "connected": true,
-            "weight": "134950367414198786",
+            "weight": "134950817414198786",
             "selfBond": "9000000950000000",
-            "delegatedWeight": "125950366464198786",
+            "delegatedWeight": "125950816464198786",
             "delegatorCount": 39
           }
         ],
@@ -2688,12 +2688,12 @@
           {
             "nodeId": "NodeID-CrsvTSFLB8G3ziPaVjgH1pj8NQxSZkECD",
             "feePercent": 20,
-            "uptimePercent": 99.9663,
+            "uptimePercent": 99.9665,
             "connected": true,
-            "weight": "83325506803103663",
+            "weight": "85908006751526285",
             "selfBond": "18750000000000000",
-            "delegatedWeight": "64575506803103663",
-            "delegatorCount": 37
+            "delegatedWeight": "67158006751526285",
+            "delegatorCount": 38
           },
           {
             "nodeId": "NodeID-Fvr7jSqNdueYRthVBp2qVWdAgw3tQzjxa",
@@ -2757,17 +2757,17 @@
           {
             "nodeId": "NodeID-PkR4UxQ6MVLQAZ7RmKd93eDmS8BtmYdLG",
             "feePercent": 20,
-            "uptimePercent": 99.89,
+            "uptimePercent": 99.8906,
             "connected": true,
-            "weight": "103083766195578977",
+            "weight": "103134766195578977",
             "selfBond": "14501584380000000",
-            "delegatedWeight": "88582181815578977",
-            "delegatorCount": 15
+            "delegatedWeight": "88633181815578977",
+            "delegatorCount": 16
           },
           {
             "nodeId": "NodeID-A3LxQME97LZCyiY6kAWnZ3SXkwJ82YDM9",
             "feePercent": 20,
-            "uptimePercent": 99.7763,
+            "uptimePercent": 99.7801,
             "connected": true,
             "weight": "14058350980000000",
             "selfBond": "13417950980000000",
@@ -2777,7 +2777,7 @@
           {
             "nodeId": "NodeID-9mdghD2VMj56BXp7zf52o19h9WepVMyUn",
             "feePercent": 20,
-            "uptimePercent": 99.93,
+            "uptimePercent": 99.9302,
             "connected": true,
             "weight": "225188521349999995",
             "selfBond": "15012568090000000",
@@ -2846,12 +2846,12 @@
           {
             "nodeId": "NodeID-5V2bQbryZTU4pAe59KNHNBru1BwEfcXqg",
             "feePercent": 20,
-            "uptimePercent": 99.1916,
+            "uptimePercent": 99.2037,
             "connected": true,
-            "weight": "102692317158092355",
+            "weight": "121843570750676292",
             "selfBond": "13333334000000000",
-            "delegatedWeight": "89358983158092355",
-            "delegatorCount": 19
+            "delegatedWeight": "108510236750676292",
+            "delegatorCount": 23
           }
         ],
         "selfDeclared": {
@@ -2905,7 +2905,7 @@
           {
             "nodeId": "NodeID-6Ww2bagQbUaZppGWFdBcGamtNDtjap1sD",
             "feePercent": 20,
-            "uptimePercent": 99.9782,
+            "uptimePercent": 99.9783,
             "connected": true,
             "weight": "26271347389883472",
             "selfBond": "2124274000000000",
@@ -2964,7 +2964,7 @@
           {
             "nodeId": "NodeID-8aGBxZssVWRvEr57YGRsWjZTHbnoWrfcc",
             "feePercent": 20,
-            "uptimePercent": 99.9885,
+            "uptimePercent": 99.9886,
             "connected": true,
             "weight": "278123407791503321",
             "selfBond": "20000000000000000",
@@ -3023,7 +3023,7 @@
           {
             "nodeId": "NodeID-5amxeiA5AKHPPy6v1C7S1YgmkoXQDedtE",
             "feePercent": 20,
-            "uptimePercent": 99.9739,
+            "uptimePercent": 99.974,
             "connected": true,
             "weight": "51124005912109540",
             "selfBond": "4832630000000000",
@@ -3141,7 +3141,7 @@
           {
             "nodeId": "NodeID-4hyFQEeDqpG9yyEnafTwqQQTTFex32KG2",
             "feePercent": 20,
-            "uptimePercent": 99.975,
+            "uptimePercent": 99.9752,
             "connected": true,
             "weight": "149604462393903566",
             "selfBond": "12000000000000000",
@@ -3151,7 +3151,7 @@
           {
             "nodeId": "NodeID-J8Zbi3b3AjTEUmHdE4KSApEU1U36iaeDS",
             "feePercent": 20,
-            "uptimePercent": 99.9531,
+            "uptimePercent": 99.9537,
             "connected": true,
             "weight": "176733809913057749",
             "selfBond": "13333000000000000",
@@ -3220,7 +3220,7 @@
           {
             "nodeId": "NodeID-LyKs43vshhK1Pr6apWF1sV51m2Q2CAwY",
             "feePercent": 20,
-            "uptimePercent": 99.9808,
+            "uptimePercent": 99.9809,
             "connected": true,
             "weight": "188525707791639895",
             "selfBond": "12590560000000000",
@@ -3232,10 +3232,10 @@
             "feePercent": 10,
             "uptimePercent": 99.9897,
             "connected": true,
-            "weight": "197600731426185245",
+            "weight": "199999994999999995",
             "selfBond": "13333333000000000",
-            "delegatedWeight": "184267398426185245",
-            "delegatorCount": 240
+            "delegatedWeight": "186666661999999995",
+            "delegatorCount": 241
           }
         ],
         "selfDeclared": {
@@ -3289,17 +3289,17 @@
           {
             "nodeId": "NodeID-ECqqsWu9jpUvZgPyf9yPZZcyWmJjWyN1T",
             "feePercent": 20,
-            "uptimePercent": 99.9474,
+            "uptimePercent": 99.9477,
             "connected": true,
-            "weight": "198282518252297449",
+            "weight": "195783514569264319",
             "selfBond": "14500895000000000",
-            "delegatedWeight": "183781623252297449",
-            "delegatorCount": 13
+            "delegatedWeight": "181282619569264319",
+            "delegatorCount": 11
           },
           {
             "nodeId": "NodeID-7vz3A92AkLi9YRYTauPgvkdiMmhnuDRzj",
             "feePercent": 20,
-            "uptimePercent": 99.9607,
+            "uptimePercent": 99.9608,
             "connected": true,
             "weight": "289127277370860399",
             "selfBond": "20000000000000000",
@@ -3309,7 +3309,7 @@
           {
             "nodeId": "NodeID-FXL1XNt7FFvenb5wTh7EH4Yg8AivHXqF4",
             "feePercent": 20,
-            "uptimePercent": 99.9687,
+            "uptimePercent": 99.9688,
             "connected": true,
             "weight": "296857248632920354",
             "selfBond": "20000000000000000",
@@ -3319,7 +3319,7 @@
           {
             "nodeId": "NodeID-Nu9TxjdXxGLzokgz4vT8xNx6DpW1DGsN7",
             "feePercent": 20,
-            "uptimePercent": 99.9814,
+            "uptimePercent": 99.9822,
             "connected": true,
             "weight": "297062244000000000",
             "selfBond": "20500000000000000",
@@ -3437,22 +3437,22 @@
           {
             "nodeId": "NodeID-6aKkPwTjFa3A5SH9H678r48MmNwyKFjQj",
             "feePercent": 20,
-            "uptimePercent": 99.9698,
+            "uptimePercent": 99.9699,
             "connected": true,
-            "weight": "190767826060451695",
+            "weight": "190992974731669942",
             "selfBond": "18000000000000000",
-            "delegatedWeight": "172767826060451695",
-            "delegatorCount": 123
+            "delegatedWeight": "172992974731669942",
+            "delegatorCount": 124
           },
           {
             "nodeId": "NodeID-KWuQ1CaxMUvDRRh7pzgcGMXpv38SFmb3r",
             "feePercent": 20,
-            "uptimePercent": 99.847,
+            "uptimePercent": 99.8326,
             "connected": true,
-            "weight": "18670150130000000",
+            "weight": "18820150130000000",
             "selfBond": "16700000000000000",
-            "delegatedWeight": "1970150130000000",
-            "delegatorCount": 7
+            "delegatedWeight": "2120150130000000",
+            "delegatorCount": 8
           }
         ],
         "selfDeclared": {
@@ -3506,7 +3506,7 @@
           {
             "nodeId": "NodeID-66rV9yEWSVGLC8fs9ynKptVf9f6bSbHC8",
             "feePercent": 20,
-            "uptimePercent": 99.9703,
+            "uptimePercent": 99.9705,
             "connected": true,
             "weight": "201393882144587169",
             "selfBond": "13450000000000000",
@@ -3565,7 +3565,7 @@
           {
             "nodeId": "NodeID-D3QKd6XxLnrKowkziZJSG4RNLtffz8ESk",
             "feePercent": 20,
-            "uptimePercent": 99.9888,
+            "uptimePercent": 99.9889,
             "connected": true,
             "weight": "44967165131618345",
             "selfBond": "3000000000000000",
@@ -3624,7 +3624,7 @@
           {
             "nodeId": "NodeID-4h6PNpK5oo9pjmE8zKSbm31S2LStg4tyF",
             "feePercent": 20,
-            "uptimePercent": 99.7597,
+            "uptimePercent": 99.7616,
             "connected": true,
             "weight": "44934999989480250",
             "selfBond": "3000000000000000",
@@ -3683,17 +3683,17 @@
           {
             "nodeId": "NodeID-4qa2aH7gEksskHU2nYna1mNX37U1yfdAp",
             "feePercent": 20,
-            "uptimePercent": 99.9808,
+            "uptimePercent": 99.9809,
             "connected": true,
-            "weight": "67477592077840257",
+            "weight": "59068263243963624",
             "selfBond": "4500000000000000",
-            "delegatedWeight": "62977592077840257",
-            "delegatorCount": 53
+            "delegatedWeight": "54568263243963624",
+            "delegatorCount": 52
           },
           {
             "nodeId": "NodeID-FFDXvxz7zusH2wec4DM5eKPT4gxfJKSDe",
             "feePercent": 20,
-            "uptimePercent": 99.9275,
+            "uptimePercent": 99.9286,
             "connected": true,
             "weight": "14974933092091084",
             "selfBond": "1000000000000000",
@@ -3754,20 +3754,20 @@
             "feePercent": 20,
             "uptimePercent": 99.9958,
             "connected": true,
-            "weight": "44770626523452335",
+            "weight": "43199262476796904",
             "selfBond": "3000000000000000",
-            "delegatedWeight": "41770626523452335",
-            "delegatorCount": 75
+            "delegatedWeight": "40199262476796904",
+            "delegatorCount": 74
           },
           {
             "nodeId": "NodeID-DgK9ARwXacjijk37v4fndMm6kRd8NXadM",
             "feePercent": 20,
             "uptimePercent": 99.9896,
             "connected": true,
-            "weight": "57304017964453564",
+            "weight": "57410459948043099",
             "selfBond": "4000000000000000",
-            "delegatedWeight": "53304017964453564",
-            "delegatorCount": 45
+            "delegatedWeight": "53410459948043099",
+            "delegatorCount": 46
           }
         ],
         "selfDeclared": {
@@ -3821,7 +3821,7 @@
           {
             "nodeId": "NodeID-B9o4BTqdc1qkrAn5BxLHL7pimWf9UwBkd",
             "feePercent": 20,
-            "uptimePercent": 99.9633,
+            "uptimePercent": 99.9634,
             "connected": true,
             "weight": "113282421809325618",
             "selfBond": "8750000000000000",
@@ -3831,7 +3831,7 @@
           {
             "nodeId": "NodeID-G7tmLU1k7vzv24kUhNi3KMJuiK8GLYcDq",
             "feePercent": 20,
-            "uptimePercent": 99.9384,
+            "uptimePercent": 99.9393,
             "connected": true,
             "weight": "13059220000000000",
             "selfBond": "8000000000000000",
@@ -3949,12 +3949,12 @@
           {
             "nodeId": "NodeID-P6nNyHc4QwyKoVSS7c9XatGp4Sityq7rM",
             "feePercent": 10,
-            "uptimePercent": 97.1679,
+            "uptimePercent": 97.1709,
             "connected": true,
-            "weight": "74969153343811120",
+            "weight": "74868853343811120",
             "selfBond": "5000000000000000",
-            "delegatedWeight": "69969153343811120",
-            "delegatorCount": 203
+            "delegatedWeight": "69868853343811120",
+            "delegatorCount": 201
           }
         ],
         "selfDeclared": {
@@ -4008,7 +4008,7 @@
           {
             "nodeId": "NodeID-J4nyqo44xFUxhAi9gDJXAkYyxP5z2a7UG",
             "feePercent": 20,
-            "uptimePercent": 99.8332,
+            "uptimePercent": 99.8338,
             "connected": true,
             "weight": "93906559339205172",
             "selfBond": "6750880000000000",
@@ -4018,12 +4018,12 @@
           {
             "nodeId": "NodeID-6WmWUtQ6hKUJ3dAmRD5YHnQtshtBfqVf8",
             "feePercent": 20,
-            "uptimePercent": 99.9748,
+            "uptimePercent": 99.9749,
             "connected": true,
-            "weight": "234342266645886399",
+            "weight": "236566978627236254",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "214342266645886399",
-            "delegatorCount": 145
+            "delegatedWeight": "216566978627236254",
+            "delegatorCount": 146
           }
         ],
         "selfDeclared": {
@@ -4077,12 +4077,12 @@
           {
             "nodeId": "NodeID-MN7sJduRdGUs3aWyYUmym2CFVsptzgKcJ",
             "feePercent": 20,
-            "uptimePercent": 99.9459,
+            "uptimePercent": 99.9464,
             "connected": true,
-            "weight": "118681968636604730",
+            "weight": "117298237179928780",
             "selfBond": "14000000000000000",
-            "delegatedWeight": "104681968636604730",
-            "delegatorCount": 49
+            "delegatedWeight": "103298237179928780",
+            "delegatorCount": 48
           }
         ],
         "selfDeclared": {
@@ -4195,17 +4195,17 @@
           {
             "nodeId": "NodeID-Nznsv1tqRDam6SB17FW5PAiFVSpkWpMQ6",
             "feePercent": 20,
-            "uptimePercent": 99.7073,
+            "uptimePercent": 99.7078,
             "connected": true,
-            "weight": "44986426554418701",
+            "weight": "44880797561618021",
             "selfBond": "3000000000000000",
-            "delegatedWeight": "41986426554418701",
-            "delegatorCount": 41
+            "delegatedWeight": "41880797561618021",
+            "delegatorCount": 40
           },
           {
             "nodeId": "NodeID-BfDUbmZ4SJ8cDp9hcnAu1wjzeDRGsR9QZ",
             "feePercent": 20,
-            "uptimePercent": 99.934,
+            "uptimePercent": 99.9341,
             "connected": true,
             "weight": "44430124180643961",
             "selfBond": "3000000000000000",
@@ -4264,12 +4264,12 @@
           {
             "nodeId": "NodeID-53Yqr6UiB8KYKj3HFadr27va9zLNkypmc",
             "feePercent": 20,
-            "uptimePercent": 99.9919,
+            "uptimePercent": 100,
             "connected": true,
-            "weight": "7742790670000000",
-            "selfBond": "3049000000000000",
-            "delegatedWeight": "4693790670000000",
-            "delegatorCount": 9
+            "weight": "13115279687928365",
+            "selfBond": "10855000000000000",
+            "delegatedWeight": "2260279687928365",
+            "delegatorCount": 17
           }
         ],
         "selfDeclared": {
@@ -4382,7 +4382,7 @@
           {
             "nodeId": "NodeID-LbGaxB3u2JbUSCk4SKH7yZrFzwFg1guoL",
             "feePercent": 20,
-            "uptimePercent": 99.801,
+            "uptimePercent": 99.8085,
             "connected": true,
             "weight": "220000000000000000",
             "selfBond": "20000000000000000",
@@ -4392,7 +4392,7 @@
           {
             "nodeId": "NodeID-5akjQVNKt8uEqWGyUoszCrKFWFVSegVN1",
             "feePercent": 20,
-            "uptimePercent": 99.7893,
+            "uptimePercent": 99.7972,
             "connected": true,
             "weight": "220000000000000000",
             "selfBond": "20000000000000000",
@@ -4402,7 +4402,7 @@
           {
             "nodeId": "NodeID-Foimk2gQaUs4DD3K6Jan8x8kSonGxzT9P",
             "feePercent": 20,
-            "uptimePercent": 99.7764,
+            "uptimePercent": 99.7848,
             "connected": true,
             "weight": "220000000000000000",
             "selfBond": "20000000000000000",
@@ -4412,7 +4412,7 @@
           {
             "nodeId": "NodeID-97tdK5LmgQHcrud4n7BjserKwiDa2QPFY",
             "feePercent": 20,
-            "uptimePercent": 99.8849,
+            "uptimePercent": 99.8892,
             "connected": true,
             "weight": "220000000000000000",
             "selfBond": "20000000000000000",
@@ -4473,9 +4473,9 @@
             "feePercent": 20,
             "uptimePercent": 99.9944,
             "connected": true,
-            "weight": "74968034996887362",
+            "weight": "74794214996887362",
             "selfBond": "5000000000000000",
-            "delegatedWeight": "69968034996887362",
+            "delegatedWeight": "69794214996887362",
             "delegatorCount": 71
           },
           {
@@ -4540,12 +4540,12 @@
           {
             "nodeId": "NodeID-4PEfmmKcyfndKx1EGkxeQS1eooxD8vEBS",
             "feePercent": 20,
-            "uptimePercent": 99.988,
+            "uptimePercent": 99.9881,
             "connected": true,
-            "weight": "111977513714380710",
+            "weight": "111984553714380710",
             "selfBond": "7500000000000000",
-            "delegatedWeight": "104477513714380710",
-            "delegatorCount": 65
+            "delegatedWeight": "104484553714380710",
+            "delegatorCount": 66
           }
         ],
         "selfDeclared": {
@@ -4599,12 +4599,12 @@
           {
             "nodeId": "NodeID-4YtvwPgc578pqKhHoYtP4VTKVejXg7JBF",
             "feePercent": 20,
-            "uptimePercent": 99.9809,
+            "uptimePercent": 99.981,
             "connected": true,
-            "weight": "160669616983645256",
+            "weight": "159919616983645256",
             "selfBond": "10720000000000000",
-            "delegatedWeight": "149949616983645256",
-            "delegatorCount": 98
+            "delegatedWeight": "149199616983645256",
+            "delegatorCount": 97
           }
         ],
         "selfDeclared": {
@@ -4712,10 +4712,10 @@
             "feePercent": 10,
             "uptimePercent": 99.9768,
             "connected": true,
-            "weight": "164498837377002401",
+            "weight": "165882892079225581",
             "selfBond": "15000000000000000",
-            "delegatedWeight": "149498837377002401",
-            "delegatorCount": 141
+            "delegatedWeight": "150882892079225581",
+            "delegatorCount": 144
           }
         ],
         "selfDeclared": {
@@ -4935,7 +4935,7 @@
           {
             "nodeId": "NodeID-5tHXeYMb1oY5GcWjXEcTt9CHbq5GBgCjn",
             "feePercent": 20,
-            "uptimePercent": 99.9685,
+            "uptimePercent": 99.9687,
             "connected": true,
             "weight": "154955999894715212",
             "selfBond": "10330400000000000",
@@ -4994,7 +4994,7 @@
           {
             "nodeId": "NodeID-ZPP3u3NyjAbTeGUzgjgTLwiuwuojzAeG",
             "feePercent": 20,
-            "uptimePercent": 99.9816,
+            "uptimePercent": 99.9817,
             "connected": true,
             "weight": "200615227610000000",
             "selfBond": "13400000000000000",
@@ -5004,27 +5004,27 @@
           {
             "nodeId": "NodeID-78MUvGDAGt5bJWKgxBbayhoq9cuYgw8rz",
             "feePercent": 20,
-            "uptimePercent": 99.9281,
+            "uptimePercent": 99.9286,
             "connected": true,
-            "weight": "114817695418785974",
+            "weight": "118627128314416295",
             "selfBond": "13400000000000000",
-            "delegatedWeight": "101417695418785974",
-            "delegatorCount": 18
+            "delegatedWeight": "105227128314416295",
+            "delegatorCount": 20
           },
           {
             "nodeId": "NodeID-7ady1Dgt1oZwpjQk9BpZaNA5d8LLjDbLi",
             "feePercent": 20,
-            "uptimePercent": 99.9772,
+            "uptimePercent": 99.9773,
             "connected": true,
-            "weight": "126659920639925316",
+            "weight": "125741418859691886",
             "selfBond": "13360000000000000",
-            "delegatedWeight": "113299920639925316",
-            "delegatorCount": 10
+            "delegatedWeight": "112381418859691886",
+            "delegatorCount": 8
           },
           {
             "nodeId": "NodeID-t3mLmFZJLYdPc4pBxunh585ahrHTAezm",
             "feePercent": 20,
-            "uptimePercent": 99.9414,
+            "uptimePercent": 99.9416,
             "connected": true,
             "weight": "113565360901041300",
             "selfBond": "8239932000000000",
@@ -5083,7 +5083,7 @@
           {
             "nodeId": "NodeID-JFiAG1SiqUFh3EnkY8oXcXUg8RuT2guZp",
             "feePercent": 20,
-            "uptimePercent": 99.2817,
+            "uptimePercent": 99.2935,
             "connected": true,
             "weight": "119934189971441886",
             "selfBond": "8000000000000000",
@@ -5142,7 +5142,7 @@
           {
             "nodeId": "NodeID-GGnTyHtMF7b8CELtUgFGTEHjEcjNF7RZ",
             "feePercent": 20,
-            "uptimePercent": 97.9066,
+            "uptimePercent": 97.774,
             "connected": false,
             "weight": "299999952567936480",
             "selfBond": "20000000000000000",
@@ -5152,7 +5152,7 @@
           {
             "nodeId": "NodeID-K9g6YJEhWiN2TF1RsFTA8SEXFAJWvikhu",
             "feePercent": 20,
-            "uptimePercent": 99.4391,
+            "uptimePercent": 99.429,
             "connected": true,
             "weight": "140025055000000000",
             "selfBond": "10000000000000000",
@@ -5162,7 +5162,7 @@
           {
             "nodeId": "NodeID-KH2o8xGFLYtCwseWgRbpDAf1n4zAcMNfN",
             "feePercent": 20,
-            "uptimePercent": 92.7025,
+            "uptimePercent": 92.6458,
             "connected": true,
             "weight": "269307760000000000",
             "selfBond": "20000000000000000",
@@ -5172,7 +5172,7 @@
           {
             "nodeId": "NodeID-Q3WJQcoixGGKnFs41B18rnJB9PS54M5oF",
             "feePercent": 15,
-            "uptimePercent": 98.7683,
+            "uptimePercent": 98.767,
             "connected": true,
             "weight": "150000000000000000",
             "selfBond": "10000000000000000",
@@ -5338,7 +5338,7 @@
           {
             "nodeId": "NodeID-JGAJGcDbg1kqnfwCpDiJ5VeNGkSDRxGra",
             "feePercent": 20,
-            "uptimePercent": 99.9552,
+            "uptimePercent": 99.9629,
             "connected": true,
             "weight": "44539559634522767",
             "selfBond": "6715460000000000",
@@ -5348,7 +5348,7 @@
           {
             "nodeId": "NodeID-KDzgUwGve1qisM4BM7VSmrJXK5UT9yB31",
             "feePercent": 20,
-            "uptimePercent": 99.9899,
+            "uptimePercent": 99.99,
             "connected": true,
             "weight": "25282826979333638",
             "selfBond": "6746758000000000",
@@ -5409,10 +5409,10 @@
             "feePercent": 10,
             "uptimePercent": 99.988,
             "connected": true,
-            "weight": "299911439221868936",
+            "weight": "299939939221868936",
             "selfBond": "25000000000000000",
-            "delegatedWeight": "274911439221868936",
-            "delegatorCount": 368
+            "delegatedWeight": "274939939221868936",
+            "delegatorCount": 369
           }
         ],
         "selfDeclared": {
@@ -5466,7 +5466,7 @@
           {
             "nodeId": "NodeID-NCBqn9P8oAEkYn6McyQjhF67WarSTttz5",
             "feePercent": 20,
-            "uptimePercent": 99.9706,
+            "uptimePercent": 99.9708,
             "connected": true,
             "weight": "67424999665336095",
             "selfBond": "4500000000000000",
@@ -5525,12 +5525,12 @@
           {
             "nodeId": "NodeID-8dNfgpspPNDrZD2ksKCRJoGe4Xqe6qVtz",
             "feePercent": 20,
-            "uptimePercent": 99.9859,
+            "uptimePercent": 99.986,
             "connected": true,
-            "weight": "111980651941850150",
+            "weight": "91980651941850150",
             "selfBond": "7500000000000000",
-            "delegatedWeight": "104480651941850150",
-            "delegatorCount": 18
+            "delegatedWeight": "84480651941850150",
+            "delegatorCount": 17
           }
         ],
         "selfDeclared": {
@@ -5653,7 +5653,7 @@
           {
             "nodeId": "NodeID-7aU2dDeBVu4btx4wbt44ACqyJeQRjCZMi",
             "feePercent": 100,
-            "uptimePercent": 99.9528,
+            "uptimePercent": 99.9529,
             "connected": true,
             "weight": "115163646110118480",
             "selfBond": "13500000000000000",
@@ -5663,7 +5663,7 @@
           {
             "nodeId": "NodeID-JLAi1KM18TocQu9zvmSw6wND4hEvgkER6",
             "feePercent": 100,
-            "uptimePercent": 99.7729,
+            "uptimePercent": 99.7757,
             "connected": true,
             "weight": "300000000000000000",
             "selfBond": "50000000000000000",
@@ -5673,7 +5673,7 @@
           {
             "nodeId": "NodeID-KywEC9cXm8P4KezUkovM5oA1rLTTFDe6e",
             "feePercent": 100,
-            "uptimePercent": 99.9248,
+            "uptimePercent": 99.9249,
             "connected": true,
             "weight": "202289923973547402",
             "selfBond": "13500000000000000",
@@ -5732,7 +5732,7 @@
           {
             "nodeId": "NodeID-3RJrjDMzeZQVDyHDjZ6u1X3Y3WCKY5nbb",
             "feePercent": 20,
-            "uptimePercent": 99.937,
+            "uptimePercent": 99.9374,
             "connected": true,
             "weight": "154153132819524699",
             "selfBond": "20000000000000000",
@@ -5752,12 +5752,12 @@
           {
             "nodeId": "NodeID-K4iQCzQ6VSYUchEFNBSvQwhWaunb7sZe5",
             "feePercent": 20,
-            "uptimePercent": 99.9764,
+            "uptimePercent": 99.9765,
             "connected": true,
-            "weight": "97872703826509969",
+            "weight": "98262703826509969",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "77872703826509969",
-            "delegatorCount": 35
+            "delegatedWeight": "78262703826509969",
+            "delegatorCount": 36
           }
         ],
         "selfDeclared": {
@@ -5859,21 +5859,21 @@
           {
             "nodeId": "NodeID-N3GDYNsVNMxYTW4ULzrfRZpy3tRnhxKSQ",
             "feePercent": 20,
-            "uptimePercent": 99.939,
+            "uptimePercent": 99.9391,
             "connected": true,
-            "weight": "48357850323079834",
+            "weight": "46743047327668834",
             "selfBond": "8500000000000000",
-            "delegatedWeight": "39857850323079834",
-            "delegatorCount": 8
+            "delegatedWeight": "38243047327668834",
+            "delegatorCount": 6
           },
           {
             "nodeId": "NodeID-2a7BPY7UeJv2njMuyUHfBSTeQCYZj6bwV",
             "feePercent": 20,
-            "uptimePercent": 99.7656,
+            "uptimePercent": 99.7666,
             "connected": true,
-            "weight": "189773949068338887",
+            "weight": "191018930561049641",
             "selfBond": "14810000000000000",
-            "delegatedWeight": "174963949068338887",
+            "delegatedWeight": "176208930561049641",
             "delegatorCount": 39
           },
           {
@@ -5948,7 +5948,7 @@
           {
             "nodeId": "NodeID-Dbh8RabyVE7hWiBFjKwsU8qhLGu92CpEj",
             "feePercent": 20,
-            "uptimePercent": 99.9638,
+            "uptimePercent": 99.964,
             "connected": true,
             "weight": "62577451968155659",
             "selfBond": "4172705000000000",
@@ -6066,7 +6066,7 @@
           {
             "nodeId": "NodeID-VpU9ehka7wy9C3KBjajfTop1vgkyXtzR",
             "feePercent": 20,
-            "uptimePercent": 99.9645,
+            "uptimePercent": 99.9647,
             "connected": true,
             "weight": "179827346058413666",
             "selfBond": "20000000000000000",
@@ -6096,12 +6096,12 @@
           {
             "nodeId": "NodeID-Mvr4Mv2qL4xgHsuaASvRyDQD4JsgrohgZ",
             "feePercent": 20,
-            "uptimePercent": 99.9707,
+            "uptimePercent": 99.9708,
             "connected": true,
-            "weight": "255998407328921148",
+            "weight": "258783725312186493",
             "selfBond": "20700000000000000",
-            "delegatedWeight": "235298407328921148",
-            "delegatorCount": 234
+            "delegatedWeight": "238083725312186493",
+            "delegatorCount": 236
           }
         ],
         "selfDeclared": {
@@ -6283,7 +6283,7 @@
           {
             "nodeId": "NodeID-PvoESzorptfvdheBzTN273YuMatKuJgVn",
             "feePercent": 20,
-            "uptimePercent": 45.8997,
+            "uptimePercent": 46.544,
             "connected": true,
             "weight": "136988291013193681",
             "selfBond": "12975000000000000",
@@ -6293,7 +6293,7 @@
           {
             "nodeId": "NodeID-DwsTFgCHxtg1FB7Uo7b9CVyVY9g2JRvTj",
             "feePercent": 20,
-            "uptimePercent": 98.2806,
+            "uptimePercent": 98.2031,
             "connected": true,
             "weight": "12975000000000000",
             "selfBond": "12975000000000000",
@@ -6303,7 +6303,7 @@
           {
             "nodeId": "NodeID-Dgxq3z2yWZK9KmSr3DtwU7iTCcp3TaQXc",
             "feePercent": 20,
-            "uptimePercent": 97.96,
+            "uptimePercent": 98.0289,
             "connected": true,
             "weight": "12975000000000000",
             "selfBond": "12975000000000000",
@@ -6313,7 +6313,7 @@
           {
             "nodeId": "NodeID-EFrkDEDR5e1BKWZBxsf3ucrhX9SFs16Cd",
             "feePercent": 20,
-            "uptimePercent": 98.0869,
+            "uptimePercent": 97.8481,
             "connected": true,
             "weight": "12975000000000000",
             "selfBond": "12975000000000000",
@@ -6374,15 +6374,15 @@
             "feePercent": 20,
             "uptimePercent": 99.9938,
             "connected": true,
-            "weight": "58245895000000000",
+            "weight": "58145895000000000",
             "selfBond": "13400000000000000",
-            "delegatedWeight": "44845895000000000",
-            "delegatorCount": 9
+            "delegatedWeight": "44745895000000000",
+            "delegatorCount": 8
           },
           {
             "nodeId": "NodeID-GZFJBtR95xYQf785nJwXK5dQ1MsEtbXEx",
             "feePercent": 20,
-            "uptimePercent": 99.9866,
+            "uptimePercent": 99.9867,
             "connected": true,
             "weight": "89405852000000000",
             "selfBond": "6100000000000000",
@@ -6441,37 +6441,37 @@
           {
             "nodeId": "NodeID-436aEkcwxBo9Z5Ud9Rr7mWEgHnjDu78NR",
             "feePercent": 20,
-            "uptimePercent": 99.9761,
+            "uptimePercent": 99.9763,
             "connected": true,
-            "weight": "249999999930017960",
+            "weight": "249999999925722460",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "229999999930017960",
+            "delegatedWeight": "229999999925722460",
             "delegatorCount": 24
           },
           {
             "nodeId": "NodeID-LwpTuHwv3BdGhT1y7RcPY1t4rx494uExo",
             "feePercent": 20,
-            "uptimePercent": 99.3632,
+            "uptimePercent": 99.3665,
             "connected": true,
-            "weight": "204429668616376912",
+            "weight": "193765267024844432",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "184429668616376912",
-            "delegatorCount": 55
+            "delegatedWeight": "173765267024844432",
+            "delegatorCount": 53
           },
           {
             "nodeId": "NodeID-QK6w1Ryp8kfgPBYSyNgHbRTjEhYfLkyBE",
             "feePercent": 20,
-            "uptimePercent": 98.9643,
+            "uptimePercent": 98.9693,
             "connected": true,
-            "weight": "107037043428392966",
+            "weight": "96920851050255515",
             "selfBond": "20000000000000000",
-            "delegatedWeight": "87037043428392966",
-            "delegatorCount": 18
+            "delegatedWeight": "76920851050255515",
+            "delegatorCount": 15
           },
           {
             "nodeId": "NodeID-C3cwgDrgNHRCpqd7GGBZ6qhcBFNmKh3a3",
             "feePercent": 20,
-            "uptimePercent": 99.9169,
+            "uptimePercent": 99.9173,
             "connected": true,
             "weight": "249999999676079000",
             "selfBond": "20000000000000000",
@@ -6530,12 +6530,12 @@
           {
             "nodeId": "NodeID-EBcyABp9i2wEgZbhiwnyLaqBwFFTdZXyd",
             "feePercent": 20,
-            "uptimePercent": 98.8285,
+            "uptimePercent": 98.8353,
             "connected": true,
-            "weight": "132450766340572973",
+            "weight": "132125137353874938",
             "selfBond": "10000000000000000",
-            "delegatedWeight": "122450766340572973",
-            "delegatorCount": 118
+            "delegatedWeight": "122125137353874938",
+            "delegatorCount": 115
           }
         ],
         "selfDeclared": {
@@ -6589,12 +6589,12 @@
           {
             "nodeId": "NodeID-FFdDVS1oHz6VaFweiBSSf4uaHrWEH5sbn",
             "feePercent": 20,
-            "uptimePercent": 99.9425,
+            "uptimePercent": 99.9428,
             "connected": true,
-            "weight": "73418505783774759",
+            "weight": "73625582220223426",
             "selfBond": "5000000000000000",
-            "delegatedWeight": "68418505783774759",
-            "delegatorCount": 76
+            "delegatedWeight": "68625582220223426",
+            "delegatorCount": 77
           }
         ],
         "selfDeclared": {
@@ -6658,7 +6658,7 @@
           {
             "nodeId": "NodeID-4FUZ69HaskWngaUyU9nFmEkPXAM1zx4yG",
             "feePercent": 10,
-            "uptimePercent": 99.766,
+            "uptimePercent": 99.7663,
             "connected": true,
             "weight": "49954623718039249",
             "selfBond": "3333333330000000",
@@ -6668,7 +6668,7 @@
           {
             "nodeId": "NodeID-P4vXckSMDUNvfCm1eDhEgUFsyawwneQuR",
             "feePercent": 10,
-            "uptimePercent": 99.7434,
+            "uptimePercent": 99.7438,
             "connected": true,
             "weight": "33332590883508072",
             "selfBond": "2222222220000000",
@@ -6678,7 +6678,7 @@
           {
             "nodeId": "NodeID-2hWCwcnHGDE9bsHJ6ikV8Eu38FSaAFnbo",
             "feePercent": 20,
-            "uptimePercent": 99.9564,
+            "uptimePercent": 99.9567,
             "connected": true,
             "weight": "24365442148492304",
             "selfBond": "1658731000000000",
@@ -6737,17 +6737,17 @@
           {
             "nodeId": "NodeID-2q436GJKA5faTceNaAbu7CYxftv3K8fS4",
             "feePercent": 13,
-            "uptimePercent": 99.9191,
+            "uptimePercent": 99.9192,
             "connected": true,
-            "weight": "108904530680737492",
+            "weight": "108845530680737492",
             "selfBond": "7750000000000000",
-            "delegatedWeight": "101154530680737492",
-            "delegatorCount": 153
+            "delegatedWeight": "101095530680737492",
+            "delegatorCount": 152
           },
           {
             "nodeId": "NodeID-EGuZpWWQEmBYcx9atH41LuHy8h4KxxME",
             "feePercent": 20,
-            "uptimePercent": 99.8015,
+            "uptimePercent": 99.8022,
             "connected": true,
             "weight": "67499999995206384",
             "selfBond": "4500000000000000",
@@ -6865,7 +6865,7 @@
           {
             "nodeId": "NodeID-PkNmRmrsQ9Grj98XNHrsK13YCMF44p3EQ",
             "feePercent": 20,
-            "uptimePercent": 99.0497,
+            "uptimePercent": 99.1029,
             "connected": true,
             "weight": "45000000000000000",
             "selfBond": "3000000000000000",
@@ -6924,7 +6924,7 @@
           {
             "nodeId": "NodeID-HHL3A3jMLbcKWKBP91ApQpuuKkqD9VguZ",
             "feePercent": 20,
-            "uptimePercent": 99.9651,
+            "uptimePercent": 99.9652,
             "connected": true,
             "weight": "44995779860880090",
             "selfBond": "4000000000000000",
@@ -7042,7 +7042,7 @@
           {
             "nodeId": "NodeID-KiAUisCU8UvXGnMRiUvoeyWneSdUm987",
             "feePercent": 50,
-            "uptimePercent": 99.9825,
+            "uptimePercent": 99.9826,
             "connected": true,
             "weight": "14159222352393360",
             "selfBond": "1010000000000000",
@@ -7054,10 +7054,10 @@
             "feePercent": 20,
             "uptimePercent": 99.9837,
             "connected": true,
-            "weight": "59039957984973907",
+            "weight": "59999983000000002",
             "selfBond": "3999999000000000",
-            "delegatedWeight": "55039958984973907",
-            "delegatorCount": 93
+            "delegatedWeight": "55999984000000002",
+            "delegatorCount": 95
           }
         ],
         "selfDeclared": {
@@ -7170,22 +7170,22 @@
           {
             "nodeId": "NodeID-F297gLgRxBndijAYvvvBGtQTwYCrScMQT",
             "feePercent": 20,
-            "uptimePercent": 97.7927,
+            "uptimePercent": 97.7933,
             "connected": true,
-            "weight": "116422499890887090",
+            "weight": "115462299910976688",
             "selfBond": "7761500000000000",
-            "delegatedWeight": "108660999890887090",
-            "delegatorCount": 100
+            "delegatedWeight": "107700799910976688",
+            "delegatorCount": 98
           },
           {
             "nodeId": "NodeID-2xbUrUGcj9HuntjA4YPHQFWiMuQz428SL",
             "feePercent": 20,
-            "uptimePercent": 99.1835,
+            "uptimePercent": 99.1849,
             "connected": true,
-            "weight": "44380063496067429",
+            "weight": "44604776496067429",
             "selfBond": "3083000000000000",
-            "delegatedWeight": "41297063496067429",
-            "delegatorCount": 34
+            "delegatedWeight": "41521776496067429",
+            "delegatorCount": 35
           },
           {
             "nodeId": "NodeID-NV7ZpcJvqzmvvT4PaeHWbTELWKFT2Jqxw",
@@ -7249,7 +7249,7 @@
           {
             "nodeId": "NodeID-Cg8PLmdZ9JmEtUBCZhq2jt2JDS5gDaSsQ",
             "feePercent": 20,
-            "uptimePercent": 99.809,
+            "uptimePercent": 99.8096,
             "connected": true,
             "weight": "156761316727056712",
             "selfBond": "16000000000000000",
@@ -7367,7 +7367,7 @@
           {
             "nodeId": "NodeID-JF4XWnC9PjZVXQuqLcpQvxztdMez3CpkR",
             "feePercent": 20,
-            "uptimePercent": 87.3793,
+            "uptimePercent": 87.6162,
             "connected": true,
             "weight": "44957933959438220",
             "selfBond": "3000000000000000",
@@ -7426,7 +7426,7 @@
           {
             "nodeId": "NodeID-KiaPr2n8VH16oA7mGzveYgk2hceo2WYst",
             "feePercent": 20,
-            "uptimePercent": 99.9833,
+            "uptimePercent": 99.9834,
             "connected": true,
             "weight": "112499999872079693",
             "selfBond": "7500000000000000",
@@ -7436,12 +7436,12 @@
           {
             "nodeId": "NodeID-7LN3mPba5goaud9iT8tMJYafTuoCSDZxx",
             "feePercent": 20,
-            "uptimePercent": 97.9286,
+            "uptimePercent": 97.9369,
             "connected": true,
-            "weight": "111735885697762969",
+            "weight": "111785885697762969",
             "selfBond": "7500100000000000",
-            "delegatedWeight": "104235785697762969",
-            "delegatorCount": 48
+            "delegatedWeight": "104285785697762969",
+            "delegatorCount": 49
           }
         ],
         "selfDeclared": {
@@ -7495,17 +7495,17 @@
           {
             "nodeId": "NodeID-98RaC6gbJMhin1NXsBFUoicEqiF7VKWbL",
             "feePercent": 15,
-            "uptimePercent": 98.7739,
+            "uptimePercent": 98.7751,
             "connected": true,
-            "weight": "125701949611337644",
+            "weight": "126210449578966759",
             "selfBond": "13350000000000000",
-            "delegatedWeight": "112351949611337644",
-            "delegatorCount": 164
+            "delegatedWeight": "112860449578966759",
+            "delegatorCount": 165
           },
           {
             "nodeId": "NodeID-HocHt7RWAxksQj94zEJJ6He7gH2mRnzs1",
             "feePercent": 20,
-            "uptimePercent": 99.9485,
+            "uptimePercent": 99.9487,
             "connected": true,
             "weight": "193185135640000000",
             "selfBond": "14339960000000000",
@@ -7564,7 +7564,7 @@
           {
             "nodeId": "NodeID-Ckyh9cpfkkXSo5PYNNFactcrKkY2XhkXR",
             "feePercent": 20,
-            "uptimePercent": 99.3723,
+            "uptimePercent": 99.3751,
             "connected": true,
             "weight": "28116126217047965",
             "selfBond": "3000000000000000",
@@ -7623,7 +7623,7 @@
           {
             "nodeId": "NodeID-KtTdea6FeDDy5pERrZKHkkhtJFCbJNv1a",
             "feePercent": 10,
-            "uptimePercent": 99.8853,
+            "uptimePercent": 99.8854,
             "connected": true,
             "weight": "89989971809676723",
             "selfBond": "6000000000000000",
@@ -7633,7 +7633,7 @@
           {
             "nodeId": "NodeID-B7FoyLiwCjtCd1fN8TtD5BUxVVQmxczhr",
             "feePercent": 20,
-            "uptimePercent": 99.9876,
+            "uptimePercent": 99.9877,
             "connected": true,
             "weight": "14975242767696396",
             "selfBond": "1000000000000000",
@@ -7712,7 +7712,7 @@
           {
             "nodeId": "NodeID-8qMWVar3hLdLSSgbTV57brpqUNjJuU2H8",
             "feePercent": 20,
-            "uptimePercent": 99.9887,
+            "uptimePercent": 99.9888,
             "connected": true,
             "weight": "207232528552919678",
             "selfBond": "15123490000000000",
@@ -7771,12 +7771,12 @@
           {
             "nodeId": "NodeID-MzMscku8ayAd2pBEmH8xWiAXBwtPgS2S5",
             "feePercent": 20,
-            "uptimePercent": 99.9901,
+            "uptimePercent": 99.9902,
             "connected": true,
-            "weight": "151872796871834374",
+            "weight": "163927090954508153",
             "selfBond": "11000000000000000",
-            "delegatedWeight": "140872796871834374",
-            "delegatorCount": 66
+            "delegatedWeight": "152927090954508153",
+            "delegatorCount": 69
           }
         ],
         "selfDeclared": {
@@ -7830,7 +7830,7 @@
           {
             "nodeId": "NodeID-DsauN2ztCZWaVwcnf3REjj2Uqas7Gfdz6",
             "feePercent": 20,
-            "uptimePercent": 62.6003,
+            "uptimePercent": 62.4794,
             "connected": false,
             "weight": "1000000000000000",
             "selfBond": "1000000000000000",
@@ -7889,7 +7889,7 @@
           {
             "nodeId": "NodeID-NbTToANYcdsreLC5PBcE9gsMBpBY7N7s1",
             "feePercent": 20,
-            "uptimePercent": 99.9815,
+            "uptimePercent": 99.9816,
             "connected": true,
             "weight": "101249999991188355",
             "selfBond": "6750000000000000",
@@ -7948,12 +7948,12 @@
           {
             "nodeId": "NodeID-C3FRhsMBh3KNLKiVbc8xLY7gnVzmJ7EY9",
             "feePercent": 20,
-            "uptimePercent": 99.9449,
+            "uptimePercent": 99.945,
             "connected": true,
-            "weight": "44414367430487879",
+            "weight": "43280270577547552",
             "selfBond": "3000000000000000",
-            "delegatedWeight": "41414367430487879",
-            "delegatorCount": 97
+            "delegatedWeight": "40280270577547552",
+            "delegatorCount": 93
           }
         ],
         "selfDeclared": {
@@ -8007,7 +8007,7 @@
           {
             "nodeId": "NodeID-B6sAUBEYn2fvHMeUnsUkh1yNrvTzKu8gZ",
             "feePercent": 20,
-            "uptimePercent": 92.72,
+            "uptimePercent": 92.7459,
             "connected": true,
             "weight": "24950096957782133",
             "selfBond": "8500000000000000",
@@ -8017,7 +8017,7 @@
           {
             "nodeId": "NodeID-HGNPxSh8dZqCNCmHfMMNWYC8CNQiUwDWK",
             "feePercent": 20,
-            "uptimePercent": 97.0267,
+            "uptimePercent": 97.03,
             "connected": true,
             "weight": "161095821266396965",
             "selfBond": "12724000000000000",
