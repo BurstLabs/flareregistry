@@ -1,7 +1,7 @@
 {
   "$schema": "https://flareregistry.com/providerlist.schema.json",
   "name": "Flare Registry FTSO Signal Providers",
-  "timestamp": "2026-11-19T01:45:52.474Z",
+  "timestamp": "2026-11-19T01:46:01.518Z",
   "version": {
     "major": 1,
     "minor": 4,
@@ -4569,7 +4569,7 @@
     {
       "chainId": 14,
       "name": "HP/Mana Nodes",
-      "description": "HP/Mana Nodes is a community based infrastructure provider on Flare Networks. Mint Player One or Player Two NFTs to fund our validator's self-bonding and secure your place as an infrastructure shareholder. The more FLR is bonded, the more yield is shared by all.",
+      "description": "HP/Mana Nodes is a community based infrastructure provider on Flare. The Power On series NFTs sold out in a flash bootstrapping the initial deploy. Join us as we continue to grow and level up at The Forge with HPFLR liquid staking yield management",
       "url": "https://veriguardnft.xyz",
       "address": "0xF61B94dEdC5f23398997D73B7701D67556eaaD6F",
       "logoURI": "https://raw.githubusercontent.com/BurstLabs/flareregistry/main/assets/0xF61B94dEdC5f23398997D73B7701D67556eaaD6F.png",
@@ -4610,7 +4610,7 @@
         "selfDeclared": {
           "privateNode": true,
           "algorithm": "in-house",
-          "singleEntity": null
+          "singleEntity": true
         },
         "qualification": {
           "qualifiedSince": "2026-06-22T23:47:19.606Z",
@@ -4621,8 +4621,8 @@
         },
         "logoHash": "7effb3a5c9b541172d36831cd4c6393e99fb56b04b5bc9490c30fd75b94f840a",
         "status": "listed",
-        "updatedAt": "2026-06-22T18:11:40.478Z",
-        "attestedAt": "2026-11-19T01:45:51.532Z"
+        "updatedAt": "2026-11-19T01:46:00.510Z",
+        "attestedAt": "2026-11-19T01:46:00.500Z"
       }
     },
     {
