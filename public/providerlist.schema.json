@@ -105,7 +105,7 @@
               "pattern": "^0x[0-9a-fA-F]{40}$"
             }
           ],
-          "description": "Checksummed listing address, normally the delegation address."
+          "description": "Checksummed address to delegate to. When the entity has registered a delegation address on-chain, this is always that address."
         },
         "logoURI": {
           "type": "string",

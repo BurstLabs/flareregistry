@@ -307,7 +307,7 @@ export async function buildProviderList(): Promise<ProviderList> {
 
   const publishable = addresses.filter(isPublishable);
 
-  const providers: FeedProvider[] = publishable.map((a) => {
+  const mapped = publishable.map((a) => {
     // Match the entity on THIS entry's network (derived from its chainId), not address alone, so a
     // role address shared across Flare and Songbird resolves to the right-network entity.
     const entryNetwork = getChain(a.chainId)?.key ?? null;
@@ -315,6 +315,7 @@ export async function buildProviderList(): Promise<ProviderList> {
       ? entityByNetworkAddress.get(`${entryNetwork}:${a.address.toLowerCase()}`)
       : undefined;
     const latest = entity ? latestByVoter.get(`${entity.network}:${entity.voter}`) : undefined;
+    const publishedAddress = entity?.delegationAddress ?? a.address;
     const providerId = providerIdByAddress.get(a.address.toLowerCase()) ?? "";
     const risk = riskByProvider.get(providerId);
     const gov = govByProvider.get(providerId);
@@ -458,7 +459,12 @@ export async function buildProviderList(): Promise<ProviderList> {
         a.provider.chainDescriptions.find((d) => d.chainId === a.chainId)?.description ??
         a.provider.description,
       url: a.provider.url,
-      address: toChecksum(a.address),
+      // The address a wallet delegates to. When the entity has registered a separate delegation
+      // address, that is the only address whose vote power Flare counts, so it is published here
+      // whichever role address our row holds. Without this, rows copied in June from a list that
+      // carried identity addresses (Quicknode, ITB Validator) sent delegators to an address that
+      // earns nothing, and the import scan saw the corrected address only as "absorbed".
+      address: toChecksum(publishedAddress),
       logoURI: resolveLogo(a.provider.logoPath, a.provider.logoURI),
       // listed reflects automatic qualification, minus any provider still inside its 30-day
       // new-provider hold, so wallets that filter on listed get the Qualified-and-settled set.
@@ -471,7 +477,21 @@ export async function buildProviderList(): Promise<ProviderList> {
       // claims it and the source flips to "submitted".
       listed: a.provider.source === "onchain" ? false : qualified && !held,
       flareregistry: extras,
-    };
+    } satisfies FeedProvider;
+  });
+
+  // One entry per (chain, published address). If a provider holds rows for two role addresses
+  // of one entity, both now publish the delegation address; keep the row that IS that address.
+  const byKey = new Map<string, { entry: FeedProvider; native: boolean }>();
+  mapped.forEach((entry, i) => {
+    const key = `${entry.chainId}:${entry.address.toLowerCase()}`;
+    const native = publishable[i].address.toLowerCase() === entry.address.toLowerCase();
+    const prev = byKey.get(key);
+    if (!prev || (native && !prev.native)) byKey.set(key, { entry, native });
+  });
+  const providers: FeedProvider[] = mapped.filter((entry) => {
+    const key = `${entry.chainId}:${entry.address.toLowerCase()}`;
+    return byKey.get(key)?.entry === entry;
   });
 
   return {
