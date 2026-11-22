@@ -100,6 +100,13 @@ export default async function ProviderDetail({
       ],
     },
   });
+  const entityRoleAddrs = new Set(
+    entities.flatMap((e) =>
+      [e.voter, e.delegationAddress, e.submitAddress, e.submitSignaturesAddress, e.signingPolicyAddress]
+        .filter((x): x is string => !!x)
+        .map((x) => x.toLowerCase())
+    )
+  );
   // DEPARTED: the same judgement the feed publishes as flareregistry.status and the directory
   // prints as a chip. Not qualified, and silent past the purge window on every network we match.
   const latestEpochByNetwork = new Map<string, number>();
@@ -330,7 +337,8 @@ export default async function ProviderDetail({
     description: p.description,
     descriptions,
     departed,
-    dormant: p.addresses.some((a) => a.entityRegistered),
+    // Same rule as the feed: registered but not yet taking part, so no entity matches the address.
+    dormant: p.addresses.some((a) => a.entityRegistered && !entityRoleAddrs.has(a.address.toLowerCase())),
     url: p.url,
     logo: cardLogo(p.logoPath, p.logoURI),
     verified: p.source === "submitted",

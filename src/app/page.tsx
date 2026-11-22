@@ -173,9 +173,12 @@ export default async function Home({
     return silences.length > 0 && silences.every((g) => g >= PURGE_AFTER_EPOCHS);
   };
 
-  // A confirmed EntityManager registration that never took part. It passes no qualification check
-  // by definition, so it needs naming here for the same reason departed does.
-  const isDormant = (p: (typeof all)[number]) => p.addresses.some((a) => a.entityRegistered);
+  // A confirmed EntityManager registration that has not taken part YET. It passes no qualification
+  // check by definition, so it needs naming here for the same reason departed does. Same rule as the
+  // feed: the flag only counts while no on-chain entity matches the address. Once the provider
+  // starts submitting it is an ordinary entity (HUMAN_589 kept showing "Dormant" while submitting).
+  const isDormant = (p: (typeof all)[number]) =>
+    p.addresses.some((a) => a.entityRegistered && !entityByAddr.has(a.address.toLowerCase()));
 
   // Hide a row only when there is nothing we can say about it: no qualification check passes AND
   // we cannot call it departed or dormant either. A departed provider used to be hidden here too,
