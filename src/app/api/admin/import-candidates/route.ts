@@ -5,6 +5,7 @@ import { publishFeedToRepo } from "@/lib/feed";
 import { scanImports } from "@/lib/import-scan";
 import { getAdminAddress } from "@/lib/admin";
 import { normalizeName } from "@/lib/validation";
+import { mirrorLogo } from "@/lib/mirror-logo";
 
 export const dynamic = "force-dynamic";
 
@@ -137,6 +138,11 @@ export async function POST(req: NextRequest) {
     // batch of candidates hands every one of them a fresh thirty-day hold no matter how long it has
     // been registered on-chain. That happened: thirteen listings in one afternoon, nine of them for
     // entities already up to 53 days old.
+    // Mirror the upstream logo into our assets before the row exists, so the feed never publishes
+    // another project's host (Flare's explorer blocks it). Only for a new listing; a merge keeps the
+    // target's logo. On failure the upstream URL is kept, as before.
+    const mirroredLogo = mergeTarget ? null : await mirrorLogo(c.logoURI, c.address);
+
     const onchainSince = await prisma.providerOnchain.findFirst({
       where: {
         OR: [
@@ -162,7 +168,7 @@ export async function POST(req: NextRequest) {
               name: c.name.trim(),
               description: c.description.trim(),
               url: c.url.trim(),
-              logoURI: c.logoURI,
+              logoURI: mirroredLogo ?? c.logoURI,
               source: providerSource,
               firstSeenAt: onchainSince?.createdAt ?? null,
             },
