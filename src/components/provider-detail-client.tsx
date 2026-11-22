@@ -177,6 +177,7 @@ export interface DetailData {
     }[];
     version: string;
     mature: boolean;
+    maturity?: { scored: number; needed: number; expectedAt: string | Date | null } | null;
     epochsSeen: number;
     chills: {
       network: string;
@@ -1082,7 +1083,23 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                 </span>
               </p>
             ) : !d.reputation.mature ? (
-              <p className="text-muted">{t("rep.immature")}</p>
+              <>
+                <p className="text-muted">{t("rep.immature")}</p>
+                {d.reputation.maturity && (
+                  <p className="mt-2 text-xs text-faint">
+                    {d.reputation.maturity.expectedAt
+                      ? t("rep.immatureWhen", {
+                          scored: d.reputation.maturity.scored,
+                          needed: d.reputation.maturity.needed,
+                          date: day(new Date(d.reputation.maturity.expectedAt).toISOString()) ?? "",
+                        })
+                      : t("rep.immatureCount", {
+                          scored: d.reputation.maturity.scored,
+                          needed: d.reputation.maturity.needed,
+                        })}
+                  </p>
+                )}
+              </>
             ) : (
               <>
                 <div className="flex items-baseline gap-3">

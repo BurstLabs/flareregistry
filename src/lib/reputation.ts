@@ -35,7 +35,7 @@
 // incumbents and tells delegators that the oldest provider is the best one. It therefore saturates at
 // LONGEVITY_FULL_EPOCHS, after which more age buys nothing.
 
-import { eligibilityRecord, RECORD_WINDOW, type EligibilityRecord } from "@/lib/eligibility-record";
+import { eligibilityRecord, RECORD_WINDOW, RECORD_MIN_EPOCHS, type EligibilityRecord } from "@/lib/eligibility-record";
 import { prisma } from "@/lib/db";
 import { toNodeId } from "@/lib/validators";
 
@@ -71,6 +71,9 @@ export const VALIDATOR_RAMP_EPOCHS = 30;
  * below that it would round to zero on the page anyway.
  */
 export const VALIDATOR_MIN_EPOCHS = 3;
+
+/** One reward epoch: 302,400 s (3.5 days), the same on Flare and Songbird. */
+const REWARD_EPOCH_MS = 302_400 * 1000;
 
 /**
  * Hours between checks for new epoch data, matching the cron that refreshes this score's inputs.
@@ -475,6 +478,11 @@ export interface Reputation {
   version: string;
   /** False when there is too little history for the figure to mean anything. */
   mature: boolean;
+  /**
+   * While not mature: verdicts counted so far, verdicts needed, and when the first figure should
+   * appear. Null once mature.
+   */
+  maturity: { scored: number; needed: number; expectedAt: Date | null } | null;
   record: EligibilityRecord | null;
   /** Epochs we have seen this entity registered. Drives the longevity component. */
   epochsSeen: number;
@@ -1225,6 +1233,22 @@ export async function reputationFor(
     // The eligibility record carries the maturity gate, and it gates the whole figure: without enough
     // epochs the largest single component is guesswork, so publishing a score would be false precision.
     mature: !!record?.mature,
+    // The date is anchored on when the latest epoch's data ARRIVED here (IngestState.updatedAt
+    // moves only then), so Flare's publishing delay is already inside it. One verdict per reward
+    // epoch, 3.5 days each on Flare and Songbird. It assumes Flare reports on this provider every
+    // epoch from now on; a missed verdict pushes it back by one epoch.
+    maturity: record?.mature
+      ? null
+      : (() => {
+          const scored = record?.scored ?? 0;
+          const toGo = Math.max(1, RECORD_MIN_EPOCHS - scored);
+          const anchor = freshness?.updatedAt ?? null;
+          return {
+            scored,
+            needed: RECORD_MIN_EPOCHS,
+            expectedAt: anchor ? new Date(anchor.getTime() + toGo * REWARD_EPOCH_MS) : null,
+          };
+        })(),
     record,
     epochsSeen,
     chills,
