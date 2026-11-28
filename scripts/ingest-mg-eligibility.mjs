@@ -33,6 +33,17 @@
 // Flare mainnet only: the Management Group is a Flare contract and Songbird has no equivalent.
 import { PrismaClient } from "@prisma/client";
 
+/**
+ * mgRemovedAt / mgRemovedReason for one entity. Shared shape with /api/mg/refresh, which runs the moment
+ * a removal lands through this site's button and so usually captures the ground first.
+ */
+export function removalFields(prev, isMember, removedAtTs) {
+  if (isMember || !removedAtTs) return { mgRemovedAt: null, mgRemovedReason: null };
+  const at = new Date(removedAtTs * 1000);
+  const same = prev.mgRemovedAt && new Date(prev.mgRemovedAt).getTime() === at.getTime();
+  return { mgRemovedAt: at, mgRemovedReason: same ? prev.mgRemovedReason ?? null : prev.mgRemoveReason ?? null };
+}
+
 const prisma = new PrismaClient();
 
 // Same address on every Flare-family chain, by design.
@@ -213,7 +224,7 @@ function decodeAddressArray(hex) {
 
   const providers = await prisma.providerOnchain.findMany({
     where: { network: "flare" },
-    select: { id: true, voter: true, managementGroup: true },
+    select: { id: true, voter: true, managementGroup: true, mgRemoveReason: true, mgRemovedAt: true, mgRemovedReason: true },
   });
   console.log(`providers: ${providers.length}`);
 
@@ -461,6 +472,10 @@ function decodeAddressArray(hex) {
         mgBlockedAtEpoch: blockedAt,
         mgBlockedUntil:
           blockReason === "recently-removed" ? new Date(removedUntilTs * 1000) : null,
+        // The last removal and its ground. A NEW removal (a timestamp we have not recorded) takes the
+        // ground we held while the entity was still seated; the same removal keeps what was captured.
+        ...removalFields(p, isMember, removedAtTs),
+        mgChillClearEpoch: chillBlocksUntil > 0 ? chillBlocksUntil : null,
         // A provider becomes eligible once the CURRENT epoch has advanced by epochsRemaining, because
         // the contract's walk-back only ever inspects epochs below the current one. So the earliest
         // date is the start of epoch (current + epochsRemaining), which is the end of the current

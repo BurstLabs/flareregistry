@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 
 import Link from "next/link";
 import { useApp } from "./providers";
@@ -129,6 +129,11 @@ export interface DetailData {
     epochsRemaining: number | null;
     blockedAtEpoch: number | null;
     blockedUntil: string | null;
+    /** The last removal from the group, for an entity that is not a member now. */
+    removedAt?: string | null;
+    removedReason?: string | null;
+    /** First reward epoch at which a past chill stops blocking a rejoin; null if never chilled. */
+    chillClearEpoch?: number | null;
     eligibleEstimatedAt: string | null;
     blockedAtEpochTs: string | null;
     checkedEpoch: number | null;
@@ -233,6 +238,71 @@ function monthYear(ym: string | null | undefined): string | null {
   const [y, m] = ym.split("-").map(Number);
   if (!y || !m) return null;
   return new Date(y, m - 1, 1).toLocaleDateString(undefined, { year: "numeric", month: "long" });
+}
+
+type MgView = NonNullable<DetailData["mg"]>;
+
+function MgRejoin({ mg }: { mg: MgView }) {
+  const { t } = useApp();
+  const need = mg.requiredEpochs ?? 20;
+  const cooldownOver = mg.blockReason !== "recently-removed";
+  const rewardsKnown = mg.rewardedStreak != null;
+  const rewardsMet = rewardsKnown && mg.rewardedStreak! >= need;
+  const chillMet = mg.chillClearEpoch == null || (mg.checkedEpoch != null && mg.chillClearEpoch <= mg.checkedEpoch);
+  const reason =
+    mg.removedReason === "no-rewards"
+      ? t("mg.removedForNoRewards")
+      : mg.removedReason === "non-participation"
+        ? t("mg.removedForNonParticipation")
+        : mg.removedReason === "chilled"
+          ? t("mg.removedForChilled")
+          : null;
+  // The latest of the dated gates. The reward estimate assumes a reward in every epoch until then.
+  const rewardDate = !rewardsMet && mg.epochsRemaining != null && mg.epochsRemaining > 0 ? mg.eligibleEstimatedAt : null;
+  const cooldownDate = !cooldownOver ? mg.blockedUntil : null;
+  const earliest = [rewardDate, cooldownDate].filter(Boolean).sort().pop() ?? null;
+  const Row = ({ ok, children }: { ok: boolean; children: ReactNode }) => (
+    <li className="flex items-start gap-2">
+      <span className={ok ? "text-emerald-500 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400"}>{ok ? "✓" : "⏳"}</span>
+      <span className="text-muted">{children}</span>
+    </li>
+  );
+  return (
+    <>
+      <p className="text-fg">
+        {t("mg.removedOn", { date: moment(mg.removedAt)! })}
+        {reason ? ` ${reason}` : ""}
+      </p>
+      <p className="mt-3 text-sm text-muted">{t("mg.rejoinNeeds")}</p>
+      <ul className="mt-2 space-y-1.5 text-sm">
+        <Row ok={cooldownOver}>
+          {cooldownOver
+            ? t("mg.gateCooldownOver")
+            : t("mg.gateCooldownUntil", { date: moment(mg.blockedUntil) ?? "" })}
+        </Row>
+        <Row ok={rewardsMet}>
+          {rewardsKnown
+            ? t("mg.gateRewards", { need, streak: mg.rewardedStreak! })
+            : t("mg.gateRewardsPending", { need })}
+        </Row>
+        <Row ok={chillMet}>
+          {chillMet ? t("mg.gateChillClear") : t("mg.gateChillUntil", { epoch: mg.chillClearEpoch! })}
+        </Row>
+      </ul>
+      {mg.eligible ? (
+        <>
+          <p className="mt-3 text-sm text-muted">{t("mg.eligibleNow")}</p>
+          <MgJoinButton identity={mg.identity} />
+        </>
+      ) : earliest ? (
+        <p className="mt-3 text-sm text-fg">
+          {rewardDate === earliest
+            ? t("mg.rejoinEarliestRewards", { date: day(earliest)! })
+            : t("mg.rejoinEarliest", { date: moment(earliest)! })}
+        </p>
+      ) : null}
+    </>
+  );
 }
 
 function day(iso: string | null | undefined): string | null {
@@ -756,6 +826,12 @@ export function ProviderDetailClient({ data: d }: { data: DetailData }) {
                   )}
 
               </>
+            ) : d.mg.removedAt ? (
+              // REMOVED FROM THE GROUP (2026-11-28): when, on what ground, and the three conditions
+              // addMember() checks, each with where this entity stands. Replaces the single "cannot
+              // rejoin before {date}" sentence, which read as a release date while the 20-epoch
+              // reward run was the condition actually in front.
+              <MgRejoin mg={d.mg} />
             ) : d.mg.eligible ? (
               <>
                 <p className="flex items-start gap-2">

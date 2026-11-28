@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
 
   const row = await prisma.providerOnchain.findFirst({
     where: { network: "flare", voter },
-    select: { id: true },
+    select: { id: true, mgRemoveReason: true, mgRemovedAt: true, mgRemovedReason: true },
   });
   if (!row) return NextResponse.json({ error: "unknown voter" }, { status: 404 });
 
@@ -160,6 +160,15 @@ export async function POST(req: NextRequest) {
               }
             : {}),
         ...(isMember ? { mgBlockReason: null, mgBlockedUntil: null } : {}),
+        // The removal and its ground, captured here because this route runs the moment a removal
+        // lands and the row still holds the ground from the last check while seated. Same rule as
+        // removalFields() in scripts/ingest-mg-eligibility.mjs.
+        ...(() => {
+          if (isMember || !removedAtTs) return { mgRemovedAt: null, mgRemovedReason: null };
+          const at = new Date(removedAtTs * 1000);
+          const same = row.mgRemovedAt?.getTime() === at.getTime();
+          return { mgRemovedAt: at, mgRemovedReason: same ? row.mgRemovedReason : row.mgRemoveReason };
+        })(),
         mgCheckedEpoch: currentEpoch,
         mgCheckedAt: new Date(),
       },

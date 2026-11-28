@@ -502,6 +502,15 @@ model ProviderOnchain {
   mgMissedVotesLimit  Int? // removeAfterNonParticipatingProposals, at which removal becomes possible
   mgEpochsSinceReward Int? // consecutive initialised epochs with no reward, counting back from now
   mgMemberSinceEpoch  Int?
+  // THE LAST REMOVAL, for an entity that is not a member now (2026-11-28, after DataVector's removal
+  // showed only a rejoin date). mgRemovedAt is memberRemovedAtTs from the contract. mgRemovedReason is
+  // the ground this site had on record for the member just before it went (mgRemoveReason at the last
+  // check while seated), captured once per removal; null when the site had none on record.
+  mgRemovedAt         DateTime?
+  mgRemovedReason     String? // chilled | no-rewards | non-participation
+  // First reward epoch at which a past chill stops blocking addMember (chilledUntil + addAfterNotChilled
+  // + 1); null when the entity has never been chilled.
+  mgChillClearEpoch   Int?
   // IMPLEMENTATION INDEPENDENCE, mirrored daily from oracleindependence.com.
   //
   // That screen states its own limits and they are carried through here: it is a suspicion score
